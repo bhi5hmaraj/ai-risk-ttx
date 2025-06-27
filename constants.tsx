@@ -64,6 +64,6 @@ export const ROLES: Record<RoleName, RoleData> = {
 
 export const GAME_CONFIG = {
   MAX_ROUNDS: 5,
-  ACTION_PHASE_SECONDS: 120, // 2 minutes
+  ACTION_PHASE_SECONDS: 300, // 5 minutes
   ACTION_POINTS_PER_ROUND: 3,
 };

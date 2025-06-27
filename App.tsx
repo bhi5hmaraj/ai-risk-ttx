@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { GameState, Player, RoleData, RoleName, ActionOption, GameLogEntry, PlayerRoundActions, HiddenScoreUpdate, AIHiddenScoreUpdate } from './types';
 import { GamePhase } from './types';
 import { ROLES, GAME_CONFIG } from './constants';
-import { generateInitialScenario, generateConsequences, generateAIPlayerActions, generateActionOptions } from './services/geminiService';
+import { generateInitialScenario, generateConsequences, generateAIPlayerActions, generateActionOptions, generateCounterfactualConsequences } from './services/geminiService';
 import { LoadingSpinner, CheckCircleIcon, EyeIcon, EyeSlashIcon, PauseIcon, PlayIcon } from './components/Icons';
+import CytoscapeComponent from 'react-cytoscapejs';
+import cytoscape from 'cytoscape';
 
 // --- HELPER COMPONENTS ---
 
@@ -22,30 +24,111 @@ const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boo
   </div>
 );
 
-const PlayerInfoPanel: React.FC<{ player: Player }> = ({ player }) => {
+const CombinedActionTree: React.FC<{ logEntry: GameLogEntry | null }> = ({ logEntry }) => {
+    const elements = useMemo(() => {
+        if (!logEntry || !logEntry.event || logEntry.playerActions.length === 0) {
+            return [];
+        }
+
+        const nodes: cytoscape.ElementDefinition[] = [];
+        const edges: cytoscape.ElementDefinition[] = [];
+
+        // Event Node (Root)
+        nodes.push({ data: { id: 'event', label: logEntry.event.headline }, classes: 'event' });
+
+        logEntry.playerActions.forEach(pa => {
+            const roleId = pa.roleName;
+            const chosenActionTitles = new Set(pa.actions.map(a => a.title));
+            
+            // Role Node
+            nodes.push({ data: { id: roleId, label: roleId }, classes: 'role' });
+            edges.push({ data: { source: 'event', target: roleId }, classes: 'event-edge' });
+            
+            // Action Nodes and Edges
+            if (pa.availableOptions) {
+                pa.availableOptions.forEach(opt => {
+                    const actionId = `${roleId}_${opt.title}`;
+                    const isChosen = chosenActionTitles.has(opt.title);
+                    
+                    nodes.push({
+                        data: { id: actionId, label: opt.title },
+                        classes: isChosen ? 'action chosen' : 'action unchosen'
+                    });
+                    
+                    edges.push({
+                        data: { source: roleId, target: actionId },
+                        classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge'
+                    });
+                });
+            }
+        });
+
+        return [...nodes, ...edges];
+    }, [logEntry]);
+
+    const stylesheet: cytoscape.Stylesheet[] = [
+        { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'color': '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'shape': 'round-rectangle', 'width': '130px', 'height': 'auto', 'padding': '10px', 'background-opacity': 1 } },
+        { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', 'color': 'white' } },
+        { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
+        { selector: '.action', style: { 'font-size': '9px', 'width': '100px', 'height': 'auto', 'padding': '8px' } },
+        { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
+        { selector: '.unchosen', style: { 'background-color': '#4b5563', 'opacity': 0.7 } },
+        { selector: 'edge', style: { 'width': 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
+        { selector: '.event-edge', style: { 'line-color': '#4b5563' , 'target-arrow-color': '#4b5563'} },
+        { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', 'width': 3, 'z-index': 99 } },
+        { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', 'opacity': 0.6 } }
+    ];
+    
+    if (elements.length === 0) {
+        return (
+            <div className="bg-gray-800 rounded-lg p-6 mt-6">
+                <h3 className="text-lg font-bold text-blue-300 mb-2">Round Action Tree</h3>
+                <p className="text-gray-400 text-sm">The action tree for the first round will appear here after it concludes.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
+            <h3 className="text-lg font-bold text-blue-300 mb-2 text-center">Round {logEntry?.round} Action Tree</h3>
+            <CytoscapeComponent 
+                elements={elements} 
+                stylesheet={stylesheet} 
+                layout={{ name: 'cose', animate: true, padding: 20, nodeRepulsion: 400000, idealEdgeLength: 100, nodeOverlap: 20, gravity: 80, numIter: 1000, initialTemp: 200, coolingFactor: 0.95, minTemp: 1.0 }}
+                style={{ width: '100%', height: 'calc(100% - 30px)' }} 
+                cy={(cy) => { cy.maxZoom(1.5); cy.minZoom(0.3); }}
+            />
+        </div>
+    );
+};
+
+const PlayerInfoPanel: React.FC<{ player: Player; lastLogEntry: GameLogEntry | null }> = ({ player, lastLogEntry }) => {
   const [showHidden, setShowHidden] = useState(false);
   return (
-    <div className="bg-gray-800 rounded-lg p-6 sticky top-6">
-      <div className="flex items-center mb-4">
-        <div className="bg-gray-700 p-3 rounded-md mr-4">
-          {player.role.icon({ className: "h-10 w-10 text-blue-400" })}
+    <div className="sticky top-6">
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center mb-4">
+          <div className="bg-gray-700 p-3 rounded-md mr-4">
+            {player.role.icon({ className: "h-10 w-10 text-blue-400" })}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{player.role.name}</h2>
+            <span className="text-sm text-blue-400 font-semibold">Your Role</span>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold">{player.role.name}</h2>
-          <span className="text-sm text-blue-400 font-semibold">Your Role</span>
+        <div className="space-y-4 text-sm">
+          <p><strong className="text-blue-300">Public Objective:</strong> {player.role.publicObjective}</p>
+          <div className="bg-gray-900 p-3 rounded-md border border-gray-700">
+              <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowHidden(!showHidden)}>
+                  <strong className="text-amber-300">Hidden Objective</strong>
+                  {showHidden ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
+              </div>
+              {showHidden && <p className="mt-2 text-amber-200 italic">{player.role.hiddenObjective}</p>}
+          </div>
+          <p><strong className="text-blue-300">Personal Score:</strong> {player.hiddenScore}</p>
         </div>
       </div>
-      <div className="space-y-4 text-sm">
-        <p><strong className="text-blue-300">Public Objective:</strong> {player.role.publicObjective}</p>
-        <div className="bg-gray-900 p-3 rounded-md border border-gray-700">
-            <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowHidden(!showHidden)}>
-                <strong className="text-amber-300">Hidden Objective</strong>
-                {showHidden ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
-            </div>
-            {showHidden && <p className="mt-2 text-amber-200 italic">{player.role.hiddenObjective}</p>}
-        </div>
-        <p><strong className="text-blue-300">Personal Score:</strong> {player.hiddenScore}</p>
-      </div>
+      <CombinedActionTree logEntry={lastLogEntry} />
     </div>
   );
 };
@@ -65,7 +148,7 @@ const GameStatusPanel: React.FC<{
         <div className='w-full md:w-1/3 text-center md:text-right flex items-center justify-center md:justify-end space-x-4'>
             <div>
                 <span className="font-bold text-xl">{isPaused ? 'Paused' : 'Time Left:'}</span>
-                {!isPaused && <span className="text-2xl text-blue-400 ml-2">{Math.floor(timer/60)}:{(timer % 60).toString().padStart(2, '0')}</span>}
+                {!isPaused && <span className={`text-2xl text-blue-400 ml-2 font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : ''}`}>{Math.floor(timer/60)}:{(timer % 60).toString().padStart(2, '0')}</span>}
             </div>
             {gameState.phase === GamePhase.ACTION && (
                 <button onClick={onPauseClick} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors" aria-label={isPaused ? "Resume game" : "Pause game"}>
@@ -78,15 +161,15 @@ const GameStatusPanel: React.FC<{
 
 const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
     <div className="bg-gray-800 rounded-lg p-6 space-y-6 max-h-[50vh] overflow-y-auto">
-        {gameState.eventLog.slice().reverse().map((log, index) => (
-            <div key={index} className="border-b border-gray-700 pb-4 last:border-b-0">
+        {gameState.eventLog.slice().reverse().map((log) => (
+            <div key={log.round} className="border-b border-gray-700 pb-4 last:border-b-0 animate-fade-in">
                 {log.round > 0 ? (
                     <>
                         <h3 className="text-xl font-bold text-blue-400 mb-2">Round {log.round} Outcome</h3>
                          <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
                             <span>
                                 Democratic Legitimacy: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
-                                <span className={`ml-2 font-bold ${log.publicScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className={`ml-2 font-bold score-change-animate ${log.publicScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                     ({log.publicScoreChange >= 0 ? '+' : ''}{log.publicScoreChange})
                                 </span>
                             </span>
@@ -117,8 +200,6 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                    </>
                 )}
                 
-                <p className="bg-gray-900/50 p-3 rounded-md text-gray-400 italic"><strong>Narrative:</strong> {log.narrative}</p>
-
                 {log.playerActions && log.playerActions.length > 0 && (
                     <div className="mt-4">
                         <h4 className="font-bold text-lg text-gray-300 mb-2">Actions &amp; Outcomes:</h4>
@@ -133,7 +214,7 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                                             {role.icon({ className: "h-6 w-6 mr-3 text-blue-400" })}
                                             <span className="font-bold text-white">{playerAction.roleName}</span>
                                         </div>
-                                        <ul className="space-y-1 text-sm text-gray-400 flex-grow">
+                                        <ul className="space-y-1 text-sm text-gray-400 flex-grow mb-3">
                                             {playerAction.actions.length > 0 ? (
                                                 playerAction.actions.map((action, i) => (
                                                     <li key={i} className="flex justify-between items-start">
@@ -148,13 +229,22 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                                             )}
                                         </ul>
                                         {scoreChange && (
-                                            <div className="mt-3 pt-3 border-t border-gray-700/50">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="font-bold text-gray-300">Personal Score:</span>
-                                                    <span className={`font-bold text-lg ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        {scoreChange.update >= 0 ? '+' : ''}{scoreChange.update}
-                                                    </span>
-                                                </div>
+                                            <div className="mt-auto pt-3 border-t border-gray-700/50">
+                                                {playerAction.isHuman ? (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="font-bold text-gray-300">Personal Score:</span>
+                                                        <span className={`font-bold text-lg score-change-animate ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                            {scoreChange.update >= 0 ? '+' : ''}{scoreChange.update}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="font-bold text-gray-300">Personal Score:</span>
+                                                        <span className={`font-bold italic ${scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                                            {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-amber-300/80 italic mt-1">
                                                     <span className="font-bold">Justification:</span> {scoreChange.justification}
                                                 </p>
@@ -166,6 +256,7 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                         </div>
                     </div>
                 )}
+                <p className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap"><strong>Narrative:</strong> {log.narrative}</p>
             </div>
         ))}
     </div>
@@ -178,10 +269,13 @@ const ActionSelection: React.FC<{
     isLoading: boolean,
     hasSubmitted: boolean,
     isPaused: boolean,
-}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused }) => {
+    players: Player[],
+    aiCompletionStatus: Record<string, boolean>
+}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused, players, aiCompletionStatus }) => {
     const [selected, setSelected] = useState<ActionOption[]>([]);
     const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
     const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
+    const aiPlayers = useMemo(() => players.filter(p => !p.isHuman), [players]);
 
     const toggleAction = (option: ActionOption) => {
         if(hasSubmitted || isPaused) return;
@@ -198,9 +292,18 @@ const ActionSelection: React.FC<{
     if (hasSubmitted) {
         return (
             <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
-                <CheckCircleIcon className="h-12 w-12 text-green-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">Actions Submitted</h3>
-                <p className="text-gray-400">Waiting for AI opponents...</p>
+                <h3 className="text-xl font-bold mb-4">Waiting for Opponents...</h3>
+                <div className="space-y-3 text-left">
+                    {aiPlayers.map(player => {
+                        const isComplete = aiCompletionStatus[player.role.name];
+                        return (
+                            <div key={player.id} className={`flex items-center p-3 rounded-lg transition-all duration-300 ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
+                                {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
+                                <span className={`${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
         );
     }
@@ -262,26 +365,27 @@ export default function App() {
   const [timer, setTimer] = useState(GAME_CONFIG.ACTION_PHASE_SECONDS);
   const [isPaused, setIsPaused] = useState(false);
   const geminiCallsThisRoundRef = useRef(0);
-
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
+  const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
 
   const humanPlayer = useMemo(() => players.find(p => p.isHuman), [players]);
+  
+  const lastCompletedLogEntry = useMemo(
+    () => gameState.eventLog.find(entry => entry.round === gameState.round - 1) || null,
+    [gameState.eventLog, gameState.round]
+  );
 
-  // Effect to log phase transitions
   useEffect(() => {
     const phaseName = GamePhase[gameState.phase];
     console.log(`%c[STATE_TRANSITION] Game phase changed to: ${phaseName}`, 'color: #88aaff; font-weight: bold;');
   }, [gameState.phase]);
 
-
-  // Helper to convert the API's array response to the Record used in the app's state
   const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<RoleName, HiddenScoreUpdate> => {
       return Object.fromEntries(
           updates.map(item => [item.roleName, { update: item.update, justification: item.justification }])
       ) as Record<RoleName, HiddenScoreUpdate>;
   };
 
-  // Wrapper for API calls to count them per round
   const callGeminiAndCount = useCallback(async <T extends (...args: any[]) => Promise<any>>(
     apiFunc: T, ...args: Parameters<T>
   ): Promise<Awaited<ReturnType<T>> | null> => {
@@ -303,34 +407,58 @@ export default function App() {
     setError(null);
     setActionOptions([]);
     setIsPaused(false);
+    setAiCompletionStatus({});
     geminiCallsThisRoundRef.current = 0;
   };
 
   const runConsequencePhase = useCallback(async (currentPlayers: Player[], currentGameState: GameState) => {
     console.log(`[GAME_LOGIC] Running consequence phase for round ${currentGameState.round}.`);
     setIsLoading(true);
-    setLoadingMessage("AI players are deciding their moves...");
-    
+
     let playersWithActions = [...currentPlayers];
     const aiPlayers = currentPlayers.filter(p => !p.isHuman);
 
-    if (aiPlayers.length > 0) {
-        const aiActionPromises = aiPlayers.map(player =>
-            callGeminiAndCount(generateAIPlayerActions, player, currentGameState)
-        );
-        const aiActionsResults = await Promise.all(aiActionPromises);
+    const initialStatus = Object.fromEntries(aiPlayers.map(p => [p.role.name, false]));
+    setAiCompletionStatus(initialStatus);
 
-        // If any AI action generation fails, stop the phase
-        if (aiActionsResults.some(r => r === null)) {
+    setLoadingMessage("AI Game Master is assessing the situation...");
+    const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
+
+    const previousRoundLog = currentGameState.eventLog.find(entry => entry.round === currentGameState.round - 1);
+    const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
+
+    let aiActionOptionsResults: (Awaited<ReturnType<typeof generateActionOptions>> | null)[] = [];
+
+    if (aiPlayers.length > 0) {
+        const aiActionOptionsPromises = aiPlayers.map(player =>
+            callGeminiAndCount(generateActionOptions, player, currentGameState, previousRoundActions)
+        );
+        aiActionOptionsResults = await Promise.all(aiActionOptionsPromises);
+
+        if (aiActionOptionsResults.some(r => r === null)) {
+            setError("Failed to generate action options for AI players. The simulation cannot continue.");
+            setIsLoading(false); setLoadingMessage(''); return;
+        }
+
+        setLoadingMessage("AI players are choosing their actions...");
+        const aiActionChoicesPromises = aiPlayers.map((player, index) => {
+            const options = aiActionOptionsResults[index]?.options || [];
+            return callGeminiAndCount(generateAIPlayerActions, player, currentGameState, options)
+                .then(result => {
+                    setAiCompletionStatus(prev => ({ ...prev, [player.role.name]: true }));
+                    return result; 
+                });
+        });
+        const aiActionChoicesResults = await Promise.all(aiActionChoicesPromises);
+
+        if (aiActionChoicesResults.some(r => r === null)) {
             setError("Failed to generate actions for AI players. The simulation cannot continue.");
-            setIsLoading(false);
-            setLoadingMessage('');
-            return;
+            setIsLoading(false); setLoadingMessage(''); return;
         }
 
         const aiActionsByRole: Record<string, ActionOption[]> = {};
         aiPlayers.forEach((player, index) => {
-            aiActionsByRole[player.role.name] = aiActionsResults[index] || [];
+            aiActionsByRole[player.role.name] = aiActionChoicesResults[index] || [];
         });
 
         playersWithActions = currentPlayers.map(p => {
@@ -340,20 +468,38 @@ export default function App() {
             return p;
         });
     }
-    
+
     setPlayers(playersWithActions);
     
     setLoadingMessage("AI Game Master is processing the consequences...");
-    const result = await callGeminiAndCount(generateConsequences, currentGameState, playersWithActions);
+    const counterfactualResult = await counterfactualPromise;
+    if (!counterfactualResult) {
+        setError("The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.");
+        setIsLoading(false); setLoadingMessage(''); return;
+    }
+
+    const result = await callGeminiAndCount(generateConsequences, currentGameState, playersWithActions, counterfactualResult.publicScoreUpdate);
     
     if (result) {
         const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
 
-        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map(p => ({
-            roleName: p.role.name,
-            actions: p.actions,
-            isHuman: p.isHuman,
-        }));
+        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map(p => {
+            let availableOptions: ActionOption[] = [];
+            if (p.isHuman) {
+                availableOptions = actionOptions;
+            } else {
+                const aiPlayerIndex = aiPlayers.findIndex(ap => ap.id === p.id);
+                if (aiPlayerIndex !== -1 && aiActionOptionsResults[aiPlayerIndex]) {
+                    availableOptions = aiActionOptionsResults[aiPlayerIndex]?.options || [];
+                }
+            }
+            return {
+                roleName: p.role.name,
+                actions: p.actions,
+                availableOptions,
+                isHuman: p.isHuman,
+            };
+        });
 
         const newPublicScore = Math.max(0, Math.min(100, currentGameState.publicScore + result.publicScoreUpdate));
 
@@ -390,12 +536,13 @@ export default function App() {
         setActionOptions([]);
         setIsLoading(false);
         setLoadingMessage('');
+        setAiCompletionStatus({});
     } else {
         setError("The AI Game Master failed to provide a consequence. The simulation cannot continue.");
         setIsLoading(false);
         setLoadingMessage('');
     }
-  }, [callGeminiAndCount]);
+  }, [callGeminiAndCount, actionOptions]);
 
   const handleConfirmActions = useCallback((actions: ActionOption[]) => {
       if(!humanPlayer) return;
@@ -424,9 +571,6 @@ export default function App() {
     setLoadingMessage("AI Game Master is generating the initial scenario...");
   };
   
-  // --- Game Loop Management ---
-
-  // Effect to handle initial scenario generation
   useEffect(() => {
     if (gameState.phase !== GamePhase.STARTING) return;
 
@@ -469,15 +613,13 @@ export default function App() {
     initializeScenario();
   }, [gameState.phase, callGeminiAndCount, gameState.publicScore]);
 
-
-  // Effect for generating action options for the player
   useEffect(() => {
     if (gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0 && !isLoading) {
         console.log('[GAME_LOGIC] Generating action options for human player...');
         setIsLoading(true);
         setLoadingMessage("Generating action options...");
-        geminiCallsThisRoundRef.current = 0; // Reset for the new action phase
-        callGeminiAndCount(generateActionOptions, humanPlayer, gameState).then(res => {
+        geminiCallsThisRoundRef.current = 0;
+        callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then(res => {
             if (res) {
               setActionOptions(res.options);
             } else {
@@ -487,21 +629,19 @@ export default function App() {
             setLoadingMessage('');
         });
     }
-  }, [gameState.round, gameState.phase, humanPlayer, actionOptions.length, callGeminiAndCount, isLoading]);
+  }, [gameState.round, gameState.phase, humanPlayer, actionOptions.length, callGeminiAndCount, isLoading, lastCompletedLogEntry]);
 
-  // Effect for the round timer
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
     if (timer > 0 && gameState.phase === GamePhase.ACTION && !isPaused && !humanPlayer?.hasSubmittedActions) {
       interval = setInterval(() => setTimer(t => t - 1), 1000);
     } else if (timer <= 0 && gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions) {
       console.log('[GAME_LOGIC] Timer expired. Auto-submitting empty actions.');
-      handleConfirmActions([]); // Auto-submit when timer runs out
+      handleConfirmActions([]);
     }
     return () => clearInterval(interval);
   }, [timer, gameState.phase, isPaused, humanPlayer, handleConfirmActions]);
   
-  // Effect to check for game end condition
   useEffect(() => {
     if ((gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.publicScore <= 0 && gameState.round > 0)) && gameState.phase !== GamePhase.END) {
         console.log('[STATE_TRANSITION] Game ended. Moving to END phase.');
@@ -509,8 +649,6 @@ export default function App() {
     }
   }, [gameState.round, gameState.publicScore, gameState.phase]);
 
-
-  // --- RENDER LOGIC ---
 
   if (gameState.phase === GamePhase.LOBBY) {
     return (
@@ -579,7 +717,7 @@ export default function App() {
           <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3">
-              <PlayerInfoPanel player={humanPlayer} />
+              <PlayerInfoPanel player={humanPlayer} lastLogEntry={lastCompletedLogEntry} />
             </div>
             <div className="lg:col-span-6 space-y-6">
                <div className="bg-gray-800 rounded-lg p-6">
@@ -593,9 +731,11 @@ export default function App() {
                     key={gameState.round}
                     options={actionOptions} 
                     onConfirm={handleConfirmActions} 
-                    isLoading={isLoading} 
+                    isLoading={isLoading && !humanPlayer.hasSubmittedActions} 
                     hasSubmitted={humanPlayer.hasSubmittedActions} 
                     isPaused={isPaused}
+                    players={players}
+                    aiCompletionStatus={aiCompletionStatus}
                 />
             </div>
           </div>

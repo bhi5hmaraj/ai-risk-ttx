@@ -41,7 +41,8 @@ export interface GameEvent {
 
 export interface PlayerRoundActions {
   roleName: RoleName;
-  actions: ActionOption[];
+  actions: ActionOption[]; // chosen actions
+  availableOptions: ActionOption[]; // all possible actions for that round
   isHuman: boolean;
 }
 
@@ -91,4 +92,8 @@ export interface ActionOption {
 
 export interface AIActionOptionsResponse {
     options: ActionOption[];
+}
+
+export interface AICounterfactualResponse {
+    publicScoreUpdate: number;
 }
