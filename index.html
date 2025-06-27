@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -23,6 +22,33 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #6b7280; /* gray-500 */
       }
+
+      /* Gamification Animations */
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.5s ease-out forwards;
+      }
+
+      @keyframes score-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); }
+        100% { transform: scale(1); }
+      }
+      .score-change-animate {
+        display: inline-block; /* Needed for transform */
+        animation: score-pop 0.6s ease-in-out;
+      }
+
+      @keyframes timer-flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+      .timer-flash {
+        animation: timer-flash 1s ease-in-out infinite;
+      }
     </style>
   <script type="importmap">
 {
@@ -30,7 +56,9 @@
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
     "react/": "https://esm.sh/react@^19.1.0/",
     "react": "https://esm.sh/react@^19.1.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.7.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.7.0",
+    "cytoscape": "https://esm.sh/cytoscape@3.29.2",
+    "react-cytoscapejs": "https://esm.sh/react-cytoscapejs@2.0.0"
   }
 }
 </script>
