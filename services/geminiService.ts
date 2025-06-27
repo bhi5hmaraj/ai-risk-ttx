@@ -8,12 +8,13 @@ import {
     getCounterfactualPromptAndSchema
 } from '../prompts';
 
+const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set. This application requires a valid Google Gemini API key to function.");
+if (!apiKey) {
+  throw new Error("API key not set. Please set VITE_GEMINI_API_KEY (for Vercel) or GEMINI_API_KEY (for local development). This application requires a valid Google Gemini API key to function.");
 }
+const ai = new GoogleGenAI({ apiKey });
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const safeJsonParse = <T,>(jsonString: string): T | null => {
   try {
