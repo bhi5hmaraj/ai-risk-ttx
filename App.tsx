@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { GameState, Player, RoleData, RoleName, ActionOption, GameLogEntry, PlayerRoundActions, HiddenScoreUpdate, AIHiddenScoreUpdate } from './types';
 import { GamePhase } from './types';
 import { ROLES, GAME_CONFIG } from './constants';
 import { generateInitialScenario, generateConsequences, generateAIPlayerActions, generateActionOptions, generateCounterfactualConsequences } from './services/geminiService';
-import { LoadingSpinner, CheckCircleIcon, EyeIcon, EyeSlashIcon, PauseIcon, PlayIcon } from './components/Icons';
+import { LoadingSpinner, CheckCircleIcon, EyeIcon, EyeSlashIcon, PauseIcon, PlayIcon, ExpandIcon, CloseIcon } from './components/Icons';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
+import dagre from 'cytoscape-dagre';
+
+cytoscape.use(dagre);
 
 // --- HELPER COMPONENTS ---
 
@@ -24,53 +28,130 @@ const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boo
   </div>
 );
 
-const CombinedActionTree: React.FC<{ logEntry: GameLogEntry | null }> = ({ logEntry }) => {
-    const elements = useMemo(() => {
-        if (!logEntry || !logEntry.event || logEntry.playerActions.length === 0) {
-            return [];
-        }
+const ActionTreeModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    logEntry: GameLogEntry | null;
+    stylesheet: cytoscape.Stylesheet[];
+    elements: cytoscape.ElementDefinition[];
+}> = ({ isOpen, onClose, logEntry, stylesheet, elements }) => {
+    if (!isOpen) return null;
+    const cyRef = useRef<cytoscape.Core | null>(null);
 
+    const handleResetView = () => {
+        if (cyRef.current) {
+            cyRef.current.fit();
+            cyRef.current.center();
+        }
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 border border-blue-500 rounded-lg w-full h-full max-w-7xl max-h-[90vh] p-4 flex flex-col">
+                <div className="flex justify-between items-center mb-2 flex-shrink-0">
+                    <h3 className="text-xl font-bold text-blue-300">Full Action Tree (Round {logEntry?.round})</h3>
+                    <div className="flex items-center space-x-2">
+                        <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
+                            Reset View
+                        </button>
+                        <button onClick={onClose} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600">
+                            <CloseIcon className="h-5 w-5 text-white" />
+                        </button>
+                    </div>
+                </div>
+                <div className="flex-grow h-full w-full">
+                     <CytoscapeComponent
+                        elements={elements}
+                        stylesheet={stylesheet}
+                        layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
+                        style={{ width: '100%', height: '100%' }}
+                        cy={(cy) => {
+                            if (cyRef.current !== cy) {
+                                cyRef.current = cy;
+                                cy.maxZoom(2);
+                                cy.minZoom(0.1);
+                                cy.fit();
+                                cy.center();
+                            }
+                        }}
+                    />
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+};
+
+
+const CombinedActionTree: React.FC<{ eventLog: GameLogEntry[] }> = ({ eventLog }) => {
+    const cyRef = useRef<cytoscape.Core | null>(null);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const elements = useMemo(() => {
         const nodes: cytoscape.ElementDefinition[] = [];
         const edges: cytoscape.ElementDefinition[] = [];
+        let lastEventId: string | null = null;
 
-        // Event Node (Root)
-        nodes.push({ data: { id: 'event', label: logEntry.event.headline }, classes: 'event' });
+        eventLog.forEach(log => {
+            if (!log.event) return;
 
-        logEntry.playerActions.forEach(pa => {
-            const roleId = pa.roleName;
-            const chosenActionTitles = new Set(pa.actions.map(a => a.title));
-            
-            // Role Node
-            nodes.push({ data: { id: roleId, label: roleId }, classes: 'role' });
-            edges.push({ data: { source: 'event', target: roleId }, classes: 'event-edge' });
-            
-            // Action Nodes and Edges
-            if (pa.availableOptions) {
-                pa.availableOptions.forEach(opt => {
-                    const actionId = `${roleId}_${opt.title}`;
-                    const isChosen = chosenActionTitles.has(opt.title);
-                    
-                    nodes.push({
-                        data: { id: actionId, label: opt.title },
-                        classes: isChosen ? 'action chosen' : 'action unchosen'
-                    });
-                    
-                    edges.push({
-                        data: { source: roleId, target: actionId },
-                        classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge'
-                    });
-                });
+            const eventId = `event_${log.round}`;
+            nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
+
+            if (lastEventId) {
+                edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
             }
+
+            log.playerActions.forEach(pa => {
+                const roleId = `${pa.roleName}_${log.round}`;
+                nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
+                edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
+
+                if (pa.availableOptions) {
+                    pa.availableOptions.forEach(opt => {
+                        const actionId = `${roleId}_${opt.title}`;
+                        const isChosen = pa.actions.some(a => a.title === opt.title);
+                        
+                        nodes.push({
+                            data: { id: actionId, label: opt.title },
+                            classes: isChosen ? 'action chosen' : 'action unchosen'
+                        });
+                        
+                        edges.push({
+                            data: { source: roleId, target: actionId },
+                            classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge'
+                        });
+                    });
+                }
+            });
+            lastEventId = eventId;
         });
 
         return [...nodes, ...edges];
-    }, [logEntry]);
+    }, [eventLog]);
+
+    const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
+    const currentRoundElements = useMemo(() => {
+        if (!lastLogEntry || !lastLogEntry.event) return [];
+        return elements.filter(el => {
+            const id = el.data.id;
+            if (!id) return false;
+            return id.includes(`_${lastLogEntry.round}`) || id === `event_${lastLogEntry.round}`;
+        });
+    }, [elements, lastLogEntry]);
+
+    useEffect(() => {
+        if (cyRef.current && currentRoundElements.length > 0) {
+            const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
+            layout.run();
+        }
+    }, [currentRoundElements]);
 
     const stylesheet: cytoscape.Stylesheet[] = [
-        { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'color': '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'shape': 'round-rectangle', 'width': '130px', 'height': 'auto', 'padding': '10px', 'background-opacity': 1 } },
+        { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'color': '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'shape': 'round-rectangle', 'width': '130px', 'height': 'auto', 'padding': '10px', 'background-opacity': 1 } as any },
         { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', 'color': 'white' } },
         { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
-        { selector: '.action', style: { 'font-size': '9px', 'width': '100px', 'height': 'auto', 'padding': '8px' } },
+        { selector: '.action', style: { 'font-size': '9px', 'width': '100px', 'height': 'auto', 'padding': '8px' } as any },
         { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
         { selector: '.unchosen', style: { 'background-color': '#4b5563', 'opacity': 0.7 } },
         { selector: 'edge', style: { 'width': 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
@@ -88,21 +169,51 @@ const CombinedActionTree: React.FC<{ logEntry: GameLogEntry | null }> = ({ logEn
         );
     }
 
+    const handleResetView = () => {
+        if (cyRef.current) {
+            cyRef.current.fit();
+            cyRef.current.center();
+        }
+    };
+
     return (
-        <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
-            <h3 className="text-lg font-bold text-blue-300 mb-2 text-center">Round {logEntry?.round} Action Tree</h3>
-            <CytoscapeComponent 
-                elements={elements} 
-                stylesheet={stylesheet} 
-                layout={{ name: 'cose', animate: true, padding: 20, nodeRepulsion: 400000, idealEdgeLength: 100, nodeOverlap: 20, gravity: 80, numIter: 1000, initialTemp: 200, coolingFactor: 0.95, minTemp: 1.0 }}
-                style={{ width: '100%', height: 'calc(100% - 30px)' }} 
-                cy={(cy) => { cy.maxZoom(1.5); cy.minZoom(0.3); }}
+        <>
+            <ActionTreeModal 
+                isOpen={isExpanded} 
+                onClose={() => setIsExpanded(false)}
+                logEntry={lastLogEntry}
+                stylesheet={stylesheet}
+                elements={elements}
             />
-        </div>
+            <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
+                <div className="flex justify-center items-center mb-2 relative">
+                    <h3 className="text-lg font-bold text-blue-300">Round {lastLogEntry?.round} Action Tree</h3>
+                    <div className="absolute right-0 top-0 flex space-x-2">
+                        <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
+                            Reset
+                        </button>
+                        <button onClick={() => setIsExpanded(true)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold p-1 rounded-md">
+                            <ExpandIcon className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+                <CytoscapeComponent 
+                    elements={currentRoundElements} 
+                    stylesheet={stylesheet} 
+                    layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
+                    style={{ width: '100%', height: 'calc(100% - 40px)' }} 
+                    cy={(cy) => { 
+                        cyRef.current = cy;
+                        cy.maxZoom(1.5); 
+                        cy.minZoom(0.3); 
+                    }}
+                />
+            </div>
+        </>
     );
 };
 
-const PlayerInfoPanel: React.FC<{ player: Player; lastLogEntry: GameLogEntry | null }> = ({ player, lastLogEntry }) => {
+const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = ({ player, eventLog }) => {
   const [showHidden, setShowHidden] = useState(false);
   return (
     <div className="sticky top-6">
@@ -128,7 +239,7 @@ const PlayerInfoPanel: React.FC<{ player: Player; lastLogEntry: GameLogEntry | n
           <p><strong className="text-blue-300">Personal Score:</strong> {player.hiddenScore}</p>
         </div>
       </div>
-      <CombinedActionTree logEntry={lastLogEntry} />
+      <CombinedActionTree eventLog={eventLog} />
     </div>
   );
 };
@@ -276,6 +387,7 @@ const ActionSelection: React.FC<{
     const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
     const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
     const aiPlayers = useMemo(() => players.filter(p => !p.isHuman), [players]);
+    const allAIsDone = useMemo(() => aiPlayers.every(p => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
 
     const toggleAction = (option: ActionOption) => {
         if(hasSubmitted || isPaused) return;
@@ -292,18 +404,23 @@ const ActionSelection: React.FC<{
     if (hasSubmitted) {
         return (
             <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
-                <h3 className="text-xl font-bold mb-4">Waiting for Opponents...</h3>
-                <div className="space-y-3 text-left">
-                    {aiPlayers.map(player => {
-                        const isComplete = aiCompletionStatus[player.role.name];
-                        return (
-                            <div key={player.id} className={`flex items-center p-3 rounded-lg transition-all duration-300 ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
-                                {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
-                                <span className={`${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
-                            </div>
-                        )
-                    })}
-                </div>
+                <h3 className="text-xl font-bold mb-4">
+                    {allAIsDone ? "Generating next scenario..." : "Waiting for Opponents..."}
+                </h3>
+                {!allAIsDone && (
+                    <div className="space-y-3 text-left">
+                        {aiPlayers.map(player => {
+                            const isComplete = aiCompletionStatus[player.role.name];
+                            return (
+                                <div key={player.id} className={`flex items-center p-3 rounded-lg transition-all duration-300 ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
+                                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
+                                    <span className={`${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+                 {allAIsDone && <LoadingSpinner />}
             </div>
         );
     }
@@ -670,6 +787,15 @@ export default function App() {
             </div>
         </div>
 
+        <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
+            <h2 className="text-2xl font-bold text-green-300 mb-3">Your Goal</h2>
+            <div className="text-gray-300 space-y-4 text-left">
+                <p>
+                    Your primary objective is to maximize your <strong className="text-white">Personal Score</strong> by fulfilling your role's secret objectives. However, you must balance this with the collective goal of maintaining <strong className="text-white">Democratic Legitimacy</strong>. If this public score drops too low, everyone loses.
+                </p>
+            </div>
+        </div>
+
         <div className="text-center mb-10">
             <h2 className="text-3xl font-bold">Choose Your Role</h2>
         </div>
@@ -733,7 +859,7 @@ export default function App() {
           <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3">
-              <PlayerInfoPanel player={humanPlayer} lastLogEntry={lastCompletedLogEntry} />
+              <PlayerInfoPanel player={humanPlayer} eventLog={gameState.eventLog} />
             </div>
             <div className="lg:col-span-6 space-y-6">
                <div className="bg-gray-800 rounded-lg p-6">
