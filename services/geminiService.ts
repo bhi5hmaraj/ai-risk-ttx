@@ -15,6 +15,7 @@ if (!apiKey) {
 }
 const ai = new GoogleGenAI({ apiKey });
 
+const geminiModel = "gemini-2.5-flash";
 
 const safeJsonParse = <T,>(jsonString: string): T | null => {
   try {
@@ -37,7 +38,7 @@ export const generateInitialScenario = async (): Promise<AIConsequenceResponse |
     const { prompt, schema } = getInitialScenarioPromptAndSchema();
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: geminiModel,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -57,7 +58,7 @@ export const generateConsequences = async (gameState: GameState, players: Player
     const { prompt, schema } = getConsequencesPromptAndSchema(gameState, players, counterfactualScoreChange);
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: geminiModel,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -77,7 +78,7 @@ export const generateAIPlayerActions = async (player: Player, gameState: GameSta
     const { prompt, schema } = getAIPlayerActionsPromptAndSchema(player, gameState, options);
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: geminiModel,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -99,7 +100,7 @@ export const generateActionOptions = async (player: Player, gameState: GameState
     const { prompt, schema } = getActionOptionsPromptAndSchema(player, gameState, previousRoundActions);
     try {
          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: geminiModel,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -119,7 +120,7 @@ export const generateCounterfactualConsequences = async (gameState: GameState): 
     const { prompt, schema } = getCounterfactualPromptAndSchema(gameState);
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: geminiModel,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
