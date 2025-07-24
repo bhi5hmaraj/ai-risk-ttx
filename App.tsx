@@ -655,7 +655,23 @@ export default function App() {
       <div className="min-h-screen bg-gray-900 text-white p-8">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-extrabold text-blue-400">AI Election Crisis</h1>
-          <p className="text-lg text-gray-300 mt-2">Choose Your Role</p>
+          <p className="text-lg text-gray-300 mt-2 max-w-4xl mx-auto">A Tabletop Exercise in Strategic Decision-Making</p>
+        </div>
+
+        <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
+            <h2 className="text-2xl font-bold text-blue-300 mb-3">What is this?</h2>
+            <div className="text-gray-300 space-y-4 text-left">
+                <p>
+                    This is a <strong className="text-white">Tabletop Exercise (TTX)</strong>: a simulated crisis where you role-play as a key decision-maker. Think of it as a serious game designed to test your strategic thinking and reveal how complex systems respond to pressure.
+                </p>
+                <p>
+                    In this AI-powered simulation, you'll choose a role and face an escalating scenario. You must make tough choices with limited resources to advance your secret objectives while maintaining public trust. An <strong className="text-white">AI Game Master</strong> generates the story, controls the other characters, and shapes the consequences of your actions, ensuring a unique challenge every time. Your goal is to navigate the crisis and learn about high-stakes, multi-stakeholder decision-making.
+                </p>
+            </div>
+        </div>
+
+        <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold">Choose Your Role</h2>
         </div>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
