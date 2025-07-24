@@ -2,6 +2,13 @@
 
 This is a web-based, single-player crisis simulation game where you assume a critical role during an AI-powered election misinformation crisis. Your strategic decisions will affect public trust, national security, and your own secret objectives. The game is driven by the Google Gemini API, which acts as the Game Master, creating dynamic scenarios, consequences, and AI opponents.
 
+## What is a Tabletop Exercise (TTX)?
+
+This simulation is a **Tabletop Exercise (TTX)**: a simulated crisis where you role-play as a key decision-maker. Think of it as a serious game designed to test your strategic thinking and reveal how complex systems respond to pressure.
+
+In this AI-powered simulation, you'll choose a role and face an escalating scenario. You must make tough choices with limited resources to advance your secret objectives while maintaining public trust. An **AI Game Master** generates the story, controls the other characters, and shapes the consequences of your actions, ensuring a unique challenge every time. Your goal is to navigate the crisis and learn about high-stakes, multi-stakeholder decision-making.
+
+
 ## Core Features
 
 - **Dynamic Scenarios:** The Gemini API generates a unique opening crisis and evolving events each time you play.
@@ -105,3 +112,6 @@ This model centralizes logic, making it easier to test, debug, and expand.
 - **Saved Games:** Allow users to save their game state and resume a session later.
 - **Tutorial Mode:** An interactive tutorial to guide new players through their first round.
 - **Enhanced End-Game Summary:** Provide a more detailed breakdown of the game's events and how key decisions led to the final outcome.
+
+---
+

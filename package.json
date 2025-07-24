@@ -9,14 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-dom": "^19.1.0",
-    "react": "^19.1.0",
     "@google/genai": "^1.7.0",
     "cytoscape": "3.29.2",
-    "react-cytoscapejs": "2.0.0"
+    "react": "^19.1.0",
+    "react-cytoscapejs": "2.0.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/react-cytoscapejs": "^1.2.5",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }
