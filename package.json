@@ -18,6 +18,8 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/react-cytoscapejs": "^1.2.5",
+    "@types/react-dom": "^19.1.6",
+    "cytoscape-dagre": "^2.5.0",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }
