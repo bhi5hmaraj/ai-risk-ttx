@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { GameState, Player, RoleData, RoleName, ActionOption, GameLogEntry, PlayerRoundActions, HiddenScoreUpdate, AIHiddenScoreUpdate } from './types';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import type { GameState, Player, RoleData, ActionOption, RoleName, GameLogEntry, PlayerRoundActions, HiddenScoreUpdate, AIHiddenScoreUpdate } from './types';
 import { GamePhase } from './types';
 import { ROLES, GAME_CONFIG } from './constants';
-import { generateInitialScenario, generateConsequences, generateAIPlayerActions, generateActionOptions, generateCounterfactualConsequences } from './services/geminiService';
 import { LoadingSpinner, CheckCircleIcon, EyeIcon, EyeSlashIcon, PauseIcon, PlayIcon } from './components/Icons';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
+// Removed gameStore import - using server state via WebSocket
+import * as apiService from './src/services/apiService';
+import { connect, disconnect, getConnectionStatus, setGameStateCallback } from './src/services/websocketService';
 
-// --- HELPER COMPONENTS ---
+// --- HELPER COMPONENTS (Can be moved to their own files) ---
 
 const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boolean; }> = ({ role, onSelect, isSelected }) => (
   <div className={`bg-gray-800 rounded-lg p-6 border-2 transition-all duration-300 ease-in-out ${isSelected ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-700 hover:border-blue-600'}`}>
@@ -133,6 +135,8 @@ const PlayerInfoPanel: React.FC<{ player: Player; lastLogEntry: GameLogEntry | n
   );
 };
 
+
+
 const GameStatusPanel: React.FC<{ 
     gameState: GameState; 
     timer: number; 
@@ -199,69 +203,11 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                         </div>
                    </>
                 )}
-                
-                {log.playerActions && log.playerActions.length > 0 && (
-                    <div className="mt-4">
-                        <h4 className="font-bold text-lg text-gray-300 mb-2">Actions &amp; Outcomes:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {log.playerActions.map(playerAction => {
-                                const role = ROLES[playerAction.roleName];
-                                const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
-                                if (!role) return null;
-                                return (
-                                    <div key={playerAction.roleName} className="bg-gray-900/70 p-3 rounded-md border border-gray-700 flex flex-col">
-                                        <div className="flex items-center mb-2">
-                                            {role.icon({ className: "h-6 w-6 mr-3 text-blue-400" })}
-                                            <span className="font-bold text-white">{playerAction.roleName}</span>
-                                        </div>
-                                        <ul className="space-y-1 text-sm text-gray-400 flex-grow mb-3">
-                                            {playerAction.actions.length > 0 ? (
-                                                playerAction.actions.map((action, i) => (
-                                                    <li key={i} className="flex justify-between items-start">
-                                                        <span className='mr-2'>- {action.title}</span>
-                                                        <span className="flex-shrink-0 text-xs font-mono bg-gray-700 text-blue-300 px-1.5 py-0.5 rounded">
-                                                            {action.cost} AP
-                                                        </span>
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <li><em>No action taken.</em></li>
-                                            )}
-                                        </ul>
-                                        {scoreChange && (
-                                            <div className="mt-auto pt-3 border-t border-gray-700/50">
-                                                {playerAction.isHuman ? (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-bold text-gray-300">Personal Score:</span>
-                                                        <span className={`font-bold text-lg score-change-animate ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {scoreChange.update >= 0 ? '+' : ''}{scoreChange.update}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-bold text-gray-300">Personal Score:</span>
-                                                        <span className={`font-bold italic ${scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                                            {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <p className="text-xs text-amber-300/80 italic mt-1">
-                                                    <span className="font-bold">Justification:</span> {scoreChange.justification}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
                 <p className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap"><strong>Narrative:</strong> {log.narrative}</p>
             </div>
         ))}
     </div>
 );
-
 
 const ActionSelection: React.FC<{
     options: ActionOption[],
@@ -269,13 +215,10 @@ const ActionSelection: React.FC<{
     isLoading: boolean,
     hasSubmitted: boolean,
     isPaused: boolean,
-    players: Player[],
-    aiCompletionStatus: Record<string, boolean>
-}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused, players, aiCompletionStatus }) => {
+}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused }) => {
     const [selected, setSelected] = useState<ActionOption[]>([]);
     const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
     const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
-    const aiPlayers = useMemo(() => players.filter(p => !p.isHuman), [players]);
 
     const toggleAction = (option: ActionOption) => {
         if(hasSubmitted || isPaused) return;
@@ -292,18 +235,9 @@ const ActionSelection: React.FC<{
     if (hasSubmitted) {
         return (
             <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
-                <h3 className="text-xl font-bold mb-4">Waiting for Opponents...</h3>
-                <div className="space-y-3 text-left">
-                    {aiPlayers.map(player => {
-                        const isComplete = aiCompletionStatus[player.role.name];
-                        return (
-                            <div key={player.id} className={`flex items-center p-3 rounded-lg transition-all duration-300 ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
-                                {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
-                                <span className={`${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
-                            </div>
-                        )
-                    })}
-                </div>
+                <CheckCircleIcon className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">Actions Submitted</h3>
+                <p className="text-gray-400">Waiting for other players...</p>
             </div>
         );
     }
@@ -350,307 +284,181 @@ const ActionSelection: React.FC<{
     );
 };
 
-
 // --- MAIN APP COMPONENT ---
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>({
-    phase: GamePhase.LOBBY, round: 0, publicScore: 100, eventLog: [], currentEvent: null,
-  });
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [gameState, setGameState] = useState<GameState | null>(null);
+
   const [selectedRoleName, setSelectedRoleName] = useState<RoleName | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(GAME_CONFIG.ACTION_PHASE_SECONDS);
   const [isPaused, setIsPaused] = useState(false);
-  const geminiCallsThisRoundRef = useRef(0);
+  const [wsStatus, setWsStatus] = useState<string>('disconnected');
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
-  const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
 
-  const humanPlayer = useMemo(() => players.find(p => p.isHuman), [players]);
-  
+  const humanPlayer = useMemo(() => {
+    if (!gameState?.players) return null;
+    const player = gameState.players.find(p => p.is_human);
+    if (!player) return null;
+    
+    // Convert to frontend Player format
+    return {
+      id: player.id,
+      role: ROLES[player.role_name as RoleName],
+      isHuman: player.is_human,
+      hiddenScore: player.hidden_score,
+      actions: player.actions || [],
+      hasSubmittedActions: player.has_submitted_actions
+    };
+  }, [gameState?.players]);
+
   const lastCompletedLogEntry = useMemo(
-    () => gameState.eventLog.find(entry => entry.round === gameState.round - 1) || null,
-    [gameState.eventLog, gameState.round]
+    () => gameState?.eventLog.find(entry => entry.round === (gameState.round - 1)) || null,
+    [gameState?.eventLog, gameState?.round]
   );
 
+  // Effect to set up WebSocket game state callback
   useEffect(() => {
-    const phaseName = GamePhase[gameState.phase];
-    console.log(`%c[STATE_TRANSITION] Game phase changed to: ${phaseName}`, 'color: #88aaff; font-weight: bold;');
-  }, [gameState.phase]);
-
-  const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<RoleName, HiddenScoreUpdate> => {
-      return Object.fromEntries(
-          updates.map(item => [item.roleName, { update: item.update, justification: item.justification }])
-      ) as Record<RoleName, HiddenScoreUpdate>;
-  };
-
-  const callGeminiAndCount = useCallback(async <T extends (...args: any[]) => Promise<any>>(
-    apiFunc: T, ...args: Parameters<T>
-  ): Promise<Awaited<ReturnType<T>> | null> => {
-      geminiCallsThisRoundRef.current += 1;
-      const result = await apiFunc(...args);
-      if (result === null) {
-          setError(`An API call to Gemini failed. Check the console for details.`);
-          return null;
-      }
-      return result;
+    setGameStateCallback((newGameState) => {
+      console.log('WebSocket updating game state:', newGameState);
+      setGameState(newGameState);
+    });
+    
+    // Debug current state
+    console.log('Current game state:', gameState);
+    console.log('Selected role name:', selectedRoleName);
   }, []);
 
-  const resetState = () => {
-    console.log('[STATE_TRANSITION] Resetting game state to LOBBY.');
-    setGameState({ phase: GamePhase.LOBBY, round: 0, publicScore: 100, eventLog: [], currentEvent: null });
-    setPlayers([]);
-    setSelectedRoleName(null);
-    setIsLoading(false);
-    setError(null);
-    setActionOptions([]);
-    setIsPaused(false);
-    setAiCompletionStatus({});
-    geminiCallsThisRoundRef.current = 0;
-  };
-
-  const runConsequencePhase = useCallback(async (currentPlayers: Player[], currentGameState: GameState) => {
-    console.log(`[GAME_LOGIC] Running consequence phase for round ${currentGameState.round}.`);
-    setIsLoading(true);
-
-    let playersWithActions = [...currentPlayers];
-    const aiPlayers = currentPlayers.filter(p => !p.isHuman);
-
-    const initialStatus = Object.fromEntries(aiPlayers.map(p => [p.role.name, false]));
-    setAiCompletionStatus(initialStatus);
-
-    setLoadingMessage("AI Game Master is assessing the situation...");
-    const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
-
-    const previousRoundLog = currentGameState.eventLog.find(entry => entry.round === currentGameState.round - 1);
-    const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
-
-    let aiActionOptionsResults: (Awaited<ReturnType<typeof generateActionOptions>> | null)[] = [];
-
-    if (aiPlayers.length > 0) {
-        const aiActionOptionsPromises = aiPlayers.map(player =>
-            callGeminiAndCount(generateActionOptions, player, currentGameState, previousRoundActions)
-        );
-        aiActionOptionsResults = await Promise.all(aiActionOptionsPromises);
-
-        if (aiActionOptionsResults.some(r => r === null)) {
-            setError("Failed to generate action options for AI players. The simulation cannot continue.");
-            setIsLoading(false); setLoadingMessage(''); return;
-        }
-
-        setLoadingMessage("AI players are choosing their actions...");
-        const aiActionChoicesPromises = aiPlayers.map((player, index) => {
-            const options = aiActionOptionsResults[index]?.options || [];
-            return callGeminiAndCount(generateAIPlayerActions, player, currentGameState, options)
-                .then(result => {
-                    setAiCompletionStatus(prev => ({ ...prev, [player.role.name]: true }));
-                    return result; 
-                });
-        });
-        const aiActionChoicesResults = await Promise.all(aiActionChoicesPromises);
-
-        if (aiActionChoicesResults.some(r => r === null)) {
-            setError("Failed to generate actions for AI players. The simulation cannot continue.");
-            setIsLoading(false); setLoadingMessage(''); return;
-        }
-
-        const aiActionsByRole: Record<string, ActionOption[]> = {};
-        aiPlayers.forEach((player, index) => {
-            aiActionsByRole[player.role.name] = aiActionChoicesResults[index] || [];
-        });
-
-        playersWithActions = currentPlayers.map(p => {
-            if (!p.isHuman && aiActionsByRole[p.role.name]) {
-                return { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true };
-            }
-            return p;
-        });
-    }
-
-    setPlayers(playersWithActions);
-    
-    setLoadingMessage("AI Game Master is processing the consequences...");
-    const counterfactualResult = await counterfactualPromise;
-    if (!counterfactualResult) {
-        setError("The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.");
-        setIsLoading(false); setLoadingMessage(''); return;
-    }
-
-    const result = await callGeminiAndCount(generateConsequences, currentGameState, playersWithActions, counterfactualResult.publicScoreUpdate);
-    
-    if (result) {
-        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-
-        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map(p => {
-            let availableOptions: ActionOption[] = [];
-            if (p.isHuman) {
-                availableOptions = actionOptions;
-            } else {
-                const aiPlayerIndex = aiPlayers.findIndex(ap => ap.id === p.id);
-                if (aiPlayerIndex !== -1 && aiActionOptionsResults[aiPlayerIndex]) {
-                    availableOptions = aiActionOptionsResults[aiPlayerIndex]?.options || [];
-                }
-            }
-            return {
-                roleName: p.role.name,
-                actions: p.actions,
-                availableOptions,
-                isHuman: p.isHuman,
-            };
-        });
-
-        const newPublicScore = Math.max(0, Math.min(100, currentGameState.publicScore + result.publicScoreUpdate));
-
-        const newGameState: GameState = {
-            ...currentGameState,
-            phase: GamePhase.ACTION,
-            round: currentGameState.round + 1,
-            publicScore: newPublicScore,
-            eventLog: [
-                ...currentGameState.eventLog, 
-                { 
-                    round: currentGameState.round, 
-                    narrative: result.narrative, 
-                    event: currentGameState.currentEvent,
-                    playerActions: playerActionsForLog,
-                    publicScoreChange: result.publicScoreUpdate,
-                    publicScoreAfter: newPublicScore,
-                    hiddenScoreChanges: hiddenScoreUpdatesRecord,
-                    geminiCalls: geminiCallsThisRoundRef.current,
-                }
-            ],
-            currentEvent: result.nextEvent
-        };
-        const newPlayers = playersWithActions.map(p => ({
-            ...p,
-            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-            actions: [],
-            hasSubmittedActions: false,
-        }));
-
-        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-        setGameState(newGameState);
-        setPlayers(newPlayers);
-        setActionOptions([]);
-        setIsLoading(false);
-        setLoadingMessage('');
-        setAiCompletionStatus({});
-    } else {
-        setError("The AI Game Master failed to provide a consequence. The simulation cannot continue.");
-        setIsLoading(false);
-        setLoadingMessage('');
-    }
-  }, [callGeminiAndCount, actionOptions]);
-
-  const handleConfirmActions = useCallback((actions: ActionOption[]) => {
-      if(!humanPlayer) return;
-      console.log(`[PLAYER_ACTION] Human player confirmed ${actions.length} action(s).`);
-      const updatedPlayer = {...humanPlayer, actions, hasSubmittedActions: true};
-      const updatedPlayers = players.map(p => p.isHuman ? updatedPlayer : p);
-      setPlayers(updatedPlayers);
-      runConsequencePhase(updatedPlayers, gameState);
-  }, [humanPlayer, players, runConsequencePhase, gameState]);
-
-  const handleStartGame = () => {
-    if (!selectedRoleName) return;
-    console.log('[STATE_TRANSITION] Starting game, moving to STARTING phase.');
-    const allRoles = Object.values(ROLES);
-    const initialPlayers: Player[] = allRoles.map((role, index) => ({
-      id: role.name === selectedRoleName ? 'human_player' : `ai_${index}`,
-      role,
-      isHuman: role.name === selectedRoleName,
-      hiddenScore: 0,
-      actions: [],
-      hasSubmittedActions: false,
-    }));
-    setPlayers(initialPlayers);
-    setGameState(prev => ({ ...prev, phase: GamePhase.STARTING }));
-    setIsLoading(true);
-    setLoadingMessage("AI Game Master is generating the initial scenario...");
-  };
-  
+  // Effect to manage WebSocket connection
   useEffect(() => {
-    if (gameState.phase !== GamePhase.STARTING) return;
+    if (gameState?.id) {
+      console.log('Connecting WebSocket for game:', gameState.id);
+      connect(gameState.id);
+    }
+    return () => {
+      console.log('Cleaning up WebSocket connection');
+      disconnect();
+    };
+  }, [gameState?.id]);
 
-    const initializeScenario = async () => {
-        console.log('[GAME_LOGIC] Initializing scenario...');
-        geminiCallsThisRoundRef.current = 0;
-        const result = await callGeminiAndCount(generateInitialScenario);
-        if (result) {
-            const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-            const newPublicScore = Math.max(0, Math.min(100, gameState.publicScore + result.publicScoreUpdate));
-            const initialGameState: GameState = {
-                ...gameState,
-                phase: GamePhase.ACTION,
-                round: 1,
-                publicScore: newPublicScore,
-                currentEvent: result.nextEvent,
-                eventLog: [{
-                    round: 0,
-                    narrative: result.narrative,
-                    event: null,
-                    playerActions: [],
-                    publicScoreChange: result.publicScoreUpdate,
-                    publicScoreAfter: newPublicScore,
-                    hiddenScoreChanges: hiddenScoreUpdatesRecord,
-                    geminiCalls: geminiCallsThisRoundRef.current,
-                }]
-            };
-            setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-            setGameState(initialGameState);
-            setIsLoading(false);
-            setLoadingMessage('');
-        } else {
-            setError("The AI Game Master failed to initialize the game. Please refresh and try again.");
-            setGameState(prev => ({ ...prev, phase: GamePhase.LOBBY }));
-            setIsLoading(false);
-            setLoadingMessage('');
-        }
+  // Effect to monitor WebSocket connection status
+  useEffect(() => {
+    const checkStatus = () => {
+      setWsStatus(getConnectionStatus());
     };
     
-    initializeScenario();
-  }, [gameState.phase, callGeminiAndCount, gameState.publicScore]);
+    checkStatus(); // Check initial status
+    const interval = setInterval(checkStatus, 1000); // Check every second
+    
+    return () => clearInterval(interval);
+  }, [gameState?.id]);
 
+  // Effect to fetch action options when in ACTION phase
   useEffect(() => {
-    if (gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0 && !isLoading) {
-        console.log('[GAME_LOGIC] Generating action options for human player...');
-        setIsLoading(true);
-        setLoadingMessage("Generating action options...");
-        geminiCallsThisRoundRef.current = 0;
-        callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then(res => {
-            if (res) {
-              setActionOptions(res.options);
-            } else {
-              setError("Failed to generate action options. You may not be able to proceed.");
-            }
-            setIsLoading(false);
-            setLoadingMessage('');
-        });
-    }
-  }, [gameState.round, gameState.phase, humanPlayer, actionOptions.length, callGeminiAndCount, isLoading, lastCompletedLogEntry]);
+    const fetchActionOptions = async () => {
+      if (gameState?.phase === GamePhase.ACTION && humanPlayer?.id && !humanPlayer.hasSubmittedActions) {
+        try {
+          setIsLoading(true);
+          setLoadingMessage('Generating action options...');
+          const response = await apiService.getActionOptions(gameState.id, humanPlayer.id);
+          setActionOptions(response.options);
+        } catch (err) {
+          console.error('Error fetching action options:', err);
+          setError('Failed to load action options. Please refresh and try again.');
+        } finally {
+          setIsLoading(false);
+          setLoadingMessage('');
+        }
+      }
+    };
 
+    fetchActionOptions();
+  }, [gameState?.phase, gameState?.id, humanPlayer?.id, humanPlayer?.hasSubmittedActions]);
+
+  const handleSelectRole = (roleName: RoleName) => {
+    setSelectedRoleName(roleName);
+  };
+
+  const handleCreateGame = async () => {
+    if (!selectedRoleName) return;
+    setIsLoading(true);
+    setLoadingMessage('Creating game...');
+    setError(null); // Clear any previous errors
+    try {
+      console.log('Creating game with role:', selectedRoleName);
+      const newGame = await apiService.createGame(selectedRoleName.toString());
+      console.log('Game created:', newGame);
+      setGameState(newGame);
+      
+      // Automatically start the game since all players are already created
+      if (newGame.id) {
+        setLoadingMessage('Starting game...');
+        const startedGame = await apiService.startGame(newGame.id);
+        console.log('Game started:', startedGame);
+        setGameState(startedGame);
+      }
+    } catch (err) {
+      console.error('Error creating/starting game:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleStartGame = async () => {
+    if (!gameState?.id) return;
+    setIsLoading(true);
+    setLoadingMessage('Starting game...');
+    setError(null);
+    try {
+      await apiService.startGame(gameState.id);
+      console.log('Game started');
+      // The WebSocket will send a game_state_update
+    } catch (err) {
+      console.error('Error starting game:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmActions = async (actions: ActionOption[]) => {
+    if (!gameState?.id || !humanPlayer?.id) return;
+    setIsLoading(true);
+    setLoadingMessage('Submitting actions...');
+    setError(null);
+    try {
+      const actionIds = actions.map(a => a.id);
+      await apiService.submitActions(gameState.id, humanPlayer.id, actionIds);
+      console.log('Actions submitted');
+      // The WebSocket will send a game_state_update when processing is complete
+    } catch (err) {
+      console.error('Error submitting actions:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Timer effect remains similar, but driven by global state
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (timer > 0 && gameState.phase === GamePhase.ACTION && !isPaused && !humanPlayer?.hasSubmittedActions) {
-      interval = setInterval(() => setTimer(t => t - 1), 1000);
-    } else if (timer <= 0 && gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions) {
-      console.log('[GAME_LOGIC] Timer expired. Auto-submitting empty actions.');
-      handleConfirmActions([]);
+    if (gameState?.phase === GamePhase.ACTION && !isPaused && !humanPlayer?.hasSubmittedActions) {
+      // This timer is now purely cosmetic. The server is the source of truth for time.
+      interval = setInterval(() => setTimer(t => t > 0 ? t - 1 : 0), 1000);
     }
     return () => clearInterval(interval);
-  }, [timer, gameState.phase, isPaused, humanPlayer, handleConfirmActions]);
-  
-  useEffect(() => {
-    if ((gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.publicScore <= 0 && gameState.round > 0)) && gameState.phase !== GamePhase.END) {
-        console.log('[STATE_TRANSITION] Game ended. Moving to END phase.');
-        setGameState(prev => ({...prev, phase: GamePhase.END}));
-    }
-  }, [gameState.round, gameState.publicScore, gameState.phase]);
+  }, [gameState?.phase, isPaused, humanPlayer?.hasSubmittedActions]);
+
+  if (isLoading) {
+    return <div className="w-screen h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><LoadingSpinner /> <p className="mt-4 text-lg">{loadingMessage}</p></div>;
+  }
 
 
-  if (gameState.phase === GamePhase.LOBBY) {
+
+  if (!gameState || gameState.phase === GamePhase.LOBBY) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-8">
         <div className="text-center mb-10">
@@ -658,28 +466,32 @@ export default function App() {
           <p className="text-lg text-gray-300 mt-2">Choose Your Role</p>
         </div>
         <div className="max-w-7xl mx-auto">
+          {error && (
+            <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-6 text-center">
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Object.values(ROLES).map(role => (
-              <RoleCard key={role.name} role={role} onSelect={() => setSelectedRoleName(role.name)} isSelected={selectedRoleName === role.name} />
+              <RoleCard key={role.name} role={role} onSelect={() => handleSelectRole(role.name)} isSelected={selectedRoleName === role.name} />
             ))}
           </div>
           <div className="text-center mt-10">
-            <button onClick={handleStartGame} disabled={!selectedRoleName} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed">
-              Start Simulation
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('Create Game button clicked, selectedRole:', selectedRoleName);
+                handleCreateGame();
+              }} 
+              disabled={!selectedRoleName || isLoading} 
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+                {isLoading ? 'Creating...' : 'Start Simulation'}
             </button>
           </div>
         </div>
       </div>
-    );
-  }
-  
-  if (isLoading && gameState.phase !== GamePhase.ACTION) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-            <LoadingSpinner />
-            <p className="text-xl mt-4 text-blue-300">{loadingMessage}</p>
-            {error && <p className="text-red-400 mt-4">{error}</p>}
-        </div>
     );
   }
 
@@ -691,65 +503,53 @@ export default function App() {
             <div className="bg-gray-800 rounded-lg p-8 w-full max-w-4xl">
                  <h2 className="text-3xl font-bold mb-6 text-center">Final Scores</h2>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {players.sort((a,b) => b.hiddenScore - a.hiddenScore).map(p => (
-                         <div key={p.id} className={`flex items-center justify-between p-4 rounded-lg ${p.isHuman ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700'}`}>
+                     {gameState.players.sort((a,b) => b.hidden_score - a.hidden_score).map(p => (
+                         <div key={p.id} className={`flex items-center justify-between p-4 rounded-lg ${p.is_human ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700'}`}>
                              <div className="flex items-center">
-                                {p.role.icon({ className: "h-8 w-8 mr-4 text-blue-300"})}
-                                <span className="font-bold">{p.role.name}</span>
+                                {ROLES[p.role_name as RoleName]?.icon({ className: "h-8 w-8 mr-4 text-blue-300"})}
+                                <span className="font-bold">{p.role_name}</span>
                              </div>
-                             <span className="text-xl font-mono">{p.hiddenScore > 0 ? '+' : ''}{p.hiddenScore}</span>
+                             <span className="text-xl font-mono">{p.hidden_score > 0 ? '+' : ''}{p.hidden_score}</span>
                          </div>
                      ))}
                  </div>
             </div>
-            <button onClick={resetState} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
+            <button onClick={() => window.location.reload()} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
               Play Again
             </button>
         </div>
      );
   }
-  
-  if (humanPlayer) {
-    return (
-      <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
-        <div className="max-w-8xl mx-auto">
-          {error && <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>}
-          <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-3">
-              <PlayerInfoPanel player={humanPlayer} lastLogEntry={lastCompletedLogEntry} />
-            </div>
-            <div className="lg:col-span-6 space-y-6">
-               <div className="bg-gray-800 rounded-lg p-6">
-                    <h3 className="text-2xl font-bold text-red-400 mb-2">{gameState.currentEvent?.headline}</h3>
-                    <p className="text-gray-300">{gameState.currentEvent?.detail}</p>
-                </div>
-               <EventLog gameState={gameState} />
-            </div>
-            <div className="lg:col-span-3">
-                <ActionSelection 
-                    key={gameState.round}
-                    options={actionOptions} 
-                    onConfirm={handleConfirmActions} 
-                    isLoading={isLoading && !humanPlayer.hasSubmittedActions} 
-                    hasSubmitted={humanPlayer.hasSubmittedActions} 
-                    isPaused={isPaused}
-                    players={players}
-                    aiCompletionStatus={aiCompletionStatus}
-                />
-            </div>
+
+  // Main Game View
+  return (
+    <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
+      <div className="max-w-8xl mx-auto">
+        {error && <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>}
+        <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-3">
+            {humanPlayer && <PlayerInfoPanel player={humanPlayer} lastLogEntry={lastCompletedLogEntry} />}
+          </div>
+          <div className="lg:col-span-6 space-y-6">
+             <div className="bg-gray-800 rounded-lg p-6">
+                  <h3 className="text-2xl font-bold text-red-400 mb-2">{gameState.currentEvent?.headline}</h3>
+                  <p className="text-gray-300">{gameState.currentEvent?.detail}</p>
+              </div>
+             <EventLog gameState={gameState} />
+          </div>
+          <div className="lg:col-span-3">
+              <ActionSelection 
+                  key={gameState.round}
+                  options={actionOptions} 
+                  onConfirm={handleConfirmActions} 
+                  isLoading={isLoading && !humanPlayer.hasSubmittedActions} 
+                  hasSubmitted={humanPlayer.hasSubmittedActions} 
+                  isPaused={isPaused}
+              />
           </div>
         </div>
       </div>
-    );
-  }
-  
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-      <p className="text-red-500 text-2xl font-bold mb-4">{error || "An unexpected error occurred."}</p>
-      <button onClick={resetState} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
-          Back to Home
-      </button>
     </div>
   );
 }

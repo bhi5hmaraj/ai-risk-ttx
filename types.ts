@@ -27,11 +27,11 @@ export interface Player {
 }
 
 export enum GamePhase {
-  LOBBY,
-  STARTING,
-  ACTION,
-  CONSEQUENCE,
-  END,
+  LOBBY = "LOBBY",
+  STARTING = "STARTING", 
+  ACTION = "ACTION",
+  CONSEQUENCE = "CONSEQUENCE",
+  END = "END",
 }
 
 export interface GameEvent {
@@ -70,11 +70,14 @@ export interface GameLogEntry {
 }
 
 export interface GameState {
+  id: string;
   phase: GamePhase;
   round: number;
   publicScore: number; // Democratic Legitimacy
   eventLog: GameLogEntry[];
   currentEvent: GameEvent | null;
+  players: Player[];
+  actionOptions?: ActionOption[]; // Optional, only sent to the relevant player
 }
 
 export interface AIConsequenceResponse {
@@ -85,6 +88,7 @@ export interface AIConsequenceResponse {
 }
 
 export interface ActionOption {
+    id: string; // Added to match the server-side schema
     title: string;
     description: string;
     cost: number;
