@@ -9,11 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.7.0",
+    "openai": "^4.76.0",
     "cytoscape": "3.29.2",
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
