@@ -1,26 +1,47 @@
-import { GoogleGenAI } from "@google/genai";
-import type { GameState, Player, AIConsequenceResponse, ActionOption, AIActionOptionsResponse, AICounterfactualResponse, PlayerRoundActions } from '../types';
-import { 
-    getInitialScenarioPromptAndSchema,
-    getConsequencesPromptAndSchema,
-    getAIPlayerActionsPromptAndSchema,
-    getActionOptionsPromptAndSchema,
-    getCounterfactualPromptAndSchema
-} from '../prompts';
+import OpenAI from "openai";
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
+import type {
+  GameState,
+  Player,
+  AIConsequenceResponse,
+  ActionOption,
+  AIActionOptionsResponse,
+  AICounterfactualResponse,
+  PlayerRoundActions,
+} from "../types";
+import { RoleName } from "../types";
+import {
+  getInitialScenarioPromptAndSchema,
+  getConsequencesPromptAndSchema,
+  getAIPlayerActionsPromptAndSchema,
+  getActionOptionsPromptAndSchema,
+  getCounterfactualPromptAndSchema,
+} from "../prompts";
 
-const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+// Hardcoded LiteLLM proxy base URL
+const baseURL = "https://asgard.bhishmaraj.org";
+const apiKey = (import.meta as any).env?.VITE_LITELLM_API_KEY || (process as any).env?.VITE_LITELLM_API_KEY;
+const model =
+  (import.meta as any).env?.VITE_LLM_MODEL || (process as any).env?.VITE_LLM_MODEL || "gpt-4o-mini";
 
-if (!apiKey) {
-  throw new Error("API key not set. Please set VITE_GEMINI_API_KEY (for Vercel) or GEMINI_API_KEY (for local development). This application requires a valid Google Gemini API key to function.");
+if (!baseURL || !apiKey) {
+  throw new Error(
+    "Missing LiteLLM configuration. Please set VITE_LITELLM_BASE_URL and VITE_LITELLM_API_KEY."
+  );
 }
-const ai = new GoogleGenAI({ apiKey });
 
-const geminiModel = "gemini-2.5-flash";
+const client = new OpenAI({
+  apiKey,
+  baseURL,
+  // We are calling from a browser; LiteLLM should be configured with CORS and virtual keys
+  dangerouslyAllowBrowser: true,
+});
 
 const safeJsonParse = <T,>(jsonString: string): T | null => {
   try {
-    let cleanString = jsonString;
-    const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/s;
+    let cleanString = jsonString.trim();
+    const fenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
     const match = cleanString.match(fenceRegex);
     if (match && match[1]) {
       cleanString = match[1].trim();
@@ -33,104 +54,166 @@ const safeJsonParse = <T,>(jsonString: string): T | null => {
   }
 };
 
+// Zod schemas for structured outputs
+const HiddenUpdateZ = z.object({
+  roleName: z.nativeEnum(RoleName),
+  update: z.number(),
+  justification: z.string(),
+}).strict();
+
+const GameEventZ = z.object({
+  headline: z.string(),
+  detail: z.string(),
+}).strict();
+
+const ConsequenceZ = z.object({
+  narrative: z.string(),
+  publicScoreUpdate: z.number(),
+  hiddenScoreUpdates: z.array(HiddenUpdateZ),
+  nextEvent: GameEventZ,
+}).strict();
+
+const ActionOptionZ = z.object({
+  title: z.string(),
+  description: z.string(),
+  cost: z.number(),
+}).strict();
+
+const AIPlayerActionsZ = z.object({
+  actions: z.array(ActionOptionZ),
+}).strict();
+
+const ActionOptionsResponseZ = z.object({
+  options: z.array(ActionOptionZ).length(5),
+}).strict();
+
+const CounterfactualZ = z.object({
+  publicScoreUpdate: z.number(),
+}).strict();
+
+async function parseWithZod<T>(schema: z.ZodSchema<T>, prompt: string, name: string): Promise<T | null> {
+  try {
+    const completion = await client.chat.completions.create({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      response_format: zodResponseFormat(schema, name),
+    });
+    const msg = completion.choices[0]?.message as any;
+    if (msg?.refusal) {
+      console.error("Model refusal:", msg.refusal);
+      return null;
+    }
+    if (msg?.parsed) {
+      return msg.parsed as T;
+    }
+    const content = msg?.content;
+    if (typeof content === "string") {
+      const parsed = safeJsonParse<T>(content);
+      if (parsed) return parsed;
+    }
+    // Fall back to json_object if parsing or enforcement failed
+    throw new Error("No parsed content from structured output");
+  } catch (e) {
+    console.warn("Structured output enforcement failed, falling back to json_object:", e);
+    try {
+      const res = await client.chat.completions.create({
+        model,
+        messages: [{ role: "user", content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }],
+        response_format: { type: "json_object" },
+      });
+      const text = (res.choices[0]?.message?.content || "").trim();
+      return safeJsonParse<T>(text);
+    } catch (e2) {
+      console.error("Fallback json_object also failed:", e2);
+      return null;
+    }
+  }
+}
+
 export const generateInitialScenario = async (): Promise<AIConsequenceResponse | null> => {
-    console.log('[GEMINI_API] Calling generateInitialScenario...');
-    const { prompt, schema } = getInitialScenarioPromptAndSchema();
-    try {
-        const response = await ai.models.generateContent({
-            model: geminiModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-            }
-        });
-        console.log('[GEMINI_API] Successfully received response for generateInitialScenario.');
-        return safeJsonParse<AIConsequenceResponse>(response.text);
-    } catch (error) {
-        console.error("Error generating initial scenario:", error);
-        return null;
-    }
+  console.log("[LLM] Calling generateInitialScenario...");
+  const { prompt } = getInitialScenarioPromptAndSchema();
+  try {
+    return await parseWithZod<AIConsequenceResponse>(ConsequenceZ, prompt, "initial_scenario");
+  } catch (error) {
+    console.error("Error generating initial scenario:", error);
+    return null;
+  }
 };
 
-export const generateConsequences = async (gameState: GameState, players: Player[], counterfactualScoreChange: number): Promise<AIConsequenceResponse | null> => {
-    console.log(`[GEMINI_API] Calling generateConsequences for round ${gameState.round}...`);
-    const { prompt, schema } = getConsequencesPromptAndSchema(gameState, players, counterfactualScoreChange);
-    try {
-        const response = await ai.models.generateContent({
-            model: geminiModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-            }
-        });
-        console.log(`[GEMINI_API] Successfully received response for generateConsequences for round ${gameState.round}.`);
-        return safeJsonParse<AIConsequenceResponse>(response.text);
-    } catch (error) {
-        console.error("Error generating consequences:", error);
-        return null;
-    }
+export const generateConsequences = async (
+  gameState: GameState,
+  players: Player[],
+  counterfactualScoreChange: number
+): Promise<AIConsequenceResponse | null> => {
+  console.log(`[LLM] Calling generateConsequences for round ${gameState.round}...`);
+  const { prompt } = getConsequencesPromptAndSchema(
+    gameState,
+    players,
+    counterfactualScoreChange
+  );
+  try {
+    return await parseWithZod<AIConsequenceResponse>(ConsequenceZ, prompt, "round_consequences");
+  } catch (error) {
+    console.error("Error generating consequences:", error);
+    return null;
+  }
 };
 
-export const generateAIPlayerActions = async (player: Player, gameState: GameState, options: ActionOption[]): Promise<ActionOption[] | null> => {
-    console.log(`[GEMINI_API] Calling generateAIPlayerActions for ${player.role.name} in round ${gameState.round}...`);
-    const { prompt, schema } = getAIPlayerActionsPromptAndSchema(player, gameState, options);
-    try {
-        const response = await ai.models.generateContent({
-            model: geminiModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-                thinkingConfig: { thinkingBudget: 0 }
-            }
-        });
-        console.log(`[GEMINI_API] Successfully received response for generateAIPlayerActions for ${player.role.name}.`);
-        const parsed = safeJsonParse<{actions: ActionOption[]}>(response.text);
-        return parsed ? parsed.actions : [];
-    } catch (error) {
-        console.error(`Error generating actions for AI player ${player.role.name}:`, error);
-        return null;
-    }
+export const generateAIPlayerActions = async (
+  player: Player,
+  gameState: GameState,
+  options: ActionOption[]
+): Promise<ActionOption[] | null> => {
+  console.log(
+    `[LLM] Calling generateAIPlayerActions for ${player.role.name} in round ${gameState.round}...`
+  );
+  const { prompt } = getAIPlayerActionsPromptAndSchema(player, gameState, options);
+  try {
+    const parsed = await parseWithZod<{ actions: ActionOption[] }>(AIPlayerActionsZ, prompt, "ai_player_actions");
+    return parsed ? parsed.actions : [];
+  } catch (error) {
+    console.error(`Error generating actions for AI player ${player.role.name}:`, error);
+    return null;
+  }
 };
 
-export const generateActionOptions = async (player: Player, gameState: GameState, previousRoundActions: PlayerRoundActions[] | null): Promise<AIActionOptionsResponse | null> => {
-    console.log(`[GEMINI_API] Calling generateActionOptions for ${player.role.name} in round ${gameState.round}...`);
-    const { prompt, schema } = getActionOptionsPromptAndSchema(player, gameState, previousRoundActions);
-    try {
-         const response = await ai.models.generateContent({
-            model: geminiModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-            }
-        });
-        console.log(`[GEMINI_API] Successfully received response for generateActionOptions for ${player.role.name}.`);
-        return safeJsonParse<AIActionOptionsResponse>(response.text);
-    } catch(error) {
-        console.error("Error generating action options:", error);
-        return null;
-    }
-}
+export const generateActionOptions = async (
+  player: Player,
+  gameState: GameState,
+  previousRoundActions: PlayerRoundActions[] | null
+): Promise<AIActionOptionsResponse | null> => {
+  console.log(
+    `[LLM] Calling generateActionOptions for ${player.role.name} in round ${gameState.round}...`
+  );
+  const { prompt } = getActionOptionsPromptAndSchema(
+    player,
+    gameState,
+    previousRoundActions
+  );
+  try {
+    return await parseWithZod<AIActionOptionsResponse>(
+      ActionOptionsResponseZ,
+      prompt,
+      "action_options"
+    );
+  } catch (error) {
+    console.error("Error generating action options:", error);
+    return null;
+  }
+};
 
-export const generateCounterfactualConsequences = async (gameState: GameState): Promise<AICounterfactualResponse | null> => {
-    console.log(`[GEMINI_API] Calling generateCounterfactualConsequences for round ${gameState.round}...`);
-    const { prompt, schema } = getCounterfactualPromptAndSchema(gameState);
-    try {
-        const response = await ai.models.generateContent({
-            model: geminiModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-            }
-        });
-        console.log(`[GEMINI_API] Successfully received response for generateCounterfactualConsequences for round ${gameState.round}.`);
-        return safeJsonParse<AICounterfactualResponse>(response.text);
-    } catch (error) {
-        console.error("Error generating counterfactual consequences:", error);
-        return null;
-    }
-}
+export const generateCounterfactualConsequences = async (
+  gameState: GameState
+): Promise<AICounterfactualResponse | null> => {
+  console.log(
+    `[LLM] Calling generateCounterfactualConsequences for round ${gameState.round}...`
+  );
+  const { prompt } = getCounterfactualPromptAndSchema(gameState);
+  try {
+    return await parseWithZod<AICounterfactualResponse>(CounterfactualZ, prompt, "counterfactual");
+  } catch (error) {
+    console.error("Error generating counterfactual consequences:", error);
+    return null;
+  }
+};

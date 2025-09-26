@@ -1,92 +1,91 @@
-import { Type } from "@google/genai";
 import { RoleName } from './types';
 import type { GameState, Player, ActionOption, PlayerRoundActions } from './types';
 import { GAME_CONFIG, ROLES } from "./constants";
 
 // Schema for the AI's response when determining the consequences of player actions.
 const AIConsequenceResponseSchema = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
-    narrative: { type: Type.STRING, description: "The story of what happened next as a result of player actions." },
-    publicScoreUpdate: { type: Type.NUMBER, description: "The integer change (delta) in the public score." },
+    narrative: { type: "string", description: "The story of what happened next as a result of player actions." },
+    publicScoreUpdate: { type: "number", description: "The integer change (delta) in the public score." },
     hiddenScoreUpdates: {
-      type: Type.ARRAY,
+      type: "array",
       description: "An array of hidden score updates for every role.",
       minItems: Object.keys(ROLES).length,
       maxItems: Object.keys(ROLES).length,
       items: {
-        type: Type.OBJECT,
+        type: "object",
         properties: {
-          roleName: { type: Type.STRING, enum: Object.values(RoleName), description: "The name of the role." },
-          update: { type: Type.NUMBER, description: "The integer change in the player's hidden score." },
-          justification: { type: Type.STRING, description: "A brief, one-sentence explanation for the score change based on their secret objective." },
+          roleName: { type: "string", enum: Object.values(RoleName), description: "The name of the role." },
+          update: { type: "number", description: "The integer change in the player's hidden score." },
+          justification: { type: "string", description: "A brief, one-sentence explanation for the score change based on their secret objective." },
         },
         required: ['roleName', 'update', 'justification'],
       }
     },
     nextEvent: {
-      type: Type.OBJECT,
+      type: "object",
       properties: {
-        headline: { type: Type.STRING, description: "The headline for the next, escalating crisis event." },
-        detail: { type: Type.STRING, description: "A paragraph explaining the new crisis in detail." },
+        headline: { type: "string", description: "The headline for the next, escalating crisis event." },
+        detail: { type: "string", description: "A paragraph explaining the new crisis in detail." },
       },
       required: ['headline', 'detail'],
     },
   },
   required: ['narrative', 'publicScoreUpdate', 'hiddenScoreUpdates', 'nextEvent'],
-};
+} as const;
 
 // Schema for the AI's response when generating actions for an AI-controlled player.
 const AIPlayerActionsSchema = {
-    type: Type.OBJECT,
-    properties: {
-        actions: {
-            type: Type.ARRAY,
-            description: "The list of actions the player will take. Can be an empty array.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING, description: "The concise title of the action." },
-                    description: { type: Type.STRING, description: "A brief explanation of the action." },
-                    cost: { type: Type.NUMBER, description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
-                },
-                required: ['title', 'description', 'cost']
-            }
-        }
-    },
-    required: ['actions']
-};
+  type: "object",
+  properties: {
+    actions: {
+      type: "array",
+      description: "The list of actions the player will take. Can be an empty array.",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "The concise title of the action." },
+          description: { type: "string", description: "A brief explanation of the action." },
+          cost: { type: "number", description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
+        },
+        required: ['title', 'description', 'cost']
+      }
+    }
+  },
+  required: ['actions']
+} as const;
 
 // Schema for the AI's response when generating action options for a human player.
 const AIActionOptionsResponseSchema = {
-    type: Type.OBJECT,
-    properties: {
-        options: {
-            type: Type.ARRAY,
-            description: "An array of exactly 5 distinct action options.",
-            minItems: 5,
-            maxItems: 5,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING, description: "The concise title of the action." },
-                    description: { type: Type.STRING, description: "A brief description of the action and its potential outcome." },
-                    cost: { type: Type.NUMBER, description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
-                },
-                required: ['title', 'description', 'cost']
-            },
-        }
-    },
-    required: ['options']
-};
+  type: "object",
+  properties: {
+    options: {
+      type: "array",
+      description: "An array of exactly 5 distinct action options.",
+      minItems: 5,
+      maxItems: 5,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "The concise title of the action." },
+          description: { type: "string", description: "A brief description of the action and its potential outcome." },
+          cost: { type: "number", description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
+        },
+        required: ['title', 'description', 'cost']
+      },
+    }
+  },
+  required: ['options']
+} as const;
 
 const AICounterfactualResponseSchema = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
-    publicScoreUpdate: { type: Type.NUMBER, description: "The integer change (delta) in the public score if no one acted." },
+    publicScoreUpdate: { type: "number", description: "The integer change (delta) in the public score if no one acted." },
   },
   required: ['publicScoreUpdate'],
-};
+} as const;
 
 
 /**

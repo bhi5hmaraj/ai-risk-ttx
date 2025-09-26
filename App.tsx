@@ -286,7 +286,7 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                             </span>
                             { log.geminiCalls > 0 && 
                                 <span>
-                                    Gemini Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
+                                    AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
                                 </span>
                             }
                         </div>
@@ -304,7 +304,7 @@ const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
                             </span>
                             { log.geminiCalls > 0 && 
                                 <span>
-                                    Gemini Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
+                                    AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
                                 </span>
                             }
                         </div>
@@ -509,7 +509,7 @@ export default function App() {
       geminiCallsThisRoundRef.current += 1;
       const result = await apiFunc(...args);
       if (result === null) {
-          setError(`An API call to Gemini failed. Check the console for details.`);
+          setError(`An API call to the AI model failed. Check the console for details.`);
           return null;
       }
       return result;

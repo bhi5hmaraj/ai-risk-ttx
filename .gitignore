@@ -12,19 +12,42 @@ dist
 dist-ssr
 *.local
 
+# Build outputs / caches
+build
+.cache
+.parcel-cache
+.turbo
+.vite
+.eslintcache
+*.tsbuildinfo
+coverage
+.nyc_output
+tmp
+temp
+.tmp
+
+# Framework/platform dirs
+.vercel
+.netlify
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
+# Environment files (keep examples)
 .env
 .env.local
+.env.*
+!.env.example
+!.env*.example
 
 node_modules/**
 package-lock.json
