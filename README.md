@@ -115,3 +115,36 @@ This model centralizes logic, making it easier to test, debug, and expand.
 
 ---
 
+## Commit/Push Workflow (Important)
+
+Before committing and pushing, run the helper script to guarantee a clean lockfile and a reproducible build. This avoids CI/CD issues on Vercel.
+
+1) Ensure Node 20+ is installed (the project targets Node >= 20).
+2) Run the script:
+
+```
+chmod +x ./git-push.sh
+./git-push.sh
+```
+
+- This will:
+  - Regenerate `package-lock.json` deterministically
+  - Validate install with `npm ci`
+  - Build the app with safe defaults
+  - Stage an updated `package-lock.json` if needed
+
+3) Commit and push manually, or pass a commit message to auto-commit/push:
+
+```
+./git-push.sh -c "Your commit message"
+```
+
+Vercel build settings (recommended):
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Node.js Version: `20.x`
+
+Set env vars in Vercel:
+- `VITE_LITELLM_API_KEY` — LiteLLM proxy key (virtual/master)
+- `VITE_LLM_MODEL` — e.g., `gemini-2.5-flash`

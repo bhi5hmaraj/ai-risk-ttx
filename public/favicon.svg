@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Shield background (Democratic Legitimacy / trust) -->
+  <path d="M32 4 L56 16 V32 C56 46 44 54 32 60 C20 54 8 46 8 32 V16 L32 4 Z" fill="#1d4ed8"/>
+  <!-- Subtle shield highlight -->
+  <path d="M32 6 L54 17 V31 C54 43.5 43.5 50.5 32 56 C20.5 50.5 10 43.5 10 31 V17 L32 6 Z" fill="url(#g)" opacity="0.35"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Check mark (stability / verified info) -->
+  <path d="M20 34 L28 42 L46 24" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Crisis dot (red alert for incident) -->
+  <circle cx="50" cy="12" r="5" fill="#ef4444"/>
+</svg>
