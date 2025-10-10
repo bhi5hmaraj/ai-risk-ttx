@@ -30,7 +30,6 @@ import {
   EyeSlashIcon,
   PauseIcon,
   PlayIcon,
-  ExpandIcon,
   CloseIcon,
   BeakerIcon,
 } from './components/Icons';
@@ -39,6 +38,61 @@ import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 cytoscape.use(dagre);
+
+const ACTION_TREE_STYLESHEET: cytoscape.Stylesheet[] = [
+  { selector: 'node', style: { label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center', color: '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', shape: 'round-rectangle', width: '130px', height: 'auto', padding: '10px', 'background-opacity': 1 } as any },
+  { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', color: 'white' } },
+  { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
+  { selector: '.action', style: { 'font-size': '9px', width: '100px', height: 'auto', padding: '8px' } as any },
+  { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
+  { selector: '.unchosen', style: { 'background-color': '#4b5563', opacity: 0.7 } },
+  { selector: 'edge', style: { width: 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
+  { selector: '.event-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563' } },
+  { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', width: 3, 'z-index': 99 } },
+  { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', opacity: 0.6 } },
+];
+
+const buildActionTreeData = (eventLog: GameLogEntry[]) => {
+  const nodes: cytoscape.ElementDefinition[] = [];
+  const edges: cytoscape.ElementDefinition[] = [];
+  let lastEventId: string | null = null;
+
+  eventLog.forEach((log) => {
+    if (!log.event) return;
+
+    const eventId = `event_${log.round}`;
+    nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
+
+    if (lastEventId) {
+      edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
+    }
+
+    log.playerActions.forEach((pa) => {
+      const roleId = `${pa.roleName}_${log.round}`;
+      nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
+      edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
+
+      pa.availableOptions?.forEach((opt) => {
+        const actionId = `${roleId}_${opt.title}`;
+        const isChosen = pa.actions.some((a) => a.title === opt.title);
+
+        nodes.push({
+          data: { id: actionId, label: opt.title },
+          classes: isChosen ? 'action chosen' : 'action unchosen',
+        });
+
+        edges.push({
+          data: { source: roleId, target: actionId },
+          classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge',
+        });
+      });
+    });
+    lastEventId = eventId;
+  });
+
+  const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
+  return { elements: [...nodes, ...edges], lastLogEntry };
+};
 
 const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boolean; }> = ({ role, onSelect, isSelected }) => (
   <div className={`bg-gray-800 rounded-lg p-6 border-2 transition-all duration-300 ease-in-out ${isSelected ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-700 hover:border-blue-600'}`}>
@@ -82,6 +136,15 @@ const ActionTreeModal: React.FC<{
     }
   };
 
+  useEffect(() => {
+    if (isOpen && cyRef.current) {
+      const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
+      layout.run();
+      cyRef.current.fit();
+      cyRef.current.center();
+    }
+  }, [isOpen, elements]);
+
   return createPortal(
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-blue-500 rounded-lg w-full h-full max-w-7xl max-h-[90vh] p-4 flex flex-col">
@@ -119,131 +182,7 @@ const ActionTreeModal: React.FC<{
   );
 };
 
-const CombinedActionTree: React.FC<{ eventLog: GameLogEntry[] }> = ({ eventLog }) => {
-  const cyRef = useRef<cytoscape.Core | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const elements = useMemo(() => {
-    const nodes: cytoscape.ElementDefinition[] = [];
-    const edges: cytoscape.ElementDefinition[] = [];
-    let lastEventId: string | null = null;
-
-    eventLog.forEach((log) => {
-      if (!log.event) return;
-
-      const eventId = `event_${log.round}`;
-      nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
-
-      if (lastEventId) {
-        edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
-      }
-
-      log.playerActions.forEach((pa) => {
-        const roleId = `${pa.roleName}_${log.round}`;
-        nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
-        edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
-
-        if (pa.availableOptions) {
-          pa.availableOptions.forEach((opt) => {
-            const actionId = `${roleId}_${opt.title}`;
-            const isChosen = pa.actions.some((a) => a.title === opt.title);
-
-            nodes.push({
-              data: { id: actionId, label: opt.title },
-              classes: isChosen ? 'action chosen' : 'action unchosen',
-            });
-
-            edges.push({
-              data: { source: roleId, target: actionId },
-              classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge',
-            });
-          });
-        }
-      });
-      lastEventId = eventId;
-    });
-
-    return [...nodes, ...edges];
-  }, [eventLog]);
-
-  const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
-  const currentRoundElements = useMemo(() => {
-    if (!lastLogEntry || !lastLogEntry.event) return [];
-    return elements.filter((el) => {
-      const id = el.data.id;
-      if (!id) return false;
-      return id.includes(`_${lastLogEntry.round}`) || id === `event_${lastLogEntry.round}`;
-    });
-  }, [elements, lastLogEntry]);
-
-  useEffect(() => {
-    if (cyRef.current && currentRoundElements.length > 0) {
-      const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
-      layout.run();
-    }
-  }, [currentRoundElements]);
-
-  const stylesheet: cytoscape.Stylesheet[] = [
-    { selector: 'node', style: { label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center', color: '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', shape: 'round-rectangle', width: '130px', height: 'auto', padding: '10px', 'background-opacity': 1 } as any },
-    { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', color: 'white' } },
-    { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
-    { selector: '.action', style: { 'font-size': '9px', width: '100px', height: 'auto', padding: '8px' } as any },
-    { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
-    { selector: '.unchosen', style: { 'background-color': '#4b5563', opacity: 0.7 } },
-    { selector: 'edge', style: { width: 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
-    { selector: '.event-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563' } },
-    { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', width: 3, 'z-index': 99 } },
-    { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', opacity: 0.6 } },
-  ];
-
-  if (elements.length === 0) {
-    return (
-      <div className="bg-gray-800 rounded-lg p-6 mt-6">
-        <h3 className="text-lg font-bold text-blue-300 mb-2">Round Action Tree</h3>
-        <p className="text-gray-400 text-sm">The action tree for the first round will appear here after it concludes.</p>
-      </div>
-    );
-  }
-
-  const handleResetView = () => {
-    if (cyRef.current) {
-      cyRef.current.fit();
-      cyRef.current.center();
-    }
-  };
-
-  return (
-    <>
-      <ActionTreeModal isOpen={isExpanded} onClose={() => setIsExpanded(false)} logEntry={lastLogEntry} stylesheet={stylesheet} elements={elements} />
-      <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
-        <div className="flex justify-center items-center mb-2 relative">
-          <h3 className="text-lg font-bold text-blue-300">Round {lastLogEntry?.round} Action Tree</h3>
-          <div className="absolute right-0 top-0 flex space-x-2">
-            <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
-              Reset
-            </button>
-            <button onClick={() => setIsExpanded(true)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold p-1 rounded-md">
-              <ExpandIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        <CytoscapeComponent
-          elements={currentRoundElements}
-          stylesheet={stylesheet}
-          layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
-          style={{ width: '100%', height: 'calc(100% - 40px)' }}
-          cy={(cy) => {
-            cyRef.current = cy;
-            cy.maxZoom(1.5);
-            cy.minZoom(0.3);
-          }}
-        />
-      </div>
-    </>
-  );
-};
-
-const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = ({ player, eventLog }) => {
+const PlayerInfoPanel: React.FC<{ player: Player }> = ({ player }) => {
   const [showHidden, setShowHidden] = useState(false);
   return (
     <div className="sticky top-6">
@@ -293,7 +232,6 @@ const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = 
           </p>
         </div>
       </div>
-      <CombinedActionTree eventLog={eventLog} />
     </div>
   );
 };
@@ -341,120 +279,231 @@ const GameStatusPanel: React.FC<{
   );
 };
 
-const EventLog: React.FC<{ gameState: GameState; players: Player[] }> = ({ gameState, players }) => {
+const EventLog: React.FC<{
+  gameState: GameState;
+  players: Player[];
+  onViewActionTree: () => void;
+  canViewActionTree: boolean;
+}> = ({ gameState, players, onViewActionTree, canViewActionTree }) => {
   const metricName = gameState.coreMetric.name;
-  return (
-    <div className="bg-gray-800 rounded-lg p-6 space-y-6 max-h-[50vh] overflow-y-auto">
-      {gameState.eventLog
-        .slice()
-        .reverse()
-        .map((log) => (
-          <div key={log.round} className="border-b border-gray-700 pb-4 last:border-b-0 animate-fade-in">
-            {log.round > 0 ? (
-              <>
-                <h3 className="text-xl font-bold text-blue-400 mb-2">Round {log.round} Outcome</h3>
-                <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
-                  <span>
-                    {metricName}: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
-                    <span className={`ml-2 font-bold score-change-animate ${log.publicScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      ({log.publicScoreChange >= 0 ? '+' : ''}
-                      {log.publicScoreChange})
-                    </span>
-                  </span>
-                  {log.geminiCalls > 0 && (
-                    <span>
-                      AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
-                    </span>
-                  )}
-                </div>
-                <div className="bg-gray-900/50 p-3 rounded-md my-2 border border-gray-700">
-                  <p className="font-bold text-red-400">{log.event?.headline}</p>
-                  <p className="text-gray-300 text-sm mt-1">{log.event?.detail}</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-xl font-bold text-blue-400 mb-2">Opening Scenario</h3>
-                <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
-                  <span>
-                    {metricName}: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
-                  </span>
-                  {log.geminiCalls > 0 && (
-                    <span>
-                      AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
+  const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
-            {log.playerActions && log.playerActions.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-bold text-lg text-gray-300 mb-2">Actions &amp; Outcomes:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {log.playerActions.map((playerAction) => {
-                    const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
-                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
-                    const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
-                    return (
-                      <div key={`${playerAction.roleName}_${log.round}`} className="bg-gray-900/70 p-3 rounded-md border border-gray-700 flex flex-col">
-                        <div className="flex items-center mb-2">
-                          {roleIcon({ className: 'h-6 w-6 mr-3 text-blue-400' })}
-                          <span className="font-bold text-white">{playerAction.roleName}</span>
-                        </div>
-                        <ul className="space-y-1 text-sm text-gray-400 flex-grow mb-3">
-                          {playerAction.actions.length > 0 ? (
-                            playerAction.actions.map((action, index) => (
-                              <li key={index} className="flex justify-between items-start">
-                                <span className="mr-2">- {action.title}</span>
-                                <span className="flex-shrink-0 text-xs font-mono bg-gray-700 text-blue-300 px-1.5 py-0.5 rounded">{action.cost} AP</span>
-                              </li>
-                            ))
-                          ) : (
-                            <li>
-                              <em>No action taken.</em>
-                            </li>
-                          )}
-                        </ul>
-                        {scoreChange && (
-                          <div className="mt-auto pt-3 border-t border-gray-700/50">
-                            {playerAction.isHuman ? (
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="font-bold text-gray-300">Personal Score:</span>
-                                <span className={`font-bold text-lg score-change-animate ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                  {scoreChange.update >= 0 ? '+' : ''}
-                                  {scoreChange.update}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="font-bold text-gray-300">Personal Score:</span>
-                                <span
-                                  className={`font-bold italic ${
-                                    scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'
-                                  }`}
-                                >
-                                  {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
-                                </span>
+  useEffect(() => {
+    if (gameState.eventLog.length === 0) {
+      setExpandedRound(null);
+      return;
+    }
+    const latestRound = gameState.eventLog[gameState.eventLog.length - 1].round;
+    setExpandedRound((prev) => (prev === null || latestRound > prev ? latestRound : prev));
+  }, [gameState.eventLog]);
+
+  const reversedLog = useMemo(() => gameState.eventLog.slice().reverse(), [gameState.eventLog]);
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-blue-300">Event Log</h3>
+        <button
+          onClick={onViewActionTree}
+          disabled={!canViewActionTree}
+          className={`text-sm font-semibold px-3 py-1 rounded-md transition-colors ${
+            canViewActionTree ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          View Action Tree
+        </button>
+      </div>
+
+      {reversedLog.map((log) => {
+        const isExpanded = expandedRound === log.round;
+        const scoreDelta = log.publicScoreChange;
+        const deltaLabel = log.round > 0 ? `${scoreDelta >= 0 ? '+' : ''}${scoreDelta}` : null;
+
+        return (
+          <div key={log.round} className="rounded-lg border border-gray-700 bg-gray-900/40">
+            <button
+              type="button"
+              onClick={() => setExpandedRound(isExpanded ? null : log.round)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <div>
+                <p className="font-semibold text-white">
+                  {log.round > 0 ? `Round ${log.round} Outcome` : 'Opening Scenario'}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {metricName}: <span className="text-white font-semibold">{log.publicScoreAfter}%</span>
+                  {deltaLabel && (
+                    <span className={`ml-2 font-semibold ${scoreDelta >= 0 ? 'text-green-400' : 'text-red-400'}`}>({deltaLabel})</span>
+                  )}
+                </p>
+                {log.event?.headline && (
+                  <p className="text-xs text-gray-500 mt-1 truncate">{log.event.headline}</p>
+                )}
+              </div>
+              <span className="text-blue-300 text-xl font-bold" aria-hidden="true">
+                {isExpanded ? '−' : '+'}
+              </span>
+            </button>
+
+            {isExpanded && (
+              <div className="px-4 pb-4 space-y-4">
+                {log.round > 0 && (
+                  <div className="flex items-center justify-between text-sm text-gray-400 border-y border-gray-800 py-2">
+                    <span>
+                      {metricName}: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
+                      {deltaLabel && (
+                        <span className={`ml-2 font-bold ${scoreDelta >= 0 ? 'text-green-400' : 'text-red-400'}`}>({deltaLabel})</span>
+                      )}
+                    </span>
+                    {log.geminiCalls > 0 && (
+                      <span>
+                        AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {log.event && (
+                  <div className="bg-gray-900/60 p-3 rounded-md border border-gray-800">
+                    <p className="font-bold text-red-400">{log.event.headline}</p>
+                    <p className="text-gray-300 text-sm mt-1 whitespace-pre-wrap">{log.event.detail}</p>
+                  </div>
+                )}
+
+                {log.playerActions && log.playerActions.length > 0 && (
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-300 uppercase tracking-wider mb-2">Actions &amp; Outcomes</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {log.playerActions.map((playerAction) => {
+                        const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
+                        const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
+                        const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
+                        return (
+                          <div key={`${playerAction.roleName}_${log.round}`} className="bg-gray-900/70 p-3 rounded-md border border-gray-800 flex flex-col">
+                            <div className="flex items-center mb-2">
+                              {roleIcon({ className: 'h-6 w-6 mr-3 text-blue-400' })}
+                              <span className="font-bold text-white">{playerAction.roleName}</span>
+                            </div>
+                            <ul className="space-y-1 text-sm text-gray-400 flex-grow">
+                              {playerAction.actions.length > 0 ? (
+                                playerAction.actions.map((action, index) => (
+                                  <li key={index} className="flex justify-between items-start">
+                                    <span className="mr-2 leading-snug">{action.title}</span>
+                                    <span className="flex-shrink-0 inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full">
+                                      {action.cost} AP
+                                    </span>
+                                  </li>
+                                ))
+                              ) : (
+                                <li className="italic text-gray-500">No action taken.</li>
+                              )}
+                            </ul>
+                            {scoreChange && (
+                              <div className="mt-3 pt-3 border-t border-gray-800 text-sm">
+                                {playerAction.isHuman ? (
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-semibold text-gray-300">Personal Score</span>
+                                    <span className={`font-bold ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                      {scoreChange.update >= 0 ? '+' : ''}
+                                      {scoreChange.update}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-semibold text-gray-300">Personal Score</span>
+                                    <span className={`font-semibold italic ${
+                                      scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'
+                                    }`}>
+                                      {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
+                                    </span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-amber-300/80 italic mt-2">
+                                  <span className="font-bold">Justification:</span> {scoreChange.justification}
+                                </p>
                               </div>
                             )}
-                            <p className="text-xs text-amber-300/80 italic mt-1">
-                              <span className="font-bold">Justification:</span> {scoreChange.justification}
-                            </p>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap">
+                  <strong>Narrative:</strong> {log.narrative}
                 </div>
               </div>
             )}
-
-            <p className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap">
-              <strong>Narrative:</strong> {log.narrative}
-            </p>
           </div>
-        ))}
+        );
+      })}
+    </div>
+  );
+};
+
+const RoundSnapshotCard: React.FC<{
+  gameState: GameState;
+  latestLogEntry: GameLogEntry | null;
+  onToggleHistory: () => void;
+  isHistoryOpen: boolean;
+  onViewActionTree: () => void;
+  canViewActionTree: boolean;
+}> = ({ gameState, latestLogEntry, onToggleHistory, isHistoryOpen, onViewActionTree, canViewActionTree }) => {
+  const metric = gameState.coreMetric;
+  const lastDelta = latestLogEntry?.publicScoreChange ?? null;
+  const narrativePreview = latestLogEntry?.narrative
+    ? latestLogEntry.narrative.length > 160
+      ? `${latestLogEntry.narrative.slice(0, 160).trim()}…`
+      : latestLogEntry.narrative
+    : 'Play your first round to see how the story evolves.';
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <p className="text-sm uppercase tracking-wide text-blue-300">Round {Math.max(gameState.round, 1)}</p>
+          <h2 className="text-2xl font-bold text-white mt-1">
+            {gameState.currentEvent?.headline ?? 'Awaiting next event'}
+          </h2>
+          <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+            {gameState.currentEvent?.detail ?? 'Once the AI Game Master processes the round, the next crisis beat will appear here.'}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-gray-400">{metric.name}</p>
+            <p className="text-3xl font-semibold text-blue-300">{metric.value}%</p>
+            {lastDelta !== null && gameState.round > 0 && (
+              <p className={`text-sm font-semibold ${lastDelta >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {lastDelta >= 0 ? '+' : ''}
+                {lastDelta}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button
+              onClick={onToggleHistory}
+              className="px-3 py-1 rounded-md text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+            >
+              {isHistoryOpen ? 'Hide History' : 'View History'}
+            </button>
+            <button
+              onClick={onViewActionTree}
+              disabled={!canViewActionTree}
+              className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${
+                canViewActionTree ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Action Tree
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="bg-gray-900/60 rounded-md p-4 border border-gray-800">
+        <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Latest Outcomes</p>
+        <p className="text-sm text-gray-300 leading-relaxed">{narrativePreview}</p>
+      </div>
     </div>
   );
 };
@@ -473,6 +522,7 @@ const ActionSelection: React.FC<{
   const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
   const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+  const confirmDisabled = isLoading || selected.length === 0 || isPaused;
 
   const toggleAction = (option: ActionOption) => {
     if (hasSubmitted || isPaused) return;
@@ -512,18 +562,31 @@ const ActionSelection: React.FC<{
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 sticky top-6 relative">
+    <div className="bg-gray-800 rounded-lg p-6 sticky top-6">
       {isPaused && (
-        <div className="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+        <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
           <PauseIcon className="h-12 w-12 text-blue-400 mb-4" />
           <h3 className="text-xl font-bold">Game Paused</h3>
         </div>
       )}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">Your Actions</h3>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-xl font-bold text-white">Your Actions</h3>
+          <p className="text-sm text-gray-400">Spend up to {GAME_CONFIG.ACTION_POINTS_PER_ROUND} points each round.</p>
+        </div>
         <div className="text-right">
-          <div className="font-bold text-lg text-blue-400">{pointsRemaining}</div>
-          <div className="text-sm text-gray-400">Points Left</div>
+          <span className="text-xs uppercase tracking-wide text-gray-400">Points Remaining</span>
+          <div
+            className={`mt-1 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+              pointsRemaining > 1
+                ? 'bg-green-900/40 text-green-300'
+                : pointsRemaining === 0
+                ? 'bg-red-900/40 text-red-300'
+                : 'bg-yellow-900/40 text-yellow-300'
+            }`}
+          >
+            {pointsRemaining}
+          </div>
         </div>
       </div>
       {isLoading && !options.length ? (
@@ -531,39 +594,52 @@ const ActionSelection: React.FC<{
           <LoadingSpinner />
         </div>
       ) : (
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           {options.map((opt) => {
             const isSelected = selected.some((s) => s.title === opt.title);
-            const canSelect = pointsRemaining >= opt.cost;
+            const preview = opt.description.length > 110 ? `${opt.description.slice(0, 110).trim()}…` : opt.description;
+            const canSelect = pointsRemaining >= opt.cost || isSelected;
             return (
-              <div
+              <button
                 key={opt.title}
+                type="button"
                 onClick={() => toggleAction(opt)}
-                className={`p-3 rounded-md border-2 transition-all cursor-pointer ${
+                disabled={!canSelect && !isSelected}
+                className={`w-full text-left p-3 rounded-md border transition-colors ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-900/50'
-                    : !canSelect && !isSelected
-                    ? 'border-gray-700 bg-gray-800 opacity-60 cursor-not-allowed'
-                    : 'border-gray-700 hover:border-blue-400 bg-gray-900/50'
+                    ? 'border-blue-500 bg-blue-900/40 shadow-inner'
+                    : canSelect
+                    ? 'border-gray-700 bg-gray-900/50 hover:border-blue-400'
+                    : 'border-gray-800 bg-gray-900/20 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                <div className="flex justify-between font-bold">
-                  <span>{opt.title}</span>
-                  <span className="text-blue-300">Cost: {opt.cost}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
+                    <p className={`mt-2 text-sm leading-snug ${isSelected ? 'text-gray-200' : 'text-gray-400'}`}>
+                      {isSelected ? opt.description : preview}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full shrink-0">
+                    {opt.cost} AP
+                  </span>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">{opt.description}</p>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
-      <button
-        onClick={() => onConfirm(selected)}
-        disabled={isLoading || selected.length === 0 || isPaused}
-        className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
-        Confirm Actions
-      </button>
+      <div className="mt-6 pt-4 border-t border-gray-800">
+        <button
+          onClick={() => onConfirm(selected)}
+          disabled={confirmDisabled}
+          className={`w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center ${
+            confirmDisabled ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed' : ''
+          }`}
+        >
+          Confirm Actions
+        </button>
+      </div>
     </div>
   );
 };
@@ -597,6 +673,25 @@ export default function App() {
   const geminiCallsThisRoundRef = useRef(0);
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
+  const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const latestLogEntry = useMemo(
+    () => (gameState.eventLog.length > 0 ? gameState.eventLog[gameState.eventLog.length - 1] : null),
+    [gameState.eventLog]
+  );
+
+  const actionTreeData = useMemo(() => buildActionTreeData(gameState.eventLog), [gameState.eventLog]);
+  const canViewActionTree = actionTreeData.elements.length > 0;
+  const actionTreeModal = isActionTreeOpen && canViewActionTree ? (
+    <ActionTreeModal
+      isOpen
+      onClose={() => setIsActionTreeOpen(false)}
+      logEntry={actionTreeData.lastLogEntry}
+      stylesheet={ACTION_TREE_STYLESHEET}
+      elements={actionTreeData.elements}
+    />
+  ) : null;
 
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
 
@@ -609,6 +704,29 @@ export default function App() {
     const phaseName = GamePhase[gameState.phase];
     console.log(`%c[STATE_TRANSITION] Game phase changed to: ${phaseName}`, 'color: #88aaff; font-weight: bold;');
   }, [gameState.phase]);
+
+  const eventLogLengthRef = useRef(gameState.eventLog.length);
+  useEffect(() => {
+    if (!canViewActionTree && isActionTreeOpen) {
+      setIsActionTreeOpen(false);
+    }
+  }, [canViewActionTree, isActionTreeOpen]);
+
+  useEffect(() => {
+    const prevLength = eventLogLengthRef.current;
+    const currentLength = gameState.eventLog.length;
+
+    if (currentLength === 0) {
+      setIsHistoryOpen(false);
+    } else if (currentLength > prevLength) {
+      const latestRound = gameState.eventLog[currentLength - 1].round;
+      if (latestRound > 0) {
+        setIsHistoryOpen(true);
+      }
+    }
+
+    eventLogLengthRef.current = currentLength;
+  }, [gameState.eventLog]);
 
   const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
     return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
@@ -641,6 +759,7 @@ export default function App() {
     setIsPaused(false);
     setAiCompletionStatus({});
     geminiCallsThisRoundRef.current = 0;
+    setIsActionTreeOpen(false);
   };
 
   const handleCustomGameStart = async () => {
@@ -888,6 +1007,12 @@ export default function App() {
     setLoadingMessage('AI Game Master is generating the initial scenario...');
   };
 
+  const handleOpenActionTree = () => {
+    if (canViewActionTree) {
+      setIsActionTreeOpen(true);
+    }
+  };
+
   useEffect(() => {
     if (gameState.phase !== GamePhase.STARTING) return;
 
@@ -1036,7 +1161,9 @@ export default function App() {
 
   if (gameState.phase === GamePhase.LOBBY) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-8">
+      <>
+        {actionTreeModal}
+        <div className="min-h-screen bg-gray-900 text-white p-8">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-extrabold text-blue-400">AI Election Crisis</h1>
           <p className="text-lg text-gray-300 mt-2 max-w-4xl mx-auto">A Tabletop Exercise in Strategic Decision-Making</p>
@@ -1218,28 +1345,34 @@ export default function App() {
             </div>
           </>
         )}
-      </div>
+        </div>
+      </>
     );
   }
 
   if (isLoading && gameState.phase !== GamePhase.ACTION) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-        <LoadingSpinner />
-        <p className="text-xl mt-4 text-blue-300">{loadingMessage}</p>
-        {error && <p className="text-red-400 mt-4">{error}</p>}
-      </div>
+      <>
+        {actionTreeModal}
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+          <LoadingSpinner />
+          <p className="text-xl mt-4 text-blue-300">{loadingMessage}</p>
+          {error && <p className="text-red-400 mt-4">{error}</p>}
+        </div>
+      </>
     );
   }
 
   if (gameState.phase === GamePhase.END) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center justify-center">
-        <h1 className="text-5xl font-extrabold text-blue-400 mb-4">Simulation Over</h1>
-        <p className="text-lg text-gray-300 mb-8">
-          Final {gameState.coreMetric.name}:{' '}
-          <span className="text-2xl font-bold text-green-400">{gameState.coreMetric.value}%</span>
-        </p>
+      <>
+        {actionTreeModal}
+        <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center justify-center">
+          <h1 className="text-5xl font-extrabold text-blue-400 mb-4">Simulation Over</h1>
+          <p className="text-lg text-gray-300 mb-8">
+            Final {gameState.coreMetric.name}:{' '}
+            <span className="text-2xl font-bold text-green-400">{gameState.coreMetric.value}%</span>
+          </p>
         <div className="bg-gray-800 rounded-lg p-8 w-full max-w-4xl">
           <h2 className="text-3xl font-bold mb-6 text-center">Final Scores</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1261,32 +1394,46 @@ export default function App() {
                 </div>
               ))}
           </div>
+          </div>
+          <button onClick={resetState} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
+            Play Again
+          </button>
         </div>
-        <button onClick={resetState} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
-          Play Again
-        </button>
-      </div>
+      </>
     );
   }
 
   if (humanPlayer) {
     return (
-      <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
-        <div className="max-w-8xl mx-auto">
-          {error && (
-            <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
-          )}
-          <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
+      <>
+        {actionTreeModal}
+        <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
+          <div className="max-w-8xl mx-auto">
+            {error && (
+              <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
+            )}
+            <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3">
-              <PlayerInfoPanel player={humanPlayer} eventLog={gameState.eventLog} />
+              <PlayerInfoPanel player={humanPlayer} />
             </div>
             <div className="lg:col-span-6 space-y-6">
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-2xl font-bold text-red-400 mb-2">{gameState.currentEvent?.headline}</h3>
-                <p className="text-gray-300">{gameState.currentEvent?.detail}</p>
-              </div>
-              <EventLog gameState={gameState} players={players} />
+              <RoundSnapshotCard
+                gameState={gameState}
+                latestLogEntry={latestLogEntry}
+                onToggleHistory={() => setIsHistoryOpen((prev) => !prev)}
+                isHistoryOpen={isHistoryOpen}
+                onViewActionTree={handleOpenActionTree}
+                canViewActionTree={canViewActionTree}
+              />
+              {isHistoryOpen && (
+                <EventLog
+                  gameState={gameState}
+                  players={players}
+                  onViewActionTree={handleOpenActionTree}
+                  canViewActionTree={canViewActionTree}
+                />
+              )}
             </div>
             <div className="lg:col-span-3">
               <ActionSelection
@@ -1302,16 +1449,20 @@ export default function App() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-      <p className="text-red-500 text-2xl font-bold mb-4">{error || 'An unexpected error occurred.'}</p>
-      <button onClick={resetState} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
-        Back to Home
-      </button>
-    </div>
+    <>
+      {actionTreeModal}
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+        <p className="text-red-500 text-2xl font-bold mb-4">{error || 'An unexpected error occurred.'}</p>
+        <button onClick={resetState} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+          Back to Home
+        </button>
+      </div>
+    </>
   );
 }
