@@ -9,6 +9,7 @@ import type {
   AIActionOptionsResponse,
   AICounterfactualResponse,
   PlayerRoundActions,
+  GameSetup,
 } from "../types";
 import { RoleName } from "../types";
 import {
@@ -17,6 +18,7 @@ import {
   getAIPlayerActionsPromptAndSchema,
   getActionOptionsPromptAndSchema,
   getCounterfactualPromptAndSchema,
+  getCustomScenarioPromptAndSchema,
 } from "../prompts";
 
 // Hardcoded LiteLLM proxy base URL
@@ -56,7 +58,7 @@ const safeJsonParse = <T,>(jsonString: string): T | null => {
 
 // Zod schemas for structured outputs
 const HiddenUpdateZ = z.object({
-  roleName: z.nativeEnum(RoleName),
+  roleName: z.string(),
   update: z.number(),
   justification: z.string(),
 }).strict();
@@ -89,6 +91,21 @@ const ActionOptionsResponseZ = z.object({
 
 const CounterfactualZ = z.object({
   publicScoreUpdate: z.number(),
+}).strict();
+
+const GameSetupZ = z.object({
+    scenarioTitle: z.string(),
+    scenarioDescription: z.string(),
+    coreMetric: z.object({
+        name: z.string(),
+        description: z.string(),
+        initialValue: z.number(),
+    }).strict(),
+    stakeholders: z.array(z.object({
+        name: z.string(),
+        publicObjective: z.string(),
+        hiddenObjective: z.string(),
+    }).strict()).min(4).max(6),
 }).strict();
 
 async function parseWithZod<T>(schema: z.ZodSchema<T>, prompt: string, name: string): Promise<T | null> {
@@ -216,4 +233,15 @@ export const generateCounterfactualConsequences = async (
     console.error("Error generating counterfactual consequences:", error);
     return null;
   }
+};
+
+export const generateCustomScenario = async (scenarioDescription: string): Promise<GameSetup | null> => {
+    console.log("[LLM] Calling generateCustomScenario...");
+    const { prompt } = getCustomScenarioPromptAndSchema(scenarioDescription);
+    try {
+        return await parseWithZod<GameSetup>(GameSetupZ, prompt, "custom_scenario_setup");
+    } catch (error) {
+        console.error("Error generating custom scenario:", error);
+        return null;
+    }
 };

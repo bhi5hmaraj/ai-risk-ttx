@@ -1,4 +1,3 @@
-
 export enum RoleName {
   ELECTION_COMMISSIONER = "Election Commissioner",
   TECH_CEO = "Tech CEO",
@@ -9,12 +8,25 @@ export enum RoleName {
 }
 
 export interface RoleData {
-  name: RoleName;
+  name: string;
   publicObjective: string;
   hiddenObjective: string;
   resources: string[];
   constraints: string[];
   icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactNode;
+}
+
+export interface CoreMetric {
+  name: string;
+  description: string;
+  value: number;
+}
+
+export interface GameSetup {
+    scenarioTitle: string;
+    scenarioDescription: string;
+    coreMetric: CoreMetric;
+    stakeholders: RoleData[];
 }
 
 export interface Player {
@@ -40,7 +52,7 @@ export interface GameEvent {
 }
 
 export interface PlayerRoundActions {
-  roleName: RoleName;
+  roleName: string;
   actions: ActionOption[]; // chosen actions
   availableOptions: ActionOption[]; // all possible actions for that round
   isHuman: boolean;
@@ -53,7 +65,7 @@ export interface HiddenScoreUpdate {
 
 // New type for the array structure from the API
 export interface AIHiddenScoreUpdate {
-  roleName: RoleName;
+  roleName: string;
   update: number;
   justification: string;
 }
@@ -65,14 +77,14 @@ export interface GameLogEntry {
   playerActions: PlayerRoundActions[];
   publicScoreChange: number;
   publicScoreAfter: number;
-  hiddenScoreChanges: Record<RoleName, HiddenScoreUpdate>;
+  hiddenScoreChanges: Record<string, HiddenScoreUpdate>;
   geminiCalls: number;
 }
 
 export interface GameState {
   phase: GamePhase;
   round: number;
-  publicScore: number; // Democratic Legitimacy
+  coreMetric: CoreMetric;
   eventLog: GameLogEntry[];
   currentEvent: GameEvent | null;
 }

@@ -1,216 +1,246 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { GameState, Player, RoleData, RoleName, ActionOption, GameLogEntry, PlayerRoundActions, HiddenScoreUpdate, AIHiddenScoreUpdate } from './types';
+import type {
+  GameState,
+  Player,
+  RoleData,
+  ActionOption,
+  GameLogEntry,
+  PlayerRoundActions,
+  HiddenScoreUpdate,
+  AIHiddenScoreUpdate,
+  GameSetup,
+  CoreMetric,
+} from './types';
 import { GamePhase } from './types';
 import { ROLES, GAME_CONFIG } from './constants';
-import { generateInitialScenario, generateConsequences, generateAIPlayerActions, generateActionOptions, generateCounterfactualConsequences } from './services/geminiService';
-import { LoadingSpinner, CheckCircleIcon, EyeIcon, EyeSlashIcon, PauseIcon, PlayIcon, ExpandIcon, CloseIcon } from './components/Icons';
+import { AI_SAFETY_SCENARIO } from './presets';
+import {
+  generateInitialScenario,
+  generateConsequences,
+  generateAIPlayerActions,
+  generateActionOptions,
+  generateCounterfactualConsequences,
+  generateCustomScenario,
+} from './services/geminiService';
+import {
+  LoadingSpinner,
+  CheckCircleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  PauseIcon,
+  PlayIcon,
+  ExpandIcon,
+  CloseIcon,
+  BeakerIcon,
+} from './components/Icons';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 cytoscape.use(dagre);
 
-// --- HELPER COMPONENTS ---
-
 const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boolean; }> = ({ role, onSelect, isSelected }) => (
   <div className={`bg-gray-800 rounded-lg p-6 border-2 transition-all duration-300 ease-in-out ${isSelected ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-700 hover:border-blue-600'}`}>
     <div className="flex items-center mb-4">
       <div className="bg-gray-700 p-2 rounded-md mr-4">
-        {role.icon({ className: "h-8 w-8 text-blue-400" })}
+        {role.icon({ className: 'h-8 w-8 text-blue-400' })}
       </div>
       <h3 className="text-2xl font-bold text-white">{role.name}</h3>
     </div>
     <p className="text-gray-400 mb-2 text-sm">Public: {role.publicObjective}</p>
-    <button onClick={onSelect} disabled={isSelected} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed">
-      {isSelected ? <><CheckCircleIcon className="h-5 w-5 mr-2" /> Selected</> : 'Select Role'}
+    <button
+      onClick={onSelect}
+      disabled={isSelected}
+      className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
+    >
+      {isSelected ? (
+        <>
+          <CheckCircleIcon className="h-5 w-5 mr-2" /> Selected
+        </>
+      ) : (
+        'Select Role'
+      )}
     </button>
   </div>
 );
 
 const ActionTreeModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    logEntry: GameLogEntry | null;
-    stylesheet: cytoscape.Stylesheet[];
-    elements: cytoscape.ElementDefinition[];
+  isOpen: boolean;
+  onClose: () => void;
+  logEntry: GameLogEntry | null;
+  stylesheet: cytoscape.Stylesheet[];
+  elements: cytoscape.ElementDefinition[];
 }> = ({ isOpen, onClose, logEntry, stylesheet, elements }) => {
-    if (!isOpen) return null;
-    const cyRef = useRef<cytoscape.Core | null>(null);
+  if (!isOpen) return null;
+  const cyRef = useRef<cytoscape.Core | null>(null);
 
-    const handleResetView = () => {
-        if (cyRef.current) {
-            cyRef.current.fit();
-            cyRef.current.center();
-        }
-    };
+  const handleResetView = () => {
+    if (cyRef.current) {
+      cyRef.current.fit();
+      cyRef.current.center();
+    }
+  };
 
-    return createPortal(
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 border border-blue-500 rounded-lg w-full h-full max-w-7xl max-h-[90vh] p-4 flex flex-col">
-                <div className="flex justify-between items-center mb-2 flex-shrink-0">
-                    <h3 className="text-xl font-bold text-blue-300">Full Action Tree (Round {logEntry?.round})</h3>
-                    <div className="flex items-center space-x-2">
-                        <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
-                            Reset View
-                        </button>
-                        <button onClick={onClose} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600">
-                            <CloseIcon className="h-5 w-5 text-white" />
-                        </button>
-                    </div>
-                </div>
-                <div className="flex-grow h-full w-full">
-                     <CytoscapeComponent
-                        elements={elements}
-                        stylesheet={stylesheet}
-                        layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
-                        style={{ width: '100%', height: '100%' }}
-                        cy={(cy) => {
-                            if (cyRef.current !== cy) {
-                                cyRef.current = cy;
-                                cy.maxZoom(2);
-                                cy.minZoom(0.1);
-                                cy.fit();
-                                cy.center();
-                            }
-                        }}
-                    />
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
+  return createPortal(
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-blue-500 rounded-lg w-full h-full max-w-7xl max-h-[90vh] p-4 flex flex-col">
+        <div className="flex justify-between items-center mb-2 flex-shrink-0">
+          <h3 className="text-xl font-bold text-blue-300">Full Action Tree (Round {logEntry?.round})</h3>
+          <div className="flex items-center space-x-2">
+            <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
+              Reset View
+            </button>
+            <button onClick={onClose} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600">
+              <CloseIcon className="h-5 w-5 text-white" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-grow h-full w-full">
+          <CytoscapeComponent
+            elements={elements}
+            stylesheet={stylesheet}
+            layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
+            style={{ width: '100%', height: '100%' }}
+            cy={(cy) => {
+              if (cyRef.current !== cy) {
+                cyRef.current = cy;
+                cy.maxZoom(2);
+                cy.minZoom(0.1);
+                cy.fit();
+                cy.center();
+              }
+            }}
+          />
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 };
 
-
 const CombinedActionTree: React.FC<{ eventLog: GameLogEntry[] }> = ({ eventLog }) => {
-    const cyRef = useRef<cytoscape.Core | null>(null);
-    const [isExpanded, setIsExpanded] = useState(false);
+  const cyRef = useRef<cytoscape.Core | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    const elements = useMemo(() => {
-        const nodes: cytoscape.ElementDefinition[] = [];
-        const edges: cytoscape.ElementDefinition[] = [];
-        let lastEventId: string | null = null;
+  const elements = useMemo(() => {
+    const nodes: cytoscape.ElementDefinition[] = [];
+    const edges: cytoscape.ElementDefinition[] = [];
+    let lastEventId: string | null = null;
 
-        eventLog.forEach(log => {
-            if (!log.event) return;
+    eventLog.forEach((log) => {
+      if (!log.event) return;
 
-            const eventId = `event_${log.round}`;
-            nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
+      const eventId = `event_${log.round}`;
+      nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
 
-            if (lastEventId) {
-                edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
-            }
+      if (lastEventId) {
+        edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
+      }
 
-            log.playerActions.forEach(pa => {
-                const roleId = `${pa.roleName}_${log.round}`;
-                nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
-                edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
+      log.playerActions.forEach((pa) => {
+        const roleId = `${pa.roleName}_${log.round}`;
+        nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
+        edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
 
-                if (pa.availableOptions) {
-                    pa.availableOptions.forEach(opt => {
-                        const actionId = `${roleId}_${opt.title}`;
-                        const isChosen = pa.actions.some(a => a.title === opt.title);
-                        
-                        nodes.push({
-                            data: { id: actionId, label: opt.title },
-                            classes: isChosen ? 'action chosen' : 'action unchosen'
-                        });
-                        
-                        edges.push({
-                            data: { source: roleId, target: actionId },
-                            classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge'
-                        });
-                    });
-                }
+        if (pa.availableOptions) {
+          pa.availableOptions.forEach((opt) => {
+            const actionId = `${roleId}_${opt.title}`;
+            const isChosen = pa.actions.some((a) => a.title === opt.title);
+
+            nodes.push({
+              data: { id: actionId, label: opt.title },
+              classes: isChosen ? 'action chosen' : 'action unchosen',
             });
-            lastEventId = eventId;
-        });
 
-        return [...nodes, ...edges];
-    }, [eventLog]);
-
-    const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
-    const currentRoundElements = useMemo(() => {
-        if (!lastLogEntry || !lastLogEntry.event) return [];
-        return elements.filter(el => {
-            const id = el.data.id;
-            if (!id) return false;
-            return id.includes(`_${lastLogEntry.round}`) || id === `event_${lastLogEntry.round}`;
-        });
-    }, [elements, lastLogEntry]);
-
-    useEffect(() => {
-        if (cyRef.current && currentRoundElements.length > 0) {
-            const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
-            layout.run();
+            edges.push({
+              data: { source: roleId, target: actionId },
+              classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge',
+            });
+          });
         }
-    }, [currentRoundElements]);
+      });
+      lastEventId = eventId;
+    });
 
-    const stylesheet: cytoscape.Stylesheet[] = [
-        { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'color': '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'shape': 'round-rectangle', 'width': '130px', 'height': 'auto', 'padding': '10px', 'background-opacity': 1 } as any },
-        { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', 'color': 'white' } },
-        { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
-        { selector: '.action', style: { 'font-size': '9px', 'width': '100px', 'height': 'auto', 'padding': '8px' } as any },
-        { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
-        { selector: '.unchosen', style: { 'background-color': '#4b5563', 'opacity': 0.7 } },
-        { selector: 'edge', style: { 'width': 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
-        { selector: '.event-edge', style: { 'line-color': '#4b5563' , 'target-arrow-color': '#4b5563'} },
-        { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', 'width': 3, 'z-index': 99 } },
-        { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', 'opacity': 0.6 } }
-    ];
-    
-    if (elements.length === 0) {
-        return (
-            <div className="bg-gray-800 rounded-lg p-6 mt-6">
-                <h3 className="text-lg font-bold text-blue-300 mb-2">Round Action Tree</h3>
-                <p className="text-gray-400 text-sm">The action tree for the first round will appear here after it concludes.</p>
-            </div>
-        );
+    return [...nodes, ...edges];
+  }, [eventLog]);
+
+  const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
+  const currentRoundElements = useMemo(() => {
+    if (!lastLogEntry || !lastLogEntry.event) return [];
+    return elements.filter((el) => {
+      const id = el.data.id;
+      if (!id) return false;
+      return id.includes(`_${lastLogEntry.round}`) || id === `event_${lastLogEntry.round}`;
+    });
+  }, [elements, lastLogEntry]);
+
+  useEffect(() => {
+    if (cyRef.current && currentRoundElements.length > 0) {
+      const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
+      layout.run();
     }
+  }, [currentRoundElements]);
 
-    const handleResetView = () => {
-        if (cyRef.current) {
-            cyRef.current.fit();
-            cyRef.current.center();
-        }
-    };
+  const stylesheet: cytoscape.Stylesheet[] = [
+    { selector: 'node', style: { label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center', color: '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', shape: 'round-rectangle', width: '130px', height: 'auto', padding: '10px', 'background-opacity': 1 } as any },
+    { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', color: 'white' } },
+    { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
+    { selector: '.action', style: { 'font-size': '9px', width: '100px', height: 'auto', padding: '8px' } as any },
+    { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
+    { selector: '.unchosen', style: { 'background-color': '#4b5563', opacity: 0.7 } },
+    { selector: 'edge', style: { width: 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
+    { selector: '.event-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563' } },
+    { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', width: 3, 'z-index': 99 } },
+    { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', opacity: 0.6 } },
+  ];
 
+  if (elements.length === 0) {
     return (
-        <>
-            <ActionTreeModal 
-                isOpen={isExpanded} 
-                onClose={() => setIsExpanded(false)}
-                logEntry={lastLogEntry}
-                stylesheet={stylesheet}
-                elements={elements}
-            />
-            <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
-                <div className="flex justify-center items-center mb-2 relative">
-                    <h3 className="text-lg font-bold text-blue-300">Round {lastLogEntry?.round} Action Tree</h3>
-                    <div className="absolute right-0 top-0 flex space-x-2">
-                        <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
-                            Reset
-                        </button>
-                        <button onClick={() => setIsExpanded(true)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold p-1 rounded-md">
-                            <ExpandIcon className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
-                <CytoscapeComponent 
-                    elements={currentRoundElements} 
-                    stylesheet={stylesheet} 
-                    layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
-                    style={{ width: '100%', height: 'calc(100% - 40px)' }} 
-                    cy={(cy) => { 
-                        cyRef.current = cy;
-                        cy.maxZoom(1.5); 
-                        cy.minZoom(0.3); 
-                    }}
-                />
-            </div>
-        </>
+      <div className="bg-gray-800 rounded-lg p-6 mt-6">
+        <h3 className="text-lg font-bold text-blue-300 mb-2">Round Action Tree</h3>
+        <p className="text-gray-400 text-sm">The action tree for the first round will appear here after it concludes.</p>
+      </div>
     );
+  }
+
+  const handleResetView = () => {
+    if (cyRef.current) {
+      cyRef.current.fit();
+      cyRef.current.center();
+    }
+  };
+
+  return (
+    <>
+      <ActionTreeModal isOpen={isExpanded} onClose={() => setIsExpanded(false)} logEntry={lastLogEntry} stylesheet={stylesheet} elements={elements} />
+      <div className="bg-gray-800 rounded-lg p-4 mt-6 h-[50vh]">
+        <div className="flex justify-center items-center mb-2 relative">
+          <h3 className="text-lg font-bold text-blue-300">Round {lastLogEntry?.round} Action Tree</h3>
+          <div className="absolute right-0 top-0 flex space-x-2">
+            <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
+              Reset
+            </button>
+            <button onClick={() => setIsExpanded(true)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold p-1 rounded-md">
+              <ExpandIcon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <CytoscapeComponent
+          elements={currentRoundElements}
+          stylesheet={stylesheet}
+          layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
+          style={{ width: '100%', height: 'calc(100% - 40px)' }}
+          cy={(cy) => {
+            cyRef.current = cy;
+            cy.maxZoom(1.5);
+            cy.minZoom(0.3);
+          }}
+        />
+      </div>
+    </>
+  );
 };
 
 const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = ({ player, eventLog }) => {
@@ -220,7 +250,7 @@ const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = 
       <div className="bg-gray-800 rounded-lg p-6">
         <div className="flex items-center mb-4">
           <div className="bg-gray-700 p-3 rounded-md mr-4">
-            {player.role.icon({ className: "h-10 w-10 text-blue-400" })}
+            {player.role.icon({ className: 'h-10 w-10 text-blue-400' })}
           </div>
           <div>
             <h2 className="text-2xl font-bold">{player.role.name}</h2>
@@ -228,15 +258,39 @@ const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = 
           </div>
         </div>
         <div className="space-y-4 text-sm">
-          <p><strong className="text-blue-300">Public Objective:</strong> {player.role.publicObjective}</p>
+          <p>
+            <strong className="text-blue-300">Public Objective:</strong> {player.role.publicObjective}
+          </p>
           <div className="bg-gray-900 p-3 rounded-md border border-gray-700">
-              <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowHidden(!showHidden)}>
-                  <strong className="text-amber-300">Hidden Objective</strong>
-                  {showHidden ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
-              </div>
-              {showHidden && <p className="mt-2 text-amber-200 italic">{player.role.hiddenObjective}</p>}
+            <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowHidden(!showHidden)}>
+              <strong className="text-amber-300">Hidden Objective</strong>
+              {showHidden ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
+            </div>
+            {showHidden && <p className="mt-2 text-amber-200 italic">{player.role.hiddenObjective}</p>}
           </div>
-          <p><strong className="text-blue-300">Personal Score:</strong> {player.hiddenScore}</p>
+          {player.role.resources.length > 0 && (
+            <div>
+              <strong className="text-blue-300">Resources:</strong>
+              <ul className="mt-1 text-gray-300 list-disc list-inside space-y-1">
+                {player.role.resources.map((resource) => (
+                  <li key={resource}>{resource}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {player.role.constraints.length > 0 && (
+            <div>
+              <strong className="text-blue-300">Constraints:</strong>
+              <ul className="mt-1 text-gray-300 list-disc list-inside space-y-1">
+                {player.role.constraints.map((constraint) => (
+                  <li key={constraint}>{constraint}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p>
+            <strong className="text-blue-300">Personal Score:</strong> {player.hiddenScore}
+          </p>
         </div>
       </div>
       <CombinedActionTree eventLog={eventLog} />
@@ -244,238 +298,297 @@ const PlayerInfoPanel: React.FC<{ player: Player; eventLog: GameLogEntry[] }> = 
   );
 };
 
-const GameStatusPanel: React.FC<{ 
-    gameState: GameState; 
-    timer: number; 
-    isPaused: boolean;
-    onPauseClick: () => void;
-}> = ({ gameState, timer, isPaused, onPauseClick }) => (
+const GameStatusPanel: React.FC<{
+  gameState: GameState;
+  timer: number;
+  isPaused: boolean;
+  onPauseClick: () => void;
+}> = ({ gameState, timer, isPaused, onPauseClick }) => {
+  const metricValue = gameState.coreMetric.value;
+  const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
+  return (
     <div className="bg-gray-800 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-        <div className='w-full md:w-1/3 text-center md:text-left'><span className="font-bold text-xl">Round:</span> <span className="text-2xl text-blue-400">{gameState.round} / {GAME_CONFIG.MAX_ROUNDS}</span></div>
-        <div className="text-center w-full md:w-1/3">
-            <div className="font-bold text-xl">Democratic Legitimacy</div>
-            <div className={`text-4xl font-bold ${gameState.publicScore > 60 ? 'text-green-400' : gameState.publicScore > 30 ? 'text-yellow-400' : 'text-red-400'}`}>{gameState.publicScore}%</div>
+      <div className="w-full md:w-1/3 text-center md:text-left">
+        <span className="font-bold text-xl">Round:</span>{' '}
+        <span className="text-2xl text-blue-400">
+          {gameState.round} / {GAME_CONFIG.MAX_ROUNDS}
+        </span>
+      </div>
+      <div className="text-center w-full md:w-1/3">
+        <div className="font-bold text-xl">{gameState.coreMetric.name}</div>
+        <div className={`text-4xl font-bold ${metricClass}`}>{metricValue}%</div>
+      </div>
+      <div className="w-full md:w-1/3 text-center md:text-right flex items-center justify-center md:justify-end space-x-4">
+        <div>
+          <span className="font-bold text-xl">{isPaused ? 'Paused' : 'Time Left:'}</span>
+          {!isPaused && (
+            <span className={`text-2xl text-blue-400 ml-2 font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : ''}`}>
+              {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+            </span>
+          )}
         </div>
-        <div className='w-full md:w-1/3 text-center md:text-right flex items-center justify-center md:justify-end space-x-4'>
-            <div>
-                <span className="font-bold text-xl">{isPaused ? 'Paused' : 'Time Left:'}</span>
-                {!isPaused && <span className={`text-2xl text-blue-400 ml-2 font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : ''}`}>{Math.floor(timer/60)}:{(timer % 60).toString().padStart(2, '0')}</span>}
-            </div>
-            {gameState.phase === GamePhase.ACTION && (
-                <button onClick={onPauseClick} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors" aria-label={isPaused ? "Resume game" : "Pause game"}>
-                    {isPaused ? <PlayIcon className="h-6 w-6 text-white" /> : <PauseIcon className="h-6 w-6 text-white" />}
-                </button>
-            )}
-        </div>
+        {gameState.phase === GamePhase.ACTION && (
+          <button
+            onClick={onPauseClick}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+            aria-label={isPaused ? 'Resume game' : 'Pause game'}
+          >
+            {isPaused ? <PlayIcon className="h-6 w-6 text-white" /> : <PauseIcon className="h-6 w-6 text-white" />}
+          </button>
+        )}
+      </div>
     </div>
-);
-
-const EventLog: React.FC<{ gameState: GameState }> = ({ gameState }) => (
-    <div className="bg-gray-800 rounded-lg p-6 space-y-6 max-h-[50vh] overflow-y-auto">
-        {gameState.eventLog.slice().reverse().map((log) => (
-            <div key={log.round} className="border-b border-gray-700 pb-4 last:border-b-0 animate-fade-in">
-                {log.round > 0 ? (
-                    <>
-                        <h3 className="text-xl font-bold text-blue-400 mb-2">Round {log.round} Outcome</h3>
-                         <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
-                            <span>
-                                Democratic Legitimacy: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
-                                <span className={`ml-2 font-bold score-change-animate ${log.publicScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    ({log.publicScoreChange >= 0 ? '+' : ''}{log.publicScoreChange})
-                                </span>
-                            </span>
-                            { log.geminiCalls > 0 && 
-                                <span>
-                                    AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
-                                </span>
-                            }
-                        </div>
-                        <div className="bg-gray-900/50 p-3 rounded-md my-2 border border-gray-700">
-                           <p className="font-bold text-red-400">{log.event?.headline}</p>
-                           <p className="text-gray-300 text-sm mt-1">{log.event?.detail}</p>
-                        </div>
-                    </>
-                ) : (
-                   <>
-                        <h3 className="text-xl font-bold text-blue-400 mb-2">Opening Scenario</h3>
-                         <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
-                            <span>
-                                Democratic Legitimacy: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
-                            </span>
-                            { log.geminiCalls > 0 && 
-                                <span>
-                                    AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
-                                </span>
-                            }
-                        </div>
-                   </>
-                )}
-                
-                {log.playerActions && log.playerActions.length > 0 && (
-                    <div className="mt-4">
-                        <h4 className="font-bold text-lg text-gray-300 mb-2">Actions &amp; Outcomes:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {log.playerActions.map(playerAction => {
-                                const role = ROLES[playerAction.roleName];
-                                const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
-                                if (!role) return null;
-                                return (
-                                    <div key={playerAction.roleName} className="bg-gray-900/70 p-3 rounded-md border border-gray-700 flex flex-col">
-                                        <div className="flex items-center mb-2">
-                                            {role.icon({ className: "h-6 w-6 mr-3 text-blue-400" })}
-                                            <span className="font-bold text-white">{playerAction.roleName}</span>
-                                        </div>
-                                        <ul className="space-y-1 text-sm text-gray-400 flex-grow mb-3">
-                                            {playerAction.actions.length > 0 ? (
-                                                playerAction.actions.map((action, i) => (
-                                                    <li key={i} className="flex justify-between items-start">
-                                                        <span className='mr-2'>- {action.title}</span>
-                                                        <span className="flex-shrink-0 text-xs font-mono bg-gray-700 text-blue-300 px-1.5 py-0.5 rounded">
-                                                            {action.cost} AP
-                                                        </span>
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <li><em>No action taken.</em></li>
-                                            )}
-                                        </ul>
-                                        {scoreChange && (
-                                            <div className="mt-auto pt-3 border-t border-gray-700/50">
-                                                {playerAction.isHuman ? (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-bold text-gray-300">Personal Score:</span>
-                                                        <span className={`font-bold text-lg score-change-animate ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {scoreChange.update >= 0 ? '+' : ''}{scoreChange.update}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-bold text-gray-300">Personal Score:</span>
-                                                        <span className={`font-bold italic ${scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                                            {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <p className="text-xs text-amber-300/80 italic mt-1">
-                                                    <span className="font-bold">Justification:</span> {scoreChange.justification}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-                <p className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap"><strong>Narrative:</strong> {log.narrative}</p>
-            </div>
-        ))}
-    </div>
-);
-
-
-const ActionSelection: React.FC<{
-    options: ActionOption[],
-    onConfirm: (actions: ActionOption[]) => void,
-    isLoading: boolean,
-    hasSubmitted: boolean,
-    isPaused: boolean,
-    players: Player[],
-    aiCompletionStatus: Record<string, boolean>
-}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused, players, aiCompletionStatus }) => {
-    const [selected, setSelected] = useState<ActionOption[]>([]);
-    const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
-    const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
-    const aiPlayers = useMemo(() => players.filter(p => !p.isHuman), [players]);
-    const allAIsDone = useMemo(() => aiPlayers.every(p => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
-
-    const toggleAction = (option: ActionOption) => {
-        if(hasSubmitted || isPaused) return;
-        const isSelected = selected.some(s => s.title === option.title);
-        if (isSelected) {
-            setSelected(selected.filter(s => s.title !== option.title));
-        } else {
-            if (pointsRemaining >= option.cost) {
-                setSelected([...selected, option]);
-            }
-        }
-    };
-    
-    if (hasSubmitted) {
-        return (
-            <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
-                <h3 className="text-xl font-bold mb-4">
-                    {allAIsDone ? "Generating next scenario..." : "Waiting for Opponents..."}
-                </h3>
-                {!allAIsDone && (
-                    <div className="space-y-3 text-left">
-                        {aiPlayers.map(player => {
-                            const isComplete = aiCompletionStatus[player.role.name];
-                            return (
-                                <div key={player.id} className={`flex items-center p-3 rounded-lg transition-all duration-300 ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
-                                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
-                                    <span className={`${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
-                 {allAIsDone && <LoadingSpinner />}
-            </div>
-        );
-    }
-    
-    return (
-        <div className="bg-gray-800 rounded-lg p-6 sticky top-6 relative">
-             {isPaused && (
-                <div className="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
-                    <PauseIcon className="h-12 w-12 text-blue-400 mb-4" />
-                    <h3 className="text-xl font-bold">Game Paused</h3>
-                </div>
-            )}
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Your Actions</h3>
-                <div className="text-right">
-                    <div className="font-bold text-lg text-blue-400">{pointsRemaining}</div>
-                    <div className="text-sm text-gray-400">Points Left</div>
-                </div>
-            </div>
-            {isLoading && !options.length ? <div className="flex justify-center items-center h-48"><LoadingSpinner/></div> :
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                {options.map((opt) => {
-                    const isSelected = selected.some(s => s.title === opt.title);
-                    const canSelect = pointsRemaining >= opt.cost;
-                    return (
-                        <div key={opt.title} onClick={() => toggleAction(opt)}
-                            className={`p-3 rounded-md border-2 transition-all cursor-pointer 
-                                ${isSelected ? 'border-blue-500 bg-blue-900/50' : (!canSelect && !isSelected) ? 'border-gray-700 bg-gray-800 opacity-60 cursor-not-allowed' : 'border-gray-700 hover:border-blue-400 bg-gray-900/50'}`}>
-                            <div className="flex justify-between font-bold">
-                                <span>{opt.title}</span>
-                                <span className="text-blue-300">Cost: {opt.cost}</span>
-                            </div>
-                            <p className="text-sm text-gray-400 mt-1">{opt.description}</p>
-                        </div>
-                    );
-                })}
-            </div>
-            }
-            <button onClick={() => onConfirm(selected)} disabled={isLoading || selected.length === 0 || isPaused}
-                className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed">
-                Confirm Actions
-            </button>
-        </div>
-    );
+  );
 };
 
+const EventLog: React.FC<{ gameState: GameState; players: Player[] }> = ({ gameState, players }) => {
+  const metricName = gameState.coreMetric.name;
+  return (
+    <div className="bg-gray-800 rounded-lg p-6 space-y-6 max-h-[50vh] overflow-y-auto">
+      {gameState.eventLog
+        .slice()
+        .reverse()
+        .map((log) => (
+          <div key={log.round} className="border-b border-gray-700 pb-4 last:border-b-0 animate-fade-in">
+            {log.round > 0 ? (
+              <>
+                <h3 className="text-xl font-bold text-blue-400 mb-2">Round {log.round} Outcome</h3>
+                <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
+                  <span>
+                    {metricName}: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
+                    <span className={`ml-2 font-bold score-change-animate ${log.publicScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ({log.publicScoreChange >= 0 ? '+' : ''}
+                      {log.publicScoreChange})
+                    </span>
+                  </span>
+                  {log.geminiCalls > 0 && (
+                    <span>
+                      AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
+                    </span>
+                  )}
+                </div>
+                <div className="bg-gray-900/50 p-3 rounded-md my-2 border border-gray-700">
+                  <p className="font-bold text-red-400">{log.event?.headline}</p>
+                  <p className="text-gray-300 text-sm mt-1">{log.event?.detail}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-blue-400 mb-2">Opening Scenario</h3>
+                <div className="flex justify-between items-center text-sm text-gray-400 mb-2 border-b border-t border-gray-700 py-2">
+                  <span>
+                    {metricName}: <strong className="text-lg text-white">{log.publicScoreAfter}%</strong>
+                  </span>
+                  {log.geminiCalls > 0 && (
+                    <span>
+                      AI Calls: <strong className="text-lg text-white">{log.geminiCalls}</strong>
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
 
-// --- MAIN APP COMPONENT ---
+            {log.playerActions && log.playerActions.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-bold text-lg text-gray-300 mb-2">Actions &amp; Outcomes:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {log.playerActions.map((playerAction) => {
+                    const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
+                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
+                    const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
+                    return (
+                      <div key={`${playerAction.roleName}_${log.round}`} className="bg-gray-900/70 p-3 rounded-md border border-gray-700 flex flex-col">
+                        <div className="flex items-center mb-2">
+                          {roleIcon({ className: 'h-6 w-6 mr-3 text-blue-400' })}
+                          <span className="font-bold text-white">{playerAction.roleName}</span>
+                        </div>
+                        <ul className="space-y-1 text-sm text-gray-400 flex-grow mb-3">
+                          {playerAction.actions.length > 0 ? (
+                            playerAction.actions.map((action, index) => (
+                              <li key={index} className="flex justify-between items-start">
+                                <span className="mr-2">- {action.title}</span>
+                                <span className="flex-shrink-0 text-xs font-mono bg-gray-700 text-blue-300 px-1.5 py-0.5 rounded">{action.cost} AP</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <em>No action taken.</em>
+                            </li>
+                          )}
+                        </ul>
+                        {scoreChange && (
+                          <div className="mt-auto pt-3 border-t border-gray-700/50">
+                            {playerAction.isHuman ? (
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="font-bold text-gray-300">Personal Score:</span>
+                                <span className={`font-bold text-lg score-change-animate ${scoreChange.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  {scoreChange.update >= 0 ? '+' : ''}
+                                  {scoreChange.update}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="font-bold text-gray-300">Personal Score:</span>
+                                <span
+                                  className={`font-bold italic ${
+                                    scoreChange.update > 0 ? 'text-green-400' : scoreChange.update < 0 ? 'text-red-400' : 'text-gray-400'
+                                  }`}
+                                >
+                                  {scoreChange.update !== 0 ? 'Changed' : 'No Change'}
+                                </span>
+                              </div>
+                            )}
+                            <p className="text-xs text-amber-300/80 italic mt-1">
+                              <span className="font-bold">Justification:</span> {scoreChange.justification}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <p className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap">
+              <strong>Narrative:</strong> {log.narrative}
+            </p>
+          </div>
+        ))}
+    </div>
+  );
+};
+
+const ActionSelection: React.FC<{
+  options: ActionOption[];
+  onConfirm: (actions: ActionOption[]) => void;
+  isLoading: boolean;
+  hasSubmitted: boolean;
+  isPaused: boolean;
+  players: Player[];
+  aiCompletionStatus: Record<string, boolean>;
+}> = ({ options, onConfirm, isLoading, hasSubmitted, isPaused, players, aiCompletionStatus }) => {
+  const [selected, setSelected] = useState<ActionOption[]>([]);
+  const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
+  const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
+  const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
+  const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+
+  const toggleAction = (option: ActionOption) => {
+    if (hasSubmitted || isPaused) return;
+    const isSelected = selected.some((s) => s.title === option.title);
+    if (isSelected) {
+      setSelected(selected.filter((s) => s.title !== option.title));
+    } else if (pointsRemaining >= option.cost) {
+      setSelected([...selected, option]);
+    }
+  };
+
+  if (hasSubmitted) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
+        <h3 className="text-xl font-bold mb-4">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
+        {!allAIsDone && (
+          <div className="space-y-3 text-left">
+            {aiPlayers.map((player) => {
+              const isComplete = aiCompletionStatus[player.role.name];
+              return (
+                <div
+                  key={player.id}
+                  className={`flex items-center p-3 rounded-lg transition-all duration-300 ${
+                    isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
+                  }`}
+                >
+                  {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
+                  <span className={isComplete ? 'text-gray-300' : 'text-gray-400'}>{player.role.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {allAIsDone && <LoadingSpinner />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6 sticky top-6 relative">
+      {isPaused && (
+        <div className="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+          <PauseIcon className="h-12 w-12 text-blue-400 mb-4" />
+          <h3 className="text-xl font-bold">Game Paused</h3>
+        </div>
+      )}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Your Actions</h3>
+        <div className="text-right">
+          <div className="font-bold text-lg text-blue-400">{pointsRemaining}</div>
+          <div className="text-sm text-gray-400">Points Left</div>
+        </div>
+      </div>
+      {isLoading && !options.length ? (
+        <div className="flex justify-center items-center h-48">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+          {options.map((opt) => {
+            const isSelected = selected.some((s) => s.title === opt.title);
+            const canSelect = pointsRemaining >= opt.cost;
+            return (
+              <div
+                key={opt.title}
+                onClick={() => toggleAction(opt)}
+                className={`p-3 rounded-md border-2 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-900/50'
+                    : !canSelect && !isSelected
+                    ? 'border-gray-700 bg-gray-800 opacity-60 cursor-not-allowed'
+                    : 'border-gray-700 hover:border-blue-400 bg-gray-900/50'
+                }`}
+              >
+                <div className="flex justify-between font-bold">
+                  <span>{opt.title}</span>
+                  <span className="text-blue-300">Cost: {opt.cost}</span>
+                </div>
+                <p className="text-sm text-gray-400 mt-1">{opt.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <button
+        onClick={() => onConfirm(selected)}
+        disabled={isLoading || selected.length === 0 || isPaused}
+        className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
+      >
+        Confirm Actions
+      </button>
+    </div>
+  );
+};
+
+const DEFAULT_CORE_METRIC: CoreMetric = {
+  name: 'Democratic Legitimacy',
+  description: "The public's trust in the democratic process.",
+  value: 100,
+};
+
+const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>({
-    phase: GamePhase.LOBBY, round: 0, publicScore: 100, eventLog: [], currentEvent: null,
+    phase: GamePhase.LOBBY,
+    round: 0,
+    coreMetric: { ...DEFAULT_CORE_METRIC },
+    eventLog: [],
+    currentEvent: null,
   });
   const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedRoleName, setSelectedRoleName] = useState<RoleName | null>(null);
+  const [selectedRoleName, setSelectedRoleName] = useState<string | null>(null);
+  const [gamePath, setGamePath] = useState<'classic' | 'custom' | 'ai_safety' | null>(null);
+  const [gameSetup, setGameSetup] = useState<GameSetup | null>(null);
+  const [customScenario, setCustomScenario] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -485,10 +598,10 @@ export default function App() {
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
 
-  const humanPlayer = useMemo(() => players.find(p => p.isHuman), [players]);
-  
+  const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
+
   const lastCompletedLogEntry = useMemo(
-    () => gameState.eventLog.find(entry => entry.round === gameState.round - 1) || null,
+    () => gameState.eventLog.find((entry) => entry.round === gameState.round - 1) || null,
     [gameState.eventLog, gameState.round]
   );
 
@@ -497,29 +610,31 @@ export default function App() {
     console.log(`%c[STATE_TRANSITION] Game phase changed to: ${phaseName}`, 'color: #88aaff; font-weight: bold;');
   }, [gameState.phase]);
 
-  const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<RoleName, HiddenScoreUpdate> => {
-      return Object.fromEntries(
-          updates.map(item => [item.roleName, { update: item.update, justification: item.justification }])
-      ) as Record<RoleName, HiddenScoreUpdate>;
+  const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
+    return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
   };
 
-  const callGeminiAndCount = useCallback(async <T extends (...args: any[]) => Promise<any>>(
-    apiFunc: T, ...args: Parameters<T>
-  ): Promise<Awaited<ReturnType<T>> | null> => {
+  const callGeminiAndCount = useCallback(
+    async <T extends (...args: any[]) => Promise<any>>(apiFunc: T, ...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | null> => {
       geminiCallsThisRoundRef.current += 1;
       const result = await apiFunc(...args);
       if (result === null) {
-          setError(`An API call to the AI model failed. Check the console for details.`);
-          return null;
+        setError('An API call to the AI model failed. Check the console for details.');
+        return null;
       }
       return result;
-  }, []);
+    },
+    []
+  );
 
   const resetState = () => {
     console.log('[STATE_TRANSITION] Resetting game state to LOBBY.');
-    setGameState({ phase: GamePhase.LOBBY, round: 0, publicScore: 100, eventLog: [], currentEvent: null });
+    setGameState({ phase: GamePhase.LOBBY, round: 0, coreMetric: { ...DEFAULT_CORE_METRIC }, eventLog: [], currentEvent: null });
     setPlayers([]);
     setSelectedRoleName(null);
+    setGamePath(null);
+    setGameSetup(null);
+    setCustomScenario('');
     setIsLoading(false);
     setError(null);
     setActionOptions([]);
@@ -528,123 +643,149 @@ export default function App() {
     geminiCallsThisRoundRef.current = 0;
   };
 
-  const runConsequencePhase = useCallback(async (currentPlayers: Player[], currentGameState: GameState) => {
-    console.log(`[GAME_LOGIC] Running consequence phase for round ${currentGameState.round}.`);
+  const handleCustomGameStart = async () => {
+    if (!customScenario.trim()) return;
     setIsLoading(true);
+    setLoadingMessage('Generating your custom scenario... This can take a moment.');
+    setError(null);
 
-    let playersWithActions = [...currentPlayers];
-    const aiPlayers = currentPlayers.filter(p => !p.isHuman);
+    const setup = await generateCustomScenario(customScenario);
 
-    const initialStatus = Object.fromEntries(aiPlayers.map(p => [p.role.name, false]));
-    setAiCompletionStatus(initialStatus);
+    if (setup) {
+      setGameSetup(setup);
+    } else {
+      setError('The AI failed to generate a valid game setup. Please try a different scenario description or try again later.');
+    }
+    setIsLoading(false);
+    setLoadingMessage('');
+  };
 
-    setLoadingMessage("AI Game Master is assessing the situation...");
-    const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
+  const runConsequencePhase = useCallback(
+    async (currentPlayers: Player[], currentGameState: GameState) => {
+      console.log(`[GAME_LOGIC] Running consequence phase for round ${currentGameState.round}.`);
+      setIsLoading(true);
 
-    const previousRoundLog = currentGameState.eventLog.find(entry => entry.round === currentGameState.round - 1);
-    const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
+      let playersWithActions = [...currentPlayers];
+      const aiPlayers = currentPlayers.filter((p) => !p.isHuman);
 
-    let aiActionOptionsResults: (Awaited<ReturnType<typeof generateActionOptions>> | null)[] = [];
+      const initialStatus = Object.fromEntries(aiPlayers.map((p) => [p.role.name, false]));
+      setAiCompletionStatus(initialStatus);
 
-    if (aiPlayers.length > 0) {
-        const aiActionOptionsPromises = aiPlayers.map(player =>
-            callGeminiAndCount(generateActionOptions, player, currentGameState, previousRoundActions)
-        );
+      setLoadingMessage('AI Game Master is assessing the situation...');
+      const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
+
+      const previousRoundLog = currentGameState.eventLog.find((entry) => entry.round === currentGameState.round - 1);
+      const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
+
+      let aiActionOptionsResults: (Awaited<ReturnType<typeof generateActionOptions>> | null)[] = [];
+
+      if (aiPlayers.length > 0) {
+        const aiActionOptionsPromises = aiPlayers.map((player) => callGeminiAndCount(generateActionOptions, player, currentGameState, previousRoundActions));
         aiActionOptionsResults = await Promise.all(aiActionOptionsPromises);
 
-        if (aiActionOptionsResults.some(r => r === null)) {
-            setError("Failed to generate action options for AI players. The simulation cannot continue.");
-            setIsLoading(false); setLoadingMessage(''); return;
+        if (aiActionOptionsResults.some((r) => r === null)) {
+          setError('Failed to generate action options for AI players. The simulation cannot continue.');
+          setIsLoading(false);
+          setLoadingMessage('');
+          return;
         }
 
-        setLoadingMessage("AI players are choosing their actions...");
+        setLoadingMessage('AI players are choosing their actions...');
         const aiActionChoicesPromises = aiPlayers.map((player, index) => {
-            const options = aiActionOptionsResults[index]?.options || [];
-            return callGeminiAndCount(generateAIPlayerActions, player, currentGameState, options)
-                .then(result => {
-                    setAiCompletionStatus(prev => ({ ...prev, [player.role.name]: true }));
-                    return result; 
-                });
+          const options = aiActionOptionsResults[index]?.options || [];
+          return callGeminiAndCount(generateAIPlayerActions, player, currentGameState, options).then((result) => {
+            setAiCompletionStatus((prev) => ({ ...prev, [player.role.name]: true }));
+            return result;
+          });
         });
         const aiActionChoicesResults = await Promise.all(aiActionChoicesPromises);
 
-        if (aiActionChoicesResults.some(r => r === null)) {
-            setError("Failed to generate actions for AI players. The simulation cannot continue.");
-            setIsLoading(false); setLoadingMessage(''); return;
+        if (aiActionChoicesResults.some((r) => r === null)) {
+          setError('Failed to generate actions for AI players. The simulation cannot continue.');
+          setIsLoading(false);
+          setLoadingMessage('');
+          return;
         }
 
         const aiActionsByRole: Record<string, ActionOption[]> = {};
         aiPlayers.forEach((player, index) => {
-            aiActionsByRole[player.role.name] = aiActionChoicesResults[index] || [];
+          aiActionsByRole[player.role.name] = aiActionChoicesResults[index] || [];
         });
 
-        playersWithActions = currentPlayers.map(p => {
-            if (!p.isHuman && aiActionsByRole[p.role.name]) {
-                return { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true };
-            }
-            return p;
+        playersWithActions = currentPlayers.map((p) => {
+          if (!p.isHuman && aiActionsByRole[p.role.name]) {
+            return { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true };
+          }
+          return p;
         });
-    }
+      }
 
-    setPlayers(playersWithActions);
-    
-    setLoadingMessage("AI Game Master is processing the consequences...");
-    const counterfactualResult = await counterfactualPromise;
-    if (!counterfactualResult) {
-        setError("The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.");
-        setIsLoading(false); setLoadingMessage(''); return;
-    }
+      setPlayers(playersWithActions);
 
-    const result = await callGeminiAndCount(generateConsequences, currentGameState, playersWithActions, counterfactualResult.publicScoreUpdate);
-    
-    if (result) {
+      setLoadingMessage('AI Game Master is processing the consequences...');
+      const counterfactualResult = await counterfactualPromise;
+      if (!counterfactualResult) {
+        setError('The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.');
+        setIsLoading(false);
+        setLoadingMessage('');
+        return;
+      }
+
+      const result = await callGeminiAndCount(
+        generateConsequences,
+        currentGameState,
+        playersWithActions,
+        counterfactualResult.publicScoreUpdate
+      );
+
+      if (result) {
         const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
 
-        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map(p => {
-            let availableOptions: ActionOption[] = [];
-            if (p.isHuman) {
-                availableOptions = actionOptions;
-            } else {
-                const aiPlayerIndex = aiPlayers.findIndex(ap => ap.id === p.id);
-                if (aiPlayerIndex !== -1 && aiActionOptionsResults[aiPlayerIndex]) {
-                    availableOptions = aiActionOptionsResults[aiPlayerIndex]?.options || [];
-                }
+        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map((p) => {
+          let availableOptions: ActionOption[] = [];
+          if (p.isHuman) {
+            availableOptions = actionOptions;
+          } else {
+            const aiPlayerIndex = aiPlayers.findIndex((ap) => ap.id === p.id);
+            if (aiPlayerIndex !== -1 && aiActionOptionsResults[aiPlayerIndex]) {
+              availableOptions = aiActionOptionsResults[aiPlayerIndex]?.options || [];
             }
-            return {
-                roleName: p.role.name,
-                actions: p.actions,
-                availableOptions,
-                isHuman: p.isHuman,
-            };
+          }
+          return {
+            roleName: p.role.name,
+            actions: p.actions,
+            availableOptions,
+            isHuman: p.isHuman,
+          };
         });
 
-        const newPublicScore = Math.max(0, Math.min(100, currentGameState.publicScore + result.publicScoreUpdate));
+        const newScoreValue = clampScore(currentGameState.coreMetric.value + result.publicScoreUpdate);
 
         const newGameState: GameState = {
-            ...currentGameState,
-            phase: GamePhase.ACTION,
-            round: currentGameState.round + 1,
-            publicScore: newPublicScore,
-            eventLog: [
-                ...currentGameState.eventLog, 
-                { 
-                    round: currentGameState.round, 
-                    narrative: result.narrative, 
-                    event: currentGameState.currentEvent,
-                    playerActions: playerActionsForLog,
-                    publicScoreChange: result.publicScoreUpdate,
-                    publicScoreAfter: newPublicScore,
-                    hiddenScoreChanges: hiddenScoreUpdatesRecord,
-                    geminiCalls: geminiCallsThisRoundRef.current,
-                }
-            ],
-            currentEvent: result.nextEvent
+          ...currentGameState,
+          phase: GamePhase.ACTION,
+          round: currentGameState.round + 1,
+          coreMetric: { ...currentGameState.coreMetric, value: newScoreValue },
+          eventLog: [
+            ...currentGameState.eventLog,
+            {
+              round: currentGameState.round,
+              narrative: result.narrative,
+              event: currentGameState.currentEvent,
+              playerActions: playerActionsForLog,
+              publicScoreChange: result.publicScoreUpdate,
+              publicScoreAfter: newScoreValue,
+              hiddenScoreChanges: hiddenScoreUpdatesRecord,
+              geminiCalls: geminiCallsThisRoundRef.current,
+            },
+          ],
+          currentEvent: result.nextEvent,
         };
-        const newPlayers = playersWithActions.map(p => ({
-            ...p,
-            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-            actions: [],
-            hasSubmittedActions: false,
+        const newPlayers = playersWithActions.map((p) => ({
+          ...p,
+          hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
+          actions: [],
+          hasSubmittedActions: false,
         }));
 
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
@@ -654,27 +795,78 @@ export default function App() {
         setIsLoading(false);
         setLoadingMessage('');
         setAiCompletionStatus({});
-    } else {
-        setError("The AI Game Master failed to provide a consequence. The simulation cannot continue.");
+        geminiCallsThisRoundRef.current = 0;
+      } else {
+        setError('The AI Game Master failed to provide a consequence. The simulation cannot continue.');
         setIsLoading(false);
         setLoadingMessage('');
-    }
-  }, [callGeminiAndCount, actionOptions]);
+      }
+    },
+    [actionOptions, callGeminiAndCount]
+  );
 
-  const handleConfirmActions = useCallback((actions: ActionOption[]) => {
-      if(!humanPlayer) return;
+  const handleConfirmActions = useCallback(
+    (actions: ActionOption[]) => {
+      if (!humanPlayer) return;
       console.log(`[PLAYER_ACTION] Human player confirmed ${actions.length} action(s).`);
-      const updatedPlayer = {...humanPlayer, actions, hasSubmittedActions: true};
-      const updatedPlayers = players.map(p => p.isHuman ? updatedPlayer : p);
+      const updatedPlayer = { ...humanPlayer, actions, hasSubmittedActions: true };
+      const updatedPlayers = players.map((p) => (p.isHuman ? updatedPlayer : p));
       setPlayers(updatedPlayers);
       runConsequencePhase(updatedPlayers, gameState);
-  }, [humanPlayer, players, runConsequencePhase, gameState]);
+    },
+    [gameState, humanPlayer, players, runConsequencePhase]
+  );
+
+  const buildRolesFromSetup = (setup: GameSetup): RoleData[] =>
+    setup.stakeholders.map((stakeholder) => ({
+      name: stakeholder.name,
+      publicObjective: stakeholder.publicObjective,
+      hiddenObjective: stakeholder.hiddenObjective,
+      resources: stakeholder.resources ?? [],
+      constraints: stakeholder.constraints ?? [],
+      icon: (props) => <BeakerIcon {...props} />,
+    }));
 
   const handleStartGame = () => {
     if (!selectedRoleName) return;
-    console.log('[STATE_TRANSITION] Starting game, moving to STARTING phase.');
-    const allRoles = Object.values(ROLES);
-    const initialPlayers: Player[] = allRoles.map((role, index) => ({
+    const path = gamePath ?? 'classic';
+    console.log(`[STATE_TRANSITION] Starting ${path} game, moving to STARTING phase.`);
+
+    let roles: RoleData[] = [];
+    let coreMetric: CoreMetric = { ...DEFAULT_CORE_METRIC };
+
+    if (path === 'custom') {
+      if (!gameSetup) {
+        setError('Cannot start game without a generated scenario.');
+        return;
+      }
+      roles = buildRolesFromSetup(gameSetup);
+      const initial = Number.isFinite(gameSetup.coreMetric.initialValue)
+        ? clampScore(gameSetup.coreMetric.initialValue)
+        : 75;
+      coreMetric = {
+        name: gameSetup.coreMetric.name,
+        description: gameSetup.coreMetric.description,
+        value: initial,
+      };
+    } else if (path === 'ai_safety') {
+      roles = AI_SAFETY_SCENARIO.stakeholders.map((stakeholder, index) => ({
+        ...stakeholder,
+        resources: stakeholder.resources ?? [],
+        constraints: stakeholder.constraints ?? [],
+        icon: (props) => <BeakerIcon key={`${stakeholder.name}_${index}`} {...props} />,
+      }));
+      coreMetric = {
+        name: AI_SAFETY_SCENARIO.coreMetric.name,
+        description: AI_SAFETY_SCENARIO.coreMetric.description,
+        value: clampScore(AI_SAFETY_SCENARIO.coreMetric.initialValue),
+      };
+    } else {
+      roles = Object.values(ROLES);
+      coreMetric = { ...DEFAULT_CORE_METRIC };
+    }
+
+    const initialPlayers: Player[] = roles.map((role, index) => ({
       id: role.name === selectedRoleName ? 'human_player' : `ai_${index}`,
       role,
       isHuman: role.name === selectedRoleName,
@@ -682,90 +874,165 @@ export default function App() {
       actions: [],
       hasSubmittedActions: false,
     }));
+
     setPlayers(initialPlayers);
-    setGameState(prev => ({ ...prev, phase: GamePhase.STARTING }));
+    setGameState((prev) => ({
+      ...prev,
+      phase: GamePhase.STARTING,
+      coreMetric,
+      eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog,
+      round: prev.phase === GamePhase.LOBBY ? 0 : prev.round,
+      currentEvent: null,
+    }));
     setIsLoading(true);
-    setLoadingMessage("AI Game Master is generating the initial scenario...");
+    setLoadingMessage('AI Game Master is generating the initial scenario...');
   };
-  
+
   useEffect(() => {
     if (gameState.phase !== GamePhase.STARTING) return;
 
-    const initializeScenario = async () => {
-        console.log('[GAME_LOGIC] Initializing scenario...');
-        geminiCallsThisRoundRef.current = 0;
-        const result = await callGeminiAndCount(generateInitialScenario);
-        if (result) {
-            const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-            const newPublicScore = Math.max(0, Math.min(100, gameState.publicScore + result.publicScoreUpdate));
-            const initialGameState: GameState = {
-                ...gameState,
-                phase: GamePhase.ACTION,
-                round: 1,
-                publicScore: newPublicScore,
-                currentEvent: result.nextEvent,
-                eventLog: [{
-                    round: 0,
-                    narrative: result.narrative,
-                    event: null,
-                    playerActions: [],
-                    publicScoreChange: result.publicScoreUpdate,
-                    publicScoreAfter: newPublicScore,
-                    hiddenScoreChanges: hiddenScoreUpdatesRecord,
-                    geminiCalls: geminiCallsThisRoundRef.current,
-                }]
-            };
-            setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-            setGameState(initialGameState);
-            setIsLoading(false);
-            setLoadingMessage('');
-        } else {
-            setError("The AI Game Master failed to initialize the game. Please refresh and try again.");
-            setGameState(prev => ({ ...prev, phase: GamePhase.LOBBY }));
-            setIsLoading(false);
-            setLoadingMessage('');
-        }
+    const initializeClassicScenario = async () => {
+      console.log('[GAME_LOGIC] Initializing classic scenario...');
+      geminiCallsThisRoundRef.current = 0;
+      const result = await callGeminiAndCount(generateInitialScenario);
+      if (result) {
+        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
+        const newScoreValue = clampScore(gameState.coreMetric.value + result.publicScoreUpdate);
+        const initialGameState: GameState = {
+          ...gameState,
+          phase: GamePhase.ACTION,
+          round: 1,
+          coreMetric: { ...gameState.coreMetric, value: newScoreValue },
+          currentEvent: result.nextEvent,
+          eventLog: [
+            {
+              round: 0,
+              narrative: result.narrative,
+              event: null,
+              playerActions: [],
+              publicScoreChange: result.publicScoreUpdate,
+              publicScoreAfter: newScoreValue,
+              hiddenScoreChanges: hiddenScoreUpdatesRecord,
+              geminiCalls: geminiCallsThisRoundRef.current,
+            },
+          ],
+        };
+        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
+        setGameState(initialGameState);
+        setIsLoading(false);
+        setLoadingMessage('');
+      } else {
+        setError('The AI Game Master failed to initialize the game. Please refresh and try again.');
+        setGameState((prev) => ({ ...prev, phase: GamePhase.LOBBY }));
+        setIsLoading(false);
+        setLoadingMessage('');
+      }
     };
-    
-    initializeScenario();
-  }, [gameState.phase, callGeminiAndCount, gameState.publicScore]);
+
+    const initializePresetScenario = (setup: GameSetup) => {
+      console.log(`[GAME_LOGIC] Initializing ${gamePath} scenario...`);
+      geminiCallsThisRoundRef.current = 0;
+      const initialGameState: GameState = {
+        ...gameState,
+        phase: GamePhase.ACTION,
+        round: 1,
+        currentEvent: {
+          headline: setup.scenarioTitle,
+          detail: setup.scenarioDescription,
+        },
+        eventLog: [
+          {
+            round: 0,
+            narrative: setup.scenarioDescription,
+            event: null,
+            playerActions: [],
+            publicScoreChange: 0,
+            publicScoreAfter: gameState.coreMetric.value,
+            hiddenScoreChanges: {},
+            geminiCalls: 0,
+          },
+        ],
+      };
+      setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
+      setGameState(initialGameState);
+      setIsLoading(false);
+      setLoadingMessage('');
+    };
+
+    if (gamePath === 'classic' || !gamePath) {
+      initializeClassicScenario();
+    } else {
+      const setup = gamePath === 'ai_safety' ? AI_SAFETY_SCENARIO : gameSetup;
+      if (!setup) {
+        setError('Cannot start game without a valid game setup.');
+        setGameState((prev) => ({ ...prev, phase: GamePhase.LOBBY }));
+        setIsLoading(false);
+        setLoadingMessage('');
+        return;
+      }
+      initializePresetScenario(setup);
+    }
+  }, [callGeminiAndCount, gamePath, gameSetup, gameState]);
 
   useEffect(() => {
-    if (gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0 && !isLoading) {
-        console.log('[GAME_LOGIC] Generating action options for human player...');
-        setIsLoading(true);
-        setLoadingMessage("Generating action options...");
-        geminiCallsThisRoundRef.current = 0;
-        callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then(res => {
-            if (res) {
-              setActionOptions(res.options);
-            } else {
-              setError("Failed to generate action options. You may not be able to proceed.");
-            }
-            setIsLoading(false);
-            setLoadingMessage('');
-        });
+    if (
+      gameState.phase === GamePhase.ACTION &&
+      humanPlayer &&
+      !humanPlayer.hasSubmittedActions &&
+      actionOptions.length === 0 &&
+      !isLoading
+    ) {
+      console.log('[GAME_LOGIC] Generating action options for human player...');
+      setIsLoading(true);
+      setLoadingMessage('Generating action options...');
+      geminiCallsThisRoundRef.current = 0;
+      callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then((res) => {
+        if (res) {
+          setActionOptions(res.options);
+        } else {
+          setError('Failed to generate action options. You may not be able to proceed.');
+        }
+        setIsLoading(false);
+        setLoadingMessage('');
+      });
     }
-  }, [gameState.round, gameState.phase, humanPlayer, actionOptions.length, callGeminiAndCount, isLoading, lastCompletedLogEntry]);
+  }, [actionOptions.length, callGeminiAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
     if (timer > 0 && gameState.phase === GamePhase.ACTION && !isPaused && !humanPlayer?.hasSubmittedActions) {
-      interval = setInterval(() => setTimer(t => t - 1), 1000);
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
     } else if (timer <= 0 && gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions) {
       console.log('[GAME_LOGIC] Timer expired. Auto-submitting empty actions.');
       handleConfirmActions([]);
     }
     return () => clearInterval(interval);
-  }, [timer, gameState.phase, isPaused, humanPlayer, handleConfirmActions]);
-  
-  useEffect(() => {
-    if ((gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.publicScore <= 0 && gameState.round > 0)) && gameState.phase !== GamePhase.END) {
-        console.log('[STATE_TRANSITION] Game ended. Moving to END phase.');
-        setGameState(prev => ({...prev, phase: GamePhase.END}));
-    }
-  }, [gameState.round, gameState.publicScore, gameState.phase]);
+  }, [gameState.phase, handleConfirmActions, humanPlayer, isPaused, timer]);
 
+  useEffect(() => {
+    if (
+      (gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.coreMetric.value <= 0 && gameState.round > 0)) &&
+      gameState.phase !== GamePhase.END
+    ) {
+      console.log('[STATE_TRANSITION] Game ended. Moving to END phase.');
+      setGameState((prev) => ({ ...prev, phase: GamePhase.END }));
+    }
+  }, [gameState.coreMetric.value, gameState.phase, gameState.round]);
+
+  const renderExperienceBackButton = () => (
+    <div className="max-w-7xl mx-auto mb-6 text-left">
+      <button
+        onClick={() => {
+          setGamePath(null);
+          setGameSetup(null);
+          setSelectedRoleName(null);
+        }}
+        className="text-sm text-blue-300 hover:text-blue-200"
+      >
+        &larr; Choose a different experience
+      </button>
+    </div>
+  );
 
   if (gameState.phase === GamePhase.LOBBY) {
     return (
@@ -776,121 +1043,274 @@ export default function App() {
         </div>
 
         <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
-            <h2 className="text-2xl font-bold text-blue-300 mb-3">What is this?</h2>
-            <div className="text-gray-300 space-y-4 text-left">
-                <p>
-                    This is a <strong className="text-white">Tabletop Exercise (TTX)</strong>: a simulated crisis where you role-play as a key decision-maker. Think of it as a serious game designed to test your strategic thinking and reveal how complex systems respond to pressure.
-                </p>
-                <p>
-                    In this AI-powered simulation, you'll choose a role and face an escalating scenario. You must make tough choices with limited resources to advance your secret objectives while maintaining public trust. An <strong className="text-white">AI Game Master</strong> generates the story, controls the other characters, and shapes the consequences of your actions, ensuring a unique challenge every time. Your goal is to navigate the crisis and learn about high-stakes, multi-stakeholder decision-making.
-                </p>
-            </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
-            <h2 className="text-2xl font-bold text-green-300 mb-3">Your Goal</h2>
-            <div className="text-gray-300 space-y-4 text-left">
-                <p>
-                    Your primary objective is to maximize your <strong className="text-white">Personal Score</strong> by fulfilling your role's secret objectives. However, you must balance this with the collective goal of maintaining <strong className="text-white">Democratic Legitimacy</strong>. If this public score drops too low, everyone loses.
-                </p>
-            </div>
-        </div>
-
-        <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold">Choose Your Role</h2>
-        </div>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Object.values(ROLES).map(role => (
-              <RoleCard key={role.name} role={role} onSelect={() => setSelectedRoleName(role.name)} isSelected={selectedRoleName === role.name} />
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <button onClick={handleStartGame} disabled={!selectedRoleName} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed">
-              Start Simulation
-            </button>
+          <h2 className="text-2xl font-bold text-blue-300 mb-3">What is this?</h2>
+          <div className="text-gray-300 space-y-4 text-left">
+            <p>
+              This is a <strong className="text-white">Tabletop Exercise (TTX)</strong>: a simulated crisis where you role-play as a key decision-maker. Think of it as a serious game designed to test your strategic thinking and reveal how complex systems respond to pressure.
+            </p>
+            <p>
+              In this AI-powered simulation, you'll choose a role and face an escalating scenario. You must make tough choices with limited resources to advance your secret objectives while maintaining public trust. An <strong className="text-white">AI Game Master</strong> generates the story, controls the other characters, and shapes the consequences of your actions, ensuring a unique challenge every time. Your goal is to navigate the crisis and learn about high-stakes, multi-stakeholder decision-making.
+            </p>
           </div>
         </div>
+
+        {!gamePath ? (
+          <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
+            <h2 className="text-3xl font-bold mb-6">Choose Your Experience</h2>
+            <div className="flex flex-col md:flex-row justify-center items-center gap-6">
+              <button
+                onClick={() => {
+                  setGamePath('classic');
+                  setSelectedRoleName(null);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-200 w-full md:w-auto"
+              >
+                Classic Scenario (Election)
+              </button>
+              <button
+                onClick={() => {
+                  setGamePath('ai_safety');
+                  setSelectedRoleName(null);
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-200 w-full md:w-auto"
+              >
+                AI Safety Scenario
+              </button>
+              <button
+                onClick={() => {
+                  setGamePath('custom');
+                  setSelectedRoleName(null);
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-200 w-full md:w-auto"
+              >
+                Create Your Own
+              </button>
+            </div>
+          </div>
+        ) : gamePath === 'classic' ? (
+          <>
+            {renderExperienceBackButton()}
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold">Choose Your Role</h2>
+            </div>
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {Object.values(ROLES).map((role) => (
+                  <RoleCard key={role.name} role={role} onSelect={() => setSelectedRoleName(role.name)} isSelected={selectedRoleName === role.name} />
+                ))}
+              </div>
+              <div className="text-center mt-10">
+                <button
+                  onClick={handleStartGame}
+                  disabled={!selectedRoleName}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  Start Simulation
+                </button>
+              </div>
+            </div>
+          </>
+        ) : gamePath === 'ai_safety' ? (
+          <>
+            {renderExperienceBackButton()}
+            <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
+              <h2 className="text-3xl font-bold text-red-300 mb-2">{AI_SAFETY_SCENARIO.scenarioTitle}</h2>
+              <p className="text-gray-300">{AI_SAFETY_SCENARIO.scenarioDescription}</p>
+            </div>
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold">Choose Your Role</h2>
+            </div>
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {AI_SAFETY_SCENARIO.stakeholders.map((role) => {
+                  const roleData: RoleData = {
+                    name: role.name,
+                    publicObjective: role.publicObjective,
+                    hiddenObjective: role.hiddenObjective,
+                    resources: role.resources ?? [],
+                    constraints: role.constraints ?? [],
+                    icon: (props) => <BeakerIcon {...props} />,
+                  };
+                  return (
+                    <RoleCard
+                      key={role.name}
+                      role={roleData}
+                      onSelect={() => setSelectedRoleName(role.name)}
+                      isSelected={selectedRoleName === role.name}
+                    />
+                  );
+                })}
+              </div>
+              <div className="text-center mt-10">
+                <button
+                  onClick={handleStartGame}
+                  disabled={!selectedRoleName}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  Start AI Safety Simulation
+                </button>
+              </div>
+            </div>
+          </>
+        ) : gameSetup ? (
+          <>
+            {renderExperienceBackButton()}
+            <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
+              <h2 className="text-3xl font-bold text-purple-300 mb-2">{gameSetup.scenarioTitle}</h2>
+              <p className="text-gray-300">{gameSetup.scenarioDescription}</p>
+            </div>
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold">Choose Your Role</h2>
+            </div>
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {gameSetup.stakeholders.map((role) => {
+                  const roleData: RoleData = {
+                    name: role.name,
+                    publicObjective: role.publicObjective,
+                    hiddenObjective: role.hiddenObjective,
+                    resources: role.resources ?? [],
+                    constraints: role.constraints ?? [],
+                    icon: (props) => <BeakerIcon {...props} />,
+                  };
+                  return (
+                    <RoleCard
+                      key={role.name}
+                      role={roleData}
+                      onSelect={() => setSelectedRoleName(role.name)}
+                      isSelected={selectedRoleName === role.name}
+                    />
+                  );
+                })}
+              </div>
+              <div className="text-center mt-10">
+                <button
+                  onClick={handleStartGame}
+                  disabled={!selectedRoleName}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  Start Custom Simulation
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {renderExperienceBackButton()}
+            <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
+              <h2 className="text-3xl font-bold text-center mb-4">Describe Your Crisis Scenario</h2>
+              <textarea
+                value={customScenario}
+                onChange={(e) => setCustomScenario(e.target.value)}
+                placeholder="e.g., A coordinated drone attack takes down a major power grid..."
+                className="w-full h-32 p-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              />
+              <div className="text-center mt-6">
+                <button
+                  onClick={handleCustomGameStart}
+                  disabled={!customScenario || isLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Generating...' : 'Generate Scenario & Roles'}
+                </button>
+              </div>
+              {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+            </div>
+          </>
+        )}
       </div>
     );
   }
-  
+
   if (isLoading && gameState.phase !== GamePhase.ACTION) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-            <LoadingSpinner />
-            <p className="text-xl mt-4 text-blue-300">{loadingMessage}</p>
-            {error && <p className="text-red-400 mt-4">{error}</p>}
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+        <LoadingSpinner />
+        <p className="text-xl mt-4 text-blue-300">{loadingMessage}</p>
+        {error && <p className="text-red-400 mt-4">{error}</p>}
+      </div>
     );
   }
 
   if (gameState.phase === GamePhase.END) {
-     return (
-        <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center justify-center">
-            <h1 className="text-5xl font-extrabold text-blue-400 mb-4">Simulation Over</h1>
-            <p className="text-lg text-gray-300 mb-8">Final Democratic Legitimacy: <span className="text-2xl font-bold text-green-400">{gameState.publicScore}%</span></p>
-            <div className="bg-gray-800 rounded-lg p-8 w-full max-w-4xl">
-                 <h2 className="text-3xl font-bold mb-6 text-center">Final Scores</h2>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {players.sort((a,b) => b.hiddenScore - a.hiddenScore).map(p => (
-                         <div key={p.id} className={`flex items-center justify-between p-4 rounded-lg ${p.isHuman ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700'}`}>
-                             <div className="flex items-center">
-                                {p.role.icon({ className: "h-8 w-8 mr-4 text-blue-300"})}
-                                <span className="font-bold">{p.role.name}</span>
-                             </div>
-                             <span className="text-xl font-mono">{p.hiddenScore > 0 ? '+' : ''}{p.hiddenScore}</span>
-                         </div>
-                     ))}
-                 </div>
-            </div>
-            <button onClick={resetState} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
-              Play Again
-            </button>
+    return (
+      <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center justify-center">
+        <h1 className="text-5xl font-extrabold text-blue-400 mb-4">Simulation Over</h1>
+        <p className="text-lg text-gray-300 mb-8">
+          Final {gameState.coreMetric.name}:{' '}
+          <span className="text-2xl font-bold text-green-400">{gameState.coreMetric.value}%</span>
+        </p>
+        <div className="bg-gray-800 rounded-lg p-8 w-full max-w-4xl">
+          <h2 className="text-3xl font-bold mb-6 text-center">Final Scores</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {players
+              .slice()
+              .sort((a, b) => b.hiddenScore - a.hiddenScore)
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between p-4 rounded-lg ${
+                    p.isHuman ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    {p.role.icon({ className: 'h-8 w-8 mr-4 text-blue-300' })}
+                    <span className="font-bold">{p.role.name}</span>
+                  </div>
+                  <span className="text-xl font-mono">{p.hiddenScore > 0 ? '+' : ''}{p.hiddenScore}</span>
+                </div>
+              ))}
+          </div>
         </div>
-     );
+        <button onClick={resetState} className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl">
+          Play Again
+        </button>
+      </div>
+    );
   }
-  
+
   if (humanPlayer) {
     return (
       <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
         <div className="max-w-8xl mx-auto">
-          {error && <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>}
+          {error && (
+            <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
+          )}
           <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={() => setIsPaused(!isPaused)} />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3">
               <PlayerInfoPanel player={humanPlayer} eventLog={gameState.eventLog} />
             </div>
             <div className="lg:col-span-6 space-y-6">
-               <div className="bg-gray-800 rounded-lg p-6">
-                    <h3 className="text-2xl font-bold text-red-400 mb-2">{gameState.currentEvent?.headline}</h3>
-                    <p className="text-gray-300">{gameState.currentEvent?.detail}</p>
-                </div>
-               <EventLog gameState={gameState} />
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h3 className="text-2xl font-bold text-red-400 mb-2">{gameState.currentEvent?.headline}</h3>
+                <p className="text-gray-300">{gameState.currentEvent?.detail}</p>
+              </div>
+              <EventLog gameState={gameState} players={players} />
             </div>
             <div className="lg:col-span-3">
-                <ActionSelection 
-                    key={gameState.round}
-                    options={actionOptions} 
-                    onConfirm={handleConfirmActions} 
-                    isLoading={isLoading && !humanPlayer.hasSubmittedActions} 
-                    hasSubmitted={humanPlayer.hasSubmittedActions} 
-                    isPaused={isPaused}
-                    players={players}
-                    aiCompletionStatus={aiCompletionStatus}
-                />
+              <ActionSelection
+                key={gameState.round}
+                options={actionOptions}
+                onConfirm={handleConfirmActions}
+                isLoading={isLoading && !humanPlayer.hasSubmittedActions}
+                hasSubmitted={humanPlayer.hasSubmittedActions}
+                isPaused={isPaused}
+                players={players}
+                aiCompletionStatus={aiCompletionStatus}
+              />
             </div>
           </div>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-      <p className="text-red-500 text-2xl font-bold mb-4">{error || "An unexpected error occurred."}</p>
+      <p className="text-red-500 text-2xl font-bold mb-4">{error || 'An unexpected error occurred.'}</p>
       <button onClick={resetState} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
-          Back to Home
+        Back to Home
       </button>
     </div>
   );

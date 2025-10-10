@@ -87,6 +87,39 @@ const AICounterfactualResponseSchema = {
   required: ['publicScoreUpdate'],
 } as const;
 
+const GameSetupSchema = {
+    type: "object",
+    properties: {
+        scenarioTitle: { type: "string", description: "A short, catchy title for the scenario." },
+        scenarioDescription: { type: "string", description: "A brief, one-paragraph overview of the starting situation." },
+        coreMetric: {
+            type: "object",
+            properties: {
+                name: { type: "string", description: "The name of the central score for this scenario (e.g., 'Public Trust', 'Market Stability')." },
+                description: { type: "string", description: "A brief explanation of what this score represents." },
+                initialValue: { type: "number", description: "The starting value for the score, typically between 70 and 100." }
+            },
+            required: ['name', 'description', 'initialValue']
+        },
+        stakeholders: {
+            type: "array",
+            description: "A list of 4 to 6 relevant and distinct stakeholder roles for this scenario.",
+            minItems: 4,
+            maxItems: 6,
+            items: {
+                type: "object",
+                properties: {
+                    name: { type: "string", description: "The title of the stakeholder role (e.g., 'Lead Cyberneticist', 'Chief Medical Officer')." },
+                    publicObjective: { type: "string", description: "The stated, public-facing goal of this role." },
+                    hiddenObjective: { type: "string", description: "The secret, personal, or institutional goal that this role is trying to achieve." }
+                },
+                required: ['name', 'publicObjective', 'hiddenObjective']
+            }
+        }
+    },
+    required: ['scenarioTitle', 'scenarioDescription', 'coreMetric', 'stakeholders']
+} as const;
+
 
 /**
  * Generates the prompt for creating the initial game scenario.
@@ -130,14 +163,14 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
 
       CURRENT SITUATION:
       - Round: ${gameState.round}
-      - Democratic Legitimacy Score: ${gameState.publicScore}
+      - ${gameState.coreMetric.name}: ${gameState.coreMetric.value}
       - The Crisis: "${gameState.currentEvent?.headline}" - ${gameState.currentEvent?.detail}
 
       PLAYER ACTIONS TAKEN:
       ${playerActionsText}
 
       Now, determine the outcome. Your response must be logical and fair.
-      1.  **Narrative:** Write a compelling story of what happened. This narrative is critical. It MUST explicitly explain *why* the Democratic Legitimacy score changed, directly linking the outcome to specific player actions (or their inaction). Did their efforts help, hinder, or have unintended consequences? Did they work together or at cross-purposes? After the main narrative, add a 'Counterfactual Analysis' section. In a new paragraph, starting with the bolded words "**Counterfactual Analysis:**", state that if no action had been taken, the score would have changed by ${counterfactualScoreChange} points, and briefly explain why this would have been the case.
+      1.  **Narrative:** Write a compelling story of what happened. This narrative is critical. It MUST explicitly explain *why* the ${gameState.coreMetric.name} score changed, directly linking the outcome to specific player actions (or their inaction). Did their efforts help, hinder, or have unintended consequences? Did they work together or at cross-purposes? After the main narrative, add a 'Counterfactual Analysis' section. In a new paragraph, starting with the bolded words "**Counterfactual Analysis:**", state that if no action had been taken, the score would have changed by ${counterfactualScoreChange} points, and briefly explain why this would have been the case.
       2.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the narrative you just wrote.
       3.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
       4.  **New Crisis:** Generate a new crisis event. This event MUST be an escalation or a logical next step that flows from this round's narrative. Raise the stakes.
@@ -236,9 +269,34 @@ export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
 
       INSTRUCTION:
       Imagine that faced with this crisis, EVERY role chose to do NOTHING. They took no action.
-      Based on this complete inaction, determine the change to the 'Democratic Legitimacy' score. This should reflect the public's reaction to their leaders' failure to act during a crisis. The score change should almost always be negative.
+      Based on this complete inaction, determine the change to the '${gameState.coreMetric.name}' score. This should reflect the public's reaction to their leaders' failure to act during a crisis. The score change should almost always be negative.
 
       Respond ONLY with a valid JSON object matching the provided schema. No commentary. Just the JSON.
     `;
     return { prompt, schema: AICounterfactualResponseSchema };
+};
+
+export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) => {
+    const prompt = `
+      You are a world-class Game Designer and Storyteller. Your task is to take a user's idea for a crisis and transform it into a complete, playable setup for a strategic simulation game.
+
+      USER'S SCENARIO IDEA:
+      "${scenarioDescription}"
+
+      Based on this idea, you must design all the core components of the game. Your response must be a single, valid JSON object that conforms to the provided schema.
+
+      Here are your design instructions:
+      1.  **Scenario Title & Description:** Invent a catchy, evocative title and write a compelling one-paragraph description that sets the scene and establishes the stakes.
+      2.  **Core Metric:**
+          -   Invent a central game score that is thematic to the scenario. Instead of "Democratic Legitimacy," it could be "Global Economic Stability," "Public Health Confidence," or "Inter-species Trust."
+          -   The 'initialValue' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
+      3.  **Stakeholders (4-6 Roles):**
+          -   Create a cast of 4 to 6 distinct, believable stakeholder roles. These should be the key players in the crisis.
+          -   **Crucially, their objectives must create tension and potential conflict.** Give them reasons to disagree and compete.
+          -   The 'publicObjective' should be what they say they want in press conferences.
+          -   The 'hiddenObjective' should be their true, often selfish or controversial, goal. This is the key to strategic gameplay. Avoid generic goals; make them specific and compelling.
+
+      Be creative, insightful, and strategic in your design. The quality of the game depends on the rich conflict you build into this setup.
+    `;
+    return { prompt, schema: GameSetupSchema };
 };
