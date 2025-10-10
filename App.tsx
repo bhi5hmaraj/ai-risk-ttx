@@ -288,15 +288,6 @@ const EventLog: React.FC<{
   const metricName = gameState.coreMetric.name;
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (gameState.eventLog.length === 0) {
-      setExpandedRound(null);
-      return;
-    }
-    const latestRound = gameState.eventLog[gameState.eventLog.length - 1].round;
-    setExpandedRound((prev) => (prev === null || latestRound > prev ? latestRound : prev));
-  }, [gameState.eventLog]);
-
   const reversedLog = useMemo(() => gameState.eventLog.slice().reverse(), [gameState.eventLog]);
 
   return (
@@ -705,7 +696,6 @@ export default function App() {
     console.log(`%c[STATE_TRANSITION] Game phase changed to: ${phaseName}`, 'color: #88aaff; font-weight: bold;');
   }, [gameState.phase]);
 
-  const eventLogLengthRef = useRef(gameState.eventLog.length);
   useEffect(() => {
     if (!canViewActionTree && isActionTreeOpen) {
       setIsActionTreeOpen(false);
@@ -713,20 +703,10 @@ export default function App() {
   }, [canViewActionTree, isActionTreeOpen]);
 
   useEffect(() => {
-    const prevLength = eventLogLengthRef.current;
-    const currentLength = gameState.eventLog.length;
-
-    if (currentLength === 0) {
+    if (gameState.eventLog.length === 0) {
       setIsHistoryOpen(false);
-    } else if (currentLength > prevLength) {
-      const latestRound = gameState.eventLog[currentLength - 1].round;
-      if (latestRound > 0) {
-        setIsHistoryOpen(true);
-      }
     }
-
-    eventLogLengthRef.current = currentLength;
-  }, [gameState.eventLog]);
+  }, [gameState.eventLog.length]);
 
   const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
     return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
