@@ -27,3 +27,4 @@
 - [ ] Share `ACTION_TREE_STYLESHEET` and other helpers via a utilities module (`services/gameHelpers.ts`).
 - [ ] Create a barrel export for `components/game/` to simplify imports once components are split out.
 - [ ] Re-run smoke tests after refactor: start game, complete round, open history/action tree, verify build.
+- [ ] Replace Cytoscape-based action tree with React Flow (`reactflow`), including new component, layout helper, and simplified styling.
