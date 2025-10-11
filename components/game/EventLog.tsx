@@ -153,9 +153,39 @@ export const EventLog: React.FC<EventLogProps> = ({
                   </div>
                 )}
 
-                <div className="bg-gray-900/50 p-3 rounded-md text-gray-300 italic whitespace-pre-wrap">
-                  <strong>Narrative:</strong> {log.narrative}
-                </div>
+                {log.roundSummary && (
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-md p-3">
+                    <p className="text-xs uppercase tracking-wide text-blue-200 mb-1">Round Summary</p>
+                    <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{log.roundSummary}</p>
+                  </div>
+                )}
+
+                {log.outcomeTimeline?.length ? (
+                  <div className="space-y-3">
+                    <p className="text-xs uppercase tracking-wide text-blue-200">Key Moments</p>
+                    <ol className="space-y-3">
+                      {log.outcomeTimeline.map((item, index) => (
+                        <li key={`${log.round}_${index}`} className="flex gap-3">
+                          <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-sm flex items-center justify-center">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 bg-gray-900/50 border border-gray-800 rounded-md p-3 space-y-1">
+                            <p className="text-sm font-semibold text-white">{item.title}</p>
+                            <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
+                            <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+
+                {log.counterfactualNote && (
+                  <div className="bg-gray-900/40 border border-blue-800/30 rounded-md p-3 text-sm text-blue-100/90">
+                    <span className="font-semibold uppercase tracking-wide text-blue-200">If No One Acted</span>
+                    <p className="mt-1 leading-relaxed">{log.counterfactualNote}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

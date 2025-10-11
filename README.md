@@ -15,9 +15,9 @@ In this AI-powered simulation, you'll choose a role and face an escalating scena
 - **Role-Playing:** Choose from one of six unique roles, each with public and hidden objectives.
 - **Sophisticated AI Opponents:** The other five roles are controlled by AI that use a two-step process: first generating a unique set of strategic options based on the situation, then choosing from them based on their secret goals.
 - **Strategic Decision-Making:** Use a limited pool of action points each round to respond to the crisis.
-- **Impactful Consequences:** The AI Game Master analyzes all player actions to determine the narrative outcome, changes to public trust, and updates to your personal score.
+- **Structured Consequences:** The AI Game Master analyzes all player actions and returns a clear round summary, a short timeline of key beats, and precise changes to public trust and personal scores.
 - **Action Space Visualization:** Each round's summary includes a dynamic graph visualizing every player's available action options and highlighting their final choices.
-- **Counterfactual Analysis:** The narrative explains not only what happened, but what *would have* happened if no one had acted, providing a clear benchmark for your performance.
+- **Counterfactual Analysis:** Each round includes an "If no one acted" note so you can compare the real outcome against the projected baseline.
 
 ---
 
@@ -28,7 +28,7 @@ The application currently manages its state using core React hooks (`useState`, 
 ### State Flow:
 
 1.  **LOBBY:** The game starts in the `LOBBY` phase. The user selects a role.
-2.  **STARTING:** Upon starting, the phase changes to `STARTING`. An `useEffect` hook triggers an API call (`generateInitialScenario`) to get the opening narrative and event.
+2.  **STARTING:** Upon starting, the phase changes to `STARTING`. An `useEffect` hook triggers an API call (`generateInitialScenario`) to get the opening summary timeline and event.
 3.  **ACTION:** On success, the phase becomes `ACTION`. The round counter starts at 1.
     - An `useEffect` triggers to fetch player-specific `actionOptions`.
     - A timer starts, counting down the action phase.

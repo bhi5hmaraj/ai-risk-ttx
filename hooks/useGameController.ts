@@ -228,7 +228,9 @@ export const useGameController = () => {
             ...currentGameState.eventLog,
             {
               round: currentGameState.round,
-              narrative: result.narrative,
+              roundSummary: result.roundSummary,
+              outcomeTimeline: result.outcomeTimeline ?? [],
+              counterfactualNote: result.counterfactualNote ?? '',
               event: currentGameState.currentEvent,
               playerActions: playerActionsForLog,
               publicScoreChange: result.publicScoreUpdate,
@@ -363,7 +365,9 @@ export const useGameController = () => {
           eventLog: [
             {
               round: 0,
-              narrative: result.narrative,
+              roundSummary: result.roundSummary,
+              outcomeTimeline: result.outcomeTimeline ?? [],
+              counterfactualNote: result.counterfactualNote ?? '',
               event: null,
               playerActions: [],
               publicScoreChange: result.publicScoreUpdate,
@@ -398,7 +402,10 @@ export const useGameController = () => {
         eventLog: [
           {
             round: 0,
-            narrative: setup.scenarioDescription,
+            roundSummary: setup.scenarioDescription,
+            outcomeTimeline: [],
+            counterfactualNote:
+              'If no one had acted, the crisis would remain poised to escalate immediately once the simulation begins.',
             event: null,
             playerActions: [],
             publicScoreChange: 0,

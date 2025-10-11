@@ -6,7 +6,26 @@ import { GAME_CONFIG, ROLES } from "./constants";
 const AIConsequenceResponseSchema = {
   type: "object",
   properties: {
-    narrative: { type: "string", description: "The story of what happened next as a result of player actions." },
+    roundSummary: { type: "string", description: "2-3 sentence plain-language summary of what happened this round and why the core metric changed." },
+    outcomeTimeline: {
+      type: "array",
+      description: "An ordered list (3-5 items) that breaks down the key beats of the round in chronological order.",
+      minItems: 3,
+      maxItems: 5,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "A short label for the moment." },
+          description: { type: "string", description: "1-2 sentences describing what happened during this beat." },
+          impact: { type: "string", description: "A concise explanation of how this beat affected the core metric or player goals." },
+        },
+        required: ['title', 'description', 'impact'],
+      },
+    },
+    counterfactualNote: {
+      type: "string",
+      description: "One short paragraph that explains what would have happened to the core metric if no one had acted, starting with 'If no one had acted...'",
+    },
     publicScoreUpdate: { type: "number", description: "The integer change (delta) in the public score." },
     hiddenScoreUpdates: {
       type: "array",
@@ -32,7 +51,7 @@ const AIConsequenceResponseSchema = {
       required: ['headline', 'detail'],
     },
   },
-  required: ['narrative', 'publicScoreUpdate', 'hiddenScoreUpdates', 'nextEvent'],
+  required: ['roundSummary', 'outcomeTimeline', 'counterfactualNote', 'publicScoreUpdate', 'hiddenScoreUpdates', 'nextEvent'],
 } as const;
 
 // Schema for the AI's response when generating actions for an AI-controlled player.
@@ -131,11 +150,13 @@ export const getInitialScenarioPromptAndSchema = () => {
       Your primary task is to establish a tense, realistic, and thought-provoking starting scenario.
       The game begins with the 'Democratic Legitimacy' score at a fragile 100.
 
-      Your narrative should craft an opening crisis that immediately challenges the players and justifies a drop in that score.
-      Think about real-world events: a sophisticated disinformation campaign, a major data breach of a political party, a viral deepfake of a candidate, or a sudden resignation of a key election official under suspicious circumstances.
+      Tell the story in a way that players can scan quickly:
+      - Use the 'roundSummary' field for a tight plain-language recap (no more than 3 sentences).
+      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects Democratic Legitimacy or the players.
+      - The 'counterfactualNote' should begin with "If no one had acted..." and briefly explain the expected score change (remember, this is the first round so reference the escalating crisis rather than player decisions).
 
       Here are your strict instructions for the response:
-      1.  Generate a compelling opening narrative and a specific, actionable crisis event.
+      1.  Generate that structured summary plus a specific, actionable crisis event.
       2.  The 'publicScoreUpdate' field MUST be a significant negative integer. A value between -15 and -25 is ideal to create immediate tension. The game will start at (100 + this value).
       3.  For the 'hiddenScoreUpdates', every role MUST be present. Each must have an 'update' of 0 and a 'justification' of 'Game start.'. This is a non-negotiable setup requirement.
 
@@ -159,7 +180,7 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
 
     const prompt = `
       You are the Game Master for 'Crisis Command', and you are the impartial arbiter of consequences.
-      Your task is to analyze the players' actions in response to the crisis and weave them into a single, cohesive narrative. The world reacts to their choices.
+      Your task is to analyze the players' actions in response to the crisis and return a crisp, structured recap. The world reacts to their choices.
 
       CURRENT SITUATION:
       - Round: ${gameState.round}
@@ -170,10 +191,12 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       ${playerActionsText}
 
       Now, determine the outcome. Your response must be logical and fair.
-      1.  **Narrative:** Write a compelling story of what happened. This narrative is critical. It MUST explicitly explain *why* the ${gameState.coreMetric.name} score changed, directly linking the outcome to specific player actions (or their inaction). Did their efforts help, hinder, or have unintended consequences? Did they work together or at cross-purposes? After the main narrative, add a 'Counterfactual Analysis' section. In a new paragraph, starting with the bolded words "**Counterfactual Analysis:**", state that if no action had been taken, the score would have changed by ${counterfactualScoreChange} points, and briefly explain why this would have been the case.
-      2.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the narrative you just wrote.
-      3.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
-      4.  **New Crisis:** Generate a new crisis event. This event MUST be an escalation or a logical next step that flows from this round's narrative. Raise the stakes.
+      1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
+      2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
+      3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
+      4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
+      5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
+      6.  **New Crisis:** Generate a new crisis event. This event MUST be an escalation or a logical next step that flows naturally from this round's timeline. Raise the stakes.
 
       Respond ONLY with a valid JSON object matching the provided schema. No commentary.
     `;

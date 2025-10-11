@@ -1,7 +1,7 @@
 # UI & UX Polish
 - [ ] Replace lobby intro copy with a concise hero plus modal/"Learn more" panel so role cards remain above the fold on mobile.
 - [ ] Restyle experience selection buttons as descriptive cards with icons and short blurbs.
-- [ ] Extract game-screen components (`GameStatusPanel`, `RoundSnapshotCard`, `EventLog`, `ActionSelection`, `PlayerInfoPanel`, `ActionTreeModal`) into `components/game/` for reuse and smaller `App.tsx`.
+- [ ] Keep game-screen components (`GameStatusPanel`, `RoundSnapshotCard`, `EventLog`, `ActionSelection`, `ActionTreeModal`) lean and reusable; centralize shared timeline/action summaries to avoid duplication.
 - [ ] Introduce a `useGameController` hook (or similar) that centralizes state and handlers, keeping `App.tsx` declarative.
 
 # Game Mechanics Enhancements
