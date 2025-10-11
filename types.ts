@@ -72,13 +72,21 @@ export interface AIHiddenScoreUpdate {
 
 export interface GameLogEntry {
   round: number;
-  narrative: string;
-  event: GameEvent | null; // The event that *led* to this narrative
+  roundSummary: string;
+  outcomeTimeline: OutcomeTimelineItem[];
+  counterfactualNote: string;
+  event: GameEvent | null; // The event that led to this summary
   playerActions: PlayerRoundActions[];
   publicScoreChange: number;
   publicScoreAfter: number;
   hiddenScoreChanges: Record<string, HiddenScoreUpdate>;
   geminiCalls: number;
+}
+
+export interface OutcomeTimelineItem {
+  title: string;
+  description: string;
+  impact: string;
 }
 
 export interface GameState {
@@ -90,7 +98,9 @@ export interface GameState {
 }
 
 export interface AIConsequenceResponse {
-  narrative: string;
+  roundSummary: string;
+  outcomeTimeline: OutcomeTimelineItem[];
+  counterfactualNote: string;
   publicScoreUpdate: number;
   hiddenScoreUpdates: AIHiddenScoreUpdate[];
   nextEvent: GameEvent;

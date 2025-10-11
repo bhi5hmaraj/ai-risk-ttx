@@ -68,8 +68,16 @@ const GameEventZ = z.object({
   detail: z.string(),
 }).strict();
 
+const TimelineItemZ = z.object({
+  title: z.string(),
+  description: z.string(),
+  impact: z.string(),
+}).strict();
+
 const ConsequenceZ = z.object({
-  narrative: z.string(),
+  roundSummary: z.string(),
+  outcomeTimeline: z.array(TimelineItemZ).min(3).max(5),
+  counterfactualNote: z.string(),
   publicScoreUpdate: z.number(),
   hiddenScoreUpdates: z.array(HiddenUpdateZ),
   nextEvent: GameEventZ,
