@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import type {
   GameState,
   Player,
@@ -23,209 +22,17 @@ import {
   generateCounterfactualConsequences,
   generateCustomScenario,
 } from './services/geminiService';
+import { LoadingSpinner, BeakerIcon } from './components/Icons';
 import {
-  LoadingSpinner,
-  CheckCircleIcon,
-  PauseIcon,
-  PlayIcon,
-  CloseIcon,
-  BeakerIcon,
-} from './components/Icons';
-import { RoundSnapshotCard } from './components/game/RoundSnapshotCard';
-import { EventLog } from './components/game/EventLog';
-import { ActionSelection } from './components/game/ActionSelection';
-import { PlayerInfoPanel } from './components/game/PlayerInfoPanel';
-import CytoscapeComponent from 'react-cytoscapejs';
-import cytoscape from 'cytoscape';
-import dagre from 'cytoscape-dagre';
-
-cytoscape.use(dagre);
-
-const ACTION_TREE_STYLESHEET: cytoscape.Stylesheet[] = [
-  { selector: 'node', style: { label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center', color: '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', shape: 'round-rectangle', width: '130px', height: 'auto', padding: '10px', 'background-opacity': 1 } as any },
-  { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', color: 'white' } },
-  { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
-  { selector: '.action', style: { 'font-size': '9px', width: '100px', height: 'auto', padding: '8px' } as any },
-  { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
-  { selector: '.unchosen', style: { 'background-color': '#4b5563', opacity: 0.7 } },
-  { selector: 'edge', style: { width: 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
-  { selector: '.event-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563' } },
-  { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', width: 3, 'z-index': 99 } },
-  { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', opacity: 0.6 } },
-];
-
-const buildActionTreeData = (eventLog: GameLogEntry[]) => {
-  const nodes: cytoscape.ElementDefinition[] = [];
-  const edges: cytoscape.ElementDefinition[] = [];
-  let lastEventId: string | null = null;
-
-  eventLog.forEach((log) => {
-    if (!log.event) return;
-
-    const eventId = `event_${log.round}`;
-    nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
-
-    if (lastEventId) {
-      edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
-    }
-
-    log.playerActions.forEach((pa) => {
-      const roleId = `${pa.roleName}_${log.round}`;
-      nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
-      edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
-
-      pa.availableOptions?.forEach((opt) => {
-        const actionId = `${roleId}_${opt.title}`;
-        const isChosen = pa.actions.some((a) => a.title === opt.title);
-
-        nodes.push({
-          data: { id: actionId, label: opt.title },
-          classes: isChosen ? 'action chosen' : 'action unchosen',
-        });
-
-        edges.push({
-          data: { source: roleId, target: actionId },
-          classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge',
-        });
-      });
-    });
-    lastEventId = eventId;
-  });
-
-  const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
-  return { elements: [...nodes, ...edges], lastLogEntry };
-};
-
-const RoleCard: React.FC<{ role: RoleData; onSelect: () => void; isSelected: boolean; }> = ({ role, onSelect, isSelected }) => (
-  <div className={`bg-gray-800 rounded-lg p-6 border-2 transition-all duration-300 ease-in-out ${isSelected ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-700 hover:border-blue-600'}`}>
-    <div className="flex items-center mb-4">
-      <div className="bg-gray-700 p-2 rounded-md mr-4">
-        {role.icon({ className: 'h-8 w-8 text-blue-400' })}
-      </div>
-      <h3 className="text-2xl font-bold text-white">{role.name}</h3>
-    </div>
-    <p className="text-gray-400 mb-2 text-sm">Public: {role.publicObjective}</p>
-    <button
-      onClick={onSelect}
-      disabled={isSelected}
-      className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
-    >
-      {isSelected ? (
-        <>
-          <CheckCircleIcon className="h-5 w-5 mr-2" /> Selected
-        </>
-      ) : (
-        'Select Role'
-      )}
-    </button>
-  </div>
-);
-
-const ActionTreeModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  logEntry: GameLogEntry | null;
-  stylesheet: cytoscape.Stylesheet[];
-  elements: cytoscape.ElementDefinition[];
-}> = ({ isOpen, onClose, logEntry, stylesheet, elements }) => {
-  if (!isOpen) return null;
-  const cyRef = useRef<cytoscape.Core | null>(null);
-
-  const handleResetView = () => {
-    if (cyRef.current) {
-      cyRef.current.fit();
-      cyRef.current.center();
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen && cyRef.current) {
-      const layout = cyRef.current.layout({ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any);
-      layout.run();
-      cyRef.current.fit();
-      cyRef.current.center();
-    }
-  }, [isOpen, elements]);
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-blue-500 rounded-lg w-full h-full max-w-7xl max-h-[90vh] p-4 flex flex-col">
-        <div className="flex justify-between items-center mb-2 flex-shrink-0">
-          <h3 className="text-xl font-bold text-blue-300">Full Action Tree (Round {logEntry?.round})</h3>
-          <div className="flex items-center space-x-2">
-            <button onClick={handleResetView} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-xs">
-              Reset View
-            </button>
-            <button onClick={onClose} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600">
-              <CloseIcon className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-        <div className="flex-grow h-full w-full">
-          <CytoscapeComponent
-            elements={elements}
-            stylesheet={stylesheet}
-            layout={{ name: 'dagre', rankDir: 'TB', spacingFactor: 1.2 } as any}
-            style={{ width: '100%', height: '100%' }}
-            cy={(cy) => {
-              if (cyRef.current !== cy) {
-                cyRef.current = cy;
-                cy.maxZoom(2);
-                cy.minZoom(0.1);
-                cy.fit();
-                cy.center();
-              }
-            }}
-          />
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
-
-const GameStatusPanel: React.FC<{
-  gameState: GameState;
-  timer: number;
-  isPaused: boolean;
-  onPauseClick: () => void;
-}> = ({ gameState, timer, isPaused, onPauseClick }) => {
-  const metricValue = gameState.coreMetric.value;
-  const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
-  return (
-    <div className="bg-gray-800 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-      <div className="w-full md:w-1/3 text-center md:text-left">
-        <span className="font-bold text-xl">Round:</span>{' '}
-        <span className="text-2xl text-blue-400">
-          {gameState.round} / {GAME_CONFIG.MAX_ROUNDS}
-        </span>
-      </div>
-      <div className="text-center w-full md:w-1/3">
-        <div className="font-bold text-xl">{gameState.coreMetric.name}</div>
-        <div className={`text-4xl font-bold ${metricClass}`}>{metricValue}%</div>
-      </div>
-      <div className="w-full md:w-1/3 text-center md:text-right flex items-center justify-center md:justify-end space-x-4">
-        <div>
-          <span className="font-bold text-xl">{isPaused ? 'Paused' : 'Time Left:'}</span>
-          {!isPaused && (
-            <span className={`text-2xl text-blue-400 ml-2 font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : ''}`}>
-              {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-            </span>
-          )}
-        </div>
-        {gameState.phase === GamePhase.ACTION && (
-          <button
-            onClick={onPauseClick}
-            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
-            aria-label={isPaused ? 'Resume game' : 'Pause game'}
-          >
-            {isPaused ? <PlayIcon className="h-6 w-6 text-white" /> : <PauseIcon className="h-6 w-6 text-white" />}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+  RoundSnapshotCard,
+  EventLog,
+  ActionSelection,
+  PlayerInfoPanel,
+  GameStatusPanel,
+  ActionTreeModal,
+  RoleCard,
+} from './components/game';
+import { ACTION_TREE_STYLESHEET, buildActionTreeData } from './services/gameHelpers';
 
 const DEFAULT_CORE_METRIC: CoreMetric = {
   name: 'Democratic Legitimacy',
