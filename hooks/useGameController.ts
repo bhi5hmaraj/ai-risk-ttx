@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BeakerIcon } from '../components/Icons';
 import type {
   GameState,
   Player,
