@@ -9,11 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "openai": "^4.76.0",
     "cytoscape": "3.29.2",
+    "openai": "^4.76.0",
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
     "react-dom": "^19.1.0",
+    "reactflow": "^11.11.4",
     "zod": "^3.25.6"
   },
   "engines": {

@@ -1,58 +1,76 @@
 import type { GameLogEntry } from '../types';
-import cytoscape from 'cytoscape';
+import type { Node, Edge } from 'reactflow';
 
-export const ACTION_TREE_STYLESHEET: cytoscape.Stylesheet[] = [
-  { selector: 'node', style: { label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center', color: '#fff', 'font-size': '10px', 'text-wrap': 'wrap', 'text-max-width': '120px', shape: 'round-rectangle', width: '130px', height: 'auto', padding: '10px', 'background-opacity': 1 } as any },
-  { selector: '.event', style: { 'background-color': '#be123c', 'font-weight': 'bold', 'font-size': '14px', color: 'white' } },
-  { selector: '.role', style: { 'background-color': '#1d4ed8', 'font-weight': 'bold', 'font-size': '12px' } },
-  { selector: '.action', style: { 'font-size': '9px', width: '100px', height: 'auto', padding: '8px' } as any },
-  { selector: '.chosen', style: { 'background-color': '#16a34a', 'border-width': '2px', 'border-color': '#22c55e' } },
-  { selector: '.unchosen', style: { 'background-color': '#4b5563', opacity: 0.7 } },
-  { selector: 'edge', style: { width: 2, 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
-  { selector: '.event-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563' } },
-  { selector: '.chosen-edge', style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e', width: 3, 'z-index': 99 } },
-  { selector: '.unchosen-edge', style: { 'line-color': '#4b5563', 'target-arrow-color': '#4b5563', opacity: 0.6 } },
-];
+type FlowNode = Node<{ label: string; detail?: any; variant?: 'event' | 'role' | 'action'; }>; 
+type FlowEdge = Edge;
 
-export const buildActionTreeData = (eventLog: GameLogEntry[]) => {
-  const nodes: cytoscape.ElementDefinition[] = [];
-  const edges: cytoscape.ElementDefinition[] = [];
-  let lastEventId: string | null = null;
-
-  eventLog.forEach((log) => {
-    if (!log.event) return;
-
-    const eventId = `event_${log.round}`;
-    nodes.push({ data: { id: eventId, label: log.event.headline }, classes: 'event' });
-
-    if (lastEventId) {
-      edges.push({ data: { source: lastEventId, target: eventId }, classes: 'event-edge' });
-    }
-
-    log.playerActions.forEach((pa) => {
-      const roleId = `${pa.roleName}_${log.round}`;
-      nodes.push({ data: { id: roleId, label: pa.roleName }, classes: 'role' });
-      edges.push({ data: { source: eventId, target: roleId }, classes: 'event-edge' });
-
-      pa.availableOptions?.forEach((opt) => {
-        const actionId = `${roleId}_${opt.title}`;
-        const isChosen = pa.actions.some((a) => a.title === opt.title);
-
-        nodes.push({
-          data: { id: actionId, label: opt.title },
-          classes: isChosen ? 'action chosen' : 'action unchosen',
-        });
-
-        edges.push({
-          data: { source: roleId, target: actionId },
-          classes: isChosen ? 'edge chosen-edge' : 'edge unchosen-edge',
-        });
-      });
-    });
-    lastEventId = eventId;
-  });
-
-  const lastLogEntry = eventLog.length > 0 ? eventLog[eventLog.length - 1] : null;
-  return { elements: [...nodes, ...edges], lastLogEntry };
+const COLUMN_X = {
+  event: 0,
+  role: 280,
+  action: 560,
 };
 
+const ROW_SPACING = 220;
+const ROLE_SPACING = 140;
+const ACTION_SPACING = 120;
+
+const sanitizeId = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+export const buildActionFlowData = (eventLog: GameLogEntry[]): { nodes: FlowNode[]; edges: FlowEdge[] } => {
+  const nodes: FlowNode[] = [];
+  const edges: FlowEdge[] = [];
+
+  eventLog.forEach((log, roundIndex) => {
+    const baseY = roundIndex * ROW_SPACING;
+    const eventId = `event-${log.round}`;
+
+    nodes.push({
+      id: eventId,
+      position: { x: COLUMN_X.event, y: baseY },
+      data: {
+        label: log.event?.headline ?? (log.round === 0 ? 'Opening Scenario' : `Round ${log.round}`),
+        detail: log.event?.detail,
+        variant: 'event',
+      },
+      type: 'default',
+    });
+
+    log.playerActions.forEach((playerAction, actionIndex) => {
+      const roleId = `${eventId}-role-${sanitizeId(playerAction.roleName)}-${actionIndex}`;
+      const roleY = baseY + ROLE_SPACING * (actionIndex + 1);
+
+      nodes.push({
+        id: roleId,
+        position: { x: COLUMN_X.role, y: roleY },
+        data: {
+          label: playerAction.roleName,
+          detail: playerAction.availableOptions,
+          variant: 'role',
+        },
+        type: 'default',
+      });
+
+      edges.push({ id: `${eventId}->${roleId}`, source: eventId, target: roleId, animated: false });
+
+      playerAction.actions.forEach((action, idx) => {
+        const actionId = `${roleId}-action-${sanitizeId(action.title)}-${idx}`;
+        const actionY = roleY + ACTION_SPACING * idx;
+
+        nodes.push({
+          id: actionId,
+          position: { x: COLUMN_X.action, y: actionY },
+          data: {
+            label: action.title,
+            detail: action.description,
+            variant: 'action',
+          },
+          type: 'default',
+        });
+
+        edges.push({ id: `${roleId}->${actionId}`, source: roleId, target: actionId, animated: true });
+      });
+    });
+  });
+
+  return { nodes, edges };
+};

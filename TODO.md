@@ -28,3 +28,4 @@
 - [ ] Create a barrel export for `components/game/` to simplify imports once components are split out.
 - [ ] Re-run smoke tests after refactor: start game, complete round, open history/action tree, verify build.
 - [ ] Replace Cytoscape-based action tree with React Flow (`reactflow`), including new component, layout helper, and simplified styling.
+- [ ] Ensure `reactflow` package is installed (`npm install reactflow`) and customize mobile node styles/detail drawer.
