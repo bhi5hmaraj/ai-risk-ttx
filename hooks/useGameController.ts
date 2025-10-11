@@ -53,7 +53,7 @@ export const useGameController = () => {
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
