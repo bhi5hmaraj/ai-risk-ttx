@@ -1,12 +1,6 @@
 import React from 'react';
 import type { ActionOption, GameLogEntry, GameState, Player } from '../types';
-import {
-  RoundSnapshotCard,
-  EventLog,
-  ActionSelection,
-  PlayerInfoPanel,
-  GameStatusPanel,
-} from '../components/game';
+import { RoundSnapshotCard, EventLog, ActionSelection, GameStatusPanel } from '../components/game';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -54,12 +48,15 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       {error && (
         <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
       )}
-      <GameStatusPanel gameState={gameState} timer={timer} isPaused={isPaused} onPauseClick={onPauseToggle} />
+      <GameStatusPanel
+        gameState={gameState}
+        timer={timer}
+        isPaused={isPaused}
+        onPauseClick={onPauseToggle}
+        player={humanPlayer}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-3">
-          <PlayerInfoPanel player={humanPlayer} />
-        </div>
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-9 space-y-6">
           <RoundSnapshotCard
             gameState={gameState}
             latestLogEntry={latestLogEntry}
@@ -95,4 +92,3 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     </div>
   </div>
 );
-
