@@ -1,6 +1,6 @@
-# AI Election Crisis - Tabletop Exercise Simulation Game
+# Crisis Command - AI Tabletop Exercise
 
-This is a web-based, single-player crisis simulation game where you assume a critical role during an AI-powered election misinformation crisis. Your strategic decisions will affect public trust, national security, and your own secret objectives. The game is driven by the Google Gemini API, which acts as the Game Master, creating dynamic scenarios, consequences, and AI opponents.
+This is a web-based, single-player crisis simulation game where you assume a critical role during an AI-driven global emergency. Your strategic decisions affect public trust, national security, and your own secret objectives. The game is driven by the Google Gemini API (or LiteLLM proxy), which acts as the Game Master, creating dynamic scenarios, consequences, and AI opponents.
 
 ## What is a Tabletop Exercise (TTX)?
 

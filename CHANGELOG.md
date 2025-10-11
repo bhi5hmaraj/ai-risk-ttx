@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-05-19
 
 ### Added
-- Initial version of the AI Election Crisis simulation game.
+- Initial version of the Crisis Command simulation game.
 - Core gameplay loop: role selection, scenario generation, action phase, and consequence phase.
 - UI components for displaying game state, player roles, event logs, and action selection.
 - Integration with Google Gemini API for dynamic content generation.

@@ -1,6 +1,6 @@
 # GEMINI.md
 
-This document provides a comprehensive overview of the "AI Election Crisis" project for the Gemini AI agent.
+This document provides a comprehensive overview of the "Crisis Command" project for the Gemini AI agent.
 
 ## Project Overview
 
@@ -62,7 +62,7 @@ The application requires the following environment variables (defined in `.env` 
 
 ## Current Progress (As of Oct 10, 2025)
 
-Implemented the **Dynamic Scenario Generation** feature. This major update allows users to move beyond the single, hardcoded "AI Election Crisis" and create their own unique crisis simulations.
+Implemented the **Dynamic Scenario Generation** feature. This major update allows users to move beyond the single, hardcoded "Crisis Command" default scenario and create their own unique crisis simulations.
 
 ### Key Changes:
 
@@ -80,6 +80,6 @@ Implemented the **Dynamic Scenario Generation** feature. This major update allow
 
 ## Next Steps
 
-1.  **Generalize In-Game AI Prompts:** The prompts that generate the story, consequences, and action options during the game (`getConsequencesPromptAndSchema`, `getActionOptionsPromptAndSchema`) are still tailored to the original "AI Election Crisis" scenario. They need to be updated to be more generic, incorporating the dynamically generated `scenarioTitle` and `coreMetric` to ensure the AI's responses are thematically consistent with the user's custom scenario.
+1.  **Generalize In-Game AI Prompts:** The prompts that generate the story, consequences, and action options during the game (`getConsequencesPromptAndSchema`, `getActionOptionsPromptAndSchema`) are still tailored to the original "Crisis Command" default narrative. They need to be updated to be more generic, incorporating the dynamically generated `scenarioTitle` and `coreMetric` to ensure the AI's responses are thematically consistent with the user's custom scenario.
 2.  **UI/UX Polish:** The custom scenario flow is functional but could be improved. This could include adding more distinct loading states during scenario generation and providing the user with more feedback.
 3.  **Zustand State Management:** As outlined in the initial project plan, migrating the React hook-based state management to Zustand would be a valuable next step to simplify state logic, especially as the application's complexity grows.

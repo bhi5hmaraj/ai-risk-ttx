@@ -127,7 +127,7 @@ const GameSetupSchema = {
  */
 export const getInitialScenarioPromptAndSchema = () => {
     const prompt = `
-      You are a master storyteller and the Game Master for 'AI Election Crisis', a serious simulation game.
+      You are a master storyteller and the Game Master for 'Crisis Command', a serious simulation game.
       Your primary task is to establish a tense, realistic, and thought-provoking starting scenario.
       The game begins with the 'Democratic Legitimacy' score at a fragile 100.
 
@@ -158,7 +158,7 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
     }).join("\n");
 
     const prompt = `
-      You are the Game Master for 'AI Election Crisis', and you are the impartial arbiter of consequences.
+      You are the Game Master for 'Crisis Command', and you are the impartial arbiter of consequences.
       Your task is to analyze the players' actions in response to the crisis and weave them into a single, cohesive narrative. The world reacts to their choices.
 
       CURRENT SITUATION:
@@ -189,7 +189,7 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
 export const getAIPlayerActionsPromptAndSchema = (player: Player, gameState: GameState, options: ActionOption[]) => {
     const optionsText = options.map(opt => `- ${opt.title} (Cost: ${opt.cost}): ${opt.description}`).join('\n');
     const prompt = `
-      You are an AI role-playing in the 'AI Election Crisis' game. You must think and act *exactly* like the character you've been assigned. Your personal motivations are everything.
+      You are an AI role-playing in the 'Crisis Command' simulation. You must think and act *exactly* like the character you've been assigned. Your personal motivations are everything.
 
       YOUR PERSONA:
       - Role: ${player.role.name}
@@ -230,7 +230,7 @@ export const getActionOptionsPromptAndSchema = (player: Player, gameState: GameS
     }
 
     const prompt = `
-      You are the Game Master for 'AI Election Crisis'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
+      You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
 
       THE PLAYER:
       - Role: ${player.role.name}
@@ -261,7 +261,7 @@ ${previousActionsText}
 
 export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
     const prompt = `
-      You are an impartial Game Master for 'AI Election Crisis'.
+      You are an impartial Game Master for 'Crisis Command'.
       Your task is to calculate a specific outcome.
 
       CURRENT SITUATION:
