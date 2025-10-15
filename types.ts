@@ -119,3 +119,9 @@ export interface AIActionOptionsResponse {
 export interface AICounterfactualResponse {
     publicScoreUpdate: number;
 }
+
+// Re-export feedback types
+export * from './types/feedback';
+
+// Re-export public scenario types
+export * from './types/publicScenario';
