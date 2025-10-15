@@ -343,6 +343,10 @@ function displayFeedback(feedback: any[]) {
     console.log(`Completed: ${entry.gameCompleted ? 'Yes' : 'No'}`);
     console.log(`Average Rating: ${entry.avgRating?.toFixed(2) || 'N/A'}/10`);
 
+    if (entry.customPrompt) {
+      console.log(`Custom Prompt: "${entry.customPrompt.substring(0, 100)}${entry.customPrompt.length > 100 ? '...' : ''}"`);
+    }
+
     if (data?.ratings) {
       console.log('Ratings:');
       console.log(`  UI: ${data.ratings.ui}/10`);
@@ -366,7 +370,7 @@ async function exportToCSV(feedback: any[], filename: string) {
 
   // Header
   rows.push(
-    'ID,Date,Model,Scenario,Role,Completed,AvgRating,UI,GameDynamics,ModelQuality,ScenarioRating,Actions,Stakeholders,Improvements'
+    'ID,Date,Model,Scenario,Role,Completed,AvgRating,UI,GameDynamics,ModelQuality,ScenarioRating,Actions,Stakeholders,CustomPrompt,Improvements'
   );
 
   // Data rows
@@ -388,6 +392,7 @@ async function exportToCSV(feedback: any[], filename: string) {
       ratings.scenario || '',
       ratings.actions || '',
       ratings.stakeholders || '',
+      `"${(entry.customPrompt || '').replace(/"/g, '""')}"`,
       `"${(data?.responses?.improvements || '').replace(/"/g, '""')}"`,
     ];
 

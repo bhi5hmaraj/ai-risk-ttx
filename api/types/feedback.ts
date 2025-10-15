@@ -163,6 +163,7 @@ export interface FeedbackSubmissionPayload {
   rolePlayed: string;
   gameCompleted: boolean;
   avgRating: number;
+  customPrompt?: string;
 }
 
 /**
@@ -181,6 +182,7 @@ export function createFeedbackSubmission(
     rolePlayed: data.gameMetadata.rolePlayed,
     gameCompleted: data.gameMetadata.finalPublicScore !== null,
     avgRating: Math.round(avgRating * 100) / 100, // Round to 2 decimals
+    customPrompt: data.gameMetadata.customPrompt,
   };
 }
 
