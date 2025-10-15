@@ -148,3 +148,56 @@ Vercel build settings (recommended):
 Set env vars in Vercel:
 - `VITE_LITELLM_API_KEY` — LiteLLM proxy key (virtual/master)
 - `VITE_LLM_MODEL` — e.g., `gemini-2.5-flash`
+
+---
+
+## Local Development Setup
+
+### Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   npm ci
+   ```
+
+2. **Set up local database:**
+   ```bash
+   npm run db:setup
+   ```
+   This creates `ttx-prisma-postgres-local` database and runs migrations.
+
+3. **Configure environment:**
+   Make sure `.env` has:
+   ```bash
+   DATABASE_URL="postgresql://yourusername@localhost:5432/ttx-prisma-postgres-local?schema=public"
+   VITE_LITELLM_API_KEY="your-api-key"
+   VITE_LLM_MODEL="gpt-4o-mini"
+   ```
+
+4. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+   **Important:** This uses **Vercel CLI** (not Vite) to enable API routes locally. The feedback system requires serverless functions in `/api` that only work with Vercel's dev server.
+
+5. **View database:**
+   ```bash
+   npm run db:studio
+   ```
+
+### Testing the Feedback API
+
+In a separate terminal:
+```bash
+npm run test:api
+```
+
+### Analyze Feedback Data
+
+```bash
+npm run analyze              # Basic stats
+npm run analyze -- --export feedback.csv  # Export to CSV
+```
+
+See [docs/local-development.md](docs/local-development.md) for full guide.
