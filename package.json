@@ -6,7 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "prisma generate",
+    "db:setup": "chmod +x scripts/setup-local-db.sh && scripts/setup-local-db.sh",
+    "db:studio": "npx prisma studio",
+    "db:migrate": "npx prisma migrate dev",
+    "db:reset": "npx prisma migrate reset",
+    "analyze": "tsx scripts/analyze-feedback.ts",
+    "test:api": "chmod +x scripts/test-feedback-api.sh && scripts/test-feedback-api.sh"
   },
   "dependencies": {
     "cytoscape": "3.29.2",
@@ -14,6 +21,7 @@
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.65.0",
     "reactflow": "^11.11.4",
     "zod": "^3.25.6"
   },
@@ -21,10 +29,14 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@prisma/client": "^6.17.1",
     "@types/node": "^22.14.0",
     "@types/react-cytoscapejs": "^1.2.5",
     "@types/react-dom": "^19.1.6",
+    "@vercel/node": "^5.3.26",
     "cytoscape-dagre": "^2.5.0",
+    "prisma": "^6.17.1",
+    "tsx": "^4.20.6",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }

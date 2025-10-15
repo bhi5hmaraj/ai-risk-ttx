@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// FEEDBACK SYSTEM
+// ============================================================================
+
+model Feedback {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Version tracking
+  schemaVersion String @default("1.0.0")
+
+  // Full data as JSON (flexible)
+  data        Json
+
+  // Denormalized fields for fast querying
+  model       String?
+  scenarioType String?
+  rolePlayed  String?
+  gameCompleted Boolean @default(false)
+  avgRating   Float?
+
+  @@index([schemaVersion])
+  @@index([createdAt])
+  @@index([model])
+  @@index([scenarioType])
+  @@index([gameCompleted])
+}
+
+// ============================================================================
+// PUBLIC SCENARIOS
+// ============================================================================
+
+model PublicScenario {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // User input
+  customPrompt String   @db.Text // Original user prompt
+
+  // AI-generated scenario content (stored for consistent replay)
+  gameSetup    Json     // GameSetup type: scenarioTitle, scenarioDescription, coreMetric, stakeholders
+  initialEvent Json     // GameEvent type: headline, detail
+
+  // Moderation workflow
+  status           String   @default("pending") // "pending" | "approved" | "rejected"
+  submitterName    String?  // null = anonymous
+  submittedAt      DateTime @default(now())
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  rejectionReason  String?  @db.Text
+
+  // Engagement
+  voteCount   Int      @default(0)
+
+  // Relations
+  votes       ScenarioVote[]
+
+  @@index([status])
+  @@index([voteCount(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([submittedAt(sort: Desc)])
+}
+
+model ScenarioVote {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+
+  scenarioId String
+  scenario   PublicScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  // Simple fingerprinting (IP hash or session ID)
+  userFingerprint String
+
+  @@unique([scenarioId, userFingerprint])
+  @@index([scenarioId])
+}
