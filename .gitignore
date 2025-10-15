@@ -50,3 +50,5 @@ Thumbs.db
 !.env*.example
 
 node_modules/**
+
+/generated/prisma
