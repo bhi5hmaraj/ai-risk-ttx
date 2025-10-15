@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 /**
  * POST /api/scenarios/:id/vote
@@ -89,7 +87,5 @@ export default async function handler(
       error: 'Failed to record vote',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

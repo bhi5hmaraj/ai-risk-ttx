@@ -1,8 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PrismaClient } from '@prisma/client';
-import type { SubmitScenarioRequest, SubmitScenarioResponse } from '../types/publicScenario.js';
-
-const prisma = new PrismaClient();
+import { prisma } from './lib/prisma';
+import type { SubmitScenarioRequest, SubmitScenarioResponse } from './types/publicScenario';
 
 /**
  * POST /api/scenarios
@@ -29,8 +27,6 @@ export default async function handler(
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -41,10 +37,14 @@ async function handleSubmitScenario(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
+  console.log('[POST /api/scenarios] Request received');
+  console.log('[POST /api/scenarios] Body:', JSON.stringify(req.body, null, 2));
+
   const body = req.body as SubmitScenarioRequest;
 
   // Basic validation
   if (!body.scenarioData) {
+    console.error('[POST /api/scenarios] Validation failed: Missing scenarioData');
     res.status(400).json({
       success: false,
       error: 'Missing scenarioData',
@@ -53,9 +53,14 @@ async function handleSubmitScenario(
   }
 
   const { scenarioData, submitterName } = body;
+  console.log('[POST /api/scenarios] Submitter name:', submitterName || 'anonymous');
 
   // Validate required fields in scenarioData
   if (!scenarioData.customPrompt || !scenarioData.gameSetup || !scenarioData.initialEvent) {
+    console.error('[POST /api/scenarios] Validation failed: Missing required fields in scenarioData');
+    console.error('[POST /api/scenarios] Has customPrompt:', !!scenarioData.customPrompt);
+    console.error('[POST /api/scenarios] Has gameSetup:', !!scenarioData.gameSetup);
+    console.error('[POST /api/scenarios] Has initialEvent:', !!scenarioData.initialEvent);
     res.status(400).json({
       success: false,
       error: 'Invalid scenarioData: missing required fields',
@@ -64,6 +69,8 @@ async function handleSubmitScenario(
   }
 
   try {
+    console.log('[POST /api/scenarios] Creating scenario in database...');
+
     // Create the scenario in pending status
     const scenario = await prisma.publicScenario.create({
       data: {
@@ -75,12 +82,19 @@ async function handleSubmitScenario(
       },
     });
 
+    console.log('[POST /api/scenarios] Scenario created successfully. ID:', scenario.id);
+
     res.status(201).json({
       success: true,
       id: scenario.id,
     } as SubmitScenarioResponse);
   } catch (error) {
-    console.error('Error creating scenario:', error);
+    console.error('[POST /api/scenarios] Database error:', error);
+    console.error('[POST /api/scenarios] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       error: 'Failed to submit scenario',

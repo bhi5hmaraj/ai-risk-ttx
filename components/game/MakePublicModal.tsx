@@ -24,6 +24,7 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
+    console.log('[MakePublicModal] Submit button clicked');
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -33,6 +34,15 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
         gameSetup,
         initialEvent,
       };
+
+      console.log('[MakePublicModal] Scenario data prepared:', {
+        hasCustomPrompt: !!customPrompt,
+        hasGameSetup: !!gameSetup,
+        hasInitialEvent: !!initialEvent,
+        submitterName: submitterName.trim() || 'anonymous',
+      });
+
+      console.log('[MakePublicModal] Sending POST request to /api/scenarios');
 
       const response = await fetch('/api/scenarios', {
         method: 'POST',
@@ -45,9 +55,17 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
         }),
       });
 
+      console.log('[MakePublicModal] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
+
       const result = await response.json();
+      console.log('[MakePublicModal] Response body:', result);
 
       if (result.success) {
+        console.log('[MakePublicModal] Submission successful!');
         setSubmitSuccess(true);
 
         // Close modal after success message
@@ -57,11 +75,12 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
           setSubmitSuccess(false);
         }, 3000);
       } else {
+        console.error('[MakePublicModal] Submission failed:', result.error);
         setSubmitError(result.error || 'Failed to submit scenario');
       }
     } catch (error) {
+      console.error('[MakePublicModal] Caught error:', error);
       setSubmitError('An unexpected error occurred. Please try again.');
-      console.error('Error submitting scenario:', error);
     } finally {
       setIsSubmitting(false);
     }
