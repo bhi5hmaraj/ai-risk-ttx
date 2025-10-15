@@ -13,7 +13,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   const finalScoreChange = finalLogEntry?.publicScoreChange ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 pt-24 flex flex-col items-center">
       <div className="w-full max-w-5xl space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">Simulation Over</h1>
