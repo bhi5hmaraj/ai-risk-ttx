@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { GameSetup, RoleData } from '../types';
 import { ROLES } from '../constants';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import { BeakerIcon } from '../components/Icons';
-import { RoleCard } from '../components/game';
+import { RoleCard, MakePublicModal } from '../components/game';
 
 interface LobbyScreenProps {
   selectedRoleName: string | null;
@@ -85,11 +85,20 @@ const PresetRoleSelection: React.FC<{
   onSelect: (role: string) => void;
   onStart: () => void;
   cta: string;
-}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta }) => (
+  onMakePublic?: () => void;
+}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic }) => (
   <div className="max-w-7xl mx-auto">
     <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
       <h2 className="text-3xl font-bold text-purple-300 mb-2">{scenarioTitle}</h2>
       <p className="text-gray-300">{scenarioDescription}</p>
+      {onMakePublic && (
+        <button
+          onClick={onMakePublic}
+          className="mt-4 px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors"
+        >
+          📢 Make This Scenario Public
+        </button>
+      )}
     </div>
     <RoleSelection roles={roles} selectedRoleName={selectedRoleName} onSelect={onSelect} onStart={onStart} cta={cta} />
   </div>
@@ -106,8 +115,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   isLoading,
   handleCustomGameStart,
   handleStartGame,
-}) => (
-  <div className="min-h-screen bg-gray-900 text-white p-8">
+}) => {
+  const [isMakePublicModalOpen, setIsMakePublicModalOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
     <div className="text-center mb-10">
       <h1 className="text-5xl font-extrabold text-blue-400">Crisis Command</h1>
       <p className="text-lg text-gray-300 mt-2 max-w-4xl mx-auto">
@@ -167,15 +179,28 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         cta="Start AI Safety Simulation"
       />
     ) : gameSetup ? (
-      <PresetRoleSelection
-        scenarioTitle={gameSetup.scenarioTitle}
-        scenarioDescription={gameSetup.scenarioDescription}
-        roles={mapStakeholdersToRoles(gameSetup.stakeholders)}
-        selectedRoleName={selectedRoleName}
-        onSelect={setSelectedRoleName}
-        onStart={handleStartGame}
-        cta="Start Custom Simulation"
-      />
+      <>
+        <PresetRoleSelection
+          scenarioTitle={gameSetup.scenarioTitle}
+          scenarioDescription={gameSetup.scenarioDescription}
+          roles={mapStakeholdersToRoles(gameSetup.stakeholders)}
+          selectedRoleName={selectedRoleName}
+          onSelect={setSelectedRoleName}
+          onStart={handleStartGame}
+          cta="Start Custom Simulation"
+          onMakePublic={() => setIsMakePublicModalOpen(true)}
+        />
+        <MakePublicModal
+          isOpen={isMakePublicModalOpen}
+          onClose={() => setIsMakePublicModalOpen(false)}
+          customPrompt={customScenario}
+          gameSetup={gameSetup}
+          initialEvent={{
+            headline: gameSetup.scenarioTitle,
+            detail: gameSetup.scenarioDescription,
+          }}
+        />
+      </>
     ) : (
       <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
         <h2 className="text-3xl font-bold text-center mb-4">Describe Your Crisis Scenario</h2>
@@ -196,5 +221,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </div>
       </div>
     )}
-  </div>
-);
+    </div>
+  );
+};
