@@ -114,3 +114,35 @@ export const BeakerIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M8 12h8" strokeLinecap="round" />
   </svg>
 );
+
+export const ChatBubbleLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M6 18 3 21V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6Z" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const XMarkIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={2} {...props}>
+    <path d="M6 6 18 18M6 18 18 6" strokeLinecap="round" />
+  </svg>
+);
+
+export const Bars3Icon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={2} {...props}>
+    <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+  </svg>
+);
+
+export const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="m4 10 8-7 8 7v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10Z" strokeLinejoin="round" />
+    <path d="M9 21v-7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7" />
+  </svg>
+);
+
+export const InformationCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 16v-4m0-4h.01" strokeLinecap="round" />
+  </svg>
+);
