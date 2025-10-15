@@ -1,8 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PrismaClient } from '@prisma/client';
-import { feedbackDataV1Schema, createFeedbackSubmission } from '../types/feedback.js';
-
-const prisma = new PrismaClient();
+import { prisma } from './lib/prisma';
+import { feedbackDataV1Schema, createFeedbackSubmission } from './types/feedback';
 
 /**
  * POST /api/feedback
@@ -58,7 +56,5 @@ export default async function handler(
       error: 'Failed to submit feedback',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
