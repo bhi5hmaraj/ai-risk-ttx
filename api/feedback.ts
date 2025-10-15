@@ -41,6 +41,7 @@ export default async function handler(
         rolePlayed: submission.rolePlayed,
         gameCompleted: submission.gameCompleted,
         avgRating: submission.avgRating,
+        customPrompt: submission.customPrompt,
       },
     });
 

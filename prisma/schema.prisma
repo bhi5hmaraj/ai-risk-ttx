@@ -34,6 +34,7 @@ model Feedback {
   rolePlayed  String?
   gameCompleted Boolean @default(false)
   avgRating   Float?
+  customPrompt String? @db.Text // Custom scenario prompt if gamePath = "custom"
 
   @@index([schemaVersion])
   @@index([createdAt])

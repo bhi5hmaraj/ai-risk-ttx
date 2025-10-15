@@ -43,7 +43,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onPauseToggle,
   error,
 }) => (
-  <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8 pt-24">
+  <div className="min-h-screen bg-gray-900 px-4 pb-4 md:px-6 md:pb-6 lg:px-8 lg:pb-8 pt-28">
     <div className="max-w-8xl mx-auto">
       {error && (
         <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>

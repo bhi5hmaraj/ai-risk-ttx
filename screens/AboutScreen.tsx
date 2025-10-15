@@ -88,8 +88,11 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           {/* Credits */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Credits</h2>
-            <p className="leading-relaxed">
+            <p className="leading-relaxed mb-3">
               Crisis Command is an experimental project exploring AI-driven interactive storytelling and strategic decision-making.
+            </p>
+            <p className="leading-relaxed text-sm text-gray-400">
+              Contact: <span className="text-blue-400">matib275 [at] gmail [dot] com</span>
             </p>
           </section>
 
@@ -98,7 +101,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Resources</h2>
             <div className="flex flex-wrap gap-4">
               <a
-                href="https://github.com"
+                href="https://github.com/bhi5hmaraj/ai-risk-ttx"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 underline"
@@ -106,12 +109,12 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
                 GitHub Repository
               </a>
               <a
-                href="https://docs.google.com"
+                href="https://www.lesswrong.com/posts/epn73xEkeu5T4sZa5/rehearsing-the-future-tabletop-exercises-for-risks-and"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 underline"
               >
-                Documentation
+                LessWrong Blog Post
               </a>
             </div>
           </section>
