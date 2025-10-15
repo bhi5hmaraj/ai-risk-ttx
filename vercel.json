@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npx prisma migrate deploy && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
