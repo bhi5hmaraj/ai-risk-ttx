@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { GameSetup, RoleData } from '../types';
 import { ROLES } from '../constants';
 import { AI_SAFETY_SCENARIO } from '../presets';
-import { BeakerIcon } from '../components/Icons';
 import { RoleCard, MakePublicModal } from '../components/game';
 
 interface PublicScenario {
@@ -142,14 +141,26 @@ const RoleSelection: React.FC<{
 );
 
 const mapStakeholdersToRoles = (stakeholders: RoleData[] | any[]): RoleData[] =>
-  stakeholders.map((role: any) => ({
-    name: role.name,
-    publicObjective: role.publicObjective,
-    hiddenObjective: role.hiddenObjective,
-    resources: role.resources ?? [],
-    constraints: role.constraints ?? [],
-    icon: (props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />,
-  }));
+  stakeholders.map((stakeholder: any) => {
+    // Handle both emoji strings (from GameSetup) and existing icon functions (from RoleData)
+    const emoji = typeof stakeholder.icon === 'string' ? stakeholder.icon : '❓';
+    const iconComponent = typeof stakeholder.icon === 'function'
+      ? stakeholder.icon
+      : (props: React.SVGProps<SVGSVGElement>) => (
+          <span className="text-2xl" role="img" aria-label="role icon">
+            {emoji}
+          </span>
+        );
+
+    return {
+      name: stakeholder.name,
+      publicObjective: stakeholder.publicObjective,
+      hiddenObjective: stakeholder.hiddenObjective,
+      resources: stakeholder.resources ?? [],
+      constraints: stakeholder.constraints ?? [],
+      icon: iconComponent,
+    };
+  });
 
 const PresetRoleSelection: React.FC<{
   scenarioTitle: string;

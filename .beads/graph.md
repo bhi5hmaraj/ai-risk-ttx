@@ -46,42 +46,48 @@ graph TD;
     style ai-risk-ttx-54 fill:#fff3cd,stroke:#856404,stroke-width:2px
     ai-risk-ttx-55["📋 ai-risk-ttx-55<br/>Design unified scenario/prompt tracking databas...<br/>P2"]
     style ai-risk-ttx-55 fill:#fff3cd,stroke:#856404,stroke-width:2px
+    ai-risk-ttx-56["📋 ai-risk-ttx-56<br/>Implement time-travel/rewind feature to replay ...<br/>P2"]
+    style ai-risk-ttx-56 fill:#fff3cd,stroke:#856404,stroke-width:2px
+    ai-risk-ttx-57["📋 ai-risk-ttx-57<br/>Add backend analytics tracking for LLM usage an...<br/>P1"]
+    style ai-risk-ttx-57 fill:#fff3cd,stroke:#856404,stroke-width:2px
+    ai-risk-ttx-58["📋 ai-risk-ttx-58<br/>Improve action tree visualization and design<br/>P1"]
+    style ai-risk-ttx-58 fill:#fff3cd,stroke:#856404,stroke-width:2px
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and storage system<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-26 --> ai-risk-ttx-24
+    ai-risk-ttx-26 --> ai-risk-ttx-25
+    ai-risk-ttx-47 --> ai-risk-ttx-45
+    ai-risk-ttx-47 --> ai-risk-ttx-46
+    ai-risk-ttx-29 --> ai-risk-ttx-24
+    ai-risk-ttx-29 --> ai-risk-ttx-25
+    ai-risk-ttx-33 --> ai-risk-ttx-32
     ai-risk-ttx-51 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-48
     ai-risk-ttx-51 --> ai-risk-ttx-49
     ai-risk-ttx-51 --> ai-risk-ttx-50
+    ai-risk-ttx-53 --> ai-risk-ttx-45
+    ai-risk-ttx-49 --> ai-risk-ttx-47
+    ai-risk-ttx-54 --> ai-risk-ttx-52
+    ai-risk-ttx-54 --> ai-risk-ttx-53
+    ai-risk-ttx-30 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-25
+    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-45 --> ai-risk-ttx-44
     ai-risk-ttx-32 --> ai-risk-ttx-26
     ai-risk-ttx-32 --> ai-risk-ttx-27
     ai-risk-ttx-32 --> ai-risk-ttx-28
     ai-risk-ttx-32 --> ai-risk-ttx-29
     ai-risk-ttx-32 --> ai-risk-ttx-30
     ai-risk-ttx-32 --> ai-risk-ttx-31
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
-    ai-risk-ttx-53 --> ai-risk-ttx-45
-    ai-risk-ttx-54 --> ai-risk-ttx-52
-    ai-risk-ttx-54 --> ai-risk-ttx-53
-    ai-risk-ttx-31 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-25
-    ai-risk-ttx-26 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-25
-    ai-risk-ttx-28 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-25
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-50 --> ai-risk-ttx-47
-    ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-49 --> ai-risk-ttx-47
-    ai-risk-ttx-48 --> ai-risk-ttx-47
-    ai-risk-ttx-47 --> ai-risk-ttx-45
-    ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-29 --> ai-risk-ttx-24
-    ai-risk-ttx-29 --> ai-risk-ttx-25
     ai-risk-ttx-27 --> ai-risk-ttx-24
     ai-risk-ttx-27 --> ai-risk-ttx-25
+    ai-risk-ttx-31 --> ai-risk-ttx-24
+    ai-risk-ttx-31 --> ai-risk-ttx-25
+    ai-risk-ttx-28 --> ai-risk-ttx-24
+    ai-risk-ttx-28 --> ai-risk-ttx-25
+    ai-risk-ttx-25 --> ai-risk-ttx-24
+    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-52 --> ai-risk-ttx-51
 ```

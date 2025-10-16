@@ -1,6 +1,5 @@
 import React from 'react';
 import type { GameState, Player } from '../types';
-import { BeakerIcon } from '../components/Icons';
 
 interface EndScreenProps {
   gameState: GameState;
@@ -123,7 +122,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {finalLogEntry.playerActions.map((playerRound) => {
                     const matchingPlayer = players.find((p) => p.role.name === playerRound.roleName);
-                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
+                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => (
+                      <span className="text-2xl" role="img" aria-label="role icon">❓</span>
+                    ));
                     const hiddenUpdate = finalLogEntry.hiddenScoreChanges[playerRound.roleName];
 
                     return (

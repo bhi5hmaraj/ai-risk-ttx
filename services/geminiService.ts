@@ -111,8 +111,11 @@ const GameSetupZ = z.object({
     }).strict(),
     stakeholders: z.array(z.object({
         name: z.string(),
+        icon: z.string(),
         publicObjective: z.string(),
         hiddenObjective: z.string(),
+        resources: z.array(z.string()).optional(),
+        constraints: z.array(z.string()).optional(),
     }).strict()).min(4).max(6),
 }).strict();
 
