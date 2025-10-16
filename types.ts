@@ -22,11 +22,20 @@ export interface CoreMetric {
   value: number;
 }
 
+export interface StakeholderData {
+    name: string;
+    icon: string; // emoji string
+    publicObjective: string;
+    hiddenObjective: string;
+    resources?: string[];
+    constraints?: string[];
+}
+
 export interface GameSetup {
     scenarioTitle: string;
     scenarioDescription: string;
     coreMetric: CoreMetric;
-    stakeholders: RoleData[];
+    stakeholders: StakeholderData[];
 }
 
 export interface Player {
@@ -34,6 +43,7 @@ export interface Player {
   role: RoleData;
   isHuman: boolean;
   hiddenScore: number;
+  actionPoints: number;
   actions: ActionOption[];
   hasSubmittedActions: boolean;
 }
@@ -119,3 +129,9 @@ export interface AIActionOptionsResponse {
 export interface AICounterfactualResponse {
     publicScoreUpdate: number;
 }
+
+// Re-export feedback types
+export * from './types/feedback';
+
+// Re-export public scenario types
+export * from './types/publicScenario';

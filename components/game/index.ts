@@ -5,3 +5,6 @@ export { GameStatusPanel } from './GameStatusPanel';
 export { ActionTreeModal } from './ActionTreeModal';
 export { RoleCard } from './RoleCard';
 export { ActionTreePortal } from './ActionTreePortal';
+export { FeedbackBanner } from './FeedbackBanner';
+export { FeedbackModal } from './FeedbackModal';
+export { MakePublicModal } from './MakePublicModal';

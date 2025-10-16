@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BeakerIcon } from '../components/Icons';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   GameState,
   Player,
@@ -241,12 +240,20 @@ export const useGameController = () => {
           ],
           currentEvent: result.nextEvent,
         };
-        const newPlayers = playersWithActions.map((p) => ({
-          ...p,
-          hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-          actions: [],
-          hasSubmittedActions: false,
-        }));
+        const newPlayers = playersWithActions.map((p) => {
+          const pointsSpent = p.actions.reduce((sum, action) => sum + action.cost, 0);
+          const newPoints = Math.min(
+            p.actionPoints - pointsSpent + GAME_CONFIG.ACTION_POINTS_PER_ROUND,
+            GAME_CONFIG.MAX_ACTION_POINTS
+          );
+          return {
+            ...p,
+            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
+            actionPoints: newPoints,
+            actions: [],
+            hasSubmittedActions: false,
+          };
+        });
 
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
         setGameState(newGameState);
@@ -277,14 +284,24 @@ export const useGameController = () => {
   );
 
   const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] =>
-    setup.stakeholders.map((stakeholder) => ({
-      name: stakeholder.name,
-      publicObjective: stakeholder.publicObjective,
-      hiddenObjective: stakeholder.hiddenObjective,
-      resources: stakeholder.resources ?? [],
-      constraints: stakeholder.constraints ?? [],
-      icon: BeakerIcon,
-    })),
+    setup.stakeholders.map((stakeholder) => {
+      const emoji = stakeholder.icon || '❓';
+      const EmojiIcon = (props: React.SVGProps<SVGSVGElement>) =>
+        React.createElement('span', {
+          className: 'text-2xl',
+          role: 'img',
+          'aria-label': 'role icon'
+        }, emoji);
+
+      return {
+        name: stakeholder.name,
+        publicObjective: stakeholder.publicObjective,
+        hiddenObjective: stakeholder.hiddenObjective,
+        resources: stakeholder.resources ?? [],
+        constraints: stakeholder.constraints ?? [],
+        icon: EmojiIcon,
+      };
+    }),
   []);
 
   const handleStartGame = useCallback(() => {
@@ -309,12 +326,7 @@ export const useGameController = () => {
         value: initial,
       };
     } else if (path === 'ai_safety') {
-      roles = AI_SAFETY_SCENARIO.stakeholders.map((stakeholder) => ({
-        ...stakeholder,
-        resources: stakeholder.resources ?? [],
-        constraints: stakeholder.constraints ?? [],
-        icon: BeakerIcon,
-      }));
+      roles = buildRolesFromSetup(AI_SAFETY_SCENARIO);
       coreMetric = {
         name: AI_SAFETY_SCENARIO.coreMetric.name,
         description: AI_SAFETY_SCENARIO.coreMetric.description,
@@ -330,6 +342,7 @@ export const useGameController = () => {
       role,
       isHuman: role.name === selectedRoleName,
       hiddenScore: 0,
+      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
       actions: [],
       hasSubmittedActions: false,
     }));
@@ -518,6 +531,7 @@ export const useGameController = () => {
     actions: {
       setSelectedRoleName,
       setGamePath,
+      setGameSetup,
       setCustomScenario,
       setExpandedRound,
       setIsActionTreeOpen,

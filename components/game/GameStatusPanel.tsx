@@ -10,9 +10,11 @@ interface GameStatusPanelProps {
   isPaused: boolean;
   onPauseClick: () => void;
   player: Player;
+  isCustomScenario?: boolean;
+  onMakePublic?: () => void;
 }
 
-export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player }) => {
+export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
   const [showHiddenObjective, setShowHiddenObjective] = useState(false);
@@ -24,9 +26,20 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
           <div className="bg-gray-700 p-3 rounded-lg">
             {player.role.icon({ className: 'h-9 w-9 text-blue-300' })}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold">Your Role</p>
-            <h2 className="text-2xl font-bold text-white leading-tight">{player.role.name}</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-white leading-tight">{player.role.name}</h2>
+              {isCustomScenario && onMakePublic && (
+                <button
+                  onClick={onMakePublic}
+                  className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
+                  title="Share this scenario with the community"
+                >
+                  📢 Make Public
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 lg:flex-nowrap lg:gap-8 w-full lg:w-auto">

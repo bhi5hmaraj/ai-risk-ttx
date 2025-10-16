@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0.0",
+  "ratings": {
+    "ui": 8,
+    "gameDynamics": 9,
+    "modelQuality": 7,
+    "scenario": 8,
+    "actions": 9,
+    "stakeholders": 8
+  },
+  "gameMetadata": {
+    "model": "gpt-4o-mini",
+    "scenarioType": "classic",
+    "rolePlayed": "Tech CEO",
+    "roundsCompleted": 5,
+    "finalPublicScore": 65,
+    "customPromptUsed": false
+  },
+  "responses": {
+    "scenarioUsefulness": "Great for understanding AI policy tradeoffs",
+    "counterfactualTime": "Would have been scrolling social media",
+    "improvements": "More diverse scenarios would be helpful"
+  },
+  "demographics": {
+    "background": ["tech", "policy"]
+  },
+  "contact": {
+    "email": "test@example.com",
+    "wantsCollaboration": true
+  },
+  "meta": {
+    "sessionId": "1697123456789-abc123",
+    "submittedAt": "2025-10-14T22:45:00.000Z"
+  }
+}
