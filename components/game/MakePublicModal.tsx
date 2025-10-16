@@ -105,8 +105,13 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-blue-500 rounded-lg w-full max-w-lg flex flex-col relative">
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Make scenario public"
+    >
+      <div className="bg-gray-900 border border-blue-500 rounded-lg w-full max-w-lg flex flex-col relative max-h-[90vh] min-h-0 overflow-hidden shadow-2xl">
         {/* Success State - Full Screen Overlay */}
         {submitSuccess && (
           <div className="absolute inset-0 bg-gray-900/95 flex items-center justify-center rounded-lg z-10">
@@ -120,7 +125,7 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
         )}
 
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-800">
+        <div className="flex justify-between items-center p-6 border-b border-gray-800 shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-blue-300">Make Scenario Public</h2>
             <p className="text-sm text-gray-400 mt-1">Share your custom scenario with the community</p>
@@ -129,6 +134,7 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
             onClick={handleClose}
             disabled={isSubmitting}
             className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Close"
           >
             <CloseIcon className="h-5 w-5 text-white" />
           </button>
@@ -136,23 +142,27 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
 
         {/* Error State */}
         {submitError && (
-          <div className="p-4 bg-red-900/30 border-b border-red-800">
+          <div className="p-4 bg-red-900/30 border-b border-red-800 shrink-0">
             <p className="text-red-300 font-medium">✗ {submitError}</p>
           </div>
         )}
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        {/* Content (scrollable) */}
+        <div className="p-6 space-y-4 flex-1 min-h-0 overflow-y-auto">
           {/* Scenario Preview */}
-          <div className="bg-gray-800 rounded-md p-4 border border-gray-700">
+          <div className="bg-gray-800 rounded-md p-4 border border-gray-700 max-h-48 overflow-y-auto">
             <h3 className="text-sm font-semibold text-blue-200 mb-2">Your Custom Prompt:</h3>
-            <p className="text-sm text-gray-300 italic">"{customPrompt}"</p>
+            <p className="text-sm text-gray-300 italic whitespace-pre-wrap break-words">
+              "{customPrompt}"
+            </p>
           </div>
 
           <div className="bg-gray-800 rounded-md p-4 border border-gray-700">
             <h3 className="text-sm font-semibold text-blue-200 mb-2">Generated Scenario:</h3>
             <p className="text-sm text-gray-300 font-semibold">{gameSetup.scenarioTitle}</p>
-            <p className="text-xs text-gray-400 mt-1">{gameSetup.scenarioDescription.substring(0, 150)}...</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {gameSetup.scenarioDescription.substring(0, 150)}...
+            </p>
           </div>
 
           {/* Name Input */}
@@ -183,7 +193,7 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-6 border-t border-gray-800">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-6 border-t border-gray-800 shrink-0">
           <button
             onClick={handleClose}
             disabled={isSubmitting}
