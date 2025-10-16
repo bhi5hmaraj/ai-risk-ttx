@@ -331,3 +331,30 @@ Required environment variables:
 - API calls tracked via `geminiCallsThisRoundRef` for telemetry
 - All player actions stored in `GameLogEntry` for full action tree reconstruction
 We track work in Beads instead of Markdown. Run `bd quickstart` to see how.
+
+## Known Issues & Workarounds
+
+### TypeScript Errors in Dev Server
+
+**Issue**: When running `npm run dev`, you may see TypeScript errors from `node_modules/.prisma/client` and `node_modules/@types/d3-dispatch`. These are caused by TypeScript 5.7+ having stricter type checking that's incompatible with some dependency type definitions.
+
+**Example errors**:
+```
+node_modules/.prisma/client/index.d.ts(48,3): error TS1139: Type parameter declaration expected.
+node_modules/@types/d3-dispatch/index.d.ts(91,5): error TS1139: Type parameter declaration expected.
+```
+
+**Workaround**:
+The app **still works fine** - these are just type-checking warnings that don't affect runtime. The production build (`npm run build`) completes successfully and the app functions normally.
+
+**Configuration**:
+The `tsconfig.json` is already configured with:
+- `"skipLibCheck": true` - Skips type checking of `.d.ts` files
+- `"exclude": ["node_modules", "dist"]` - Excludes dependencies from type checking
+
+However, Vite's dev server runs its own TypeScript checking that doesn't fully respect these settings.
+
+**For Claude Code**:
+- Ignore these errors when reviewing logs - they don't indicate actual problems
+- Focus on errors from your own code files (not in `node_modules/`)
+- Production builds will succeed despite these dev-time warnings

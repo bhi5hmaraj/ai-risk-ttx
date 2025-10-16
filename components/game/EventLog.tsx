@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import type { GameState, Player } from '../../types';
-import { BeakerIcon } from '../Icons';
 
 interface EventLogProps {
   gameState: GameState;
@@ -99,7 +98,9 @@ export const EventLog: React.FC<EventLogProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {log.playerActions.map((playerAction) => {
                         const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
-                        const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
+                        const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => (
+                          <span className="text-2xl" role="img" aria-label="role icon">❓</span>
+                        ));
                         const scoreChange = log.hiddenScoreChanges[playerAction.roleName];
                         return (
                           <div key={`${playerAction.roleName}_${log.round}`} className="bg-gray-900/70 p-3 rounded-md border border-gray-800 flex flex-col">
