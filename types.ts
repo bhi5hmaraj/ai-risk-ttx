@@ -22,11 +22,20 @@ export interface CoreMetric {
   value: number;
 }
 
+export interface StakeholderData {
+    name: string;
+    icon: string; // emoji string
+    publicObjective: string;
+    hiddenObjective: string;
+    resources?: string[];
+    constraints?: string[];
+}
+
 export interface GameSetup {
     scenarioTitle: string;
     scenarioDescription: string;
     coreMetric: CoreMetric;
-    stakeholders: RoleData[];
+    stakeholders: StakeholderData[];
 }
 
 export interface Player {

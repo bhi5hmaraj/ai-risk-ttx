@@ -129,10 +129,11 @@ const GameSetupSchema = {
                 type: "object",
                 properties: {
                     name: { type: "string", description: "The title of the stakeholder role (e.g., 'Lead Cyberneticist', 'Chief Medical Officer')." },
+                    icon: { type: "string", description: "A single emoji that represents this role (e.g., '🔬' for scientist, '💼' for executive, '🏥' for medical officer). Must be a single emoji character." },
                     publicObjective: { type: "string", description: "The stated, public-facing goal of this role." },
                     hiddenObjective: { type: "string", description: "The secret, personal, or institutional goal that this role is trying to achieve." }
                 },
-                required: ['name', 'publicObjective', 'hiddenObjective']
+                required: ['name', 'icon', 'publicObjective', 'hiddenObjective']
             }
         }
     },
@@ -316,6 +317,7 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
       3.  **Stakeholders (4-6 Roles):**
           -   Create a cast of 4 to 6 distinct, believable stakeholder roles. These should be the key players in the crisis.
           -   **Crucially, their objectives must create tension and potential conflict.** Give them reasons to disagree and compete.
+          -   For each role's 'icon', choose a SINGLE emoji that visually represents their role or domain. Examples: 🔬 (scientist), 💼 (executive), 🏥 (medical), ⚖️ (legal/regulatory), 🎖️ (military), 🏭 (industrial), 🌍 (environmental), 📡 (communications), 🛡️ (security), 💊 (pharmaceutical), etc. The emoji should be intuitive and immediately recognizable.
           -   The 'publicObjective' should be what they say they want in press conferences.
           -   The 'hiddenObjective' should be their true, often selfish or controversial, goal. This is the key to strategic gameplay. Avoid generic goals; make them specific and compelling.
 
