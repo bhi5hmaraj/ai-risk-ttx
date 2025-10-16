@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BeakerIcon } from '../components/Icons';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   GameState,
   Player,
@@ -285,14 +284,24 @@ export const useGameController = () => {
   );
 
   const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] =>
-    setup.stakeholders.map((stakeholder) => ({
-      name: stakeholder.name,
-      publicObjective: stakeholder.publicObjective,
-      hiddenObjective: stakeholder.hiddenObjective,
-      resources: stakeholder.resources ?? [],
-      constraints: stakeholder.constraints ?? [],
-      icon: BeakerIcon,
-    })),
+    setup.stakeholders.map((stakeholder) => {
+      const emoji = stakeholder.icon || '❓';
+      const EmojiIcon = (props: React.SVGProps<SVGSVGElement>) =>
+        React.createElement('span', {
+          className: 'text-2xl',
+          role: 'img',
+          'aria-label': 'role icon'
+        }, emoji);
+
+      return {
+        name: stakeholder.name,
+        publicObjective: stakeholder.publicObjective,
+        hiddenObjective: stakeholder.hiddenObjective,
+        resources: stakeholder.resources ?? [],
+        constraints: stakeholder.constraints ?? [],
+        icon: EmojiIcon,
+      };
+    }),
   []);
 
   const handleStartGame = useCallback(() => {
@@ -317,12 +326,7 @@ export const useGameController = () => {
         value: initial,
       };
     } else if (path === 'ai_safety') {
-      roles = AI_SAFETY_SCENARIO.stakeholders.map((stakeholder) => ({
-        ...stakeholder,
-        resources: stakeholder.resources ?? [],
-        constraints: stakeholder.constraints ?? [],
-        icon: BeakerIcon,
-      }));
+      roles = buildRolesFromSetup(AI_SAFETY_SCENARIO);
       coreMetric = {
         name: AI_SAFETY_SCENARIO.coreMetric.name,
         description: AI_SAFETY_SCENARIO.coreMetric.description,
