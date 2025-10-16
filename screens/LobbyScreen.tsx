@@ -48,12 +48,20 @@ const LobbyExperienceCard: React.FC<{
 const ScenarioCard: React.FC<{
   scenario: PublicScenario;
   onSelect: () => void;
-}> = ({ scenario, onSelect }) => {
+  onVote: (scenarioId: string) => void;
+  hasVoted: boolean;
+}> = ({ scenario, onSelect, onVote, hasVoted }) => {
   const gameSetup = scenario.gameSetup;
+
+  const handleVote = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card selection when clicking vote
+    onVote(scenario.id);
+  };
+
   return (
-    <button
+    <div
+      className="bg-gray-800 border border-gray-700 rounded-lg p-5 hover:border-purple-500 transition-colors group cursor-pointer"
       onClick={onSelect}
-      className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-left hover:border-purple-500 transition-colors group"
     >
       <h4 className="text-lg font-bold text-purple-300 mb-2 group-hover:text-purple-200">
         {gameSetup.scenarioTitle}
@@ -61,11 +69,23 @@ const ScenarioCard: React.FC<{
       <p className="text-sm text-gray-400 mb-3 line-clamp-2">
         {gameSetup.scenarioDescription}
       </p>
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>{scenario.submitterName || 'Anonymous'}</span>
-        <span>👍 {scenario.voteCount}</span>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-gray-500">{scenario.submitterName || 'Anonymous'}</span>
+        <button
+          onClick={handleVote}
+          disabled={hasVoted}
+          className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+            hasVoted
+              ? 'text-purple-400 cursor-not-allowed'
+              : 'text-gray-400 hover:text-purple-300 hover:bg-gray-700'
+          }`}
+          title={hasVoted ? 'Already voted' : 'Upvote this scenario'}
+        >
+          <span>👍</span>
+          <span className="font-medium">{scenario.voteCount}</span>
+        </button>
       </div>
-    </button>
+    </div>
   );
 };
 
@@ -156,6 +176,17 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [publicScenarios, setPublicScenarios] = useState<PublicScenario[]>([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<PublicScenario | null>(null);
+  const [votedScenarios, setVotedScenarios] = useState<Set<string>>(new Set());
+
+  // Generate or retrieve user fingerprint for voting
+  const getUserFingerprint = () => {
+    let fingerprint = localStorage.getItem('userFingerprint');
+    if (!fingerprint) {
+      fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+      localStorage.setItem('userFingerprint', fingerprint);
+    }
+    return fingerprint;
+  };
 
   // Fetch public scenarios on mount
   useEffect(() => {
@@ -181,6 +212,44 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     // Set the gameSetup and gamePath so the game controller can use it
     setGameSetup(scenario.gameSetup);
     setGamePath('custom'); // Mark as custom to use preset scenario initialization
+  };
+
+  const handleVote = async (scenarioId: string) => {
+    if (votedScenarios.has(scenarioId)) {
+      return; // Already voted
+    }
+
+    try {
+      const response = await fetch(`/api/scenarios/${scenarioId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userFingerprint: getUserFingerprint(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Mark as voted locally
+        setVotedScenarios(prev => new Set(prev).add(scenarioId));
+
+        // Update vote count in local state
+        setPublicScenarios(prev =>
+          prev.map(s =>
+            s.id === scenarioId
+              ? { ...s, voteCount: s.voteCount + 1 }
+              : s
+          )
+        );
+      } else {
+        console.error('Vote failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+    }
   };
 
   return (
@@ -240,6 +309,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 key={scenario.id}
                 scenario={scenario}
                 onSelect={() => handleSelectPublicScenario(scenario)}
+                onVote={handleVote}
+                hasVoted={votedScenarios.has(scenario.id)}
               />
             ))}
           </div>
