@@ -48,14 +48,22 @@ const LobbyExperienceCard: React.FC<{
 const ScenarioCard: React.FC<{
   scenario: PublicScenario;
   onSelect: () => void;
-  onVote: (scenarioId: string) => void;
+  onVote: (scenarioId: string) => Promise<void>;
   hasVoted: boolean;
 }> = ({ scenario, onSelect, onVote, hasVoted }) => {
   const gameSetup = scenario.gameSetup;
+  const [isVoting, setIsVoting] = useState(false);
 
-  const handleVote = (e: React.MouseEvent) => {
+  const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card selection when clicking vote
-    onVote(scenario.id);
+    if (isVoting || hasVoted) return;
+
+    setIsVoting(true);
+    try {
+      await onVote(scenario.id);
+    } finally {
+      setIsVoting(false);
+    }
   };
 
   return (
@@ -73,16 +81,27 @@ const ScenarioCard: React.FC<{
         <span className="text-gray-500">{scenario.submitterName || 'Anonymous'}</span>
         <button
           onClick={handleVote}
-          disabled={hasVoted}
+          disabled={hasVoted || isVoting}
           className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
             hasVoted
               ? 'text-purple-400 cursor-not-allowed'
+              : isVoting
+              ? 'text-gray-500 cursor-wait'
               : 'text-gray-400 hover:text-purple-300 hover:bg-gray-700'
           }`}
-          title={hasVoted ? 'Already voted' : 'Upvote this scenario'}
+          title={hasVoted ? 'Already voted' : isVoting ? 'Voting...' : 'Upvote this scenario'}
         >
-          <span>👍</span>
-          <span className="font-medium">{scenario.voteCount}</span>
+          {isVoting ? (
+            <>
+              <span className="animate-spin">⏳</span>
+              <span className="font-medium">{scenario.voteCount}</span>
+            </>
+          ) : (
+            <>
+              <span>👍</span>
+              <span className="font-medium">{scenario.voteCount}</span>
+            </>
+          )}
         </button>
       </div>
     </div>
