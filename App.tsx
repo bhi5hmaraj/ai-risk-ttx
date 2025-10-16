@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameController } from './hooks/useGameController';
-import { ActionTreePortal, FeedbackBanner, FeedbackModal } from './components/game';
+import { ActionTreePortal, FeedbackBanner, FeedbackModal, MakePublicModal } from './components/game';
 import { Navigation } from './components/Navigation';
 import { LobbyScreen, GameScreen, EndScreen, LoadingScreen, AboutScreen } from './screens';
 import { GamePhase } from './types';
@@ -9,6 +9,8 @@ import type { GameMetadata } from './types/feedback';
 export default function App() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showAboutScreen, setShowAboutScreen] = useState(false);
+  const [showMakePublicModal, setShowMakePublicModal] = useState(false);
+  const [scenarioSubmitted, setScenarioSubmitted] = useState(false);
 
   const {
     state: {
@@ -34,6 +36,7 @@ export default function App() {
     actions: {
       setSelectedRoleName,
       setGamePath,
+      setGameSetup,
       setCustomScenario,
       setExpandedRound,
       setIsActionTreeOpen,
@@ -46,6 +49,13 @@ export default function App() {
     },
     derived: { humanPlayer, handlePauseToggle },
   } = useGameController();
+
+  // Reset scenarioSubmitted when returning to lobby or creating new scenario
+  React.useEffect(() => {
+    if (gameState.phase === GamePhase.LOBBY) {
+      setScenarioSubmitted(false);
+    }
+  }, [gameState.phase]);
 
   // Build game metadata for feedback form
   const gameMetadata: GameMetadata = {
@@ -102,6 +112,7 @@ export default function App() {
           customScenario={customScenario}
           setCustomScenario={setCustomScenario}
           gameSetup={gameSetup}
+          setGameSetup={setGameSetup}
           isLoading={isLoading}
           handleCustomGameStart={handleCustomGameStart}
           handleStartGame={handleStartGame}
@@ -164,6 +175,19 @@ export default function App() {
           onClose={() => setShowFeedbackModal(false)}
           gameMetadata={gameMetadata}
         />
+        {gamePath === 'custom' && gameSetup && (
+          <MakePublicModal
+            isOpen={showMakePublicModal}
+            onClose={() => setShowMakePublicModal(false)}
+            customPrompt={customScenario}
+            gameSetup={gameSetup}
+            initialEvent={{
+              headline: gameSetup.scenarioTitle,
+              detail: gameSetup.scenarioDescription,
+            }}
+            onSubmitSuccess={() => setScenarioSubmitted(true)}
+          />
+        )}
         <GameScreen
           gameState={gameState}
           players={players}
@@ -183,6 +207,8 @@ export default function App() {
           onSetExpandedRound={setExpandedRound}
           onPauseToggle={handlePauseToggle}
           error={error}
+          isCustomScenario={gamePath === 'custom' && !!customScenario && !scenarioSubmitted}
+          onMakePublic={() => setShowMakePublicModal(true)}
         />
       </>
     );
