@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { GameSetup, RoleData } from '../types';
 import { ROLES } from '../constants';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import { BeakerIcon } from '../components/Icons';
 import { RoleCard, MakePublicModal } from '../components/game';
+
+interface PublicScenario {
+  id: string;
+  customPrompt: string;
+  gameSetup: GameSetup;
+  initialEvent: { headline: string; detail: string };
+  submitterName: string | null;
+  voteCount: number;
+  createdAt: string;
+}
 
 interface LobbyScreenProps {
   selectedRoleName: string | null;
@@ -13,6 +23,7 @@ interface LobbyScreenProps {
   customScenario: string;
   setCustomScenario: (value: string) => void;
   gameSetup: GameSetup | null;
+  setGameSetup: (setup: GameSetup | null) => void;
   isLoading: boolean;
   handleCustomGameStart: () => void;
   handleStartGame: () => void;
@@ -33,6 +44,30 @@ const LobbyExperienceCard: React.FC<{
     <span className="inline-flex items-center text-blue-400 font-semibold">{cta}</span>
   </button>
 );
+
+const ScenarioCard: React.FC<{
+  scenario: PublicScenario;
+  onSelect: () => void;
+}> = ({ scenario, onSelect }) => {
+  const gameSetup = scenario.gameSetup;
+  return (
+    <button
+      onClick={onSelect}
+      className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-left hover:border-purple-500 transition-colors group"
+    >
+      <h4 className="text-lg font-bold text-purple-300 mb-2 group-hover:text-purple-200">
+        {gameSetup.scenarioTitle}
+      </h4>
+      <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+        {gameSetup.scenarioDescription}
+      </p>
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <span>{scenario.submitterName || 'Anonymous'}</span>
+        <span>👍 {scenario.voteCount}</span>
+      </div>
+    </button>
+  );
+};
 
 const RoleSelection: React.FC<{
   roles: RoleData[];
@@ -112,11 +147,41 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   customScenario,
   setCustomScenario,
   gameSetup,
+  setGameSetup,
   isLoading,
   handleCustomGameStart,
   handleStartGame,
 }) => {
   const [isMakePublicModalOpen, setIsMakePublicModalOpen] = useState(false);
+  const [publicScenarios, setPublicScenarios] = useState<PublicScenario[]>([]);
+  const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<PublicScenario | null>(null);
+
+  // Fetch public scenarios on mount
+  useEffect(() => {
+    const fetchScenarios = async () => {
+      setScenariosLoading(true);
+      try {
+        const response = await fetch('/api/scenarios?sortBy=votes&limit=6');
+        const data = await response.json();
+        if (data.success) {
+          setPublicScenarios(data.scenarios);
+        }
+      } catch (error) {
+        console.error('Failed to fetch scenarios:', error);
+      } finally {
+        setScenariosLoading(false);
+      }
+    };
+    fetchScenarios();
+  }, []);
+
+  const handleSelectPublicScenario = (scenario: PublicScenario) => {
+    setSelectedScenario(scenario);
+    // Set the gameSetup and gamePath so the game controller can use it
+    setGameSetup(scenario.gameSetup);
+    setGamePath('custom'); // Mark as custom to use preset scenario initialization
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
@@ -139,7 +204,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
       </div>
     </div>
 
-    {!gamePath ? (
+    {!gamePath && !selectedScenario ? (
+      <>
       <div className="max-w-4xl mx-auto grid gap-4 md:grid-cols-3">
         <LobbyExperienceCard
           title="Classic Scenario"
@@ -160,6 +226,36 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           cta="Generate Scenario"
         />
       </div>
+
+      {/* Browse Community Scenarios */}
+      {publicScenarios.length > 0 && (
+        <div className="max-w-6xl mx-auto mt-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-purple-300">Community Scenarios</h2>
+            <p className="text-gray-400 mt-2">Play scenarios created by the community</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {publicScenarios.map((scenario) => (
+              <ScenarioCard
+                key={scenario.id}
+                scenario={scenario}
+                onSelect={() => handleSelectPublicScenario(scenario)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      </>
+    ) : selectedScenario ? (
+      <PresetRoleSelection
+        scenarioTitle={selectedScenario.gameSetup.scenarioTitle}
+        scenarioDescription={selectedScenario.gameSetup.scenarioDescription}
+        roles={mapStakeholdersToRoles(selectedScenario.gameSetup.stakeholders)}
+        selectedRoleName={selectedRoleName}
+        onSelect={setSelectedRoleName}
+        onStart={handleStartGame}
+        cta="Start Community Scenario"
+      />
     ) : gamePath === 'classic' ? (
       <RoleSelection
         roles={Object.values(ROLES)}
