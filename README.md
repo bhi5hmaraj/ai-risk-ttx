@@ -1,6 +1,8 @@
-# Crisis Command - AI Tabletop Exercise
+# Simulacra - AI Tabletop Exercise
 
 A web-based crisis simulation game where you role-play as a key decision-maker during an AI-driven global emergency. Make strategic choices that affect public trust and your secret objectives while an AI Game Master generates dynamic scenarios and consequences.
+
+Named after Jean Baudrillard's concept of *simulacra*—simulations that become more "real" than reality itself—this game explores hyperreality through AI-generated crises where synthetic and human decision-makers interact in emergent narratives.
 
 ## What is a Tabletop Exercise (TTX)?
 
@@ -268,41 +270,41 @@ graph TD;
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and stora...<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-48 --> ai-risk-ttx-47
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-51 --> ai-risk-ttx-47
-    ai-risk-ttx-51 --> ai-risk-ttx-48
-    ai-risk-ttx-51 --> ai-risk-ttx-49
-    ai-risk-ttx-51 --> ai-risk-ttx-50
+    ai-risk-ttx-33 --> ai-risk-ttx-32
+    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-47 --> ai-risk-ttx-45
+    ai-risk-ttx-47 --> ai-risk-ttx-46
+    ai-risk-ttx-26 --> ai-risk-ttx-24
+    ai-risk-ttx-26 --> ai-risk-ttx-25
+    ai-risk-ttx-53 --> ai-risk-ttx-45
     ai-risk-ttx-32 --> ai-risk-ttx-26
     ai-risk-ttx-32 --> ai-risk-ttx-27
     ai-risk-ttx-32 --> ai-risk-ttx-28
     ai-risk-ttx-32 --> ai-risk-ttx-29
     ai-risk-ttx-32 --> ai-risk-ttx-30
     ai-risk-ttx-32 --> ai-risk-ttx-31
-    ai-risk-ttx-50 --> ai-risk-ttx-47
-    ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-47 --> ai-risk-ttx-45
-    ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-31 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-25
-    ai-risk-ttx-26 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-25
-    ai-risk-ttx-49 --> ai-risk-ttx-47
-    ai-risk-ttx-27 --> ai-risk-ttx-24
-    ai-risk-ttx-27 --> ai-risk-ttx-25
+    ai-risk-ttx-52 --> ai-risk-ttx-51
     ai-risk-ttx-54 --> ai-risk-ttx-52
     ai-risk-ttx-54 --> ai-risk-ttx-53
+    ai-risk-ttx-45 --> ai-risk-ttx-44
     ai-risk-ttx-29 --> ai-risk-ttx-24
     ai-risk-ttx-29 --> ai-risk-ttx-25
-    ai-risk-ttx-46 --> ai-risk-ttx-44
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
-    ai-risk-ttx-53 --> ai-risk-ttx-45
     ai-risk-ttx-28 --> ai-risk-ttx-24
     ai-risk-ttx-28 --> ai-risk-ttx-25
+    ai-risk-ttx-49 --> ai-risk-ttx-47
+    ai-risk-ttx-25 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-25
+    ai-risk-ttx-27 --> ai-risk-ttx-24
+    ai-risk-ttx-27 --> ai-risk-ttx-25
+    ai-risk-ttx-51 --> ai-risk-ttx-47
+    ai-risk-ttx-51 --> ai-risk-ttx-48
+    ai-risk-ttx-51 --> ai-risk-ttx-49
+    ai-risk-ttx-51 --> ai-risk-ttx-50
+    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-31 --> ai-risk-ttx-24
+    ai-risk-ttx-31 --> ai-risk-ttx-25
 ```
 
 <!-- BEADS_ISSUES_END -->

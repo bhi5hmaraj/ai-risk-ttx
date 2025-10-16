@@ -146,3 +146,9 @@ export const InformationCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M12 16v-4m0-4h.01" strokeLinecap="round" />
   </svg>
 );
+
+export const BellIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M15 17h5l-1.4-1.4A6.5 6.5 0 0 1 17 11V9a5 5 0 0 0-10 0v2c0 1.7-.7 3.4-1.6 4.6L4 17h11Zm0 0v1a3 3 0 0 1-6 0v-1" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

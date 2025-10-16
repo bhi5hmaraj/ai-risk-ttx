@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useGameController } from './hooks/useGameController';
 import { ActionTreePortal, FeedbackBanner, FeedbackModal, MakePublicModal } from './components/game';
 import { Navigation } from './components/Navigation';
-import { LobbyScreen, GameScreen, EndScreen, LoadingScreen, AboutScreen } from './screens';
+import { LobbyScreen, GameScreen, EndScreen, LoadingScreen, AboutScreen, UpdatesScreen } from './screens';
 import { GamePhase } from './types';
 import type { GameMetadata } from './types/feedback';
 
 export default function App() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showAboutScreen, setShowAboutScreen] = useState(false);
+  const [showUpdatesScreen, setShowUpdatesScreen] = useState(false);
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
   const [scenarioSubmitted, setScenarioSubmitted] = useState(false);
 
@@ -87,9 +88,26 @@ export default function App() {
           onNavigateHome={() => setShowAboutScreen(false)}
           onOpenFeedback={() => setShowFeedbackModal(true)}
           onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
           showFeedback={false}
         />
         <AboutScreen onBack={() => setShowAboutScreen(false)} />
+      </>
+    );
+  }
+
+  // Show Updates screen if requested
+  if (showUpdatesScreen) {
+    return (
+      <>
+        <Navigation
+          onNavigateHome={() => setShowUpdatesScreen(false)}
+          onOpenFeedback={() => setShowFeedbackModal(true)}
+          onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
+          showFeedback={false}
+        />
+        <UpdatesScreen onBack={() => setShowUpdatesScreen(false)} />
       </>
     );
   }
@@ -101,6 +119,7 @@ export default function App() {
           onNavigateHome={resetState}
           onOpenFeedback={() => setShowFeedbackModal(true)}
           onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
           showFeedback={false}
         />
         {actionTree}
@@ -128,6 +147,7 @@ export default function App() {
           onNavigateHome={resetState}
           onOpenFeedback={() => setShowFeedbackModal(true)}
           onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
           showFeedback={isInGame}
         />
         {actionTree}
@@ -143,6 +163,7 @@ export default function App() {
           onNavigateHome={resetState}
           onOpenFeedback={() => setShowFeedbackModal(true)}
           onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
           showFeedback={isInGame}
         />
         <FeedbackModal
@@ -163,6 +184,7 @@ export default function App() {
           onNavigateHome={resetState}
           onOpenFeedback={() => setShowFeedbackModal(true)}
           onOpenAbout={() => setShowAboutScreen(true)}
+          onOpenUpdates={() => setShowUpdatesScreen(true)}
           showFeedback={isInGame}
         />
         {actionTree}

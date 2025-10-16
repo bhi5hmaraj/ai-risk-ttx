@@ -280,7 +280,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
     <div className="text-center mb-10">
-      <h1 className="text-5xl font-extrabold text-blue-400">Crisis Command</h1>
+      <h1 className="text-5xl font-extrabold text-blue-400">Simulacra</h1>
       <p className="text-lg text-gray-300 mt-2 max-w-4xl mx-auto">
         AI-powered tabletop exercise for complex, high-stakes decision making.
       </p>
