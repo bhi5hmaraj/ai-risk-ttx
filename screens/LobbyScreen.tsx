@@ -176,7 +176,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [publicScenarios, setPublicScenarios] = useState<PublicScenario[]>([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<PublicScenario | null>(null);
-  const [votedScenarios, setVotedScenarios] = useState<Set<string>>(new Set());
+  const [votedScenarios, setVotedScenarios] = useState<Set<string>>(() => {
+    // Load voted scenarios from localStorage on mount
+    const stored = localStorage.getItem('votedScenarios');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
 
   // Generate or retrieve user fingerprint for voting
   const getUserFingerprint = () => {
@@ -233,8 +237,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
       const data = await response.json();
 
       if (data.success) {
-        // Mark as voted locally
-        setVotedScenarios(prev => new Set(prev).add(scenarioId));
+        // Mark as voted locally and persist to localStorage
+        const newVotedScenarios = new Set(votedScenarios).add(scenarioId);
+        setVotedScenarios(newVotedScenarios);
+        localStorage.setItem('votedScenarios', JSON.stringify(Array.from(newVotedScenarios)));
 
         // Update vote count in local state
         setPublicScenarios(prev =>
