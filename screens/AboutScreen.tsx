@@ -10,7 +10,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">About Simulacra</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">About Simulacra™</h1>
           <p className="text-lg text-gray-400">Where Simulation Becomes Hyperreality</p>
         </div>
 
@@ -32,7 +32,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
             </p>
             <p className="leading-relaxed mb-3">
               But here's the twist: while Baudrillard critiqued simulation as a source of passivity and alienation,
-              Simulacra uses simulation as a tool for <strong>agency and preparedness</strong>. By rehearsing future crises
+              <strong>Simulacra™</strong> uses simulation as a tool for <strong>agency and preparedness</strong>. By rehearsing future crises
               in a hyperreal space, players move from abstract hand-wringing to concrete action. The simulation doesn't
               trap you—it trains you.
             </p>
@@ -50,7 +50,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
                   "safety-conscious one" (Level 3), or pure buzzword deployment (Level 4). Each level moves further from truth.
                 </p>
                 <p className="text-sm text-gray-400 leading-relaxed mb-2">
-                  <strong className="text-gray-300">Simulacra commits to Level 1</strong>—literal truth-seeking. Every AI-generated
+                  <strong className="text-gray-300">Simulacra™ commits to Level 1</strong>—literal truth-seeking. Every AI-generated
                   scenario, consequence, and counterfactual asks: "What would <em>actually</em> happen?" Not "What makes me look good?"
                   or "What signals the right tribal affiliation?" but "What does this crisis reveal about how systems fail?"
                 </p>
@@ -121,7 +121,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
 
           {/* How it works */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h2 className="text-2xl font-semibold text-blue-300 mb-4">How Simulacra Works</h2>
+            <h2 className="text-2xl font-semibold text-blue-300 mb-4">How Simulacra™ Works</h2>
             <p className="leading-relaxed mb-4">
               In this AI-powered simulation, you assume a critical role during an escalating crisis. You must make tough choices
               with limited resources to advance your secret objectives while maintaining public trust.
@@ -223,7 +223,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-200 mb-2">Can I play with friends?</h3>
                 <p className="text-sm text-gray-300 leading-relaxed mb-2">
-                  Currently, Simulacra is a single-player experience where you play alongside AI opponents. This design allows
+                  Currently, Simulacra™ is a single-player experience where you play alongside AI opponents. This design allows
                   you to explore strategic decision-making at your own pace without coordinating schedules.
                 </p>
                 <p className="text-sm text-gray-400 leading-relaxed">
@@ -253,7 +253,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-200 mb-2">How do I know if I'm winning?</h3>
                 <p className="text-sm text-gray-300 leading-relaxed mb-2">
-                  Simulacra uses a <strong>dual scoring system</strong>:
+                  Simulacra™ uses a <strong>dual scoring system</strong>:
                 </p>
                 <ul className="text-sm text-gray-300 space-y-1 ml-4 mb-2">
                   <li>• <strong>Public Score:</strong> A shared metric (like "Democratic Legitimacy" in the election crisis) visible
@@ -289,7 +289,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Credits</h2>
             <p className="leading-relaxed mb-3">
-              Simulacra is an experimental project exploring AI-driven interactive storytelling and strategic decision-making.
+              Simulacra™ is an experimental project exploring AI-driven interactive storytelling and strategic decision-making.
             </p>
             <p className="leading-relaxed text-sm text-gray-400">
               Contact: <span className="text-blue-400">matib275 [at] gmail [dot] com</span>
@@ -300,7 +300,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Open for Collaboration</h2>
             <p className="leading-relaxed mb-3">
-              Simulacra is an <strong>open-source project</strong> and we welcome contributions from the community!
+              Simulacra™ is an <strong>open-source project</strong> and we welcome contributions from the community!
               Whether you want to add new features, fix bugs, improve documentation, or create new scenarios,
               your contributions are highly valued.
             </p>
