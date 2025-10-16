@@ -21,6 +21,8 @@ interface GameScreenProps {
   onSetExpandedRound: (round: number | null) => void;
   onPauseToggle: () => void;
   error: string | null;
+  isCustomScenario?: boolean;
+  onMakePublic?: () => void;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = ({
@@ -42,8 +44,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onSetExpandedRound,
   onPauseToggle,
   error,
+  isCustomScenario,
+  onMakePublic,
 }) => (
-  <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
+  <div className="min-h-screen bg-gray-900 px-4 pb-4 md:px-6 md:pb-6 lg:px-8 lg:pb-8 pt-28">
     <div className="max-w-8xl mx-auto">
       {error && (
         <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
@@ -54,6 +58,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         isPaused={isPaused}
         onPauseClick={onPauseToggle}
         player={humanPlayer}
+        isCustomScenario={isCustomScenario}
+        onMakePublic={onMakePublic}
       />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-9 space-y-6">
@@ -86,6 +92,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             isPaused={isPaused}
             players={players}
             aiCompletionStatus={aiCompletionStatus}
+            availablePoints={humanPlayer.actionPoints}
           />
         </div>
       </div>

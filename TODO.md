@@ -2,6 +2,8 @@
 - [ ] Replace lobby intro copy with a concise hero plus modal/"Learn more" panel so role cards remain above the fold on mobile.
 - [ ] Restyle experience selection buttons as descriptive cards with icons and short blurbs.
 - [ ] Keep game-screen components (`GameStatusPanel`, `RoundSnapshotCard`, `EventLog`, `ActionSelection`, `ActionTreeModal`) lean and reusable; centralize shared timeline/action summaries to avoid duplication.
+- [ ] Validate the new round summary timeline on multiple scenarios; tweak prompt wording if the model drifts from the 3–5 beat format.
+- [ ] Add mobile-specific styling for the timeline and counterfactual banners so they collapse cleanly on narrow viewports.
 - [ ] Introduce a `useGameController` hook (or similar) that centralizes state and handlers, keeping `App.tsx` declarative.
 
 # Game Mechanics Enhancements
@@ -10,6 +12,7 @@
 - [ ] Map actions to predictable effect templates so similar moves have consistent directional impact on metrics.
 - [ ] Track stakeholder relationship scores; adjust AI behavior and narrative based on alliances/conflicts.
 - [ ] Formalize the round loop as an MDP/POMDP: define resource/state vectors, stochastic transition functions, and reward structure for both public and hidden objectives.
+- [ ] Capture historical round summaries (timeline + counterfactual) in exportable format for after-action review handoffs.
 
 # Player Forecast & Calibration
 - [ ] Prompt players to predict score changes before submitting actions; display calibration feedback against actual outcomes.

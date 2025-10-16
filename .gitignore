@@ -50,3 +50,16 @@ Thumbs.db
 !.env*.example
 
 node_modules/**
+
+/generated/prisma
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing artifacts
+graph.md
+graph-*.svg

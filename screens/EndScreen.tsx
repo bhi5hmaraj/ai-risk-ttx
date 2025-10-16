@@ -1,6 +1,5 @@
 import React from 'react';
 import type { GameState, Player } from '../types';
-import { BeakerIcon } from '../components/Icons';
 
 interface EndScreenProps {
   gameState: GameState;
@@ -13,7 +12,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   const finalScoreChange = finalLogEntry?.publicScoreChange ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 pt-24 flex flex-col items-center">
       <div className="w-full max-w-5xl space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">Simulation Over</h1>
@@ -123,7 +122,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {finalLogEntry.playerActions.map((playerRound) => {
                     const matchingPlayer = players.find((p) => p.role.name === playerRound.roleName);
-                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => <BeakerIcon {...props} />);
+                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => (
+                      <span className="text-2xl" role="img" aria-label="role icon">❓</span>
+                    ));
                     const hiddenUpdate = finalLogEntry.hiddenScoreChanges[playerRound.roleName];
 
                     return (
