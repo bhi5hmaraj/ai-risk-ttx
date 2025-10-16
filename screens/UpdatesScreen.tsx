@@ -25,36 +25,17 @@ const UPDATES: UpdatePeriod[] = [
       {
         title: '🎭 Rebrand to Simulacra',
         items: [
-          'Renamed project to Simulacra (Jean Baudrillard\'s concept)',
-          'Added philosophical context about hyperreality',
+          'New name inspired by Jean Baudrillard\'s concept of hyperreality',
+          'Updated branding and philosophical context throughout the app',
         ],
       },
       {
         title: '🌐 Community Features',
         items: [
-          'Browse and play community-submitted scenarios',
-          'Upvote scenarios with persistent voting (localStorage)',
-          'Submit custom scenarios with "Make Public" button',
-          'Scenario management CLI tool for moderation',
-          'Loading states for upvote buttons',
-        ],
-      },
-      {
-        title: '🔧 Developer Experience',
-        items: [
-          'Multi-environment database configuration',
-          'Enhanced admin tools documentation',
-          'Beads task management with auto-updating README',
-          'Custom prompt tracking for scenarios',
-        ],
-      },
-      {
-        title: '📊 Database & API',
-        items: [
-          'Public scenario submission API and moderation workflow',
-          'Feedback system with detailed ratings',
-          'Navigation menu and About page',
-          'Database infrastructure with Prisma and PostgreSQL',
+          'Browse and play scenarios created by other players',
+          'Upvote your favorite community scenarios',
+          'Share your custom scenarios with the community',
+          'Submit feedback to help improve the game',
         ],
       },
     ],
@@ -65,20 +46,12 @@ const UPDATES: UpdatePeriod[] = [
     color: 'purple',
     categories: [
       {
-        title: '🎯 Core Game Features',
+        title: '🎯 Gameplay Enhancements',
         items: [
-          'Action tree visualization with React Flow',
-          'Timeline-based round summaries',
-          'Brand refresh with new icons',
-        ],
-      },
-      {
-        title: '🏗️ Architecture',
-        items: [
-          'Introduced useGameController hook',
-          'Split app into lobby/game/end screens',
-          'Component extraction (EventLog, ActionSelection, PlayerInfoPanel)',
-          'Enhanced UI with event log and player panels',
+          'Visualize all player choices with interactive action trees',
+          'New timeline-based storytelling for round summaries',
+          'Refreshed visual design with new icons',
+          'Improved navigation and user interface',
         ],
       },
     ],
@@ -89,12 +62,10 @@ const UPDATES: UpdatePeriod[] = [
     color: 'green',
     categories: [
       {
-        title: '🔄 Major Infrastructure Changes',
+        title: '⚡ Performance & Quality',
         items: [
-          'Migrated from Gemini API to OpenAI SDK',
-          'Switched backend to LiteLLM proxy for multi-model support',
-          'Added favicon and improved build script',
-          'Fixed Zod version compatibility and added lockfile',
+          'Improved AI response quality and speed',
+          'Enhanced game stability and reliability',
         ],
       },
     ],
@@ -105,13 +76,11 @@ const UPDATES: UpdatePeriod[] = [
     color: 'green',
     categories: [
       {
-        title: '📝 Documentation & UX',
+        title: '📖 Better Learning Experience',
         items: [
-          'Added TTX description to README and landing page',
-          'Improved game objective clarity',
-          'Added state change status tracking',
-          'Fixed Dagre layout for action tree visualization',
-          'Added environment variable for model configuration',
+          'Added detailed explanation of Tabletop Exercises',
+          'Clearer game objectives and instructions',
+          'Improved action tree visualization',
         ],
       },
     ],
@@ -122,14 +91,12 @@ const UPDATES: UpdatePeriod[] = [
     color: 'gray',
     categories: [
       {
-        title: '🎮 Initial Release',
+        title: '🎮 Launch',
         items: [
-          'Fixed action points system',
-          'Improved UI flow and prompts',
-          'Added decision graph visualization',
-          'Designed server implementation architecture',
-          'Fixed Vite Gemini API key configuration',
-          'Initial commit and project setup',
+          'Initial release of the game',
+          'Core gameplay mechanics with AI opponents',
+          'Role-playing system with hidden objectives',
+          'Decision visualization and counterfactual analysis',
         ],
       },
     ],
