@@ -11,6 +11,7 @@ interface ActionSelectionProps {
   isPaused: boolean;
   players: Player[];
   aiCompletionStatus: Record<string, boolean>;
+  availablePoints: number;
 }
 
 export const ActionSelection: React.FC<ActionSelectionProps> = ({
@@ -21,13 +22,14 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   isPaused,
   players,
   aiCompletionStatus,
+  availablePoints,
 }) => {
   const [selected, setSelected] = useState<ActionOption[]>([]);
   const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
-  const pointsRemaining = GAME_CONFIG.ACTION_POINTS_PER_ROUND - pointsUsed;
+  const pointsRemaining = availablePoints - pointsUsed;
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
   const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
-  const confirmDisabled = isLoading || selected.length === 0 || isPaused;
+  const confirmDisabled = isLoading || isPaused;
 
   const toggleAction = (option: ActionOption) => {
     if (hasSubmitted || isPaused) return;
@@ -77,7 +79,12 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-xl font-bold text-white">Your Actions</h3>
-          <p className="text-sm text-gray-400">Spend up to {GAME_CONFIG.ACTION_POINTS_PER_ROUND} points each round.</p>
+          <p className="text-sm text-gray-400">
+            You have {availablePoints} AP available (max {GAME_CONFIG.MAX_ACTION_POINTS}).
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            +{GAME_CONFIG.ACTION_POINTS_PER_ROUND} AP each round. Unused points carry over.
+          </p>
         </div>
         <div className="text-right">
           <span className="text-xs uppercase tracking-wide text-gray-400">Points Remaining</span>

@@ -92,6 +92,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             isPaused={isPaused}
             players={players}
             aiCompletionStatus={aiCompletionStatus}
+            availablePoints={humanPlayer.actionPoints}
           />
         </div>
       </div>

@@ -241,12 +241,20 @@ export const useGameController = () => {
           ],
           currentEvent: result.nextEvent,
         };
-        const newPlayers = playersWithActions.map((p) => ({
-          ...p,
-          hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-          actions: [],
-          hasSubmittedActions: false,
-        }));
+        const newPlayers = playersWithActions.map((p) => {
+          const pointsSpent = p.actions.reduce((sum, action) => sum + action.cost, 0);
+          const newPoints = Math.min(
+            p.actionPoints - pointsSpent + GAME_CONFIG.ACTION_POINTS_PER_ROUND,
+            GAME_CONFIG.MAX_ACTION_POINTS
+          );
+          return {
+            ...p,
+            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
+            actionPoints: newPoints,
+            actions: [],
+            hasSubmittedActions: false,
+          };
+        });
 
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
         setGameState(newGameState);
@@ -330,6 +338,7 @@ export const useGameController = () => {
       role,
       isHuman: role.name === selectedRoleName,
       hiddenScore: 0,
+      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
       actions: [],
       hasSubmittedActions: false,
     }));
