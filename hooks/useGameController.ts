@@ -518,6 +518,7 @@ export const useGameController = () => {
     actions: {
       setSelectedRoleName,
       setGamePath,
+      setGameSetup,
       setCustomScenario,
       setExpandedRound,
       setIsActionTreeOpen,
