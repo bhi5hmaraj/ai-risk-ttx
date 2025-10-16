@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Bars3Icon, XMarkIcon, HomeIcon, ChatBubbleLeftIcon, InformationCircleIcon } from './Icons';
+import { Bars3Icon, XMarkIcon, HomeIcon, ChatBubbleLeftIcon, InformationCircleIcon, BellIcon } from './Icons';
 
 interface NavigationProps {
   onNavigateHome: () => void;
   onOpenFeedback: () => void;
   onOpenAbout: () => void;
+  onOpenUpdates: () => void;
   showFeedback?: boolean; // Only show feedback option when in game
 }
 
@@ -12,6 +13,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onNavigateHome,
   onOpenFeedback,
   onOpenAbout,
+  onOpenUpdates,
   showFeedback = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,13 +35,18 @@ export const Navigation: React.FC<NavigationProps> = ({
     closeMenu();
   };
 
+  const handleOpenUpdates = () => {
+    onOpenUpdates();
+    closeMenu();
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Title */}
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-blue-300">Crisis Command</h1>
+            <h1 className="text-xl font-bold text-blue-300">Simulacra</h1>
             <span className="text-xs text-gray-500 hidden sm:inline">AI Tabletop Exercise</span>
           </div>
 
@@ -49,6 +56,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             {showFeedback && (
               <NavButton onClick={handleOpenFeedback} icon={ChatBubbleLeftIcon} label="Feedback" />
             )}
+            <NavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <NavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
           </div>
 
@@ -75,6 +83,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             {showFeedback && (
               <MobileNavButton onClick={handleOpenFeedback} icon={ChatBubbleLeftIcon} label="Feedback" />
             )}
+            <MobileNavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <MobileNavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
           </div>
         </div>

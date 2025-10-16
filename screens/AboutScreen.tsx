@@ -10,12 +10,27 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">About Crisis Command</h1>
-          <p className="text-lg text-gray-400">AI-Powered Tabletop Exercise</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">About Simulacra</h1>
+          <p className="text-lg text-gray-400">Where Simulation Becomes Hyperreality</p>
         </div>
 
         {/* Content */}
         <div className="space-y-8 text-gray-300">
+          {/* Philosophy */}
+          <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <h2 className="text-2xl font-semibold text-blue-300 mb-4">The Concept of Simulacra</h2>
+            <p className="leading-relaxed mb-3">
+              French philosopher <strong>Jean Baudrillard</strong> described <em>simulacra</em> as copies without originals—
+              simulations that become more "real" than reality itself. In his theory of hyperreality,
+              the boundaries between simulation and reality collapse.
+            </p>
+            <p className="leading-relaxed">
+              This game embodies that concept: an AI-generated crisis simulation where synthetic decision-makers interact
+              with human players, creating emergent narratives that feel authentic despite being entirely artificial.
+              The simulation becomes its own reality—a hyperreal space for exploring high-stakes decision-making.
+            </p>
+          </section>
+
           {/* What is it */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">What is a Tabletop Exercise?</h2>
@@ -27,7 +42,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
 
           {/* How it works */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h2 className="text-2xl font-semibold text-blue-300 mb-4">How Crisis Command Works</h2>
+            <h2 className="text-2xl font-semibold text-blue-300 mb-4">How Simulacra Works</h2>
             <p className="leading-relaxed mb-4">
               In this AI-powered simulation, you assume a critical role during an escalating crisis. You must make tough choices
               with limited resources to advance your secret objectives while maintaining public trust.
@@ -89,7 +104,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Credits</h2>
             <p className="leading-relaxed mb-3">
-              Crisis Command is an experimental project exploring AI-driven interactive storytelling and strategic decision-making.
+              Simulacra is an experimental project exploring AI-driven interactive storytelling and strategic decision-making.
             </p>
             <p className="leading-relaxed text-sm text-gray-400">
               Contact: <span className="text-blue-400">matib275 [at] gmail [dot] com</span>

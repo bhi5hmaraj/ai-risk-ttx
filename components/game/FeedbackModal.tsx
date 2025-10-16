@@ -101,7 +101,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, g
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10 rounded-t-lg">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-blue-300">Share Your Feedback</h2>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">Help us improve Crisis Command</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">Help us improve Simulacra</p>
           </div>
           <button
             onClick={handleClose}

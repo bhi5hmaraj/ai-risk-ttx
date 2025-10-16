@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Crisis Command** is an AI-powered tabletop exercise (TTX) simulation game built with React, TypeScript, and Vite. Players assume strategic roles during an AI-driven global crisis, making decisions that affect public trust and secret objectives. The game is driven by LLM API calls (via LiteLLM proxy) that act as a Game Master, generating dynamic scenarios, consequences, and AI opponent actions.
+**Simulacra** is an AI-powered tabletop exercise (TTX) simulation game built with React, TypeScript, and Vite. Named after Jean Baudrillard's concept of simulations that become more "real" than reality itself, players assume strategic roles during an AI-driven global crisis, making decisions that affect public trust and secret objectives. The game is driven by LLM API calls (via LiteLLM proxy) that act as a Game Master, generating dynamic scenarios, consequences, and AI opponent actions.
 
 ## Development Commands
 
