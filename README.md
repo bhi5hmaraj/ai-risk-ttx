@@ -1,173 +1,58 @@
 # Crisis Command - AI Tabletop Exercise
 
-This is a web-based, single-player crisis simulation game where you assume a critical role during an AI-driven global emergency. Your strategic decisions affect public trust, national security, and your own secret objectives. The game is driven by the Google Gemini API (or LiteLLM proxy), which acts as the Game Master, creating dynamic scenarios, consequences, and AI opponents.
+A web-based crisis simulation game where you role-play as a key decision-maker during an AI-driven global emergency. Make strategic choices that affect public trust and your secret objectives while an AI Game Master generates dynamic scenarios and consequences.
 
 ## What is a Tabletop Exercise (TTX)?
 
-This simulation is a **Tabletop Exercise (TTX)**: a simulated crisis where you role-play as a key decision-maker. Think of it as a serious game designed to test your strategic thinking and reveal how complex systems respond to pressure.
+A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play decision-makers to test strategic thinking and understand how systems respond under pressure. This AI-powered version generates unique scenarios each playthrough, with AI-controlled opponents making their own strategic choices.
 
-In this AI-powered simulation, you'll choose a role and face an escalating scenario. You must make tough choices with limited resources to advance your secret objectives while maintaining public trust. An **AI Game Master** generates the story, controls the other characters, and shapes the consequences of your actions, ensuring a unique challenge every time. Your goal is to navigate the crisis and learn about high-stakes, multi-stakeholder decision-making.
+## Features
 
+**Core Gameplay:**
+- **Multiple Scenario Types** - Choose from Classic (election crisis), AI Safety, community-submitted scenarios, or create your own custom crisis
+- **Role-Playing** - Each scenario defines 6 unique roles with public and hidden objectives (e.g., Election Commissioner, Tech CEO, Journalist for election crisis)
+- **Dynamic AI Generation** - LLM generates unique opening crisis and evolving events based on your chosen scenario
+- **Strategic Action System** - Limited action points per round force tough prioritization decisions
+- **AI Opponents** - Five AI players using a two-step decision process (generate options, then choose based on secret goals)
+- **Action Tree Visualization** - React Flow graphs showing all players' available options and final choices
+- **Counterfactual Analysis** - Compare actual outcomes against "if no one acted" baseline
 
-## Core Features
+**Community & Feedback:**
+- **Scenario Library** - Browse and play community-submitted custom scenarios
+- **Scenario Submission** - Share your custom scenarios with the community (with "Make Public" button in-game)
+- **Upvoting System** - Vote for your favorite scenarios (uses anonymous fingerprinting to prevent duplicate votes)
+- **Feedback Collection** - Submit feedback after playing to help improve the game
 
-- **Dynamic Scenarios:** The Gemini API generates a unique opening crisis and evolving events each time you play.
-- **Role-Playing:** Choose from one of six unique roles, each with public and hidden objectives.
-- **Sophisticated AI Opponents:** The other five roles are controlled by AI that use a two-step process: first generating a unique set of strategic options based on the situation, then choosing from them based on their secret goals.
-- **Strategic Decision-Making:** Use a limited pool of action points each round to respond to the crisis.
-- **Structured Consequences:** The AI Game Master analyzes all player actions and returns a clear round summary, a short timeline of key beats, and precise changes to public trust and personal scores.
-- **Action Space Visualization:** Each round's summary includes a dynamic graph visualizing every player's available action options and highlighting their final choices.
-- **Counterfactual Analysis:** Each round includes an "If no one acted" note so you can compare the real outcome against the projected baseline.
-
----
-
-## Current State Management
-
-The application currently manages its state using core React hooks (`useState`, `useEffect`).
-
-### State Flow:
-
-1.  **LOBBY:** The game starts in the `LOBBY` phase. The user selects a role.
-2.  **STARTING:** Upon starting, the phase changes to `STARTING`. An `useEffect` hook triggers an API call (`generateInitialScenario`) to get the opening summary timeline and event.
-3.  **ACTION:** On success, the phase becomes `ACTION`. The round counter starts at 1.
-    - An `useEffect` triggers to fetch player-specific `actionOptions`.
-    - A timer starts, counting down the action phase.
-    - The player selects their actions and clicks "Confirm".
-4.  **CONSEQUENCE (Internal):** When the player confirms actions, the `runConsequencePhase` function is called.
-    - This complex function orchestrates multiple parallel API calls:
-        1. It generates action *options* for all AI players.
-        2. It generates action *choices* for all AI players based on their options.
-        3. It calculates the *counterfactual* outcome (what would happen if no one acted).
-    - It then makes a final call to `generateConsequences` with all player actions and the counterfactual data.
-    - On receiving the consequences, it updates all state variables (scores, logs, round number) and sets the phase back to `ACTION` for the next round.
-5.  **END:** The game moves to the `END` phase if the round limit is exceeded or the public score drops to zero.
-
-This hook-based flow is effective but has grown in complexity, making a future migration to a dedicated state management library like Zustand advisable.
+**Tech Stack:**
+- React 19 + TypeScript + Vite
+- OpenAI SDK for LLM calls (via LiteLLM proxy)
+- Zod for schema validation and structured outputs
+- React Flow for action tree visualization
+- Prisma + PostgreSQL for data persistence
+- Vercel serverless functions for API routes
 
 ---
 
-## Future Architecture: Migrating to Zustand
+## Quick Start
 
-To improve state management, predictability, and scalability, a future version will migrate to **Zustand**. Zustand is a small, fast, and scalable bearbones state-management solution.
+### Prerequisites
+- Node.js 20+
+- PostgreSQL (for local development)
+- LiteLLM API key (or compatible LLM provider)
 
-Here is the proposed state machine model using a Zustand store:
-
-```
-(LOBBY) --- startGame() ---> (STARTING)
-   |                             |
-   |                             | initializeGame()
-   |                             V
-(END) <------ endGame() ----- (ACTION)
-   ^                             |
-   |                             | submitActions()
-   |                             |
-   +------------------------- (CONSEQUENCE)
-```
-
-### Zustand Store and Actions
-
-A central store would manage the entire game state, replacing multiple `useState` calls.
-
-**State Slice (`GameState`):**
-- `phase`: `GamePhase`
-- `round`: `number`
-- `publicScore`: `number`
-- `players`: `Player[]`
-- `currentEvent`: `GameEvent`
-- `eventLog`: `GameLogEntry[]`
-- `isLoading`: `boolean`
-- `error`: `string | null`
-
-**Actions:**
-
-- `startGame(selectedRole: RoleName)`:
-    - Sets phase to `STARTING`.
-    - Initializes players.
-    - Calls `initializeGame()`.
-- `initializeGame()`:
-    - Calls the Gemini API for the initial scenario.
-    - On success: updates state with scenario data, sets phase to `ACTION`.
-    - On failure: sets an error, reverts phase to `LOBBY`.
-- `submitActions(humanActions: ActionOption[])`:
-    - Sets phase to `CONSEQUENCE`.
-    - Orchestrates the parallel API calls for AI actions and counterfactuals.
-    - Calls the Gemini API to get consequences.
-    - On success: updates scores, logs, and event; increments round; checks for end condition. If not ended, sets phase to `ACTION`.
-    - On failure: sets an error.
-- `endGame()`:
-    - Sets phase to `END`.
-- `resetGame()`:
-    - Resets the entire state slice to its initial values, returning to `LOBBY`.
-
-This model centralizes logic, making it easier to test, debug, and expand.
-
----
-
-## Future Features Roadmap
-
-- **Multiplayer Mode:** Implement WebSocket (e.g., via `partykit`) to allow multiple human players to join a single game session.
-- **Advanced AI Personas:** Give the AI players more distinct personalities and long-term strategies that persist across rounds.
-- **Media Feed:** Add a dedicated UI panel that simulates a social media or news feed, showing public reactions to events and player actions.
-- **Resource Management:** Introduce role-specific resources (e.g., budget, personnel) that players must manage.
-- **Saved Games:** Allow users to save their game state and resume a session later.
-- **Tutorial Mode:** An interactive tutorial to guide new players through their first round.
-- **Enhanced End-Game Summary:** Provide a more detailed breakdown of the game's events and how key decisions led to the final outcome.
-
----
-
-## Commit/Push Workflow (Important)
-
-Before committing and pushing, run the helper script to guarantee a clean lockfile and a reproducible build. This avoids CI/CD issues on Vercel.
-
-1) Ensure Node 20+ is installed (the project targets Node >= 20).
-2) Run the script:
-
-```
-chmod +x ./git-push.sh
-./git-push.sh
-```
-
-- This will:
-  - Regenerate `package-lock.json` deterministically
-  - Validate install with `npm ci`
-  - Build the app with safe defaults
-  - Stage an updated `package-lock.json` if needed
-
-3) Commit and push manually, or pass a commit message to auto-commit/push:
-
-```
-./git-push.sh -c "Your commit message"
-```
-
-Vercel build settings (recommended):
-- Install Command: `npm ci`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Node.js Version: `20.x`
-
-Set env vars in Vercel:
-- `VITE_LITELLM_API_KEY` — LiteLLM proxy key (virtual/master)
-- `VITE_LLM_MODEL` — e.g., `gemini-2.5-flash`
-
----
-
-## Local Development Setup
-
-### Quick Start
+### Setup
 
 1. **Install dependencies:**
    ```bash
    npm ci
    ```
 
-2. **Set up local database:**
+2. **Set up database:**
    ```bash
    npm run db:setup
    ```
-   This creates `ttx-prisma-postgres-local` database and runs migrations.
 
-3. **Configure environment:**
-   Make sure `.env` has:
+3. **Configure environment** (`.env`):
    ```bash
    DATABASE_URL="postgresql://yourusername@localhost:5432/ttx-prisma-postgres-local?schema=public"
    VITE_LITELLM_API_KEY="your-api-key"
@@ -179,28 +64,31 @@ Set env vars in Vercel:
    npm run dev
    ```
 
-   **Important:** This uses **Vercel CLI** (not Vite) to enable API routes locally. The feedback system requires serverless functions in `/api` that only work with Vercel's dev server.
-
-5. **View database:**
-   ```bash
-   npm run db:studio
-   ```
-
-### Testing the Feedback API
-
-In a separate terminal:
-```bash
-npm run test:api
-```
-
-### Analyze Feedback Data
+### Available Commands
 
 ```bash
-npm run analyze              # Basic stats
-npm run analyze -- --export feedback.csv  # Export to CSV
+npm run dev              # Start Vercel dev server
+npm run build            # Production build
+npm run db:studio        # Open Prisma Studio
+npm run analyze          # Analyze feedback data
+npm run scenarios        # Manage community scenarios
+npm run test:api         # Test feedback API
 ```
 
-See [docs/local-development.md](docs/local-development.md) for full guide.
+## Deployment
+
+### Vercel Configuration
+
+**Build Settings:**
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Node.js Version: `20.x`
+
+**Environment Variables:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `VITE_LITELLM_API_KEY` - LiteLLM proxy API key
+- `VITE_LLM_MODEL` - Model name (e.g., `gemini-2.5-flash`, `gpt-4o-mini`)
 
 ---
 
@@ -298,16 +186,31 @@ graph TD;
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and stora...<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-54 --> ai-risk-ttx-52
-    ai-risk-ttx-54 --> ai-risk-ttx-53
-    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-53 --> ai-risk-ttx-45
+    ai-risk-ttx-47 --> ai-risk-ttx-45
+    ai-risk-ttx-47 --> ai-risk-ttx-46
     ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-25
+    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-52 --> ai-risk-ttx-51
+    ai-risk-ttx-45 --> ai-risk-ttx-44
+    ai-risk-ttx-29 --> ai-risk-ttx-24
+    ai-risk-ttx-29 --> ai-risk-ttx-25
+    ai-risk-ttx-51 --> ai-risk-ttx-47
+    ai-risk-ttx-51 --> ai-risk-ttx-48
+    ai-risk-ttx-51 --> ai-risk-ttx-49
+    ai-risk-ttx-51 --> ai-risk-ttx-50
     ai-risk-ttx-31 --> ai-risk-ttx-24
     ai-risk-ttx-31 --> ai-risk-ttx-25
+    ai-risk-ttx-54 --> ai-risk-ttx-52
+    ai-risk-ttx-54 --> ai-risk-ttx-53
+    ai-risk-ttx-26 --> ai-risk-ttx-24
+    ai-risk-ttx-26 --> ai-risk-ttx-25
+    ai-risk-ttx-30 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-25
+    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-25 --> ai-risk-ttx-24
+    ai-risk-ttx-28 --> ai-risk-ttx-24
+    ai-risk-ttx-28 --> ai-risk-ttx-25
     ai-risk-ttx-32 --> ai-risk-ttx-26
     ai-risk-ttx-32 --> ai-risk-ttx-27
     ai-risk-ttx-32 --> ai-risk-ttx-28
@@ -315,24 +218,9 @@ graph TD;
     ai-risk-ttx-32 --> ai-risk-ttx-30
     ai-risk-ttx-32 --> ai-risk-ttx-31
     ai-risk-ttx-49 --> ai-risk-ttx-47
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
     ai-risk-ttx-27 --> ai-risk-ttx-24
     ai-risk-ttx-27 --> ai-risk-ttx-25
-    ai-risk-ttx-47 --> ai-risk-ttx-45
-    ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-48 --> ai-risk-ttx-47
-    ai-risk-ttx-28 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-25
-    ai-risk-ttx-29 --> ai-risk-ttx-24
-    ai-risk-ttx-29 --> ai-risk-ttx-25
-    ai-risk-ttx-46 --> ai-risk-ttx-44
-    ai-risk-ttx-51 --> ai-risk-ttx-47
-    ai-risk-ttx-51 --> ai-risk-ttx-48
-    ai-risk-ttx-51 --> ai-risk-ttx-49
-    ai-risk-ttx-51 --> ai-risk-ttx-50
-    ai-risk-ttx-53 --> ai-risk-ttx-45
-    ai-risk-ttx-45 --> ai-risk-ttx-44
+    ai-risk-ttx-50 --> ai-risk-ttx-47
 ```
 
 <!-- BEADS_ISSUES_END -->
