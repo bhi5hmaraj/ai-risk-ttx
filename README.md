@@ -70,10 +70,92 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 npm run dev              # Start Vercel dev server
 npm run build            # Production build
 npm run db:studio        # Open Prisma Studio
-npm run analyze          # Analyze feedback data
-npm run scenarios        # Manage community scenarios
 npm run test:api         # Test feedback API
 ```
+
+---
+
+## Admin Tools
+
+### Environment Setup
+
+Admin scripts support multiple environments via environment-specific `.env` files:
+
+```bash
+.env                          # Local development database
+.env.development.preview      # Preview/staging database
+.env.production               # Production database
+```
+
+**Required environment variables for remote databases:**
+- `PRISMA_DATABASE_URL` - Prisma Accelerate connection URL (for preview/production)
+- `DATABASE_URL` - Direct PostgreSQL connection (for local)
+
+### Scenario Moderation
+
+Manage community-submitted scenarios:
+
+```bash
+# List scenarios (defaults to pending)
+npm run scenarios
+
+# Query different environments
+npm run scenarios -- --env preview
+npm run scenarios -- --env production
+
+# Filter by status
+npm run scenarios -- --status pending
+npm run scenarios -- --status approved
+npm run scenarios -- --status rejected
+
+# View detailed scenario info
+npm run scenarios -- --view <scenario-id>
+
+# Approve a scenario
+npm run scenarios -- --approve <scenario-id>
+
+# Reject with reason
+npm run scenarios -- --reject <scenario-id> "reason text"
+
+# Show help
+npm run scenarios -- --help
+```
+
+### Feedback Analysis
+
+Analyze user feedback with powerful filtering:
+
+```bash
+# View all feedback (local database)
+npm run analyze
+
+# Query remote environments
+npm run analyze -- --env preview
+npm run analyze -- --env production
+
+# Filter options
+npm run analyze -- --model gpt-4o-mini           # Filter by LLM model
+npm run analyze -- --scenario classic            # Filter by scenario type
+npm run analyze -- --completed true              # Only completed games
+npm run analyze -- --from 2025-01-01            # Date range
+npm run analyze -- --to 2025-12-31
+npm run analyze -- --limit 50                    # Limit results
+
+# Statistics only (no individual entries)
+npm run analyze -- --stats
+
+# Export data
+npm run analyze -- --export feedback.csv         # Export to CSV
+npm run analyze -- --export feedback.json        # Export to JSON
+
+# Combine filters (preview environment example)
+npm run analyze -- --env preview --model gpt-4o-mini --scenario ai_safety --stats
+
+# Show help
+npm run analyze -- --help
+```
+
+---
 
 ## Deployment
 
@@ -186,40 +268,40 @@ graph TD;
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and stora...<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-53 --> ai-risk-ttx-45
+    ai-risk-ttx-25 --> ai-risk-ttx-24
     ai-risk-ttx-47 --> ai-risk-ttx-45
     ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-46 --> ai-risk-ttx-44
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-29 --> ai-risk-ttx-24
-    ai-risk-ttx-29 --> ai-risk-ttx-25
+    ai-risk-ttx-48 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-48
     ai-risk-ttx-51 --> ai-risk-ttx-49
     ai-risk-ttx-51 --> ai-risk-ttx-50
-    ai-risk-ttx-31 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-25
-    ai-risk-ttx-54 --> ai-risk-ttx-52
-    ai-risk-ttx-54 --> ai-risk-ttx-53
     ai-risk-ttx-26 --> ai-risk-ttx-24
     ai-risk-ttx-26 --> ai-risk-ttx-25
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
-    ai-risk-ttx-48 --> ai-risk-ttx-47
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-25
+    ai-risk-ttx-54 --> ai-risk-ttx-52
+    ai-risk-ttx-54 --> ai-risk-ttx-53
     ai-risk-ttx-32 --> ai-risk-ttx-26
     ai-risk-ttx-32 --> ai-risk-ttx-27
     ai-risk-ttx-32 --> ai-risk-ttx-28
     ai-risk-ttx-32 --> ai-risk-ttx-29
     ai-risk-ttx-32 --> ai-risk-ttx-30
     ai-risk-ttx-32 --> ai-risk-ttx-31
+    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-30 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-25
+    ai-risk-ttx-31 --> ai-risk-ttx-24
+    ai-risk-ttx-31 --> ai-risk-ttx-25
+    ai-risk-ttx-33 --> ai-risk-ttx-32
+    ai-risk-ttx-52 --> ai-risk-ttx-51
+    ai-risk-ttx-28 --> ai-risk-ttx-24
+    ai-risk-ttx-28 --> ai-risk-ttx-25
     ai-risk-ttx-49 --> ai-risk-ttx-47
     ai-risk-ttx-27 --> ai-risk-ttx-24
     ai-risk-ttx-27 --> ai-risk-ttx-25
+    ai-risk-ttx-29 --> ai-risk-ttx-24
+    ai-risk-ttx-29 --> ai-risk-ttx-25
+    ai-risk-ttx-53 --> ai-risk-ttx-45
+    ai-risk-ttx-45 --> ai-risk-ttx-44
     ai-risk-ttx-50 --> ai-risk-ttx-47
 ```
 
