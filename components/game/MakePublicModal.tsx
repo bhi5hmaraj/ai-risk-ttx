@@ -9,6 +9,7 @@ interface MakePublicModalProps {
   customPrompt: string;
   gameSetup: GameSetup;
   initialEvent: GameEvent;
+  onSubmitSuccess?: () => void;
 }
 
 export const MakePublicModal: React.FC<MakePublicModalProps> = ({
@@ -17,6 +18,7 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
   customPrompt,
   gameSetup,
   initialEvent,
+  onSubmitSuccess,
 }) => {
   const [submitterName, setSubmitterName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +69,11 @@ export const MakePublicModal: React.FC<MakePublicModalProps> = ({
       if (result.success) {
         console.log('[MakePublicModal] Submission successful!');
         setSubmitSuccess(true);
+
+        // Notify parent that submission was successful
+        if (onSubmitSuccess) {
+          onSubmitSuccess();
+        }
 
         // Close modal after success message
         setTimeout(() => {
