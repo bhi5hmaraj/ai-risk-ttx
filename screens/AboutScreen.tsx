@@ -111,6 +111,20 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
             </p>
           </section>
 
+          {/* Open Source & Collaboration */}
+          <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <h2 className="text-2xl font-semibold text-blue-300 mb-4">Open for Collaboration</h2>
+            <p className="leading-relaxed mb-3">
+              Simulacra is an <strong>open-source project</strong> and we welcome contributions from the community!
+              Whether you want to add new features, fix bugs, improve documentation, or create new scenarios,
+              your contributions are highly valued.
+            </p>
+            <p className="leading-relaxed">
+              Feel free to submit <strong>Pull Requests</strong> on GitHub, open issues for bugs or feature requests,
+              or reach out if you have ideas for collaboration. Let's build the future of AI-driven simulations together!
+            </p>
+          </section>
+
           {/* Links */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Resources</h2>

@@ -34,6 +34,7 @@ export interface Player {
   role: RoleData;
   isHuman: boolean;
   hiddenScore: number;
+  actionPoints: number;
   actions: ActionOption[];
   hasSubmittedActions: boolean;
 }

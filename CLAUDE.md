@@ -41,6 +41,39 @@ npm run analyze -- --help # Show all analytics options
 npm run test:api         # Test feedback API endpoint
 ```
 
+### Issue Tracking with Beads
+
+This project uses **Beads** (bd) for dependency-aware issue tracking. Issues are chained together like beads, with explicit dependencies to prevent duplicate work and ensure proper sequencing.
+
+**Key Commands**:
+```bash
+bd quickstart              # Learn about Beads
+bd list                    # List all issues
+bd list --status open      # List open issues
+bd ready                   # Show issues ready to work on (no blockers)
+bd show ai-risk-ttx-15     # Show issue details
+bd create "Task name"      # Create new issue
+bd dep add bd-1 bd-2       # Add dependency (bd-2 blocks bd-1)
+bd dep tree bd-1           # Visualize dependency tree
+bd update bd-1 --status in_progress  # Update issue status
+bd close bd-1              # Close completed issue
+```
+
+**Database Location**: `.beads/issues.db` (auto-syncs with `.beads/issues.jsonl` for git)
+
+**Integration with README**:
+The README.md auto-updates with Beads statistics via pre-commit hook (`scripts/update_readme.py`):
+- Issue counts by status and priority
+- Ready-to-work issues (no blockers)
+- Mermaid dependency graph
+
+**For Claude Code**:
+- Use `bd ready` to find unblocked work
+- Create issues when discovering new tasks: `bd create "Task description" -p 1`
+- Add dependencies to prevent out-of-order work: `bd dep add child parent`
+- Update status when starting work: `bd update <id> --status in_progress`
+- Close issues when complete: `bd close <id>`
+
 ### Pre-Commit Workflow
 **IMPORTANT**: Before committing, use the helper script to ensure clean lockfiles and passing builds:
 
@@ -56,6 +89,7 @@ This script:
 - Validates install with `npm ci`
 - Builds with safe env defaults
 - Stages updated lockfile
+- Pre-commit hook runs `scripts/update_readme.py` to sync Beads stats
 
 ## Environment Configuration
 

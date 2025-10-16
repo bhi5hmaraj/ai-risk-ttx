@@ -47,7 +47,11 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Logo/Title */}
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-blue-300">Simulacra</h1>
-            <span className="text-xs text-gray-500 hidden sm:inline">AI Tabletop Exercise</span>
+            <div className="hidden lg:flex flex-col">
+              <span className="text-xs text-gray-500">AI Tabletop Exercise</span>
+              <ModelInfo />
+            </div>
+            <span className="text-xs text-gray-500 hidden sm:inline lg:hidden">AI Tabletop Exercise</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -121,3 +125,20 @@ const MobileNavButton: React.FC<{
     <span className="font-medium">{label}</span>
   </button>
 );
+
+// Model Information Display
+const ModelInfo: React.FC = () => {
+  const model = import.meta.env.VITE_LLM_MODEL || 'Unknown';
+  const isFlashLite = model.toLowerCase().includes('flash') && model.toLowerCase().includes('lite');
+
+  return (
+    <div className="text-xs text-gray-600">
+      <span>Powered by {model}</span>
+      {isFlashLite && (
+        <span className="ml-1 text-gray-500" title="Fast responses, moving to Pro models in the future">
+          (⚡ fast)
+        </span>
+      )}
+    </div>
+  );
+};
