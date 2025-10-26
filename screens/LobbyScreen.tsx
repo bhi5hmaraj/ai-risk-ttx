@@ -205,6 +205,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [isMakePublicModalOpen, setIsMakePublicModalOpen] = useState(false);
   const [publicScenarios, setPublicScenarios] = useState<PublicScenario[]>([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [scenariosError, setScenariosError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const [selectedScenario, setSelectedScenario] = useState<PublicScenario | null>(null);
   const [votedScenarios, setVotedScenarios] = useState<Set<string>>(() => {
     // Load voted scenarios from localStorage on mount
@@ -225,17 +227,41 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   // Fetch public scenarios on mount
   useEffect(() => {
     const fetchScenarios = async () => {
+      console.log('[LobbyScreen] Starting to fetch community scenarios...');
       setScenariosLoading(true);
+      setScenariosError(null);
+      setDebugInfo(null);
       try {
-        const response = await fetch('/api/scenarios?sortBy=votes&limit=6');
+        const url = '/api/scenarios?sortBy=votes&limit=6';
+        console.log('[LobbyScreen] Fetching from:', url);
+
+        const response = await fetch(url);
+        console.log('[LobbyScreen] Response status:', response.status);
+
         const data = await response.json();
+        console.log('[LobbyScreen] Response data:', data);
+
         if (data.success) {
+          console.log('[LobbyScreen] Successfully fetched scenarios:', data.scenarios.length);
+          if (data.debug) {
+            console.log('[LobbyScreen] Database stats:', data.debug);
+            setDebugInfo(data.debug);
+          }
           setPublicScenarios(data.scenarios);
+        } else {
+          console.error('[LobbyScreen] API returned success=false:', data.error);
+          setScenariosError(data.error || 'Failed to fetch scenarios');
         }
       } catch (error) {
-        console.error('Failed to fetch scenarios:', error);
+        console.error('[LobbyScreen] Failed to fetch scenarios:', error);
+        console.error('[LobbyScreen] Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        setScenariosError(error instanceof Error ? error.message : 'Network error');
       } finally {
         setScenariosLoading(false);
+        console.log('[LobbyScreen] Finished fetching scenarios');
       }
     };
     fetchScenarios();
@@ -333,12 +359,30 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
       </div>
 
       {/* Browse Community Scenarios */}
-      {publicScenarios.length > 0 && (
-        <div className="max-w-6xl mx-auto mt-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-purple-300">Community Scenarios</h2>
-            <p className="text-gray-400 mt-2">Play scenarios created by the community</p>
+      <div className="max-w-6xl mx-auto mt-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-purple-300">Community Scenarios</h2>
+          <p className="text-gray-400 mt-2">Play scenarios created by the community</p>
+        </div>
+
+        {scenariosLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
+            <p className="text-gray-400">Loading community scenarios...</p>
           </div>
+        ) : scenariosError ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 text-lg mb-2">Failed to load community scenarios</p>
+            <p className="text-gray-500 text-sm">{scenariosError}</p>
+            {debugInfo && (
+              <div className="mt-4 p-4 bg-gray-800 rounded-lg text-left max-w-md mx-auto">
+                <p className="text-xs text-gray-400 font-mono">
+                  Debug: Total={debugInfo.totalCount}, Approved={debugInfo.approvedCount}, Pending={debugInfo.pendingCount}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : publicScenarios.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {publicScenarios.map((scenario) => (
               <ScenarioCard
@@ -350,8 +394,25 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No community scenarios yet.</p>
+            <p className="text-gray-600 text-sm mt-2">Create a custom scenario and make it public to share with the community!</p>
+            {debugInfo && (
+              <div className="mt-4 p-4 bg-gray-800 rounded-lg text-left max-w-md mx-auto">
+                <p className="text-xs text-gray-400 font-mono">
+                  Debug: Total scenarios={debugInfo.totalCount}, Approved={debugInfo.approvedCount}, Pending={debugInfo.pendingCount}
+                </p>
+                {debugInfo.totalCount > 0 && debugInfo.approvedCount === 0 && (
+                  <p className="text-xs text-yellow-500 mt-2">
+                    Note: There are {debugInfo.pendingCount} scenario(s) pending approval.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       </>
     ) : selectedScenario ? (
       <PresetRoleSelection
