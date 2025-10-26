@@ -134,6 +134,12 @@ export interface AIPlayerActionsResponse {
     actions: ActionOption[];
 }
 
+export interface AITurnResponse {
+    options: ActionOption[];      // 5 generated options
+    chosenActions: ActionOption[]; // Actions chosen from options
+    reasoning: string;             // Why the AI chose these actions
+}
+
 // Re-export feedback types
 export * from './types/feedback';
 

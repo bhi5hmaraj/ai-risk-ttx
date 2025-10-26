@@ -8,6 +8,7 @@ import type {
   ActionOption,
   AIActionOptionsResponse,
   AICounterfactualResponse,
+  AITurnResponse,
   PlayerRoundActions,
   GameSetup,
 } from "../../types";
@@ -19,6 +20,7 @@ import {
   getActionOptionsPromptAndSchema,
   getCounterfactualPromptAndSchema,
   getCustomScenarioPromptAndSchema,
+  getAITurnPromptAndSchema,
 } from "../../prompts";
 
 // Server-side LiteLLM configuration
@@ -96,6 +98,12 @@ const ActionOptionsResponseZ = z.object({
 
 const CounterfactualZ = z.object({
   publicScoreUpdate: z.number(),
+}).strict();
+
+const AITurnZ = z.object({
+  options: z.array(ActionOptionZ).length(5),
+  chosenActions: z.array(ActionOptionZ),
+  reasoning: z.string(),
 }).strict();
 
 const GameSetupZ = z.object({
@@ -344,4 +352,21 @@ CRITICAL: Show clear cause-and-effect. Every consequence must trace back to spec
     console.error("Error in generateConsequencesChat:", error);
     return null;
   }
+};
+
+/**
+ * OPTIMIZED: Generate AI turn (options + chosen actions) in one LLM call
+ * This replaces calling generateActionOptions + generateAIPlayerActions separately
+ * Reduces LLM calls by 50% for AI players
+ */
+export const generateAITurn = async (
+  player: Player,
+  gameState: GameState,
+  previousRoundActions: PlayerRoundActions[] | null
+): Promise<AITurnResponse | null> => {
+  console.log(`[LLM] Generating AI turn for ${player.role.name}...`);
+
+  const { prompt, schema } = getAITurnPromptAndSchema(player, gameState, previousRoundActions);
+
+  return await parseWithZod(AITurnZ, prompt, `AI Turn for ${player.role.name}`);
 };

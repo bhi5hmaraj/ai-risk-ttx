@@ -51,3 +51,10 @@ export interface CreateChatSessionRequest {
   gameSetup: any; // GameSetup type
   players: Player[];
 }
+
+// OPTIMIZED: Combined AI turn request
+export interface GenerateAITurnRequest {
+  player: Player;
+  gameState: GameState;
+  previousRoundActions?: ActionOption[] | null;
+}

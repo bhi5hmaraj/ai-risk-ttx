@@ -3,7 +3,7 @@
 Issues with no blocking dependencies:
 
 - 📋 **ai-risk-ttx-15** (P1): Migrate from SPA to proper routing/pages (React Router)
-- 📋 **ai-risk-ttx-24** (P1): Migrate LLM service to API for server-side calls
+- 📋 **ai-risk-ttx-32** (P1): Update useGameController to call API routes
 - 📋 **ai-risk-ttx-57** (P1): Add backend analytics tracking for LLM usage and game metrics
 - 📋 **ai-risk-ttx-58** (P1): Improve action tree visualization and design
 - 📋 **ai-risk-ttx-61** (P1): Add game save/load and role switching feature

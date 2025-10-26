@@ -106,6 +106,46 @@ const AICounterfactualResponseSchema = {
   required: ['publicScoreUpdate'],
 } as const;
 
+// Schema for combined AI turn (generate options + choose actions in one call)
+const AITurnSchema = {
+  type: "object",
+  properties: {
+    options: {
+      type: "array",
+      description: "The 5 distinct action options generated for this AI player.",
+      minItems: 5,
+      maxItems: 5,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "The concise title of the action." },
+          description: { type: "string", description: "A brief description of the action and its potential outcome." },
+          cost: { type: "number", description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
+        },
+        required: ['title', 'description', 'cost']
+      }
+    },
+    chosenActions: {
+      type: "array",
+      description: "The actions the AI player chose from the options. Can be empty if they choose inaction. Must be exact copies from the options array.",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "The concise title of the action." },
+          description: { type: "string", description: "A brief description of the action and its potential outcome." },
+          cost: { type: "number", description: `An integer cost between 1 and ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}.` }
+        },
+        required: ['title', 'description', 'cost']
+      }
+    },
+    reasoning: {
+      type: "string",
+      description: "Brief internal reasoning (1-2 sentences) for why the AI chose these specific actions to advance their hidden objective."
+    }
+  },
+  required: ['options', 'chosenActions', 'reasoning']
+} as const;
+
 const GameSetupSchema = {
     type: "object",
     properties: {
@@ -324,4 +364,71 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
       Be creative, insightful, and strategic in your design. The quality of the game depends on the rich conflict you build into this setup.
     `;
     return { prompt, schema: GameSetupSchema };
+};
+
+/**
+ * OPTIMIZED: Combined AI turn - generates options AND chooses actions in one LLM call
+ * This replaces the two-step process (generateActionOptions + generateAIPlayerActions)
+ * Reduces LLM calls by 50% for AI players.
+ */
+export const getAITurnPromptAndSchema = (player: Player, gameState: GameState, previousRoundActions: PlayerRoundActions[] | null) => {
+    let previousActionsText = "This is the first round, so no actions have been taken yet.";
+    if (previousRoundActions && previousRoundActions.length > 0) {
+        previousActionsText = "Here are the actions taken by all roles in the previous round:\n" +
+            previousRoundActions.map(pa => {
+                const actionTitles = pa.actions.length > 0 ? pa.actions.map(a => a.title).join(", ") : 'Took no action';
+                return `  - ${pa.roleName}: ${actionTitles}.`
+            }).join("\n");
+    }
+
+    const prompt = `
+      You are both the Game Master AND an AI player in 'Crisis Command'. You must perform two tasks in sequence:
+
+      TASK 1: GENERATE OPTIONS (as Game Master)
+      Generate 5 distinct, strategic action options for this player.
+
+      THE PLAYER YOU'RE GENERATING FOR:
+      - Role: ${player.role.name}
+      - Public Objective: "${player.role.publicObjective}"
+      - HIDDEN Objective: "${player.role.hiddenObjective}"
+
+      THE CURRENT CRISIS:
+      - "${gameState.currentEvent?.headline}" - ${gameState.currentEvent?.detail}
+
+      CONTEXT FROM LAST ROUND:
+${previousActionsText}
+
+      OPTION DESIGN RULES:
+      1. **Create 5 Unique Options:** Genuinely different from each other.
+      2. **Ensure Coherence:** Logical evolution from previous round. React to what happened.
+      3. **Tailor to Role:** Authentic to this player's capabilities and position.
+      4. **Create Strategic Tension:**
+         - At least 2 options clearly serve the public objective
+         - At least 2 subtly serve the hidden objective
+         - 1 could be high-risk/high-reward or unconventional
+      5. **Assign Costs:** 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND} points. More impactful = higher cost.
+      6. **Clear Descriptions:** Help understand intent without revealing exact outcome.
+
+      TASK 2: CHOOSE ACTIONS (as AI Player)
+      Now, role-play as ${player.role.name}. From the 5 options you just generated, choose which actions to take.
+
+      YOUR PERSONA:
+      - Publicly, you want: "${player.role.publicObjective}"
+      - Secretly, your true goal is: "${player.role.hiddenObjective}" ← THIS is your real priority
+
+      YOUR CONSTRAINTS:
+      - You have ${GAME_CONFIG.ACTION_POINTS_PER_ROUND} action points total
+      - Choose actions that add up to your budget
+      - Choose actions that best serve your HIDDEN objective
+      - Empty array [] is valid if inaction is most strategic
+      - Chosen actions MUST be exact copies from your options list
+
+      Respond with a JSON object containing:
+      - 'options': All 5 options you generated
+      - 'chosenActions': The specific options you selected (must be from 'options')
+      - 'reasoning': 1-2 sentences explaining why these choices advance your hidden goal
+
+      Your response must match the provided schema exactly.
+    `;
+    return { prompt, schema: AITurnSchema };
 };
