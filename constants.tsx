@@ -67,4 +67,6 @@ export const GAME_CONFIG = {
   ACTION_POINTS_PER_ROUND: 3,
   MAX_ACTION_POINTS: 7,
   INITIAL_ACTION_POINTS: 3,
+  // Feature flags
+  USE_CHAT_MODE: true, // Enable chat mode for better context and caching
 };
