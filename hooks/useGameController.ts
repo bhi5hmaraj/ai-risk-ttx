@@ -21,7 +21,10 @@ import {
   generateActionOptions,
   generateCounterfactualConsequences,
   generateCustomScenario,
+  generateInitialScenarioChat,
+  generateConsequencesChat,
 } from '../services/geminiService';
+import { createGameSession, type GameChatSession } from '../services/chatSession';
 
 const DEFAULT_CORE_METRIC: CoreMetric = {
   name: 'Democratic Legitimacy',
@@ -56,6 +59,9 @@ export const useGameController = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
+  // Chat session for maintaining conversation context
+  const chatSessionRef = useRef<GameChatSession | null>(null);
+
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
   const latestLogEntry = useMemo(
     () => (gameState.eventLog.length > 0 ? gameState.eventLog[gameState.eventLog.length - 1] : null),
@@ -64,6 +70,17 @@ export const useGameController = () => {
   const lastCompletedLogEntry = useMemo(
     () => gameState.eventLog.find((entry) => entry.round === gameState.round - 1) || null,
     [gameState.eventLog, gameState.round]
+  );
+
+  // Get the log entry for the expanded round (for action tree), or latest if none selected
+  const selectedLogEntry = useMemo(
+    () => {
+      if (expandedRound !== null) {
+        return gameState.eventLog.find(log => log.round === expandedRound) ?? latestLogEntry;
+      }
+      return latestLogEntry;
+    },
+    [expandedRound, gameState.eventLog, latestLogEntry]
   );
 
   const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
@@ -99,6 +116,8 @@ export const useGameController = () => {
     setIsActionTreeOpen(false);
     setIsHistoryOpen(false);
     setExpandedRound(null);
+    // Clean up chat session
+    chatSessionRef.current = null;
   }, []);
 
   const handleCustomGameStart = useCallback(async () => {
@@ -188,12 +207,25 @@ export const useGameController = () => {
         return;
       }
 
-      const result = await callGeminiAndCount(
-        generateConsequences,
-        currentGameState,
-        playersWithActions,
-        counterfactualResult.publicScoreUpdate
-      );
+      // Use chat mode if enabled and session exists
+      let result;
+      if (GAME_CONFIG.USE_CHAT_MODE && chatSessionRef.current) {
+        result = await callGeminiAndCount(
+          () => generateConsequencesChat(
+            chatSessionRef.current!,
+            currentGameState,
+            playersWithActions,
+            counterfactualResult.publicScoreUpdate
+          )
+        );
+      } else {
+        result = await callGeminiAndCount(
+          generateConsequences,
+          currentGameState,
+          playersWithActions,
+          counterfactualResult.publicScoreUpdate
+        );
+      }
 
       if (result) {
         const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
@@ -365,7 +397,30 @@ export const useGameController = () => {
 
     const initializeClassicScenario = async () => {
       geminiCallsThisRoundRef.current = 0;
-      const result = await callGeminiAndCount(generateInitialScenario);
+
+      // Use chat mode if enabled
+      let result;
+      if (GAME_CONFIG.USE_CHAT_MODE) {
+        // Create chat session for this game
+        const setup = gameSetup || {
+          scenarioTitle: 'Election Crisis 2024',
+          scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
+          coreMetric: gameState.coreMetric,
+          stakeholders: players.map(p => ({
+            name: p.role.name,
+            icon: '🎭',
+            publicObjective: p.role.publicObjective,
+            hiddenObjective: p.role.hiddenObjective,
+            resources: p.role.resources,
+            constraints: p.role.constraints,
+          })),
+        };
+        chatSessionRef.current = createGameSession(setup, players);
+        result = await callGeminiAndCount(() => generateInitialScenarioChat(chatSessionRef.current!));
+      } else {
+        result = await callGeminiAndCount(generateInitialScenario);
+      }
+
       if (result) {
         const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
         const newScoreValue = clampScore(gameState.coreMetric.value + result.publicScoreUpdate);
@@ -404,6 +459,12 @@ export const useGameController = () => {
 
     const initializePresetScenario = (setup: GameSetup) => {
       geminiCallsThisRoundRef.current = 0;
+
+      // Create chat session for preset scenarios if chat mode is enabled
+      if (GAME_CONFIG.USE_CHAT_MODE) {
+        chatSessionRef.current = createGameSession(setup, players);
+      }
+
       const initialGameState: GameState = {
         ...gameState,
         phase: GamePhase.ACTION,
@@ -526,6 +587,7 @@ export const useGameController = () => {
       isHistoryOpen,
       expandedRound,
       latestLogEntry,
+      selectedLogEntry,
       canViewActionTree,
     },
     actions: {

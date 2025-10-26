@@ -32,6 +32,7 @@ export default function App() {
       isHistoryOpen,
       expandedRound,
       latestLogEntry,
+      selectedLogEntry,
       canViewActionTree,
     },
     actions: {
@@ -73,7 +74,7 @@ export default function App() {
     <ActionTreePortal
       isOpen={isActionTreeOpen}
       onClose={() => setIsActionTreeOpen(false)}
-      logEntry={latestLogEntry}
+      logEntry={selectedLogEntry}
       eventLog={gameState.eventLog}
     />
   );

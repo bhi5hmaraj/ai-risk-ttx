@@ -112,11 +112,30 @@ async function handleGetScenarios(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
+  console.log('[GET /api/scenarios] Request received');
+
   const sortBy = (req.query.sortBy as string) || 'votes';
   const limitParam = parseInt(req.query.limit as string) || 20;
   const limit = Math.min(limitParam, 100); // Cap at 100
 
+  console.log('[GET /api/scenarios] Query params:', { sortBy, limit });
+
   try {
+    // First, check total count of all scenarios (for debugging)
+    const totalCount = await prisma.publicScenario.count();
+    const approvedCount = await prisma.publicScenario.count({
+      where: { status: 'approved' },
+    });
+    const pendingCount = await prisma.publicScenario.count({
+      where: { status: 'pending' },
+    });
+
+    console.log('[GET /api/scenarios] Database stats:', {
+      totalCount,
+      approvedCount,
+      pendingCount,
+    });
+
     const scenarios = await prisma.publicScenario.findMany({
       where: {
         status: 'approved',
@@ -136,15 +155,28 @@ async function handleGetScenarios(
       },
     });
 
+    console.log('[GET /api/scenarios] Found scenarios:', scenarios.length);
+
     res.status(200).json({
       success: true,
       scenarios,
+      debug: {
+        totalCount,
+        approvedCount,
+        pendingCount,
+      },
     });
   } catch (error) {
-    console.error('Error fetching scenarios:', error);
+    console.error('[GET /api/scenarios] Error fetching scenarios:', error);
+    console.error('[GET /api/scenarios] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       error: 'Failed to fetch scenarios',
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }
