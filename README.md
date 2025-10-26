@@ -194,8 +194,9 @@ We use [Beads](https://github.com/steveyegge/beads) for dependency-aware issue t
 
 
 ### By Status
-- closed: 31
-- open: 30
+- closed: 38
+- in_progress: 1
+- open: 22
 
 ### By Priority
 - P0: 10
@@ -214,7 +215,7 @@ We use [Beads](https://github.com/steveyegge/beads) for dependency-aware issue t
 Issues with no blocking dependencies:
 
 - 📋 **ai-risk-ttx-15** (P1): Migrate from SPA to proper routing/pages (React Router)
-- 📋 **ai-risk-ttx-24** (P1): Migrate LLM service to API for server-side calls
+- 📋 **ai-risk-ttx-32** (P1): Update useGameController to call API routes
 - 📋 **ai-risk-ttx-57** (P1): Add backend analytics tracking for LLM usage and game metrics
 - 📋 **ai-risk-ttx-58** (P1): Improve action tree visualization and design
 - 📋 **ai-risk-ttx-61** (P1): Add game save/load and role switching feature
@@ -233,22 +234,6 @@ Issues with no blocking dependencies:
 graph TD;
     ai-risk-ttx-15["📋 ai-risk-ttx-15<br/>Migrate from SPA to proper routing/pa...<br/>P1"]
     style ai-risk-ttx-15 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-24["📋 ai-risk-ttx-24<br/>Migrate LLM service to API for server...<br/>P1"]
-    style ai-risk-ttx-24 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-25["📋 ai-risk-ttx-25<br/>Copy geminiService.ts to api/services/<br/>P1"]
-    style ai-risk-ttx-25 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-26["📋 ai-risk-ttx-26<br/>Create API route for generateInitialS...<br/>P1"]
-    style ai-risk-ttx-26 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-27["📋 ai-risk-ttx-27<br/>Create API route for generateActionOp...<br/>P1"]
-    style ai-risk-ttx-27 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-28["📋 ai-risk-ttx-28<br/>Create API route for generateAIPlayer...<br/>P1"]
-    style ai-risk-ttx-28 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-29["📋 ai-risk-ttx-29<br/>Create API route for generateConseque...<br/>P1"]
-    style ai-risk-ttx-29 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-30["📋 ai-risk-ttx-30<br/>Create API route for generateCounterf...<br/>P1"]
-    style ai-risk-ttx-30 fill:#fff3cd,stroke:#856404,stroke-width:2px
-    ai-risk-ttx-31["📋 ai-risk-ttx-31<br/>Create API route for generateCustomSc...<br/>P1"]
-    style ai-risk-ttx-31 fill:#fff3cd,stroke:#856404,stroke-width:2px
     ai-risk-ttx-32["📋 ai-risk-ttx-32<br/>Update useGameController to call API ...<br/>P1"]
     style ai-risk-ttx-32 fill:#fff3cd,stroke:#856404,stroke-width:2px
     ai-risk-ttx-33["📋 ai-risk-ttx-33<br/>Remove VITE_LITELLM_API_KEY from client<br/>P1"]
@@ -292,43 +277,22 @@ graph TD;
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and stora...<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-59 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-25
-    ai-risk-ttx-28 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-25
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-50 --> ai-risk-ttx-47
-    ai-risk-ttx-60 --> ai-risk-ttx-24
     ai-risk-ttx-54 --> ai-risk-ttx-52
     ai-risk-ttx-54 --> ai-risk-ttx-53
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-49 --> ai-risk-ttx-47
     ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-26 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-25
-    ai-risk-ttx-29 --> ai-risk-ttx-24
-    ai-risk-ttx-29 --> ai-risk-ttx-25
-    ai-risk-ttx-27 --> ai-risk-ttx-24
-    ai-risk-ttx-27 --> ai-risk-ttx-25
-    ai-risk-ttx-32 --> ai-risk-ttx-26
-    ai-risk-ttx-32 --> ai-risk-ttx-27
-    ai-risk-ttx-32 --> ai-risk-ttx-28
-    ai-risk-ttx-32 --> ai-risk-ttx-29
-    ai-risk-ttx-32 --> ai-risk-ttx-30
-    ai-risk-ttx-32 --> ai-risk-ttx-31
-    ai-risk-ttx-48 --> ai-risk-ttx-47
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-45 --> ai-risk-ttx-44
     ai-risk-ttx-53 --> ai-risk-ttx-45
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
-    ai-risk-ttx-47 --> ai-risk-ttx-45
-    ai-risk-ttx-47 --> ai-risk-ttx-46
     ai-risk-ttx-51 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-48
     ai-risk-ttx-51 --> ai-risk-ttx-49
     ai-risk-ttx-51 --> ai-risk-ttx-50
+    ai-risk-ttx-47 --> ai-risk-ttx-45
+    ai-risk-ttx-47 --> ai-risk-ttx-46
+    ai-risk-ttx-49 --> ai-risk-ttx-47
+    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-52 --> ai-risk-ttx-51
+    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-46 --> ai-risk-ttx-44
 ```
 
 <!-- BEADS_ISSUES_END -->

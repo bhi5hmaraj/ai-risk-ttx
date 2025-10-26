@@ -3,6 +3,7 @@ import type {
   AIActionOptionsResponse,
   AIPlayerActionsResponse,
   AICounterfactualResponse,
+  AITurnResponse,
   GameSetup,
 } from "../../../types";
 
@@ -31,3 +32,6 @@ export interface CreateChatSessionResponse {
   sessionId?: string;
   error?: string;
 }
+
+// OPTIMIZED: Combined AI turn response
+export type GenerateAITurnResponse = LLMApiResponse<AITurnResponse>;

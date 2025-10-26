@@ -11,6 +11,8 @@ import type {
   AIActionOptionsResponse,
   AIPlayerActionsResponse,
   AICounterfactualResponse,
+  AITurnResponse,
+  PlayerRoundActions,
   GameSetup,
 } from '../types';
 
@@ -224,6 +226,47 @@ export const generateCustomScenario = async (
     return result.data;
   } catch (error) {
     console.error('[LLM API Client] generateCustomScenario error:', error);
+    return null;
+  }
+};
+
+/**
+ * OPTIMIZED: Generate AI turn (options + chosen actions) in one call
+ * This replaces calling generateActionOptions + generateAIPlayerActions separately
+ * Reduces LLM calls by 50% for AI players
+ */
+export const generateAITurn = async (
+  player: Player,
+  gameState: GameState,
+  previousRoundActions: PlayerRoundActions[] | null
+): Promise<AITurnResponse | null> => {
+  try {
+    console.log(`[LLM API Client] Calling generateAITurn for ${player.role.name}...`);
+
+    const response = await fetch(`${API_BASE}/ai-turn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        player,
+        gameState,
+        previousRoundActions,
+      }),
+    });
+
+    const result: ApiResponse<AITurnResponse> = await response.json();
+
+    if (!result.success || !result.data) {
+      console.error('[LLM API Client] generateAITurn failed:', result.error);
+      return null;
+    }
+
+    console.log(`[LLM API Client] AI turn complete: ${result.data.options.length} options, ${result.data.chosenActions.length} chosen`);
+
+    return result.data;
+  } catch (error) {
+    console.error('[LLM API Client] generateAITurn error:', error);
     return null;
   }
 };

@@ -6,6 +6,7 @@ import {
   generateConsequences,
   generateCounterfactualConsequences,
   generateCustomScenario,
+  generateAITurn,
 } from '../services/llmService';
 import type {
   GenerateActionOptionsRequest,
@@ -13,6 +14,7 @@ import type {
   GenerateConsequencesRequest,
   GenerateCounterfactualRequest,
   GenerateCustomScenarioRequest,
+  GenerateAITurnRequest,
 } from '../types/llm/requests';
 
 const llm = new Hono();
@@ -247,6 +249,52 @@ llm.post('/custom-scenario', async (c) => {
     });
   } catch (error) {
     console.error('[API /llm/custom-scenario] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/llm/ai-turn
+ * OPTIMIZED: Generate both options and chosen actions for an AI player in one call
+ * Replaces calling /action-options + /ai-player-actions separately
+ */
+llm.post('/ai-turn', async (c) => {
+  try {
+    console.log('[API /llm/ai-turn] Request received');
+
+    const body = await c.req.json() as GenerateAITurnRequest;
+
+    if (!body.player || !body.gameState) {
+      return c.json({
+        success: false,
+        error: 'Missing required fields: player, gameState',
+      }, 400);
+    }
+
+    const result = await generateAITurn(
+      body.player,
+      body.gameState,
+      body.previousRoundActions || null
+    );
+
+    if (!result) {
+      return c.json({
+        success: false,
+        error: 'Failed to generate AI turn',
+      }, 500);
+    }
+
+    console.log(`[API /llm/ai-turn] Generated ${result.options.length} options, ${result.chosenActions.length} chosen for ${body.player.role.name}`);
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error('[API /llm/ai-turn] Error:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
