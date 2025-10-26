@@ -130,6 +130,10 @@ export interface AICounterfactualResponse {
     publicScoreUpdate: number;
 }
 
+export interface AIPlayerActionsResponse {
+    actions: ActionOption[];
+}
+
 // Re-export feedback types
 export * from './types/feedback';
 
