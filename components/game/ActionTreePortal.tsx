@@ -13,7 +13,12 @@ interface ActionTreePortalProps {
 }
 
 export const ActionTreePortal: React.FC<ActionTreePortalProps> = ({ isOpen, onClose, logEntry, eventLog }) => {
-  const { nodes, edges } = useMemo(() => buildActionFlowData(eventLog), [eventLog]);
+  // Only show the selected round to reduce clutter
+  const selectedRound = logEntry?.round;
+  const { nodes, edges } = useMemo(
+    () => buildActionFlowData(eventLog, selectedRound),
+    [eventLog, selectedRound]
+  );
   const flowRef = useRef<ReactFlowInstance | null>(null);
 
   const handleInit = useCallback((instance: ReactFlowInstance) => {
@@ -25,7 +30,7 @@ export const ActionTreePortal: React.FC<ActionTreePortalProps> = ({ isOpen, onCl
     flowRef.current?.fitView({ padding: 0.2, duration: 300 });
   }, []);
 
-  const title = logEntry ? `Full Action Tree (Round ${logEntry.round})` : 'Full Action Tree';
+  const title = logEntry ? `Action Tree - Round ${logEntry.round}` : 'Action Tree';
 
   return (
     <ActionTreeModal isOpen={isOpen} onClose={onClose} onReset={handleReset} title={title}>
