@@ -20,8 +20,8 @@ export function FeedbackBanner({ onOpenFeedback, currentRound }: FeedbackBannerP
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Only show after Round 1
-    if (currentRound < 1) {
+    // Only show after Round 1 completes (starting from Round 2)
+    if (currentRound <= 1) {
       return;
     }
 
@@ -79,9 +79,14 @@ export function FeedbackBanner({ onOpenFeedback, currentRound }: FeedbackBannerP
           {/* Icon and Message */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <ChatBubbleLeftIcon className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm font-medium truncate">
-              How's your experience so far? We'd love your feedback!
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+              <p className="text-sm font-medium truncate">
+                How's your experience so far? We'd love your feedback!
+              </p>
+              <p className="text-xs text-blue-200 opacity-90 truncate">
+                (You can also access this from the header menu)
+              </p>
+            </div>
           </div>
 
           {/* Action Buttons */}
