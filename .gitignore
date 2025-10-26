@@ -63,3 +63,11 @@ __pycache__/
 # Testing artifacts
 graph.md
 graph-*.svg
+
+# Claude Code settings (user-specific)
+.claude/
+
+# Beads database binaries (generated from .jsonl)
+.beads/*.db
+.beads/*.db-shm
+.beads/*.db-wal
