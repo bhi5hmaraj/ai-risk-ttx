@@ -256,3 +256,95 @@ export const generateCustomScenario = async (scenarioDescription: string): Promi
         return null;
     }
 };
+
+/**
+ * CHAT MODE FUNCTIONS
+ * These functions use the chat session for better context and caching
+ */
+
+import type { GameChatSession } from './chatSession';
+
+/**
+ * Generate initial scenario using chat session
+ */
+export const generateInitialScenarioChat = async (
+  session: GameChatSession
+): Promise<AIConsequenceResponse | null> => {
+  console.log("[LLM Chat] Generating initial scenario...");
+
+  const prompt = `Begin the simulation by generating the opening crisis scenario.
+
+You must provide:
+1. **roundSummary**: 2-3 sentence overview of the starting crisis
+2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats)
+3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
+4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
+5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
+6. **nextEvent**: The first actionable crisis the players will face
+
+This is Round 0 - the setup round. Make it tense and engaging.`;
+
+  try {
+    return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
+  } catch (error) {
+    console.error("Error in generateInitialScenarioChat:", error);
+    return null;
+  }
+};
+
+/**
+ * Generate consequences for a round using chat session
+ * The chat history naturally maintains context from previous rounds
+ */
+export const generateConsequencesChat = async (
+  session: GameChatSession,
+  gameState: GameState,
+  players: Player[],
+  counterfactualScoreChange: number
+): Promise<AIConsequenceResponse | null> => {
+  console.log(`[LLM Chat] Generating consequences for round ${gameState.round}...`);
+
+  const playerActionsText = players.map(p => {
+    const actionTitles = p.actions.length > 0
+      ? p.actions.map(a => `"${a.title}"`).join(", ")
+      : 'took no action';
+    return `- **${p.role.name}**: ${actionTitles}`;
+  }).join("\n");
+
+  const prompt = `# Round ${gameState.round} - Determine Consequences
+
+## Current Status
+- **${gameState.coreMetric.name}**: ${gameState.coreMetric.value}
+- **Crisis**: "${gameState.currentEvent?.headline}"
+${gameState.currentEvent?.detail}
+
+## Player Actions This Round
+${playerActionsText}
+
+## Counterfactual Analysis
+If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.
+
+## Your Task
+Generate the consequences of these actions. Remember to:
+
+1. **Round Summary**: Explicitly name which players did what and how it affected the situation (e.g., "The Tech CEO's rushed deployment, combined with the Journalist's exposé...")
+
+2. **Outcome Timeline** (3-5 beats): Show the chronological sequence of events, directly referencing specific player actions
+
+3. **Counterfactual Note**: Start with "If no one had acted..." and reference the ${counterfactualScoreChange} point change
+
+4. **Public Score Update**: Determine the actual score change based on player actions
+
+5. **Hidden Score Updates**: For each player, explain how their actions advanced or hindered their secret objective
+
+6. **Next Event**: Create a new crisis that is a **direct result** of what just happened. Reference specific actions from this round in the event description.
+
+CRITICAL: Show clear cause-and-effect. Every consequence must trace back to specific actions taken.`;
+
+  try {
+    return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
+  } catch (error) {
+    console.error("Error in generateConsequencesChat:", error);
+    return null;
+  }
+};
