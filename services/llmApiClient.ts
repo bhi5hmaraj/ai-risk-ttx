@@ -59,7 +59,7 @@ export const generateInitialScenario = async (): Promise<AIConsequenceResponse |
 export const generateActionOptions = async (
   player: Player,
   gameState: GameState,
-  previousActions: ActionOption[]
+  previousRoundActions: PlayerRoundActions[] | null
 ): Promise<AIActionOptionsResponse | null> => {
   try {
     console.log('[LLM API Client] Calling generateActionOptions...');
@@ -72,7 +72,7 @@ export const generateActionOptions = async (
       body: JSON.stringify({
         player,
         gameState,
-        previousActions,
+        previousRoundActions,
       }),
     });
 

@@ -17,10 +17,12 @@ import { AI_SAFETY_SCENARIO } from '../presets';
 import {
   generateInitialScenario,
   generateConsequences,
-  generateAIPlayerActions,
   generateActionOptions,
   generateCounterfactualConsequences,
   generateCustomScenario,
+  generateAITurn,
+} from '../services/llmApiClient';
+import {
   generateInitialScenarioChat,
   generateConsequencesChat,
 } from '../services/geminiService';
@@ -153,31 +155,21 @@ export const useGameController = () => {
       const previousRoundLog = currentGameState.eventLog.find((entry) => entry.round === currentGameState.round - 1);
       const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
 
-      let aiActionOptionsResults: (Awaited<ReturnType<typeof generateActionOptions>> | null)[] = [];
+      // OPTIMIZED: Use single generateAITurn call instead of separate options + actions
+      let aiTurnResults: (Awaited<ReturnType<typeof generateAITurn>> | null)[] = [];
 
       if (aiPlayers.length > 0) {
-        const aiActionOptionsPromises = aiPlayers.map((player) => callGeminiAndCount(generateActionOptions, player, currentGameState, previousRoundActions));
-        aiActionOptionsResults = await Promise.all(aiActionOptionsPromises);
-
-        if (aiActionOptionsResults.some((r) => r === null)) {
-          setError('Failed to generate action options for AI players. The simulation cannot continue.');
-          setIsLoading(false);
-          setLoadingMessage('');
-          return;
-        }
-
-        setLoadingMessage('AI players are choosing their actions...');
-        const aiActionChoicesPromises = aiPlayers.map((player, index) => {
-          const options = aiActionOptionsResults[index]?.options || [];
-          return callGeminiAndCount(generateAIPlayerActions, player, currentGameState, options).then((result) => {
+        setLoadingMessage('AI players are analyzing and choosing their actions...');
+        const aiTurnPromises = aiPlayers.map((player) =>
+          callGeminiAndCount(generateAITurn, player, currentGameState, previousRoundActions).then((result) => {
             setAiCompletionStatus((prev) => ({ ...prev, [player.role.name]: true }));
             return result;
-          });
-        });
-        const aiActionChoicesResults = await Promise.all(aiActionChoicesPromises);
+          })
+        );
+        aiTurnResults = await Promise.all(aiTurnPromises);
 
-        if (aiActionChoicesResults.some((r) => r === null)) {
-          setError('Failed to generate actions for AI players. The simulation cannot continue.');
+        if (aiTurnResults.some((r) => r === null)) {
+          setError('Failed to generate AI player turns. The simulation cannot continue.');
           setIsLoading(false);
           setLoadingMessage('');
           return;
@@ -185,7 +177,7 @@ export const useGameController = () => {
 
         const aiActionsByRole: Record<string, ActionOption[]> = {};
         aiPlayers.forEach((player, index) => {
-          aiActionsByRole[player.role.name] = aiActionChoicesResults[index] || [];
+          aiActionsByRole[player.role.name] = aiTurnResults[index]?.chosenActions || [];
         });
 
         playersWithActions = currentPlayers.map((p) => {
@@ -236,8 +228,8 @@ export const useGameController = () => {
             availableOptions = actionOptions;
           } else {
             const aiPlayerIndex = aiPlayers.findIndex((ap) => ap.id === p.id);
-            if (aiPlayerIndex !== -1 && aiActionOptionsResults[aiPlayerIndex]) {
-              availableOptions = aiActionOptionsResults[aiPlayerIndex]?.options || [];
+            if (aiPlayerIndex !== -1 && aiTurnResults[aiPlayerIndex]) {
+              availableOptions = aiTurnResults[aiPlayerIndex]?.options || [];
             }
           }
           return {
