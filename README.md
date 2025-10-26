@@ -288,41 +288,41 @@ graph TD;
 
     ai-risk-ttx-29 --> ai-risk-ttx-24
     ai-risk-ttx-29 --> ai-risk-ttx-25
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-26 --> ai-risk-ttx-24
-    ai-risk-ttx-26 --> ai-risk-ttx-25
-    ai-risk-ttx-33 --> ai-risk-ttx-32
-    ai-risk-ttx-27 --> ai-risk-ttx-24
-    ai-risk-ttx-27 --> ai-risk-ttx-25
-    ai-risk-ttx-60 --> ai-risk-ttx-24
-    ai-risk-ttx-49 --> ai-risk-ttx-47
-    ai-risk-ttx-50 --> ai-risk-ttx-47
-    ai-risk-ttx-28 --> ai-risk-ttx-24
-    ai-risk-ttx-28 --> ai-risk-ttx-25
-    ai-risk-ttx-30 --> ai-risk-ttx-24
-    ai-risk-ttx-30 --> ai-risk-ttx-25
     ai-risk-ttx-47 --> ai-risk-ttx-45
     ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-31 --> ai-risk-ttx-24
-    ai-risk-ttx-31 --> ai-risk-ttx-25
     ai-risk-ttx-51 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-48
     ai-risk-ttx-51 --> ai-risk-ttx-49
     ai-risk-ttx-51 --> ai-risk-ttx-50
+    ai-risk-ttx-28 --> ai-risk-ttx-24
+    ai-risk-ttx-28 --> ai-risk-ttx-25
     ai-risk-ttx-32 --> ai-risk-ttx-26
     ai-risk-ttx-32 --> ai-risk-ttx-27
     ai-risk-ttx-32 --> ai-risk-ttx-28
     ai-risk-ttx-32 --> ai-risk-ttx-29
     ai-risk-ttx-32 --> ai-risk-ttx-30
     ai-risk-ttx-32 --> ai-risk-ttx-31
-    ai-risk-ttx-53 --> ai-risk-ttx-45
-    ai-risk-ttx-59 --> ai-risk-ttx-24
-    ai-risk-ttx-25 --> ai-risk-ttx-24
-    ai-risk-ttx-46 --> ai-risk-ttx-44
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-26 --> ai-risk-ttx-24
+    ai-risk-ttx-26 --> ai-risk-ttx-25
+    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-27 --> ai-risk-ttx-24
+    ai-risk-ttx-27 --> ai-risk-ttx-25
+    ai-risk-ttx-52 --> ai-risk-ttx-51
     ai-risk-ttx-54 --> ai-risk-ttx-52
     ai-risk-ttx-54 --> ai-risk-ttx-53
+    ai-risk-ttx-48 --> ai-risk-ttx-47
+    ai-risk-ttx-30 --> ai-risk-ttx-24
+    ai-risk-ttx-30 --> ai-risk-ttx-25
+    ai-risk-ttx-25 --> ai-risk-ttx-24
+    ai-risk-ttx-60 --> ai-risk-ttx-24
+    ai-risk-ttx-49 --> ai-risk-ttx-47
+    ai-risk-ttx-31 --> ai-risk-ttx-24
+    ai-risk-ttx-31 --> ai-risk-ttx-25
+    ai-risk-ttx-33 --> ai-risk-ttx-32
+    ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-59 --> ai-risk-ttx-24
+    ai-risk-ttx-53 --> ai-risk-ttx-45
+    ai-risk-ttx-45 --> ai-risk-ttx-44
 ```
 
 <!-- BEADS_ISSUES_END -->
