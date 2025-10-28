@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { logDebug, sanitizeHeaders } from '../lib/logger';
+import { readJsonBody } from '../lib/request';
 import {
   generateInitialScenario,
   generateActionOptions,
@@ -7,7 +9,14 @@ import {
   generateCounterfactualConsequences,
   generateCustomScenario,
   generateAITurn,
+  generateInitialScenarioChat,
+  generateConsequencesChat,
 } from '../services/llmService';
+import {
+  createGameSession,
+  GameChatSession,
+  createGameMasterSystemPrompt,
+} from '../services/chatSession';
 import type {
   GenerateActionOptionsRequest,
   GenerateAIPlayerActionsRequest,
@@ -19,29 +28,40 @@ import type {
 
 const llm = new Hono();
 
+// Simple health check for readiness probes
+llm.get('/health', (c) => c.json({ ok: true }));
+// Hono may not expose .head() in all versions; use .on('HEAD', ...)
+llm.on('HEAD', '/health', (c) => c.body(null, 200));
+
 /**
  * POST /api/llm/initial-scenario
  * Generate the initial scenario for a game
  */
 llm.post('/initial-scenario', async (c) => {
   try {
-    console.log('[API /llm/initial-scenario] Request received');
+    console.log('[API /llm/initial-scenario] ✓ Request received');
+    try { logDebug('Headers:', sanitizeHeaders((c.req as any)?.raw?.headers || (c.req as any)?.headers)); } catch {}
+    console.log('[API /llm/initial-scenario] → Calling generateInitialScenario()...');
 
     const result = await generateInitialScenario();
 
+    console.log('[API /llm/initial-scenario] ✓ Got result:', result ? 'SUCCESS' : 'NULL');
+
     if (!result) {
+      console.log('[API /llm/initial-scenario] ✗ Result was null, returning 500');
       return c.json({
         success: false,
         error: 'Failed to generate initial scenario',
       }, 500);
     }
 
+    console.log('[API /llm/initial-scenario] ✓ Returning success response');
     return c.json({
       success: true,
       data: result,
     });
   } catch (error) {
-    console.error('[API /llm/initial-scenario] Error:', error);
+    console.error('[API /llm/initial-scenario] ✗ Exception caught:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -57,7 +77,8 @@ llm.post('/action-options', async (c) => {
   try {
     console.log('[API /llm/action-options] Request received');
 
-    const body = await c.req.json() as GenerateActionOptionsRequest;
+    const body = await readJsonBody<GenerateActionOptionsRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.player || !body.gameState) {
       return c.json({
@@ -69,7 +90,7 @@ llm.post('/action-options', async (c) => {
     const result = await generateActionOptions(
       body.player,
       body.gameState,
-      body.previousActions || []
+      body.previousRoundActions ?? null
     );
 
     if (!result) {
@@ -100,7 +121,8 @@ llm.post('/ai-player-actions', async (c) => {
   try {
     console.log('[API /llm/ai-player-actions] Request received');
 
-    const body = await c.req.json() as GenerateAIPlayerActionsRequest;
+    const body = await readJsonBody<GenerateAIPlayerActionsRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.player || !body.gameState || !body.options) {
       return c.json({
@@ -143,7 +165,8 @@ llm.post('/consequences', async (c) => {
   try {
     console.log('[API /llm/consequences] Request received');
 
-    const body = await c.req.json() as GenerateConsequencesRequest;
+    const body = await readJsonBody<GenerateConsequencesRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.gameState || !body.players || body.counterfactualScoreChange === undefined) {
       return c.json({
@@ -186,7 +209,8 @@ llm.post('/counterfactual', async (c) => {
   try {
     console.log('[API /llm/counterfactual] Request received');
 
-    const body = await c.req.json() as GenerateCounterfactualRequest;
+    const body = await readJsonBody<GenerateCounterfactualRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.gameState) {
       return c.json({
@@ -225,7 +249,8 @@ llm.post('/custom-scenario', async (c) => {
   try {
     console.log('[API /llm/custom-scenario] Request received');
 
-    const body = await c.req.json() as GenerateCustomScenarioRequest;
+    const body = await readJsonBody<GenerateCustomScenarioRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.scenarioDescription) {
       return c.json({
@@ -265,7 +290,8 @@ llm.post('/ai-turn', async (c) => {
   try {
     console.log('[API /llm/ai-turn] Request received');
 
-    const body = await c.req.json() as GenerateAITurnRequest;
+    const body = await readJsonBody<GenerateAITurnRequest>(c);
+    try { logDebug('Body keys:', Object.keys(body || {})); } catch {}
 
     if (!body.player || !body.gameState) {
       return c.json({
@@ -295,6 +321,116 @@ llm.post('/ai-turn', async (c) => {
     });
   } catch (error) {
     console.error('[API /llm/ai-turn] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/llm/chat/initial-scenario
+ * Generate initial scenario using chat mode (stateless with history passing)
+ */
+llm.post('/chat/initial-scenario', async (c) => {
+  try {
+    console.log('[API /llm/chat/initial-scenario] Request received');
+
+    const body = await readJsonBody<{
+      gameSetup: any;
+      players: any[];
+    }>(c);
+
+    if (!body.gameSetup || !body.players) {
+      return c.json({
+        success: false,
+        error: 'Missing required fields: gameSetup, players',
+      }, 400);
+    }
+
+    // Create new session and generate initial scenario
+    const session = createGameSession(body.gameSetup, body.players);
+    const result = await generateInitialScenarioChat(session);
+
+    if (!result) {
+      return c.json({
+        success: false,
+        error: 'Failed to generate initial scenario',
+      }, 500);
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        scenario: result,
+        chatHistory: session.getHistory(),
+      },
+    });
+  } catch (error) {
+    console.error('[API /llm/chat/initial-scenario] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/llm/chat/consequences
+ * Generate consequences using chat mode (stateless with history passing)
+ */
+llm.post('/chat/consequences', async (c) => {
+  try {
+    console.log('[API /llm/chat/consequences] Request received');
+
+    const body = await readJsonBody<{
+      gameState: any;
+      players: any[];
+      counterfactualScoreChange: number;
+      chatHistory: any[];
+      gameSetup: any;
+    }>(c);
+
+    if (!body.gameState || !body.players || body.counterfactualScoreChange === undefined || !body.chatHistory || !body.gameSetup) {
+      return c.json({
+        success: false,
+        error: 'Missing required fields: gameState, players, counterfactualScoreChange, chatHistory, gameSetup',
+      }, 400);
+    }
+
+    // Restore session from history and generate consequences
+    // Recreate session with existing history
+    const systemPrompt = createGameMasterSystemPrompt(body.gameSetup, body.players);
+    const session = new GameChatSession(systemPrompt, body.gameSetup, body.players);
+
+    // Restore conversation history (skip first message as it's the system prompt)
+    for (let i = 1; i < body.chatHistory.length; i++) {
+      (session as any).messages.push(body.chatHistory[i]);
+    }
+
+    const result = await generateConsequencesChat(
+      session,
+      body.gameState,
+      body.players,
+      body.counterfactualScoreChange
+    );
+
+    if (!result) {
+      return c.json({
+        success: false,
+        error: 'Failed to generate consequences',
+      }, 500);
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        consequences: result,
+        chatHistory: session.getHistory(),
+      },
+    });
+  } catch (error) {
+    console.error('[API /llm/chat/consequences] Error:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

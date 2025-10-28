@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
-import type { GameSetup, Player } from "../../types";
-import { GAME_CONFIG } from "../../constants";
+import type { GameSetup, Player } from "../types/core";
+import { GAME_CONFIG } from "../gameConfig";
 
 const baseURL = process.env.LITELLM_BASE_URL || "https://asgard.bhishmaraj.org";
 const apiKey = process.env.LITELLM_API_KEY;
@@ -46,7 +47,7 @@ export class GameChatSession {
    */
   async sendMessage<T extends Record<string, any>>(
     userMessage: string,
-    responseSchema?: any
+    responseSchema?: z.ZodSchema<T>
   ): Promise<T | null> {
     // Add user message to history
     this.messages.push({
@@ -55,24 +56,20 @@ export class GameChatSession {
     });
 
     try {
-      let response;
+      const response = await client.chat.completions.create(
+        responseSchema
+          ? {
+              model,
+              messages: this.messages,
+              response_format: zodResponseFormat(responseSchema, "response"),
+            }
+          : {
+              model,
+              messages: this.messages,
+            }
+      );
 
-      if (responseSchema) {
-        // Use structured output with Zod schema
-        response = await client.chat.completions.create({
-          model,
-          messages: this.messages,
-          response_format: zodResponseFormat(responseSchema, "response"),
-        });
-      } else {
-        // Regular chat completion
-        response = await client.chat.completions.create({
-          model,
-          messages: this.messages,
-        });
-      }
-
-      const assistantMessage = response.choices[0]?.message;
+      const assistantMessage = response.choices[0]?.message as any;
       if (!assistantMessage) {
         throw new Error("No response from LLM");
       }
@@ -84,17 +81,33 @@ export class GameChatSession {
       });
 
       // Parse structured output if schema was provided
-      if (responseSchema && assistantMessage.content) {
+      if (responseSchema) {
+        if (assistantMessage?.parsed) {
+          return assistantMessage.parsed as T;
+        }
+        if (typeof assistantMessage.content === 'string' && assistantMessage.content.trim()) {
+          try {
+            return JSON.parse(assistantMessage.content) as T;
+          } catch (error) {
+            console.error("[ChatSession] Failed to parse JSON content:", error);
+          }
+        }
+        // Final fallback: request json_object and parse
         try {
-          const parsed = JSON.parse(assistantMessage.content);
-          return parsed as T;
-        } catch (error) {
-          console.error("Failed to parse structured output:", error);
+          const res2 = await client.chat.completions.create({
+            model,
+            messages: this.messages,
+            response_format: { type: 'json_object' },
+          });
+          const text = (res2.choices[0]?.message?.content || '').trim();
+          return text ? (JSON.parse(text) as T) : null;
+        } catch (e2) {
+          console.error('[ChatSession] Fallback json_object failed:', e2);
           return null;
         }
       }
 
-      return { content: assistantMessage.content } as T;
+      return { content: assistantMessage.content } as unknown as T;
     } catch (error) {
       console.error("Chat session error:", error);
       return null;
@@ -147,7 +160,7 @@ You are an impartial arbiter who:
 ${gameSetup.scenarioDescription}
 
 **Core Metric:** ${gameSetup.coreMetric.name} (${gameSetup.coreMetric.description})
-Starting at: ${gameSetup.coreMetric.initialValue}
+Starting at: ${gameSetup.coreMetric.value}
 
 **Stakeholders:**
 ${rolesDescription}

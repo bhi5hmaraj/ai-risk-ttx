@@ -1,4 +1,4 @@
-import type { GameState, Player, ActionOption } from "../../../types";
+import type { GameState, Player, ActionOption, PlayerRoundActions } from "../../types/core";
 
 /**
  * API Request types for LLM endpoints
@@ -11,7 +11,7 @@ export interface GenerateInitialScenarioRequest {
 export interface GenerateActionOptionsRequest {
   player: Player;
   gameState: GameState;
-  previousActions: ActionOption[];
+  previousRoundActions?: PlayerRoundActions[] | null;
 }
 
 export interface GenerateAIPlayerActionsRequest {
@@ -56,5 +56,5 @@ export interface CreateChatSessionRequest {
 export interface GenerateAITurnRequest {
   player: Player;
   gameState: GameState;
-  previousRoundActions?: ActionOption[] | null;
+  previousRoundActions?: PlayerRoundActions[] | null;
 }

@@ -1,4 +1,4 @@
-import type { GameSetup, GameEvent } from '../../types';
+import type { GameSetup, GameEvent } from '../types/core';
 
 /**
  * Types for Public Scenario Submission and Storage
