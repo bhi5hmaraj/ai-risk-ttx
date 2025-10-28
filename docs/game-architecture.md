@@ -354,28 +354,28 @@ Rational agents must choose points along this frontier based on their weighting 
 ```mermaid
 flowchart LR
     subgraph Agent["Agent i"]
-        Obs[Observable State<br/>m_t, E_t, H_t]
-        Priv[Private State<br/>s_i, U_i^hidden]
-        Util[Utility Function<br/>U_i = α·ΔM + β·Δs_i]
+        Obs["Observable State: m_t, E_t, H_t"]
+        Priv["Private State: s_i, U_i hidden"]
+        Util["Utility Function: U_i = α·ΔM + β·Δs_i"]
     end
 
     subgraph Options["Available Actions A_i^t"]
-        A1[Action a_1<br/>cost=1]
-        A2[Action a_2<br/>cost=2]
-        A3[Action a_3<br/>cost=1]
-        A4[Action a_4<br/>cost=3]
-        A5[Action a_5<br/>cost=2]
+        A1["Action a_1 (cost=1)"]
+        A2["Action a_2 (cost=2)"]
+        A3["Action a_3 (cost=1)"]
+        A4["Action a_4 (cost=3)"]
+        A5["Action a_5 (cost=2)"]
     end
 
     subgraph Choice["Action Selection"]
-        Opt[Constrained<br/>Optimization]
-        Budget[Budget: p_i = 3]
+        Opt["Constrained Optimization"]
+        Budget["Budget: p_i = 3"]
     end
 
     subgraph Outcome["Consequences"]
-        Public[Public Score<br/>Δm_t]
-        Hidden[Hidden Score<br/>Δs_i]
-        Next[Next Event<br/>E_{t+1}]
+        Public["Public Score: Δm_t"]
+        Hidden["Hidden Score: Δs_i"]
+        Next["Next Event: E_t+1"]
     end
 
     Obs --> Util
