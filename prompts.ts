@@ -1,6 +1,9 @@
-import { RoleName } from './types';
-import type { GameState, Player, ActionOption, PlayerRoundActions } from './types';
-import { GAME_CONFIG, ROLES } from "./constants";
+import { RoleName } from './types/core';
+import type { GameState, Player, ActionOption, PlayerRoundActions } from './types/core';
+import { GAME_CONFIG } from "./gameConfig";
+
+// Number of roles in the game (avoids importing React-dependent constants.tsx)
+const NUM_ROLES = 6; // Update this if roles are added/removed
 
 // Schema for the AI's response when determining the consequences of player actions.
 const AIConsequenceResponseSchema = {
@@ -30,8 +33,8 @@ const AIConsequenceResponseSchema = {
     hiddenScoreUpdates: {
       type: "array",
       description: "An array of hidden score updates for every role.",
-      minItems: Object.keys(ROLES).length,
-      maxItems: Object.keys(ROLES).length,
+      minItems: NUM_ROLES,
+      maxItems: NUM_ROLES,
       items: {
         type: "object",
         properties: {

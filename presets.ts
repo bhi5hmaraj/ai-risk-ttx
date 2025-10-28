@@ -6,7 +6,7 @@ export const AI_SAFETY_SCENARIO: GameSetup = {
     coreMetric: { 
         name: "Global Stability", 
         description: "Measures the integrity of the global economy and the absence of open conflict. A collapse could mean world war or financial ruin.", 
-        initialValue: 40 
+        value: 40 
     },
     stakeholders: [
         {

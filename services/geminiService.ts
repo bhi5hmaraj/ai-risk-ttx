@@ -107,7 +107,7 @@ const GameSetupZ = z.object({
     coreMetric: z.object({
         name: z.string(),
         description: z.string(),
-        initialValue: z.number(),
+        value: z.number(),
     }).strict(),
     stakeholders: z.array(z.object({
         name: z.string(),

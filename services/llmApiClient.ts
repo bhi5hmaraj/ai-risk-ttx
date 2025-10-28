@@ -16,7 +16,11 @@ import type {
   GameSetup,
 } from '../types';
 
-const API_BASE = '/api/llm';
+// Allow overriding API origin for split-ports dev (e.g., Vite on 5173 and API on 3003)
+const API_ORIGIN = (import.meta as any).env?.VITE_API_ORIGIN || (process as any).env?.VITE_API_ORIGIN || '';
+const API_BASE = API_ORIGIN
+  ? `${String(API_ORIGIN).replace(/\/$/, '')}/api/llm`
+  : '/api/llm';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -267,6 +271,97 @@ export const generateAITurn = async (
     return result.data;
   } catch (error) {
     console.error('[LLM API Client] generateAITurn error:', error);
+    return null;
+  }
+};
+
+/**
+ * CHAT MODE FUNCTIONS
+ * These functions call the backend chat endpoints and manage conversation history
+ */
+
+interface ChatInitialScenarioResponse {
+  scenario: AIConsequenceResponse;
+  chatHistory: any[];
+}
+
+interface ChatConsequencesResponse {
+  consequences: AIConsequenceResponse;
+  chatHistory: any[];
+}
+
+/**
+ * Generate initial scenario using chat mode (backend)
+ */
+export const generateInitialScenarioChat = async (
+  gameSetup: GameSetup,
+  players: Player[]
+): Promise<ChatInitialScenarioResponse | null> => {
+  try {
+    console.log('[LLM API Client] Calling chat/initial-scenario...');
+
+    const response = await fetch(`${API_BASE}/chat/initial-scenario`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        gameSetup,
+        players,
+      }),
+    });
+
+    const result: ApiResponse<ChatInitialScenarioResponse> = await response.json();
+
+    if (!result.success || !result.data) {
+      console.error('[LLM API Client] chat/initial-scenario failed:', result.error);
+      return null;
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('[LLM API Client] chat/initial-scenario error:', error);
+    return null;
+  }
+};
+
+/**
+ * Generate consequences using chat mode (backend)
+ */
+export const generateConsequencesChat = async (
+  gameState: GameState,
+  players: Player[],
+  counterfactualScoreChange: number,
+  chatHistory: any[],
+  gameSetup: GameSetup
+): Promise<ChatConsequencesResponse | null> => {
+  try {
+    console.log('[LLM API Client] Calling chat/consequences...');
+
+    const response = await fetch(`${API_BASE}/chat/consequences`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        gameState,
+        players,
+        counterfactualScoreChange,
+        chatHistory,
+        gameSetup,
+      }),
+    });
+
+    const result: ApiResponse<ChatConsequencesResponse> = await response.json();
+
+    if (!result.success || !result.data) {
+      console.error('[LLM API Client] chat/consequences failed:', result.error);
+      return null;
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('[LLM API Client] chat/consequences error:', error);
     return null;
   }
 };
