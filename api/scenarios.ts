@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from './lib/prisma';
+import { prisma, getPrisma } from './lib/prisma';
 import type { SubmitScenarioRequest, SubmitScenarioResponse } from './types/publicScenario';
 
 /**
@@ -71,8 +71,15 @@ async function handleSubmitScenario(
   try {
     console.log('[POST /api/scenarios] Creating scenario in database...');
 
+    const db = getPrisma();
+    if (!db) {
+      console.warn('[POST /api/scenarios] Prisma unavailable. Returning 503.');
+      res.status(503).json({ success: false, error: 'Database unavailable' } as SubmitScenarioResponse);
+      return;
+    }
+
     // Create the scenario in pending status
-    const scenario = await prisma.publicScenario.create({
+    const scenario = await db.publicScenario.create({
       data: {
         customPrompt: scenarioData.customPrompt,
         gameSetup: scenarioData.gameSetup as any, // Prisma Json type
@@ -122,11 +129,22 @@ async function handleGetScenarios(
 
   try {
     // First, check total count of all scenarios (for debugging)
-    const totalCount = await prisma.publicScenario.count();
-    const approvedCount = await prisma.publicScenario.count({
+    const db = getPrisma();
+    if (!db) {
+      console.warn('[GET /api/scenarios] Prisma unavailable. Returning empty list.');
+      res.status(200).json({
+        success: true,
+        scenarios: [],
+        debug: { totalCount: 0, approvedCount: 0, pendingCount: 0 },
+      });
+      return;
+    }
+
+    const totalCount = await db.publicScenario.count();
+    const approvedCount = await db.publicScenario.count({
       where: { status: 'approved' },
     });
-    const pendingCount = await prisma.publicScenario.count({
+    const pendingCount = await db.publicScenario.count({
       where: { status: 'pending' },
     });
 
@@ -136,7 +154,7 @@ async function handleGetScenarios(
       pendingCount,
     });
 
-    const scenarios = await prisma.publicScenario.findMany({
+    const scenarios = await db.publicScenario.findMany({
       where: {
         status: 'approved',
       },
