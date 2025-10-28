@@ -95,7 +95,7 @@ export class GameChatSession {
         }
       }
 
-      return { content: assistantMessage.content } as T;
+      return { content: assistantMessage.content } as unknown as T;
     } catch (error) {
       console.error("Chat session error:", error);
       return null;
@@ -148,7 +148,7 @@ You are an impartial arbiter who:
 ${gameSetup.scenarioDescription}
 
 **Core Metric:** ${gameSetup.coreMetric.name} (${gameSetup.coreMetric.description})
-Starting at: ${gameSetup.coreMetric.initialValue}
+Starting at: ${gameSetup.coreMetric.value}
 
 **Stakeholders:**
 ${rolesDescription}
