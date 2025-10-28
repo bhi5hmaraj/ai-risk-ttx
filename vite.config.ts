@@ -19,6 +19,16 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      server: {
+        proxy: env.VITE_API_PROXY_TARGET
+          ? {
+              '/api': {
+                target: env.VITE_API_PROXY_TARGET,
+                changeOrigin: true,
+              },
+            }
+          : undefined,
       }
     };
 });

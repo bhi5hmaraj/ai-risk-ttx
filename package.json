@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "vercel dev",
     "build": "vite build",
     "preview": "vite preview",
     "postinstall": "prisma generate",
@@ -47,5 +48,11 @@
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
     "vitest": "^4.0.3"
+  },
+  "overrides": {
+    "@vercel/node": {
+      "typescript": "^5.7.2"
+    },
+    "@types/d3-dispatch": "2.0.0"
   }
 }
