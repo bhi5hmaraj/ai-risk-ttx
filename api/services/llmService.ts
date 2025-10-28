@@ -11,8 +11,7 @@ import type {
   AITurnResponse,
   PlayerRoundActions,
   GameSetup,
-} from "../../types";
-import { RoleName } from "../../types";
+} from "../types/core";
 import {
   getInitialScenarioPromptAndSchema,
   getConsequencesPromptAndSchema,
@@ -21,23 +20,49 @@ import {
   getCounterfactualPromptAndSchema,
   getCustomScenarioPromptAndSchema,
   getAITurnPromptAndSchema,
-} from "../../prompts";
+} from "../prompts";
 
-// Server-side LiteLLM configuration
-const baseURL = process.env.LITELLM_BASE_URL || "https://asgard.bhishmaraj.org";
+// Server-side LiteLLM configuration (read once)
+const baseURL = process.env.LITELLM_BASE_URL || 'https://asgard.bhishmaraj.org';
 const apiKey = process.env.LITELLM_API_KEY;
-const model = process.env.LLM_MODEL || "gpt-4o-mini";
+const model = process.env.LLM_MODEL || 'gpt-4o-mini';
+const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || '10000', 10);
 
-if (!apiKey) {
-  throw new Error(
-    "Missing LiteLLM configuration. Please set LITELLM_API_KEY environment variable."
-  );
+// Reuse a single OpenAI client per runtime isolate (Node or Edge)
+declare global {
+  // eslint-disable-next-line no-var
+  var __LLM_CLIENT__: OpenAI | undefined;
+  // eslint-disable-next-line no-var
+  var __LLM_SIG__: string | undefined;
 }
 
-const client = new OpenAI({
-  apiKey,
-  baseURL,
-});
+const configSig = `${baseURL}|${model}|${timeoutMs}|${apiKey ? apiKey.slice(-4) : 'nokey'}`;
+
+function getClient(): OpenAI {
+  if (!apiKey) {
+    throw new Error("Missing LiteLLM configuration. Please set LITELLM_API_KEY environment variable.");
+  }
+
+  if (!globalThis.__LLM_CLIENT__ || globalThis.__LLM_SIG__ !== configSig) {
+    globalThis.__LLM_CLIENT__ = new OpenAI({
+      apiKey,
+      baseURL,
+      timeout: timeoutMs,
+      maxRetries: 1,
+    });
+    globalThis.__LLM_SIG__ = configSig;
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[LLM INIT]', {
+        baseURL,
+        model,
+        apiKeyPresent: !!apiKey,
+        timeoutMs,
+      });
+    } catch {}
+  }
+  return globalThis.__LLM_CLIENT__;
+}
 
 const safeJsonParse = <T,>(jsonString: string): T | null => {
   try {
@@ -112,7 +137,7 @@ const GameSetupZ = z.object({
     coreMetric: z.object({
         name: z.string(),
         description: z.string(),
-        initialValue: z.number(),
+        value: z.number(),
     }).strict(),
     stakeholders: z.array(z.object({
         name: z.string(),
@@ -125,51 +150,73 @@ const GameSetupZ = z.object({
 }).strict();
 
 async function parseWithZod<T>(schema: z.ZodSchema<T>, prompt: string, name: string): Promise<T | null> {
+  console.log(`[parseWithZod] → Starting for "${name}"`);
+  console.log(`[parseWithZod] Model: ${model}, BaseURL: ${baseURL}`);
+  console.log(`[parseWithZod] API Key present: ${apiKey ? 'YES' : 'NO'}`);
+
   try {
-    const completion = await client.chat.completions.create({
+    console.log(`[parseWithZod] → Calling OpenAI API...`);
+    const completion = await getClient().chat.completions.create({
       model,
       messages: [{ role: "user", content: prompt }],
       response_format: zodResponseFormat(schema, name),
     });
+    console.log(`[parseWithZod] ✓ API call completed`);
+
     const msg = completion.choices[0]?.message as any;
     if (msg?.refusal) {
-      console.error("Model refusal:", msg.refusal);
+      console.error("[parseWithZod] ✗ Model refusal:", msg.refusal);
       return null;
     }
     if (msg?.parsed) {
+      console.log(`[parseWithZod] ✓ Got parsed response`);
       return msg.parsed as T;
     }
     const content = msg?.content;
     if (typeof content === "string") {
+      console.log(`[parseWithZod] → Parsing string content manually...`);
       const parsed = safeJsonParse<T>(content);
-      if (parsed) return parsed;
+      if (parsed) {
+        console.log(`[parseWithZod] ✓ Manual parse succeeded`);
+        return parsed;
+      }
     }
     // Fall back to json_object if parsing or enforcement failed
+    console.log(`[parseWithZod] ⚠ No parsed content, throwing error`);
     throw new Error("No parsed content from structured output");
   } catch (e) {
-    console.warn("Structured output enforcement failed, falling back to json_object:", e);
+    console.warn("[parseWithZod] ⚠ Structured output failed, falling back to json_object:", e);
     try {
-      const res = await client.chat.completions.create({
+      console.log(`[parseWithZod] → Fallback: Calling OpenAI with json_object...`);
+      const res = await getClient().chat.completions.create({
         model,
         messages: [{ role: "user", content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }],
         response_format: { type: "json_object" },
       });
+      console.log(`[parseWithZod] ✓ Fallback API call completed`);
       const text = (res.choices[0]?.message?.content || "").trim();
-      return safeJsonParse<T>(text);
+      const result = safeJsonParse<T>(text);
+      console.log(`[parseWithZod] Fallback parse result:`, result ? 'SUCCESS' : 'NULL');
+      return result;
     } catch (e2) {
-      console.error("Fallback json_object also failed:", e2);
+      console.error("[parseWithZod] ✗ Fallback json_object also failed:", e2);
       return null;
     }
   }
 }
 
 export const generateInitialScenario = async (): Promise<AIConsequenceResponse | null> => {
-  console.log("[LLM] Calling generateInitialScenario...");
+  console.log("[LLM] ✓ Calling generateInitialScenario...");
+  console.log("[LLM] → Getting prompt and schema...");
   const { prompt } = getInitialScenarioPromptAndSchema();
+  console.log("[LLM] ✓ Got prompt, length:", prompt.length);
+  console.log("[LLM] → Calling parseWithZod...");
   try {
-    return await parseWithZod<AIConsequenceResponse>(ConsequenceZ, prompt, "initial_scenario");
+    const result = await parseWithZod<AIConsequenceResponse>(ConsequenceZ, prompt, "initial_scenario");
+    console.log("[LLM] ✓ parseWithZod returned:", result ? 'SUCCESS' : 'NULL');
+    return result;
   } catch (error) {
-    console.error("Error generating initial scenario:", error);
+    console.error("[LLM] ✗ Error generating initial scenario:", error);
     return null;
   }
 };
