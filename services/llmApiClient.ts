@@ -17,7 +17,17 @@ import type {
 } from '../types';
 
 // Allow overriding API origin for split-ports dev (e.g., Vite on 5173 and API on 3003)
-const API_ORIGIN = (import.meta as any).env?.VITE_API_ORIGIN || (process as any).env?.VITE_API_ORIGIN || '';
+// Support both Vite (import.meta.env) and Next.js (process.env.NEXT_PUBLIC_)
+const getEnvVar = (name: string): string | undefined => {
+  if (typeof window !== 'undefined') {
+    // Client-side: try Next.js first, then Vite
+    return (process.env as any)[`NEXT_PUBLIC_${name}`] || (import.meta as any).env?.[`VITE_${name}`];
+  }
+  // Server-side: use process.env
+  return (process.env as any)[`VITE_${name}`] || (process.env as any)[`NEXT_PUBLIC_${name}`];
+};
+
+const API_ORIGIN = getEnvVar('API_ORIGIN') || '';
 const API_BASE = API_ORIGIN
   ? `${String(API_ORIGIN).replace(/\/$/, '')}/api/llm`
   : '/api/llm';
