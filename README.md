@@ -91,7 +91,9 @@ npm run scenarios         # Manage scenarios (scripts/manage-scenarios.ts)
 
 ### API Health / Fail‑Fast
 
-- LLM health: `GET /api/llm/health` → 200 when `LITELLM_API_KEY` loaded; 503 JSON with `{ service: "llm", missing: [...] }` when misconfigured.
+- LLM health: `GET /api/llm/health` →
+  - 200 when `LITELLM_API_KEY` loaded, or when mock mode is enabled (see Mock LLM below)
+  - 503 JSON with `{ service: "llm", missing: [...] }` when misconfigured and not in mock mode
 - DB routes (`/api/scenarios`, `/api/feedback`) return 503 when `DATABASE_URL` is not set. On Vercel, `PRISMA_DATABASE_URL` is accepted as a fallback.
 
 ---
@@ -212,6 +214,35 @@ If any required variable is missing, impacted routes will return 503 with a desc
 - Server‑side LLM config moved to `LITELLM_*` and `LLM_MODEL` (server only). The only client‑exposed var is `NEXT_PUBLIC_LLM_MODEL`.
 - Legacy files removed: Vite entrypoints and Node function handlers under `/api/*`.
 - Added centralized env guard (`server/lib/env.ts`); routes fail fast if misconfigured.
+
+---
+
+## Mock LLM Mode (Local Testing)
+
+You can run the app without making real LLM calls. The mock mode returns fast, deterministic dummy data that exercises the UI flows without cost or latency.
+
+Enable one of the following in `.env.local`:
+
+```
+# Option A
+LLM_MOCK=1
+
+# Option B
+LLM_MODE=mock
+```
+
+Behavior:
+- No `LITELLM_API_KEY` required; API health passes.
+- All `/api/llm/**` endpoints return structured mock data:
+  - Initial scenario, consequences, action options, counterfactuals, and AI turns are generated locally.
+  - Chat‑based routes also short‑circuit to mock responses.
+- Toggle off mock mode to use the real LLM service (requires `LITELLM_API_KEY`).
+
+Implementation:
+- Interface: `server/services/llm/types.ts` defines the LLM surface.
+- Real impl: `server/services/llm/openaiService.ts` (OpenAI via LiteLLM).
+- Mock impl: `server/services/llm/mockService.ts`.
+- Facade: `server/services/llmService.ts` selects implementation based on env and exports the same functions used by API routes.
 
 ---
 

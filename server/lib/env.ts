@@ -31,7 +31,13 @@ function normalizeDatabaseUrl() {
   }
 }
 
+function isMockLLM() {
+  return (process.env.LLM_MOCK === '1') || (process.env.LLM_MODE === 'mock');
+}
+
 export function requireLLMEnv() {
+  // In mock mode we intentionally do not require real credentials
+  if (isMockLLM()) return null;
   const missing = missingKeys(REQUIRED.llm);
   if (missing.length === 0) return null;
   return NextResponse.json(
@@ -59,4 +65,3 @@ export function requireDBEnv() {
     { status: 503, headers: noStoreHeaders() }
   );
 }
-
