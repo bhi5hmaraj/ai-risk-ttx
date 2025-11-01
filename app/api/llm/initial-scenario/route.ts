@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+import { generateInitialScenario } from '@/server/services/llmService';
+
+export const runtime = 'nodejs';
+
+export async function POST() {
+  try {
+    console.log('[API /llm/initial-scenario] Request received');
+    const result = await generateInitialScenario();
+    
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to generate initial scenario' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    console.error('[API /llm/initial-scenario] Exception:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
