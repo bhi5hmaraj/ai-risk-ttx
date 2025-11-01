@@ -180,7 +180,7 @@ If no one had acted, the ${gameState.coreMetric.name} would have changed by **${
     const { prompt } = getAITurnPromptAndSchema(player, gameState, previousRoundActions);
     return await parseWithZod(AITurnZ, prompt, `AI Turn for ${player.role.name}`);
   },
-  async generateDebriefChat(session, gameState, players, humanRoleName) {
+  async generateDebriefChat(session, gameState, players, humanRoleName, gameSetup) {
     const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
     const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
 
@@ -211,10 +211,18 @@ If no one had acted, the ${gameState.coreMetric.name} would have changed by **${
       roleSummaries.push(`${p.role.name} => ${perRound || 'no recorded actions'}`);
     }
 
+    const setupBlock = gameSetup ? `SETUP SUMMARY (initial conditions only):\n` +
+      `Scenario: ${gameSetup.scenarioTitle}\n${gameSetup.scenarioDescription}\n` +
+      `Core Metric (initial): ${gameSetup.coreMetric.name} — ${gameSetup.coreMetric.description} (start ${gameSetup.coreMetric.value})\n` +
+      `Stakeholders:\n` +
+      gameSetup.stakeholders.map(s => `- ${s.name}: Public="${s.publicObjective}" | Hidden="${s.hiddenObjective}"`).join('\n') +
+      `\n\n` : '';
+
     const prompt = `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
 
 FINAL OUTCOME: ${outcome}
 
+${setupBlock}
 ALLOWED_ROUNDS: [${allowedRounds.join(', ')}]
 ROUND HEADLINES (only these rounds exist):
 ${roundsList}

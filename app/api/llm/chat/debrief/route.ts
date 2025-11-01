@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       session = createGameSession(setup, body.players);
     }
 
-    const data = await generateDebriefChat(session, body.gameState, body.players, body.humanRoleName);
+    const data = await generateDebriefChat(session, body.gameState, body.players, body.humanRoleName, body.gameSetup);
     const updatedSessionHistory = session.getHistory();
 
     if (!data) {
