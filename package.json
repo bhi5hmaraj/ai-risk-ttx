@@ -25,7 +25,8 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "type-check": "tsc --noEmit",
-    "metrics": "npm run test:coverage && npm run type-check"
+    "coverage:readme": "node scripts/update-coverage-readme.mjs",
+    "metrics": "npm run test:coverage && npm run type-check && npm run coverage:readme"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",

@@ -216,6 +216,27 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ---
 
+<!-- COVERAGE_START -->
+
+## Test Coverage
+
+This section is auto-generated from Vitest coverage reports. Run:
+
+- `npm run metrics` — executes coverage + type-check + updates this section
+
+When run locally or in CI, the table below is refreshed.
+
+| Metric | Percent |
+| - | - |
+| Statements | (run metrics) |
+| Branches | (run metrics) |
+| Functions | (run metrics) |
+| Lines | (run metrics) |
+
+<!-- COVERAGE_END -->
+
+---
+
 ## Migration Notes (from Vite/SPA)
 
 - Replaced Vite dev server with Next.js App Router. The game’s main UI now lives in `app/page.tsx`.
