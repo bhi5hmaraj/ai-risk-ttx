@@ -61,14 +61,54 @@ export const feedbackDataV1Schema = z.object({
 // TypeScript Types
 // ============================================================================
 
-export type Ratings = z.infer<typeof ratingsSchema>;
-export type GameMetadata = z.infer<typeof gameMetadataSchema>;
-export type Responses = z.infer<typeof responsesSchema>;
-export type Demographics = z.infer<typeof demographicsSchema>;
-export type Contact = z.infer<typeof contactSchema>;
-export type Meta = z.infer<typeof metaSchema>;
+export interface Ratings {
+  ui: number;
+  gameDynamics: number;
+  modelQuality: number;
+  scenario: number;
+  actions: number;
+  stakeholders: number;
+}
 
-export type FeedbackDataV1 = z.infer<typeof feedbackDataV1Schema>;
+export interface GameMetadata {
+  model: string;
+  scenarioType: 'classic' | 'ai_safety' | 'custom';
+  rolePlayed: string;
+  roundsCompleted: number;
+  finalPublicScore: number | null;
+  customPromptUsed: boolean;
+  customPrompt?: string;
+}
+
+export interface Responses {
+  scenarioUsefulness?: string;
+  counterfactualTime?: string;
+  improvements?: string;
+}
+
+export interface Demographics {
+  background: Array<'tech' | 'policy' | 'creative'>;
+}
+
+export interface Contact {
+  email?: string;
+  wantsCollaboration: boolean;
+}
+
+export interface Meta {
+  sessionId: string;
+  submittedAt: string;
+}
+
+export interface FeedbackDataV1 {
+  schemaVersion: '1.0.0';
+  ratings: Ratings;
+  gameMetadata: GameMetadata;
+  responses: Responses;
+  demographics: Demographics;
+  contact: Contact;
+  meta: Meta;
+}
 
 // Union type for all schema versions (future-proof)
 export type FeedbackData = FeedbackDataV1;
@@ -171,15 +211,16 @@ export interface FeedbackSubmissionPayload {
 export function createFeedbackSubmission(
   data: FeedbackData
 ): FeedbackSubmissionPayload {
-  const ratings = Object.values(data.ratings);
+  const feedbackData = data as FeedbackDataV1;
+  const ratings = Object.values(feedbackData.ratings) as number[];
   const avgRating = ratings.reduce((sum, val) => sum + val, 0) / ratings.length;
 
   return {
-    data,
-    model: data.gameMetadata.model,
-    scenarioType: data.gameMetadata.scenarioType,
-    rolePlayed: data.gameMetadata.rolePlayed,
-    gameCompleted: data.gameMetadata.finalPublicScore !== null,
+    data: feedbackData,
+    model: feedbackData.gameMetadata.model,
+    scenarioType: feedbackData.gameMetadata.scenarioType,
+    rolePlayed: feedbackData.gameMetadata.rolePlayed,
+    gameCompleted: feedbackData.gameMetadata.finalPublicScore !== null,
     avgRating: Math.round(avgRating * 100) / 100, // Round to 2 decimals
   };
 }

@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 
 export async function readJsonBody<T = any>(c: Context): Promise<T> {
-  // Try to read using the raw Web Request stream to avoid adapter quirks
   try {
     const raw: any = (c.req as any).raw;
     if (raw && typeof raw === 'object' && 'body' in raw) {
@@ -9,10 +8,7 @@ export async function readJsonBody<T = any>(c: Context): Promise<T> {
       if (!text) return {} as T;
       return JSON.parse(text) as T;
     }
-  } catch {
-    // fall through to Hono's parser
-  }
-  // Fallback: Hono's built-in JSON parser
+  } catch {}
   try {
     return (await c.req.json()) as T;
   } catch {

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma, getPrisma } from './lib/prisma';
-import type { SubmitScenarioRequest, SubmitScenarioResponse } from './types/publicScenario';
+import { getPrisma } from '../server/lib/prisma.js';
+import type { SubmitScenarioRequest, SubmitScenarioResponse } from '../types/publicScenario.js';
 
 /**
  * POST /api/scenarios

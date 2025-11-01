@@ -38,3 +38,28 @@ export const logDebug = (...args: any[]) => {
   // eslint-disable-next-line no-console
   console.log('[API DEBUG]', ...args);
 };
+
+export const logInfo = (...args: any[]) => {
+  // eslint-disable-next-line no-console
+  console.log('[API]', ...args);
+};
+
+// Return a sanitized snapshot of selected env vars.
+// Secrets are masked: we only show last 4 characters.
+export function sanitizeEnv(keys: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  const secretPatterns = /(key|token|secret|password|pwd|database_url|api|access|bearer)/i;
+  for (const k of keys) {
+    const val = process.env[k];
+    if (val == null) {
+      out[k] = 'unset';
+      continue;
+    }
+    if (secretPatterns.test(k)) {
+      out[k] = mask(val);
+    } else {
+      out[k] = String(val);
+    }
+  }
+  return out;
+}

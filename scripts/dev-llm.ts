@@ -1,6 +1,7 @@
+import 'dotenv/config';
 import { createServer } from 'http';
 import { Hono } from 'hono';
-import llmRoutes from '../api/routes/llm';
+import llmRoutes from '../server/routes/llm';
 
 // Minimal local server for LLM API without Vercel CLI
 const app = new Hono();

@@ -1,12 +1,6 @@
 import type { GameState, Player, ActionOption, PlayerRoundActions } from "../../types/core";
 
-/**
- * API Request types for LLM endpoints
- */
-
-export interface GenerateInitialScenarioRequest {
-  // Empty - uses default scenario
-}
+export interface GenerateInitialScenarioRequest {}
 
 export interface GenerateActionOptionsRequest {
   player: Player;
@@ -34,27 +28,9 @@ export interface GenerateCustomScenarioRequest {
   scenarioDescription: string;
 }
 
-// Chat mode requests
-export interface GenerateInitialScenarioChatRequest {
-  sessionId: string;
-}
-
-export interface GenerateConsequencesChatRequest {
-  sessionId: string;
-  gameState: GameState;
-  players: Player[];
-  counterfactualScoreChange: number;
-}
-
-// Session management
-export interface CreateChatSessionRequest {
-  gameSetup: any; // GameSetup type
-  players: Player[];
-}
-
-// OPTIMIZED: Combined AI turn request
 export interface GenerateAITurnRequest {
   player: Player;
   gameState: GameState;
   previousRoundActions?: PlayerRoundActions[] | null;
 }
+

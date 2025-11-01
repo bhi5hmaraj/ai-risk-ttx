@@ -22,6 +22,21 @@ const API_BASE = API_ORIGIN
   ? `${String(API_ORIGIN).replace(/\/$/, '')}/api/llm`
   : '/api/llm';
 
+// Fetch with robust JSON parsing (no abort signal to avoid dev adapter interference)
+async function fetchJson(input: RequestInfo | URL, init?: RequestInit) {
+  const res = await fetch(input, { ...init });
+  const reqId = res.headers?.get('x-req-id') || res.headers?.get('X-Req-Id');
+  try { console.log('[LLM API Client] status:', res.status, 'x-req-id:', reqId); } catch {}
+  let data: any;
+  try {
+    data = await res.clone().json();
+  } catch {
+    const txt = await res.text();
+    try { data = JSON.parse(txt); } catch { data = { success: false, error: 'Invalid JSON', raw: txt }; }
+  }
+  return { res, data } as const;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -68,22 +83,16 @@ export const generateActionOptions = async (
   try {
     console.log('[LLM API Client] Calling generateActionOptions...');
 
-    const response = await fetch(`${API_BASE}/action-options`, {
+    const { res, data } = await fetchJson(`${API_BASE}/action-options`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        player,
-        gameState,
-        previousRoundActions,
-      }),
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ player, gameState, previousRoundActions }),
     });
-
-    const result: ApiResponse<AIActionOptionsResponse> = await response.json();
+    const result: ApiResponse<AIActionOptionsResponse> = data;
+    try { console.log('[LLM API Client] action-options ok:', result?.success, 'len:', (result as any)?.data?.options?.length ?? (result as any)?.options?.length); } catch {}
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] generateActionOptions failed:', result.error);
+      console.error('[LLM API Client] generateActionOptions failed:', result?.error, 'status:', res.status);
       return null;
     }
 

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../../lib/prisma';
+import { prisma } from '../../../server/lib/prisma.js';
 
 /**
  * POST /api/scenarios/:id/vote
