@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/server/lib/prisma';
 import type { SubmitScenarioRequest, SubmitScenarioResponse } from '@/types/publicScenario';
+import { requireDBEnv } from '@/server/lib/env';
 
 /**
  * POST /api/scenarios
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
   console.log('[POST /api/scenarios] Request received');
 
   try {
+    const envError = requireDBEnv();
+    if (envError) return envError;
     const body = await req.json() as SubmitScenarioRequest;
     console.log('[POST /api/scenarios] Body:', JSON.stringify(body, null, 2));
 
@@ -109,6 +112,8 @@ export async function GET(req: NextRequest) {
   console.log('[GET /api/scenarios] Query params:', { sortBy, limit });
 
   try {
+    const envError = requireDBEnv();
+    if (envError) return envError;
     const db = getPrisma();
     if (!db) {
       console.warn('[GET /api/scenarios] Prisma unavailable. Returning empty list.');

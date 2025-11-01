@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
+import { requireDBEnv } from '@/server/lib/env';
 
 /**
  * POST /api/scenarios/:id/vote
@@ -10,6 +11,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const envError = requireDBEnv();
+    if (envError) return envError;
     const { id: scenarioId } = await params;
     const body = await req.json();
     const { userFingerprint } = body;

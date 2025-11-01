@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateConsequences } from '@/server/services/llmService';
 import type { GenerateConsequencesRequest } from '@/server/types/llm/requests';
+import { requireLLMEnv } from '@/server/lib/env';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
+    const envError = requireLLMEnv();
+    if (envError) return envError;
     const started = Date.now();
     const body = await req.json() as GenerateConsequencesRequest;
 

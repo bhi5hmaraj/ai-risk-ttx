@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { generateInitialScenario } from '@/server/services/llmService';
+import { requireLLMEnv } from '@/server/lib/env';
 
 export const runtime = 'nodejs';
 
 export async function POST() {
   try {
+    const envError = requireLLMEnv();
+    if (envError) return envError;
     console.log('[API /llm/initial-scenario] Request received');
     const result = await generateInitialScenario();
     
