@@ -173,34 +173,41 @@ export async function handleGenerateAITurn(body: {
   gameState: GameState;
   previousRoundActions: PlayerRoundActions[] | null;
 }) {
-  const started = Date.now();
-  const playerName = body?.player?.role?.name || 'n/a';
-  const round = body?.gameState?.round || 'n/a';
-  console.log(`[generate/ai-turn]: player=${playerName} round=${round}`);
+  try {
+    const started = Date.now();
+    const playerName = body?.player?.role?.name || 'n/a';
+    const round = body?.gameState?.round || 'n/a';
+    console.log(`[generate/ai-turn]: player=${playerName} round=${round}`);
 
-  if (!body.player || !body.gameState) {
-    return NextResponse.json(
-      { success: false, error: 'Missing: player or gameState' },
-      { status: 400 }
+    if (!body.player || !body.gameState) {
+      return NextResponse.json(
+        { success: false, error: 'Missing: player or gameState' },
+        { status: 400 }
+      );
+    }
+
+    const result = await generateAITurn(
+      body.player,
+      body.gameState,
+      body.previousRoundActions ?? null
     );
-  }
 
-  const result = await generateAITurn(
-    body.player,
-    body.gameState,
-    body.previousRoundActions ?? null
-  );
+    console.log(`[generate/ai-turn]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
 
-  console.log(`[generate/ai-turn]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to generate AI turn' },
+        { status: 500 }
+      );
+    }
 
-  if (!result) {
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to generate AI turn' },
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true, data: result });
 }
 
 // ============================================================================
@@ -239,29 +246,36 @@ export async function handleGenerateCustomScenario(body: {
 export async function handleGenerateCounterfactual(body: {
   gameState: GameState;
 }) {
-  const started = Date.now();
-  const round = body?.gameState?.round || 'n/a';
-  console.log(`[generate/counterfactual]: round=${round}`);
+  try {
+    const started = Date.now();
+    const round = body?.gameState?.round || 'n/a';
+    console.log(`[generate/counterfactual]: round=${round}`);
 
-  if (!body.gameState) {
+    if (!body.gameState) {
+      return NextResponse.json(
+        { success: false, error: 'Missing: gameState' },
+        { status: 400 }
+      );
+    }
+
+    const result = await generateCounterfactualConsequences(body.gameState);
+
+    console.log(`[generate/counterfactual]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to generate counterfactual' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: 'Missing: gameState' },
-      { status: 400 }
-    );
-  }
-
-  const result = await generateCounterfactualConsequences(body.gameState);
-
-  console.log(`[generate/counterfactual]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
-
-  if (!result) {
-    return NextResponse.json(
-      { success: false, error: 'Failed to generate counterfactual' },
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true, data: result });
 }
 
 // ============================================================================
@@ -272,34 +286,41 @@ export async function handleGenerateActionOptions(body: {
   gameState: GameState;
   previousRoundActions: PlayerRoundActions[] | null;
 }) {
-  const started = Date.now();
-  const playerName = body?.player?.role?.name || 'n/a';
-  const round = body?.gameState?.round || 'n/a';
-  console.log(`[generate/action-options]: player=${playerName} round=${round}`);
+  try {
+    const started = Date.now();
+    const playerName = body?.player?.role?.name || 'n/a';
+    const round = body?.gameState?.round || 'n/a';
+    console.log(`[generate/action-options]: player=${playerName} round=${round}`);
 
-  if (!body.player || !body.gameState) {
-    return NextResponse.json(
-      { success: false, error: 'Missing: player or gameState' },
-      { status: 400 }
+    if (!body.player || !body.gameState) {
+      return NextResponse.json(
+        { success: false, error: 'Missing: player or gameState' },
+        { status: 400 }
+      );
+    }
+
+    const result = await generateActionOptions(
+      body.player,
+      body.gameState,
+      body.previousRoundActions ?? null
     );
-  }
 
-  const result = await generateActionOptions(
-    body.player,
-    body.gameState,
-    body.previousRoundActions ?? null
-  );
+    console.log(`[generate/action-options]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
 
-  console.log(`[generate/action-options]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to generate action options' },
+        { status: 500 }
+      );
+    }
 
-  if (!result) {
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to generate action options' },
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true, data: result });
 }
 
 // ============================================================================
