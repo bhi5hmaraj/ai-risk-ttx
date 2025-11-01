@@ -1,6 +1,6 @@
-import { RoleName } from './types/core';
-import type { GameState, Player, ActionOption, PlayerRoundActions } from './types/core';
-import { GAME_CONFIG } from "./gameConfig";
+import { RoleName } from './types/core.js';
+import type { GameState, Player, ActionOption, PlayerRoundActions } from './types/core.js';
+import { GAME_CONFIG } from "./gameConfig.js";
 
 // Number of roles in the game (avoids importing React-dependent constants.tsx)
 const NUM_ROLES = 6; // Update this if roles are added/removed

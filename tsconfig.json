@@ -7,7 +7,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
-    /* Bundler mode */
+    /* Bundler mode - for Vite frontend */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
@@ -21,7 +21,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
 
     "paths": {
       "@/*" :  ["./*"]
@@ -35,6 +34,8 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "api",
+    "server"
   ]
 }

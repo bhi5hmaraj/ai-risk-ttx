@@ -53,6 +53,7 @@ export const useGameController = () => {
   const [isPaused, setIsPaused] = useState(false);
   const geminiCallsThisRoundRef = useRef(0);
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
+  const actionReqInFlightRef = useRef(false);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
@@ -527,20 +528,37 @@ export const useGameController = () => {
       humanPlayer &&
       !humanPlayer.hasSubmittedActions &&
       actionOptions.length === 0 &&
-      !isLoading
+      !isLoading &&
+      !actionReqInFlightRef.current
     ) {
-      setIsLoading(true);
-      setLoadingMessage('Generating action options...');
-      geminiCallsThisRoundRef.current = 0;
-      callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then((res) => {
-        if (res) {
-          setActionOptions(res.options);
-        } else {
-          setError('Failed to generate action options. You may not be able to proceed.');
+      (async () => {
+        actionReqInFlightRef.current = true;
+        setIsLoading(true);
+        setLoadingMessage('Generating action options...');
+        geminiCallsThisRoundRef.current = 0;
+        try {
+          const res = await callGeminiAndCount(
+            generateActionOptions,
+            humanPlayer,
+            gameState,
+            lastCompletedLogEntry?.playerActions || null
+          );
+          if (res) {
+            // Helpful debug breadcrumb in dev
+            try { console.log('[UI] action-options loaded:', res.options?.length ?? 0); } catch {}
+            setActionOptions(res.options);
+          } else {
+            setError('Failed to generate action options. You may not be able to proceed.');
+          }
+        } catch (e) {
+          setError('Action options request failed. Check console for details.');
+          try { console.error('[UI] action-options error:', e); } catch {}
+        } finally {
+          actionReqInFlightRef.current = false;
+          setIsLoading(false);
+          setLoadingMessage('');
         }
-        setIsLoading(false);
-        setLoadingMessage('');
-      });
+      })();
     }
   }, [actionOptions.length, callGeminiAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
 

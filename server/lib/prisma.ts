@@ -8,7 +8,6 @@ let prismaSingleton: any | undefined = (globalThis as any).__PRISMA__;
 export function getPrisma() {
   if (prismaSingleton) return prismaSingleton;
   try {
-    // Use runtime require to avoid importing types
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { PrismaClient } = require('@prisma/client');
     prismaSingleton = new PrismaClient({
@@ -24,3 +23,4 @@ export function getPrisma() {
 }
 
 export const prisma = getPrisma();
+

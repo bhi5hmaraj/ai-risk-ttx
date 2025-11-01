@@ -9,7 +9,7 @@ const apiKey = (import.meta as any).env?.VITE_LITELLM_API_KEY || (process as any
 const model = (import.meta as any).env?.VITE_LLM_MODEL || (process as any).env?.VITE_LLM_MODEL || "gpt-4o-mini";
 
 if (!baseURL || !apiKey) {
-  throw new Error("Missing LiteLLM configuration. Please set VITE_LITELLM_API_KEY.");
+  throw new Error("Missing ! LiteLLM configuration. Please set VITE_LITELLM_API_KEY.");
 }
 
 const client = new OpenAI({

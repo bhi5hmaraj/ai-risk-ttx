@@ -1,21 +1,29 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "ESNext",
     "lib": ["ES2020"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "strict": false,
+    "noEmit": true,
     "isolatedModules": true,
-    "noEmit": false,
-    "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react",
-    "allowSyntheticDefaultImports": true
+    "types": ["node"]
   },
-  "include": ["./**/*", "../types/**/*"],
-  "exclude": ["node_modules"]
+  "include": [
+    "./**/*",
+    "../server/routes/**/*",
+    "../server/services/**/*",
+    "../server/lib/logger.ts",
+    "../server/types/**/*",
+    "../types/**/*",
+    "../prompts.ts",
+    "../gameConfig.ts"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../dist",
+    "../.vercel"
+  ]
 }

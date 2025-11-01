@@ -1,13 +1,15 @@
 import React from 'react';
+import { ChatBubbleLeftIcon } from '../components/Icons';
 import type { GameState, Player } from '../types';
 
 interface EndScreenProps {
   gameState: GameState;
   players: Player[];
   onReset: () => void;
+  onOpenFeedback?: () => void;
 }
 
-export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onReset }) => {
+export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onReset, onOpenFeedback }) => {
   const finalLogEntry = gameState.eventLog[gameState.eventLog.length - 1] ?? null;
   const finalScoreChange = finalLogEntry?.publicScoreChange ?? null;
 
@@ -169,13 +171,22 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
           </div>
         )}
 
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={onReset}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg"
           >
             Play Again
           </button>
+          {onOpenFeedback && (
+            <button
+              onClick={onOpenFeedback}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg text-lg inline-flex items-center gap-2"
+            >
+              <ChatBubbleLeftIcon className="h-5 w-5" />
+              Share Feedback
+            </button>
+          )}
         </div>
       </div>
     </div>

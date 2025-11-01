@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from './lib/prisma';
-import { feedbackDataV1Schema, createFeedbackSubmission } from './types/feedback';
+import { prisma } from '../server/lib/prisma.js';
+import { feedbackDataV1Schema, createFeedbackSubmission } from '../types/feedback.js';
 
 /**
  * POST /api/feedback
@@ -41,7 +41,6 @@ export default async function handler(
         rolePlayed: submission.rolePlayed,
         gameCompleted: submission.gameCompleted,
         avgRating: submission.avgRating,
-        customPrompt: submission.customPrompt,
       },
     });
 
