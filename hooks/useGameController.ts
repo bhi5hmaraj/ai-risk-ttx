@@ -50,7 +50,8 @@ export const useGameController = () => {
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(GAME_CONFIG.ACTION_PHASE_SECONDS);
   const [isPaused, setIsPaused] = useState(false);
-  const geminiCallsThisRoundRef = useRef(0);
+  // Tracks number of AI (LLM) API calls in the current round
+  const llmCallsThisRoundRef = useRef(0);
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
   const actionReqInFlightRef = useRef(false);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
@@ -86,9 +87,9 @@ export const useGameController = () => {
     return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
   };
 
-  const callGeminiAndCount = useCallback(
+  const callLLMAndCount = useCallback(
     async <T extends (...args: any[]) => Promise<any>>(apiFunc: T, ...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | null> => {
-      geminiCallsThisRoundRef.current += 1;
+      llmCallsThisRoundRef.current += 1;
       const result = await apiFunc(...args);
       if (result === null) {
         setError('An API call to the AI model failed. Check the console for details.');
@@ -111,7 +112,7 @@ export const useGameController = () => {
     setActionOptions([]);
     setIsPaused(false);
     setAiCompletionStatus({});
-    geminiCallsThisRoundRef.current = 0;
+    llmCallsThisRoundRef.current = 0;
     setIsActionTreeOpen(false);
     setIsHistoryOpen(false);
     setExpandedRound(null);
@@ -147,7 +148,7 @@ export const useGameController = () => {
       setAiCompletionStatus(initialStatus);
 
       setLoadingMessage('AI Game Master is assessing the situation...');
-      const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
+      const counterfactualPromise = callLLMAndCount(generateCounterfactualConsequences, currentGameState);
 
       const previousRoundLog = currentGameState.eventLog.find((entry) => entry.round === currentGameState.round - 1);
       const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
@@ -158,7 +159,7 @@ export const useGameController = () => {
       if (aiPlayers.length > 0) {
         setLoadingMessage('AI players are analyzing and choosing their actions...');
         const aiTurnPromises = aiPlayers.map((player) =>
-          callGeminiAndCount(generateAITurn, player, currentGameState, previousRoundActions).then((result) => {
+          callLLMAndCount(generateAITurn, player, currentGameState, previousRoundActions).then((result) => {
             setAiCompletionStatus((prev) => ({ ...prev, [player.role.name]: true }));
             return result;
           })
@@ -198,7 +199,7 @@ export const useGameController = () => {
 
       // Chat mode only: always call chat consequences endpoint
       let result;
-      const cons = await callGeminiAndCount(
+      const cons = await callLLMAndCount(
         () => generateConsequencesChat(
           currentGameState,
           playersWithActions,
@@ -257,7 +258,7 @@ export const useGameController = () => {
               publicScoreChange: result.publicScoreUpdate,
               publicScoreAfter: newScoreValue,
               hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: geminiCallsThisRoundRef.current,
+              geminiCalls: llmCallsThisRoundRef.current,
             },
           ],
           currentEvent: result.nextEvent,
@@ -284,14 +285,14 @@ export const useGameController = () => {
         setIsLoading(false);
         setLoadingMessage('');
         setAiCompletionStatus({});
-        geminiCallsThisRoundRef.current = 0;
+        llmCallsThisRoundRef.current = 0;
       } else {
         setError('The AI Game Master failed to provide a consequence. The simulation cannot continue.');
         setIsLoading(false);
         setLoadingMessage('');
       }
     },
-    [actionOptions, callGeminiAndCount]
+    [actionOptions, callLLMAndCount]
   );
 
   const handleConfirmActions = useCallback(
@@ -392,7 +393,7 @@ export const useGameController = () => {
     if (gameState.phase !== GamePhase.STARTING) return;
 
     const initializeClassicScenario = async () => {
-      geminiCallsThisRoundRef.current = 0;
+      llmCallsThisRoundRef.current = 0;
 
       // Chat mode only: Create and persist canonical setup, then call chat endpoint
       const setup = gameSetup || {
@@ -410,7 +411,7 @@ export const useGameController = () => {
       };
       setGameSetup(setup);
 
-      const initChat = await callGeminiAndCount(() => generateInitialScenarioChat(setup, players));
+      const initChat = await callLLMAndCount(() => generateInitialScenarioChat(setup, players));
       const result = initChat ? initChat.scenario : null;
       if (initChat) chatHistoryRef.current = initChat.chatHistory;
 
@@ -434,7 +435,7 @@ export const useGameController = () => {
               publicScoreChange: result.publicScoreUpdate,
               publicScoreAfter: newScoreValue,
               hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: geminiCallsThisRoundRef.current,
+              geminiCalls: llmCallsThisRoundRef.current,
             },
           ],
         };
@@ -451,7 +452,7 @@ export const useGameController = () => {
     };
 
     const initializePresetScenario = (setup: GameSetup) => {
-      geminiCallsThisRoundRef.current = 0;
+      llmCallsThisRoundRef.current = 0;
 
       // Persist canonical setup for AI Safety / predefined scenarios
       setGameSetup(setup);
@@ -502,7 +503,7 @@ export const useGameController = () => {
       }
       initializePresetScenario(setup);
     }
-  }, [callGeminiAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
+  }, [callLLMAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
 
   useEffect(() => {
     if (
@@ -517,9 +518,9 @@ export const useGameController = () => {
         actionReqInFlightRef.current = true;
         setIsLoading(true);
         setLoadingMessage('Generating action options...');
-        geminiCallsThisRoundRef.current = 0;
+        llmCallsThisRoundRef.current = 0;
         try {
-          const res = await callGeminiAndCount(
+          const res = await callLLMAndCount(
             generateActionOptions,
             humanPlayer,
             gameState,
@@ -542,7 +543,7 @@ export const useGameController = () => {
         }
       })();
     }
-  }, [actionOptions.length, callGeminiAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
+  }, [actionOptions.length, callLLMAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
