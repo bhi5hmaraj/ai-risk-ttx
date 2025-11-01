@@ -180,7 +180,7 @@ export default function Home() {
                 onOpenFeedback={() => setShowFeedbackModal(true)}
                 onOpenAbout={handleNavigateAbout}
                 onOpenUpdates={handleNavigateUpdates}
-                showFeedback={isInGame}
+                showFeedback={false}
               />
               {actionTree}
               <LoadingScreen message={loadingMessage} error={error} />
@@ -195,7 +195,7 @@ export default function Home() {
               onOpenFeedback={() => setShowFeedbackModal(true)}
               onOpenAbout={handleNavigateAbout}
               onOpenUpdates={handleNavigateUpdates}
-              showFeedback={isInGame}
+              showFeedback={false}
             />
             {actionTree}
             <FeedbackBanner
@@ -241,6 +241,7 @@ export default function Home() {
               error={error}
               isCustomScenario={gamePath === 'custom' && !!customScenario && !scenarioSubmitted}
               onMakePublic={() => setShowMakePublicModal(true)}
+              onOpenFeedback={() => setShowFeedbackModal(true)}
             />
           </>
         );
@@ -258,7 +259,7 @@ export default function Home() {
               onOpenFeedback={() => setShowFeedbackModal(true)}
               onOpenAbout={handleNavigateAbout}
               onOpenUpdates={handleNavigateUpdates}
-              showFeedback={isInGame}
+              showFeedback={false}
             />
             <FeedbackModal
               isOpen={showFeedbackModal}
