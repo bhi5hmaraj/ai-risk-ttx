@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateConsequencesChat } from '@/server/services/llmService';
 import { GameChatSession } from '@/server/services/chatSession';
 import type { GameSetup, GameState, Player } from '@/server/types/core';
+import { requireLLMEnv } from '@/server/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +16,8 @@ interface GenerateConsequencesChatRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    const envError = requireLLMEnv();
+    if (envError) return envError;
     const started = Date.now();
     const body = await req.json() as GenerateConsequencesChatRequest;
 

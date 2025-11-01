@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateInitialScenarioChat } from '@/server/services/llmService';
 import { createGameSession } from '@/server/services/chatSession';
 import type { GameSetup, Player } from '@/server/types/core';
+import { requireLLMEnv } from '@/server/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,8 @@ interface CreateInitialScenarioChatRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    const envError = requireLLMEnv();
+    if (envError) return envError;
     const started = Date.now();
     const body = await req.json() as CreateInitialScenarioChatRequest;
 
