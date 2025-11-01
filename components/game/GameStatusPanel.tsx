@@ -12,9 +12,10 @@ interface GameStatusPanelProps {
   player: Player;
   isCustomScenario?: boolean;
   onMakePublic?: () => void;
+  onOpenFeedback?: () => void;
 }
 
-export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic }) => {
+export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
   const [showHiddenObjective, setShowHiddenObjective] = useState(false);
@@ -30,15 +31,26 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold">Your Role</p>
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-bold text-white leading-tight">{player.role.name}</h2>
-              {isCustomScenario && onMakePublic && (
-                <button
-                  onClick={onMakePublic}
-                  className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
-                  title="Share this scenario with the community"
-                >
-                  📢 Make Public
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isCustomScenario && onMakePublic && (
+                  <button
+                    onClick={onMakePublic}
+                    className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
+                    title="Share this scenario with the community"
+                  >
+                    📢 Make Public
+                  </button>
+                )}
+                {onOpenFeedback && (
+                  <button
+                    onClick={onOpenFeedback}
+                    className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
+                    title="Share your feedback about this game"
+                  >
+                    💬 Feedback
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
