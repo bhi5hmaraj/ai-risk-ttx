@@ -127,12 +127,22 @@ export const LLM_MOCK: LLMService = {
   },
   async generateDebriefChat(_session, gameState, players, humanRoleName, gameSetup): Promise<AIDebriefResponse | null> {
     const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
-    const events = gameState.eventLog.slice(-3).map(e => ({
-      round: e.round,
-      title: e.event?.headline || `Round ${e.round}`,
-      description: e.roundSummary || 'Mock round summary.',
-      impact: e.publicScoreChange >= 0 ? 'positive' : 'negative',
-    }));
+    const events = gameState.eventLog.slice(-3).map(e => {
+      // Pick actor as the role with the most actions this round; fallback to 'System'
+      let actor: string | undefined;
+      const pra = e.playerActions || [];
+      if (pra.length) {
+        const sorted = [...pra].sort((a, b) => (b.actions?.length || 0) - (a.actions?.length || 0));
+        actor = sorted[0]?.roleName;
+      }
+      return {
+        round: e.round,
+        title: e.event?.headline || `Round ${e.round}`,
+        description: e.roundSummary || 'Mock round summary.',
+        impact: e.publicScoreChange >= 0 ? 'positive' : 'negative',
+        actor: actor || 'System',
+      };
+    });
     const humanPlayer = players.find(p => p.role.name === human) || players.find(p => p.isHuman);
     const lastEntry = gameState.eventLog.filter(e => (e.round ?? 0) > 0).at(-1);
     const pra = lastEntry?.playerActions?.find(pa => pa.roleName === humanPlayer?.role.name);
