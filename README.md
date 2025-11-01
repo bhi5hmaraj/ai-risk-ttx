@@ -79,6 +79,13 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
    npm run dev -- --port 4000  # Forwarded to Next.js
    ```
 
+## Documentation
+
+- Docs live in the `docs/` folder.
+- Advanced analytics (ADA + CDT + Shapley) design: `docs/ada-cdt-shapley.md`.
+
+---
+
 ### Available Commands
 
 ```bash
