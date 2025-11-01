@@ -1,5 +1,7 @@
 # Simulacra – AI Tabletop Exercise (Next.js)
 
+![Coverage](./badges/coverage.svg)
+
 A web-based crisis simulation game where you role‑play as a key decision‑maker during an AI‑driven emergency. Make strategic choices that affect public trust and your hidden objectives while an AI Game Master generates dynamic scenarios and consequences.
 
 This repository has been migrated to Next.js (App Router). If you used the earlier Vite/SPA variant, see Migration Notes below.
@@ -220,7 +222,7 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ## Test Coverage
 
-Last updated: 2025-11-01 20:57Z
+Last updated: 2025-11-01 21:04Z
 
 | Metric | Percent |
 | - | - |
