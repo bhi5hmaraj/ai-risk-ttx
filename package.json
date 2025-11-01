@@ -10,6 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
+    "hooks:install": "git config extensions.worktreeConfig true && git config --worktree core.hooksPath .githooks",
+    "prepare": "npm run hooks:install",
     "postinstall": "prisma generate",
     "db:setup": "chmod +x scripts/setup-local-db.sh && scripts/setup-local-db.sh",
     "db:studio": "npx prisma studio",
