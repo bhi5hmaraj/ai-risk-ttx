@@ -39,10 +39,19 @@ export async function POST(req: NextRequest) {
         (session as any).messages.push({ role: msg.role, content: msg.content });
       }
     } else {
-      if (!body.gameSetup) {
-        return NextResponse.json({ success: false, error: 'Missing: gameSetup when no sessionHistory provided' }, { status: 400 });
-      }
-      session = createGameSession(body.gameSetup, body.players);
+      // Build a minimal setup if not provided (fallback for classic games)
+      const setup = body.gameSetup ?? {
+        scenarioTitle: body.gameState.currentEvent?.headline || 'Simulation Debrief',
+        scenarioDescription: body.gameState.currentEvent?.detail || 'Auto-generated debrief context.',
+        coreMetric: body.gameState.coreMetric || { name: 'Public Trust', description: 'Shared public metric', value: 50 },
+        stakeholders: body.players.map(p => ({
+          name: p.role.name,
+          icon: '👤',
+          publicObjective: p.role.publicObjective,
+          hiddenObjective: p.role.hiddenObjective,
+        })),
+      } as GameSetup;
+      session = createGameSession(setup, body.players);
     }
 
     const data = await generateDebriefChat(session, body.gameState, body.players, body.humanRoleName);
@@ -59,4 +68,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
-
