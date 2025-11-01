@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as llmService from '../../api/services/llmService';
+import * as llmService from '../../server/services/llmService';
 import OpenAI from 'openai';
 
 // Mock OpenAI with hoisted mock function
