@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "build:analyze": "ANALYZE=true next build",
     "dev:mock": "node scripts/dev.mjs --mock-llm",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx",
     "postinstall": "prisma generate",
     "db:setup": "chmod +x scripts/setup-local-db.sh && scripts/setup-local-db.sh",
     "db:studio": "npx prisma studio",
@@ -18,7 +19,11 @@
     "scenarios": "tsx scripts/manage-scenarios.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "type-check": "tsc --noEmit",
+    "metrics": "npm run test:coverage && npm run type-check"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
@@ -35,10 +40,12 @@
     "zod": "^3.25.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.15",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.9",
     "@types/react-cytoscapejs": "^1.2.5",
     "@types/react-dom": "^19.1.6",
+    "@vitest/coverage-v8": "^4.0.6",
     "@vitest/ui": "^4.0.3",
     "cytoscape-dagre": "^2.5.0",
     "dotenv": "^17.2.3",
