@@ -1,17 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChatBubbleLeftIcon } from '../components/Icons';
 import type { GameState, Player } from '../types';
+import type { AIDebriefResponse } from '../server/types/core';
 
 interface EndScreenProps {
   gameState: GameState;
   players: Player[];
   onReset: () => void;
   onOpenFeedback?: () => void;
+  gameSetup?: any;
 }
 
-export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onReset, onOpenFeedback }) => {
+export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onReset, onOpenFeedback, gameSetup }) => {
   const finalLogEntry = gameState.eventLog[gameState.eventLog.length - 1] ?? null;
   const finalScoreChange = finalLogEntry?.publicScoreChange ?? null;
+  const [debrief, setDebrief] = useState<AIDebriefResponse | null>(null);
+  const [debriefLoading, setDebriefLoading] = useState(false);
+  const [debriefError, setDebriefError] = useState<string | null>(null);
+
+  const handleGenerateDebrief = async () => {
+    try {
+      setDebriefError(null);
+      setDebriefLoading(true);
+      const resp = await fetch('/api/llm/chat/debrief', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ gameSetup, players, gameState }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json?.success) throw new Error(json?.error || 'Failed to generate debrief');
+      setDebrief(json.data as AIDebriefResponse);
+    } catch (e: any) {
+      setDebriefError(e?.message || String(e));
+    } finally {
+      setDebriefLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 pt-24 flex flex-col items-center">
@@ -170,6 +195,55 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             )}
           </div>
         )}
+
+        {/* Debrief Section */}
+        <div className="bg-gray-800 rounded-lg p-6 md:p-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl md:text-3xl font-bold">Debrief</h2>
+            <button
+              onClick={handleGenerateDebrief}
+              disabled={debriefLoading}
+              className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium"
+            >
+              {debriefLoading ? 'Generating…' : 'Generate Debrief'}
+            </button>
+          </div>
+          {debriefError && (
+            <div className="text-red-300 text-sm">{debriefError}</div>
+          )}
+          {debrief && (
+            <div className="space-y-4">
+              <p className="text-gray-100 leading-relaxed whitespace-pre-wrap">{debrief.summary}</p>
+              {debrief.keyEvents?.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-blue-200">Key Decisive Events</p>
+                  <ul className="space-y-2">
+                    {debrief.keyEvents.map((ev, idx) => (
+                      <li key={`ev_${idx}`} className="bg-gray-900/60 border border-gray-700 rounded-md p-3">
+                        <div className="text-sm text-white font-semibold">Round {ev.round}: {ev.title}</div>
+                        <div className="text-sm text-gray-300">{ev.description}</div>
+                        <div className="text-xs text-blue-300 mt-1">Impact: {ev.impact}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {debrief.userActions?.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-amber-200">Your Influential Actions</p>
+                  <ul className="space-y-2">
+                    {debrief.userActions.map((ac, idx) => (
+                      <li key={`act_${idx}`} className="bg-gray-900/60 border border-gray-700 rounded-md p-3">
+                        <div className="text-sm text-white font-semibold">Round {ac.round}: {ac.title}</div>
+                        <div className="text-xs text-amber-200">Impact: {ac.impact}{ac.rationale ? ` — ${ac.rationale}` : ''}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button

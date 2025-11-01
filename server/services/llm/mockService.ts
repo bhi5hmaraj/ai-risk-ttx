@@ -9,6 +9,7 @@ import type {
   PlayerRoundActions,
   GameSetup,
 } from "../../types/core";
+import type { AIDebriefResponse } from "../../types/core";
 import type { LLMService } from './types';
 import type { GameChatSession } from '../chatSession';
 
@@ -124,5 +125,20 @@ export const LLM_MOCK: LLMService = {
       reasoning: 'Mock: selected first option for speed.',
     };
   },
+  async generateDebriefChat(_session, gameState, players, humanRoleName): Promise<AIDebriefResponse | null> {
+    const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
+    const events = gameState.eventLog.slice(-3).map(e => ({
+      round: e.round,
+      title: e.event?.headline || `Round ${e.round}`,
+      description: e.roundSummary || 'Mock round summary.',
+      impact: e.publicScoreChange >= 0 ? 'positive' : 'negative',
+    }));
+    const humanPlayer = players.find(p => p.role.name === human) || players.find(p => p.isHuman);
+    const actions = (humanPlayer?.actions || []).map((a, idx) => ({ round: gameState.round - (humanPlayer?.actions.length - 1 - idx), title: a.title, impact: 'mixed' }));
+    return {
+      summary: `Mock debrief: ${human} steered the simulation to ${gameState.coreMetric.value}% ${gameState.coreMetric.name}.`,
+      keyEvents: events.length ? events : [{ round: gameState.round, title: 'Simulation End', description: 'Mock debrief event.', impact: 'neutral' }],
+      userActions: actions.length ? actions : [{ round: gameState.round, title: 'No actions recorded', impact: 'neutral' }],
+    };
+  },
 };
-

@@ -12,6 +12,7 @@ import type {
   PlayerRoundActions,
   GameSetup,
 } from "../../types/core";
+import type { AIDebriefResponse } from "../../types/core";
 import {
   getInitialScenarioPromptAndSchema,
   getConsequencesPromptAndSchema,
@@ -88,6 +89,10 @@ const GameSetupZ = z.object({
     constraints: z.array(z.string()).nullable(),
   }).strict()).min(4).max(6),
 }).strict();
+
+const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string() }).strict();
+const DebriefActionZ = z.object({ round: z.number().int().min(1), title: z.string(), impact: z.string(), rationale: z.string().optional() }).strict();
+const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(3).max(7), userActions: z.array(DebriefActionZ).min(1) }).strict();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
@@ -174,5 +179,24 @@ If no one had acted, the ${gameState.coreMetric.name} would have changed by **${
     const { prompt } = getAITurnPromptAndSchema(player, gameState, previousRoundActions);
     return await parseWithZod(AITurnZ, prompt, `AI Turn for ${player.role.name}`);
   },
-};
+  async generateDebriefChat(session, gameState, players, humanRoleName) {
+    const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
+    const last = gameState.eventLog.at(-1);
+    const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
+    const actionsText = players.map(p => `- ${p.role.name}: ${p.actions.map(a => a.title).join(', ') || 'no actions'}`).join('\n');
+    const rounds = gameState.eventLog.map(e => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
 
+    const prompt = `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
+
+Final Outcome: ${outcome}
+
+Round Headlines:
+${rounds}
+
+Player Actions Across Rounds:
+${actionsText}
+
+Focus especially on the human player's (${human}) actions and which ones most influenced the final outcome. Use the schema to respond.`;
+    return await parseWithZod<AIDebriefResponse>(DebriefZ, prompt, 'debrief');
+  },
+};
