@@ -36,8 +36,18 @@ fi
 echo "[pre-commit] Running type-check…"
 npm run -s type-check
 
-echo "[pre-commit] Running unit tests…"
-npm run -s test:run
+echo "[pre-commit] Running unit tests with coverage…"
+npm run -s test:coverage
+
+echo "[pre-commit] Updating README coverage…"
+if npm run -s coverage:readme; then
+  # Stage README if it changed so coverage table lands in this commit
+  if ! git diff --quiet -- README.md 2>/dev/null; then
+    git add README.md
+    echo "[pre-commit] Staged README.md with refreshed coverage"
+  fi
+else
+  echo "[pre-commit] Warning: coverage:readme failed; continuing"
+fi
 
 echo "[pre-commit] OK"
-
