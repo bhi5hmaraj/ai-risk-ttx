@@ -146,11 +146,11 @@ export const LLM_MOCK: LLMService = {
     const humanPlayer = players.find(p => p.role.name === human) || players.find(p => p.isHuman);
     const lastEntry = gameState.eventLog.filter(e => (e.round ?? 0) > 0).at(-1);
     const pra = lastEntry?.playerActions?.find(pa => pa.roleName === humanPlayer?.role.name);
-    const actions = (pra?.actions || []).map((a) => ({ round: lastEntry?.round || gameState.round, title: a.title, impact: 'mixed' }));
+    const actions = (pra?.actions || []).map((a) => ({ round: lastEntry?.round || gameState.round, title: a.title, impact: 'mixed', rationale: null }));
     const setupLine = gameSetup ? ` Setup: ${gameSetup.scenarioTitle}.` : '';
     return {
       summary: `Mock debrief:${setupLine} ${human} steered the simulation to ${gameState.coreMetric.value}% ${gameState.coreMetric.name}.`,
-      keyEvents: events.length ? events : [{ round: gameState.round, title: 'Simulation End', description: 'Mock debrief event.', impact: 'neutral' }],
+      keyEvents: events.length ? events : [{ round: gameState.round, title: 'Simulation End', description: 'Mock debrief event.', impact: 'neutral', actor: 'System' }],
       userActions: actions,
     };
   },

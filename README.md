@@ -376,22 +376,22 @@ graph TD;
     ai-risk-ttx-8["📋 ai-risk-ttx-8<br/>Implement prompt versioning and stora...<br/>P2"]
     style ai-risk-ttx-8 fill:#fff3cd,stroke:#856404,stroke-width:2px
 
-    ai-risk-ttx-52 --> ai-risk-ttx-51
-    ai-risk-ttx-54 --> ai-risk-ttx-52
-    ai-risk-ttx-54 --> ai-risk-ttx-53
     ai-risk-ttx-48 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-47
     ai-risk-ttx-51 --> ai-risk-ttx-48
     ai-risk-ttx-51 --> ai-risk-ttx-49
     ai-risk-ttx-51 --> ai-risk-ttx-50
-    ai-risk-ttx-50 --> ai-risk-ttx-47
     ai-risk-ttx-47 --> ai-risk-ttx-45
     ai-risk-ttx-47 --> ai-risk-ttx-46
-    ai-risk-ttx-45 --> ai-risk-ttx-44
-    ai-risk-ttx-33 --> ai-risk-ttx-32
+    ai-risk-ttx-52 --> ai-risk-ttx-51
     ai-risk-ttx-53 --> ai-risk-ttx-45
-    ai-risk-ttx-49 --> ai-risk-ttx-47
     ai-risk-ttx-46 --> ai-risk-ttx-44
+    ai-risk-ttx-33 --> ai-risk-ttx-32
+    ai-risk-ttx-50 --> ai-risk-ttx-47
+    ai-risk-ttx-49 --> ai-risk-ttx-47
+    ai-risk-ttx-45 --> ai-risk-ttx-44
+    ai-risk-ttx-54 --> ai-risk-ttx-52
+    ai-risk-ttx-54 --> ai-risk-ttx-53
 ```
 
 <!-- BEADS_ISSUES_END -->
