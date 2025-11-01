@@ -35,22 +35,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Restore session from history
+    // Restore or reconstruct session from history
+    let session: GameChatSession;
     const firstMessage = history[0];
     if (!firstMessage || firstMessage.role !== 'system') {
-      return NextResponse.json(
-        { success: false, error: 'Invalid session history: missing system message' },
-        { status: 400 }
+      // Rebuild from gameSetup when system message is missing
+      session = new GameChatSession(
+        // create the same system prompt as initial-scenario
+        `You are the Game Master for "Simulacra".\n\nScenario: ${body.gameSetup.scenarioTitle}\n${body.gameSetup.scenarioDescription}\n\nCore Metric: ${body.gameSetup.coreMetric.name} (${body.gameSetup.coreMetric.description})\nStarting at: ${body.gameSetup.coreMetric.value}\n\nStakeholders:\n${body.players.map(p => `- ${p.role.name}: Public Goal: "${p.role.publicObjective}" | Hidden Goal: "${p.role.hiddenObjective}"`).join('\n')}\n\n- Max rounds: ${body.gameState.round || ''}`,
+        body.gameSetup,
+        body.players
       );
-    }
-
-    const session = new GameChatSession(firstMessage.content, body.gameSetup, body.players);
-
-    // Restore conversation history (skip system message, add the rest)
-    for (let i = 1; i < history.length; i++) {
-      const msg = history[i];
-      // Reconstruct messages by accessing private property (workaround for API compatibility)
-      (session as any).messages.push({ role: msg.role, content: msg.content });
+      // Append provided messages as user/assistant turns if present
+      for (let i = 0; i < history.length; i++) {
+        const msg = history[i];
+        (session as any).messages.push({ role: msg.role, content: msg.content });
+      }
+    } else {
+      session = new GameChatSession(firstMessage.content, body.gameSetup, body.players);
+      // Restore conversation history (skip system message, add the rest)
+      for (let i = 1; i < history.length; i++) {
+        const msg = history[i];
+        (session as any).messages.push({ role: msg.role, content: msg.content });
+      }
     }
 
     const result = await generateConsequencesChat(

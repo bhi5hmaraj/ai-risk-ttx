@@ -9,7 +9,9 @@ import {
   GameScreen,
   EndScreen,
   LoadingScreen,
-  GameRulesScreen
+  GameRulesScreen,
+  AboutScreen,
+  UpdatesScreen,
 } from '../screens';
 import { GamePhase } from '../types';
 import type { GameMetadata } from '../types/feedback';
@@ -278,7 +280,6 @@ export default function Home() {
         );
 
       case 'about':
-        // TODO: Import AboutScreen when needed
         return (
           <>
             <Navigation
@@ -288,25 +289,11 @@ export default function Home() {
               onOpenUpdates={handleNavigateUpdates}
               showFeedback={false}
             />
-            <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-4xl font-bold mb-4">About Simulacra</h1>
-                <p className="text-gray-300 mb-4">
-                  Simulacra is an AI-powered tabletop exercise simulation game.
-                </p>
-                <button
-                  onClick={handleNavigateHome}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg"
-                >
-                  Back to Home
-                </button>
-              </div>
-            </div>
+            <AboutScreen onBack={handleNavigateHome} />
           </>
         );
 
       case 'updates':
-        // TODO: Import UpdatesScreen when needed
         return (
           <>
             <Navigation
@@ -316,20 +303,7 @@ export default function Home() {
               onOpenUpdates={handleNavigateUpdates}
               showFeedback={false}
             />
-            <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-4xl font-bold mb-4">Updates</h1>
-                <p className="text-gray-300 mb-4">
-                  Check back soon for updates and new features.
-                </p>
-                <button
-                  onClick={handleNavigateHome}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg"
-                >
-                  Back to Home
-                </button>
-              </div>
-            </div>
+            <UpdatesScreen onBack={handleNavigateHome} />
           </>
         );
 
