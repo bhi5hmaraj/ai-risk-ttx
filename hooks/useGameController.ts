@@ -15,7 +15,6 @@ import { GamePhase } from '../types';
 import { ROLES, GAME_CONFIG } from '../constants';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import {
-  generateInitialScenario,
   generateConsequences,
   generateActionOptions,
   generateCounterfactualConsequences,
@@ -197,38 +196,25 @@ export const useGameController = () => {
         return;
       }
 
-      // Use chat mode if enabled and history exists
+      // Chat mode only: always call chat consequences endpoint
       let result;
-      if (GAME_CONFIG.USE_CHAT_MODE && chatHistoryRef.current && gameSetup) {
-        const chatResult = await callGeminiAndCount(
-          () => generateConsequencesChat(
-            currentGameState,
-            playersWithActions,
-            counterfactualResult.publicScoreUpdate,
-            chatHistoryRef.current!,
-            gameSetup
-          )
-        );
-
-        if (chatResult) {
-          result = chatResult.consequences;
-          chatHistoryRef.current = chatResult.chatHistory;
-        } else {
-          // Fallback to stateless consequence generation if chat mode fails
-          result = await callGeminiAndCount(
-            generateConsequences,
-            currentGameState,
-            playersWithActions,
-            counterfactualResult.publicScoreUpdate
-          );
-        }
-      } else {
-        result = await callGeminiAndCount(
-          generateConsequences,
+      const cons = await callGeminiAndCount(
+        () => generateConsequencesChat(
           currentGameState,
           playersWithActions,
-          counterfactualResult.publicScoreUpdate
-        );
+          counterfactualResult.publicScoreUpdate,
+          chatHistoryRef.current || [],
+          gameSetup!
+        )
+      );
+      if (cons) {
+        result = cons.consequences;
+        chatHistoryRef.current = cons.chatHistory;
+      } else {
+        setError('The AI Game Master failed to process consequences (chat mode). Please retry.');
+        setIsLoading(false);
+        setLoadingMessage('');
+        return;
       }
 
       if (result) {
@@ -408,37 +394,25 @@ export const useGameController = () => {
     const initializeClassicScenario = async () => {
       geminiCallsThisRoundRef.current = 0;
 
-      // Use chat mode if enabled
-      let result;
-      if (GAME_CONFIG.USE_CHAT_MODE) {
-        // Create and persist a canonical game setup for chat & debrief
-        const setup = gameSetup || {
-          scenarioTitle: 'Election Crisis 2024',
-          scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
-          coreMetric: gameState.coreMetric,
-          stakeholders: players.map(p => ({
-            name: p.role.name,
-            icon: '🎭',
-            publicObjective: p.role.publicObjective,
-            hiddenObjective: p.role.hiddenObjective,
-            resources: p.role.resources,
-            constraints: p.role.constraints,
-          })),
-        };
-        // Persist canonical setup so downstream (e.g., debrief) always has it
-        setGameSetup(setup);
+      // Chat mode only: Create and persist canonical setup, then call chat endpoint
+      const setup = gameSetup || {
+        scenarioTitle: 'Election Crisis 2024',
+        scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
+        coreMetric: gameState.coreMetric,
+        stakeholders: players.map(p => ({
+          name: p.role.name,
+          icon: '🎭',
+          publicObjective: p.role.publicObjective,
+          hiddenObjective: p.role.hiddenObjective,
+          resources: p.role.resources,
+          constraints: p.role.constraints,
+        })),
+      };
+      setGameSetup(setup);
 
-        const chatResult = await callGeminiAndCount(() => generateInitialScenarioChat(setup, players));
-
-        if (chatResult) {
-          result = chatResult.scenario;
-          chatHistoryRef.current = chatResult.chatHistory;
-        } else {
-          result = null;
-        }
-      } else {
-        result = await callGeminiAndCount(generateInitialScenario);
-      }
+      const initChat = await callGeminiAndCount(() => generateInitialScenarioChat(setup, players));
+      const result = initChat ? initChat.scenario : null;
+      if (initChat) chatHistoryRef.current = initChat.chatHistory;
 
       if (result) {
         const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
@@ -482,11 +456,8 @@ export const useGameController = () => {
       // Persist canonical setup for AI Safety / predefined scenarios
       setGameSetup(setup);
 
-      // Initialize chat history for preset scenarios if chat mode is enabled
-      // The backend will create the system prompt on first request
-      if (GAME_CONFIG.USE_CHAT_MODE) {
-        chatHistoryRef.current = [];
-      }
+      // Initialize chat history for preset scenarios (chat mode only)
+      chatHistoryRef.current = [];
 
       const initialGameState: GameState = {
         ...gameState,
