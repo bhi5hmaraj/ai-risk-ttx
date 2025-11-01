@@ -1,5 +1,5 @@
 import { RoleName } from './types/core';
-import type { GameState, Player, ActionOption, PlayerRoundActions } from './types/core';
+import type { GameState, Player, ActionOption, PlayerRoundActions, GameSetup } from './types/core';
 import { GAME_CONFIG } from "./gameConfig";
 
 // Number of roles in the game (avoids importing React-dependent constants.tsx)
@@ -294,7 +294,116 @@ export const getActionOptionsPromptAndSchema = (player: Player, gameState: GameS
                 const actionTitles = pa.actions.length > 0 ? pa.actions.map(a => a.title).join(", ") : 'Took no action';
                 return `  - ${pa.roleName}: ${actionTitles}.`
             }).join("\n");
+}
+
+/** CHAT MODE PROMPTS **/
+
+export const getInitialScenarioChatPrompt = () => {
+  return `Begin the simulation by generating the opening crisis scenario.
+
+You must provide:
+1. **roundSummary**: 2-3 sentence overview of the starting crisis
+2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats)
+3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
+4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
+5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
+6. **nextEvent**: The first actionable crisis the players will face`;
+};
+
+export const getChatConsequencesPrompt = (
+  gameState: GameState,
+  players: Player[],
+  counterfactualScoreChange: number
+) => {
+  const playerActionsText = players
+    .map(p => {
+      const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
+      return `- **${p.role.name}**: ${actionTitles}`;
+    })
+    .join("\n");
+
+  return `# Round ${gameState.round} - Determine Consequences
+
+## Current Status
+- **${gameState.coreMetric.name}**: ${gameState.coreMetric.value}
+- **Crisis**: "${gameState.currentEvent?.headline}"
+${gameState.currentEvent?.detail}
+
+## Player Actions This Round
+${playerActionsText}
+
+## Counterfactual Analysis
+If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.`;
+};
+
+export const getDebriefPrompt = (
+  gameState: GameState,
+  players: Player[],
+  humanRoleName?: string,
+  gameSetup?: GameSetup
+) => {
+  const human = humanRoleName || players.find(p => (p as any).isHuman)?.role.name || 'Human Player';
+  const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
+
+  const realEntries = gameState.eventLog.filter((e: any) => (e.round ?? 0) > 0 && (gameState.round ? e.round <= gameState.round : true));
+  const allowedRounds = realEntries.map((e: any) => e.round);
+  const roundsList = realEntries.map((e: any) => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
+
+  const actionsByRole = new Map<string, { round: number; titles: string[] }[]>();
+  for (const entry of realEntries) {
+    for (const pra of entry.playerActions || []) {
+      const arr = actionsByRole.get(pra.roleName) ?? [];
+      arr.push({ round: entry.round, titles: (pra.actions || []).map((a: any) => a.title) });
+      actionsByRole.set(pra.roleName, arr);
     }
+  }
+
+  const humanActionsList = (actionsByRole.get(human) || [])
+    .flatMap(a => a.titles.map(t => `Round ${a.round}: ${t}`));
+  const actionsText = `Human (${human}): ${humanActionsList.join(', ') || 'no recorded actions'}`;
+
+  const roleCounts: string[] = [];
+  const roleSummaries: string[] = [];
+  for (const p of players) {
+    const arr = actionsByRole.get(p.role.name) || [];
+    const count = arr.reduce((sum, rr) => sum + rr.titles.length, 0);
+    roleCounts.push(`${p.role.name}: ${count}`);
+    const perRound = arr.map(rr => `Round ${rr.round}: [${rr.titles.join('; ')}]`).join(' | ');
+    roleSummaries.push(`${p.role.name} => ${perRound || 'no recorded actions'}`);
+  }
+
+  const setupBlock = gameSetup ? `SETUP SUMMARY (initial conditions only):\n` +
+    `Scenario: ${gameSetup.scenarioTitle}\n${gameSetup.scenarioDescription}\n` +
+    `Core Metric (initial): ${gameSetup.coreMetric.name} — ${gameSetup.coreMetric.description} (start ${gameSetup.coreMetric.value})\n` +
+    `Stakeholders:\n` +
+    gameSetup.stakeholders.map(s => `- ${s.name}: Public="${s.publicObjective}" | Hidden="${s.hiddenObjective}"`).join('\n') +
+    `\n\n` : '';
+
+  return `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
+
+FINAL OUTCOME: ${outcome}
+
+${setupBlock}
+ALLOWED_ROUNDS: [${allowedRounds.join(', ')}]
+ROUND HEADLINES (only these rounds exist):
+${roundsList}
+
+HUMAN ACTIONS BY ROUND (choose only from these):
+${actionsText}
+
+ROLE ACTION COUNTS: { ${roleCounts.join('; ')} }
+ROLE ACTIONS BY ROUND:
+${roleSummaries.join('\n')}
+
+CONSTRAINTS (MUST FOLLOW):
+- Do NOT reference any rounds that are not listed in ALLOWED_ROUNDS.
+- If there are fewer than 3 rounds, return at most that many keyEvents.
+- userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
+- Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
+- For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
+
+Respond using the required schema.`;
+};
 
     const prompt = `
       You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.

@@ -21,6 +21,9 @@ import {
   getCounterfactualPromptAndSchema,
   getCustomScenarioPromptAndSchema,
   getAITurnPromptAndSchema,
+  getInitialScenarioChatPrompt,
+  getChatConsequencesPrompt,
+  getDebriefPrompt,
 } from "../../../prompts";
 import type { LLMService } from './types';
 import type { GameChatSession } from '../chatSession';
@@ -144,35 +147,11 @@ export const LLM_OPENAI: LLMService = {
     return await parseWithZod<GameSetup>(GameSetupZ, prompt, "custom_scenario_setup");
   },
   async generateInitialScenarioChat(session: GameChatSession) {
-    const prompt = `Begin the simulation by generating the opening crisis scenario.
-
-You must provide:
-1. **roundSummary**: 2-3 sentence overview of the starting crisis
-2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats)
-3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
-4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
-5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
-6. **nextEvent**: The first actionable crisis the players will face`;
+    const prompt = getInitialScenarioChatPrompt();
     return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
   },
   async generateConsequencesChat(session, gameState, players, counterfactualScoreChange) {
-    const playerActionsText = players.map(p => {
-      const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
-      return `- **${p.role.name}**: ${actionTitles}`;
-    }).join("\n");
-
-    const prompt = `# Round ${gameState.round} - Determine Consequences
-
-## Current Status
-- **${gameState.coreMetric.name}**: ${gameState.coreMetric.value}
-- **Crisis**: "${gameState.currentEvent?.headline}"
-${gameState.currentEvent?.detail}
-
-## Player Actions This Round
-${playerActionsText}
-
-## Counterfactual Analysis
-If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.`;
+    const prompt = getChatConsequencesPrompt(gameState, players, counterfactualScoreChange);
 
     return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
   },
@@ -181,67 +160,7 @@ If no one had acted, the ${gameState.coreMetric.name} would have changed by **${
     return await parseWithZod(AITurnZ, prompt, `AI Turn for ${player.role.name}`);
   },
   async generateDebriefChat(session, gameState, players, humanRoleName, gameSetup) {
-    const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
-    const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
-
-    // Build allowed rounds and per-round actions from event log (skip round 0 bootstrap)
-    const realEntries = gameState.eventLog.filter(e => (e.round ?? 0) > 0 && (gameState.round ? e.round <= gameState.round : true));
-    const allowedRounds = realEntries.map(e => e.round);
-    const roundsList = realEntries.map(e => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
-    const actionsByRole = new Map<string, { round: number; titles: string[] }[]>();
-    for (const entry of realEntries) {
-      for (const pra of entry.playerActions || []) {
-        const arr = actionsByRole.get(pra.roleName) ?? [];
-        arr.push({ round: entry.round, titles: (pra.actions || []).map(a => a.title) });
-        actionsByRole.set(pra.roleName, arr);
-      }
-    }
-    const humanActionsList = (actionsByRole.get(human) || [])
-      .flatMap(a => a.titles.map(t => `Round ${a.round}: ${t}`));
-    const actionsText = `Human (${human}): ${humanActionsList.join(', ') || 'no recorded actions'}`;
-
-    // Build role action counts and per-role summaries to prevent "no actions" hallucinations
-    const roleCounts: string[] = [];
-    const roleSummaries: string[] = [];
-    for (const p of players) {
-      const arr = actionsByRole.get(p.role.name) || [];
-      const count = arr.reduce((sum, rr) => sum + rr.titles.length, 0);
-      roleCounts.push(`${p.role.name}: ${count}`);
-      const perRound = arr.map(rr => `Round ${rr.round}: [${rr.titles.join('; ')}]`).join(' | ');
-      roleSummaries.push(`${p.role.name} => ${perRound || 'no recorded actions'}`);
-    }
-
-    const setupBlock = gameSetup ? `SETUP SUMMARY (initial conditions only):\n` +
-      `Scenario: ${gameSetup.scenarioTitle}\n${gameSetup.scenarioDescription}\n` +
-      `Core Metric (initial): ${gameSetup.coreMetric.name} — ${gameSetup.coreMetric.description} (start ${gameSetup.coreMetric.value})\n` +
-      `Stakeholders:\n` +
-      gameSetup.stakeholders.map(s => `- ${s.name}: Public="${s.publicObjective}" | Hidden="${s.hiddenObjective}"`).join('\n') +
-      `\n\n` : '';
-
-    const prompt = `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
-
-FINAL OUTCOME: ${outcome}
-
-${setupBlock}
-ALLOWED_ROUNDS: [${allowedRounds.join(', ')}]
-ROUND HEADLINES (only these rounds exist):
-${roundsList}
-
-HUMAN ACTIONS BY ROUND (choose only from these):
-${actionsText}
-
-ROLE ACTION COUNTS: { ${roleCounts.join('; ')} }
-ROLE ACTIONS BY ROUND:
-${roleSummaries.join('\n')}
-
-CONSTRAINTS (MUST FOLLOW):
-- Do NOT reference any rounds that are not listed in ALLOWED_ROUNDS.
-- If there are fewer than 3 rounds, return at most that many keyEvents.
-- userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
-- Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
-- For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
-
-Respond using the required schema.`;
+    const prompt = getDebriefPrompt(gameState, players, humanRoleName, gameSetup);
     return await parseWithZod<AIDebriefResponse>(DebriefZ, prompt, 'debrief');
   },
 };
