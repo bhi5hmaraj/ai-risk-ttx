@@ -74,7 +74,8 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 
 4. **Start development server:**
    ```bash
-   npm run dev   # http://localhost:3000
+   npm run dev                 # http://localhost:3000
+   npm run dev -- --port 4000  # Forwarded to Next.js
    ```
 
 ### Available Commands
@@ -221,7 +222,15 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 You can run the app without making real LLM calls. The mock mode returns fast, deterministic dummy data that exercises the UI flows without cost or latency.
 
-Enable one of the following in `.env.local`:
+Enable via CLI flag (recommended):
+
+```bash
+npm run dev -- --mock-llm
+# or
+npm run dev:mock
+```
+
+Alternatively, enable in `.env.local`:
 
 ```
 # Option A
