@@ -411,7 +411,7 @@ export const useGameController = () => {
       // Use chat mode if enabled
       let result;
       if (GAME_CONFIG.USE_CHAT_MODE) {
-        // Create game setup for chat mode
+        // Create and persist a canonical game setup for chat & debrief
         const setup = gameSetup || {
           scenarioTitle: 'Election Crisis 2024',
           scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
@@ -425,6 +425,8 @@ export const useGameController = () => {
             constraints: p.role.constraints,
           })),
         };
+        // Persist canonical setup so downstream (e.g., debrief) always has it
+        setGameSetup(setup);
 
         const chatResult = await callGeminiAndCount(() => generateInitialScenarioChat(setup, players));
 
@@ -476,6 +478,9 @@ export const useGameController = () => {
 
     const initializePresetScenario = (setup: GameSetup) => {
       geminiCallsThisRoundRef.current = 0;
+
+      // Persist canonical setup for AI Safety / predefined scenarios
+      setGameSetup(setup);
 
       // Initialize chat history for preset scenarios if chat mode is enabled
       // The backend will create the system prompt on first request
