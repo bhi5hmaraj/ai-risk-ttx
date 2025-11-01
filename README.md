@@ -254,6 +254,24 @@ Implementation:
 - Mock impl: `server/services/llm/mockService.ts`.
 - Facade: `server/services/llmService.ts` selects implementation based on env and exports the same functions used by API routes.
 
+### Dev Speed Flags (Rounds/AI Players)
+
+You can reduce rounds and AI players for faster iteration in development (CLI flags):
+
+```bash
+# 2 rounds, 2 AI players (plus you)
+npm run dev -- --rounds 2 --ai 2
+
+# or explicit
+npm run dev -- --rounds 3 --ai-players 1
+```
+
+This sets env vars for the current dev run only:
+- `GAME_MAX_ROUNDS` / `NEXT_PUBLIC_GAME_MAX_ROUNDS`
+- `GAME_AI_PLAYERS` / `NEXT_PUBLIC_GAME_AI_PLAYERS`
+
+Game config reads these at runtime; AI players are chosen from the available roles (your selected role + N AI).
+
 ---
 
 ## Project Status & Issue Tracking

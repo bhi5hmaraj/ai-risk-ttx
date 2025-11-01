@@ -373,7 +373,13 @@ export const useGameController = () => {
       coreMetric = { ...DEFAULT_CORE_METRIC };
     }
 
-    const initialPlayers: Player[] = roles.map((role, index) => ({
+    // Determine AI subset based on config
+    const humanRole = roles.find((r) => r.name === selectedRoleName)!;
+    const aiPool = roles.filter((r) => r.name !== selectedRoleName);
+    const limitedAI = aiPool.slice(0, Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS, aiPool.length)));
+    const orderedRoles: RoleData[] = [humanRole, ...limitedAI];
+
+    const initialPlayers: Player[] = orderedRoles.map((role, index) => ({
       id: role.name === selectedRoleName ? 'human_player' : `ai_${index}`,
       role,
       isHuman: role.name === selectedRoleName,
