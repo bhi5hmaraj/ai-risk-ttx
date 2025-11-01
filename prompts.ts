@@ -294,7 +294,37 @@ export const getActionOptionsPromptAndSchema = (player: Player, gameState: GameS
                 const actionTitles = pa.actions.length > 0 ? pa.actions.map(a => a.title).join(", ") : 'Took no action';
                 return `  - ${pa.roleName}: ${actionTitles}.`
             }).join("\n");
-}
+    }
+
+    const prompt = `
+      You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
+
+      THE PLAYER:
+      - Role: ${player.role.name}
+      - Public Objective: "${player.role.publicObjective}"
+      - HIDDEN Objective: "${player.role.hiddenObjective}"
+
+      THE CURRENT CRISIS:
+      - "${gameState.currentEvent?.headline}" - ${gameState.currentEvent?.detail}
+
+      CONTEXT FROM LAST ROUND:
+${previousActionsText}
+
+      INSTRUCTIONS FOR OPTION DESIGN:
+      1.  **Create 5 Unique Options:** The options must be genuinely different from each other. Avoid simple rephrasings.
+      2.  **Ensure Coherence:** The new options should be a logical evolution from the previous round's actions. They should react to, build upon, or counter what happened before. Do not suggest actions that are functionally identical to what was done last round.
+      3.  **Tailor to the Role:** The actions must feel authentic to the player's role. A Tech CEO has different capabilities than a Journalist.
+      4.  **Create Strategic Tension:** Design the options to create a difficult choice.
+          - At least two options should clearly serve the public objective.
+          - At least two should subtly serve the hidden objective.
+          - One option could be a high-risk/high-reward gamble, a compromise, or an unconventional idea.
+      5.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
+      6.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
+
+      Respond ONLY with a valid JSON object matching the provided schema.
+    `;
+    return { prompt, schema: AIActionOptionsResponseSchema };
+};
 
 /** CHAT MODE PROMPTS **/
 
@@ -403,36 +433,6 @@ CONSTRAINTS (MUST FOLLOW):
 - For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
 
 Respond using the required schema.`;
-};
-
-    const prompt = `
-      You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
-
-      THE PLAYER:
-      - Role: ${player.role.name}
-      - Public Objective: "${player.role.publicObjective}"
-      - HIDDEN Objective: "${player.role.hiddenObjective}"
-
-      THE CURRENT CRISIS:
-      - "${gameState.currentEvent?.headline}" - ${gameState.currentEvent?.detail}
-
-      CONTEXT FROM LAST ROUND:
-${previousActionsText}
-
-      INSTRUCTIONS FOR OPTION DESIGN:
-      1.  **Create 5 Unique Options:** The options must be genuinely different from each other. Avoid simple rephrasings.
-      2.  **Ensure Coherence:** The new options should be a logical evolution from the previous round's actions. They should react to, build upon, or counter what happened before. Do not suggest actions that are functionally identical to what was done last round.
-      3.  **Tailor to the Role:** The actions must feel authentic to the player's role. A Tech CEO has different capabilities than a Journalist.
-      4.  **Create Strategic Tension:** Design the options to create a difficult choice.
-          - At least two options should clearly serve the public objective.
-          - At least two should subtly serve the hidden objective.
-          - One option could be a high-risk/high-reward gamble, a compromise, or an unconventional idea.
-      5.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
-      6.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
-
-      Respond ONLY with a valid JSON object matching the provided schema.
-    `;
-    return { prompt, schema: AIActionOptionsResponseSchema };
 };
 
 export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
