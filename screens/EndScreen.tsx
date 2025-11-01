@@ -18,6 +18,14 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   const [debriefLoading, setDebriefLoading] = useState(false);
   const [debriefError, setDebriefError] = useState<string | null>(null);
 
+  const impactClass = (impact: string) => {
+    const v = (impact || '').toLowerCase();
+    if (/(pos|green|improve|increase|gain|good)/.test(v)) return 'text-green-300';
+    if (/(neg|red|worse|decrease|loss|bad)/.test(v)) return 'text-red-300';
+    if (/(mix|neutral|balanced)/.test(v)) return 'text-amber-200';
+    return 'text-blue-300';
+  };
+
   const handleGenerateDebrief = async () => {
     try {
       setDebriefError(null);
@@ -271,7 +279,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                           <tr key={`ev_${idx}`} className="odd:bg-gray-900/40">
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.round}</td>
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
-                            <td className="px-3 py-2 border-b border-gray-800 text-blue-300">{ev.impact}</td>
+                            <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-300 whitespace-pre-wrap">{ev.description}</td>
                           </tr>
                         ))}
@@ -301,7 +309,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                             <tr key={`act_${idx}`} className="odd:bg-gray-900/40">
                               <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ac.round}</td>
                               <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ac.title}</td>
-                              <td className="px-3 py-2 border-b border-gray-800 text-amber-200">{ac.impact}</td>
+                              <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ac.impact)}`}>{ac.impact}</td>
                               <td className="px-3 py-2 border-b border-gray-800 text-gray-300">{ac.rationale || '—'}</td>
                             </tr>
                           ))

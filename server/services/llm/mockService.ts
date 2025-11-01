@@ -125,7 +125,7 @@ export const LLM_MOCK: LLMService = {
       reasoning: 'Mock: selected first option for speed.',
     };
   },
-  async generateDebriefChat(_session, gameState, players, humanRoleName): Promise<AIDebriefResponse | null> {
+  async generateDebriefChat(_session, gameState, players, humanRoleName, gameSetup): Promise<AIDebriefResponse | null> {
     const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
     const events = gameState.eventLog.slice(-3).map(e => ({
       round: e.round,
@@ -137,8 +137,9 @@ export const LLM_MOCK: LLMService = {
     const lastEntry = gameState.eventLog.filter(e => (e.round ?? 0) > 0).at(-1);
     const pra = lastEntry?.playerActions?.find(pa => pa.roleName === humanPlayer?.role.name);
     const actions = (pra?.actions || []).map((a) => ({ round: lastEntry?.round || gameState.round, title: a.title, impact: 'mixed' }));
+    const setupLine = gameSetup ? ` Setup: ${gameSetup.scenarioTitle}.` : '';
     return {
-      summary: `Mock debrief: ${human} steered the simulation to ${gameState.coreMetric.value}% ${gameState.coreMetric.name}.`,
+      summary: `Mock debrief:${setupLine} ${human} steered the simulation to ${gameState.coreMetric.value}% ${gameState.coreMetric.name}.`,
       keyEvents: events.length ? events : [{ round: gameState.round, title: 'Simulation End', description: 'Mock debrief event.', impact: 'neutral' }],
       userActions: actions,
     };

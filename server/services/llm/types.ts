@@ -53,6 +53,7 @@ export interface LLMService {
     session: GameChatSession,
     gameState: GameState,
     players: Player[],
-    humanRoleName?: string
+    humanRoleName?: string,
+    gameSetup?: GameSetup
   ): Promise<import('../../types/core').AIDebriefResponse | null>;
 }
