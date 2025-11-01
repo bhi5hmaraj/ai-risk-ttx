@@ -1,20 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GAME_CONFIG } from '../gameConfig';
 
 interface GameRulesScreenProps {
-  onNavigateToLobby?: () => void;
+  onNavigateToLobby: () => void;
 }
 
 export const GameRulesScreen: React.FC<GameRulesScreenProps> = ({ onNavigateToLobby }) => {
-  const navigate = useNavigate();
-
   const handleContinue = () => {
-    if (onNavigateToLobby) {
-      onNavigateToLobby();
-    } else {
-      navigate('/lobby');
-    }
+    onNavigateToLobby();
   };
 
   return (

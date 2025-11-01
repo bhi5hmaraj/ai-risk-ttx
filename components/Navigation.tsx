@@ -128,7 +128,7 @@ const MobileNavButton: React.FC<{
 
 // Model Information Display
 const ModelInfo: React.FC = () => {
-  const model = import.meta.env.VITE_LLM_MODEL || 'Unknown';
+  const model = process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'Unknown';
   const isFlashLite = model.toLowerCase().includes('flash') && model.toLowerCase().includes('lite');
 
   return (
