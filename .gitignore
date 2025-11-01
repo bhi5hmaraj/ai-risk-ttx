@@ -29,6 +29,7 @@ temp
 # Framework/platform dirs
 .vercel
 .netlify
+.next
 
 # Editor directories and files
 .vscode/*
