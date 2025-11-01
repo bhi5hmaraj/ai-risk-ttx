@@ -11,7 +11,7 @@ import type {
   AITurnResponse,
   PlayerRoundActions,
   GameSetup,
-} from "../types/core.js";
+} from "../types/core";
 import {
   getInitialScenarioPromptAndSchema,
   getConsequencesPromptAndSchema,
@@ -20,7 +20,7 @@ import {
   getCounterfactualPromptAndSchema,
   getCustomScenarioPromptAndSchema,
   getAITurnPromptAndSchema,
-} from "../../prompts.js";
+} from "../../prompts";
 
 const baseURL = process.env.LITELLM_BASE_URL || 'https://asgard.bhishmaraj.org';
 const apiKey = process.env.LITELLM_API_KEY;

@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import type { GameSetup, Player } from "../types/core";
-import { GAME_CONFIG } from "../../gameConfig.js";
+import { GAME_CONFIG } from "../../gameConfig";
 
 const baseURL = process.env.LITELLM_BASE_URL || "https://asgard.bhishmaraj.org";
 const model = process.env.LLM_MODEL || "gpt-4o-mini";
