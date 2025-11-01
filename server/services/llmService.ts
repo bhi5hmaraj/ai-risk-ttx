@@ -86,3 +86,12 @@ export const generateAITurn = async (
 ): Promise<AITurnResponse | null> => {
   return getService().generateAITurn(player, gameState, previousRoundActions);
 };
+
+export const generateDebriefChat = async (
+  session: import('./chatSession').GameChatSession,
+  gameState: GameState,
+  players: Player[],
+  humanRoleName?: string
+): Promise<import('../types/core').AIDebriefResponse | null> => {
+  return getService().generateDebriefChat(session, gameState, players, humanRoleName);
+};

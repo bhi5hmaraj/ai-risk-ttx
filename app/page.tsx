@@ -272,6 +272,7 @@ export default function Home() {
               players={players}
               onReset={handleResetAndNavigate}
               onOpenFeedback={() => setShowFeedbackModal(true)}
+              gameSetup={gameSetup}
             />
           </>
         );

@@ -18,6 +18,7 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 - **AI Opponents** - Five AI players using a two-step decision process (generate options, then choose based on secret goals)
 - **Action Tree Visualization** - React Flow graphs showing all players' available options and final choices
 - **Counterfactual Analysis** - Compare actual outcomes against "if no one acted" baseline
+- **End‑Screen Debrief** - One‑click AI debrief summarizes decisive events and your impactful actions
 
 **Community & Feedback:**
 - **Scenario Library** - Browse and play community-submitted custom scenarios

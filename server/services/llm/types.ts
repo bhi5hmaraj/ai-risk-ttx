@@ -47,5 +47,12 @@ export interface LLMService {
     gameState: GameState,
     previousRoundActions: PlayerRoundActions[] | null
   ): Promise<AITurnResponse | null>;
-}
 
+  // Debrief
+  generateDebriefChat(
+    session: GameChatSession,
+    gameState: GameState,
+    players: Player[],
+    humanRoleName?: string
+  ): Promise<import('../../types/core').AIDebriefResponse | null>;
+}
