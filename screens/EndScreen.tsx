@@ -269,6 +269,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                       <thead className="bg-gray-900/70 text-gray-300">
                         <tr>
                           <th className="px-3 py-2 border-b border-gray-700">Round</th>
+                          <th className="px-3 py-2 border-b border-gray-700">Actor</th>
                           <th className="px-3 py-2 border-b border-gray-700">Title</th>
                           <th className="px-3 py-2 border-b border-gray-700">Impact</th>
                           <th className="px-3 py-2 border-b border-gray-700">Description</th>
@@ -278,6 +279,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                         {debrief.keyEvents.map((ev, idx) => (
                           <tr key={`ev_${idx}`} className="odd:bg-gray-900/40">
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.round}</td>
+                            <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.actor || '—'}</td>
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
                             <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-300 whitespace-pre-wrap">{ev.description}</td>

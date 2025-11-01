@@ -118,7 +118,7 @@ export interface AITurnResponse {
 }
 
 // Debrief types
-export interface AIDebriefEvent { round: number; title: string; description: string; impact: string }
+export interface AIDebriefEvent { round: number; title: string; description: string; impact: string; actor?: string }
 export interface AIDebriefAction { round: number; title: string; impact: string; rationale?: string }
 export interface AIDebriefResponse {
   summary: string;

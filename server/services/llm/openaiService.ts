@@ -90,7 +90,7 @@ const GameSetupZ = z.object({
   }).strict()).min(4).max(6),
 }).strict();
 
-const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string() }).strict();
+const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string(), actor: z.string().optional() }).strict();
 const DebriefActionZ = z.object({ round: z.number().int().min(1), title: z.string(), impact: z.string(), rationale: z.string().optional() }).strict();
 // Allow as few as 1 event to avoid forcing hallucinated rounds in short games
 const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(1).max(7), userActions: z.array(DebriefActionZ).min(0) }).strict();
@@ -239,6 +239,7 @@ CONSTRAINTS (MUST FOLLOW):
 - If there are fewer than 3 rounds, return at most that many keyEvents.
 - userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
 - Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
+- For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
 
 Respond using the required schema.`;
     return await parseWithZod<AIDebriefResponse>(DebriefZ, prompt, 'debrief');
