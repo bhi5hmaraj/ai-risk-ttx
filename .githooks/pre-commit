@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Ensure we run from repo root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Allow bypass via env var
+if [ "${SKIP_PRECOMMIT_TESTS:-}" = "1" ]; then
+  echo "[pre-commit] SKIP_PRECOMMIT_TESTS=1 → skipping tests"
+  exit 0
+fi
+
+# Determine if staged changes include code paths
+CHANGED_FILES="$(git diff --cached --name-only --diff-filter=ACM || true)"
+if [ -z "$CHANGED_FILES" ]; then
+  echo "[pre-commit] No staged changes; skipping."
+  exit 0
+fi
+
+NEED_TEST=0
+for f in $CHANGED_FILES; do
+  case "$f" in
+    *.ts|*.tsx|*.js|*.jsx|*.json|package.json|next.config.*|app/*|lib/*|server/*)
+      NEED_TEST=1
+      break
+      ;;
+  esac
+done
+
+if [ "$NEED_TEST" = "0" ]; then
+  echo "[pre-commit] No relevant code changes; skipping tests."
+  exit 0
+fi
+
+echo "[pre-commit] Running type-check…"
+npm run -s type-check
+
+echo "[pre-commit] Running unit tests…"
+npm run -s test:run
+
+echo "[pre-commit] OK"
+
