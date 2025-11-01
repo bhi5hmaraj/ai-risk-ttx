@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next';
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+});
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -6,12 +12,11 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  // Enable React strict mode for better error detection
   reactStrictMode: true,
-  // Optimize images (if using next/image)
+  productionBrowserSourceMaps: true,
   images: {
     remotePatterns: [],
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
