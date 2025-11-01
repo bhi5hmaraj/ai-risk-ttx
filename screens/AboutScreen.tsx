@@ -173,7 +173,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">Technology</h2>
             <p className="leading-relaxed">
-              Built with <strong>React</strong>, <strong>TypeScript</strong>, and <strong>Vite</strong>.
+              Built with <strong>Next.js</strong> (App Router), <strong>React</strong>, and <strong>TypeScript</strong>.
               Powered by LLM APIs via <strong>LiteLLM proxy</strong> for dynamic content generation.
               Data persistence with <strong>Prisma</strong> and <strong>PostgreSQL</strong>.
             </p>

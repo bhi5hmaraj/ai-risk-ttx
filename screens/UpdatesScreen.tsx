@@ -18,6 +18,39 @@ interface UpdatePeriod {
 
 const UPDATES: UpdatePeriod[] = [
   {
+    period: 'November 2025',
+    date: 'Nov 1, 2025',
+    color: 'blue',
+    categories: [
+      {
+        title: '🧠 Debrief & Insights',
+        items: [
+          'New end‑screen Debrief with concise summary and actor attribution',
+          'Round‑by‑round score table with color‑coded deltas and relative %',
+        ],
+      },
+      {
+        title: '🎮 Gameplay UX',
+        items: [
+          'Feedback button moved into the game and end screens for quicker access',
+          'Custom scenarios respect fast‑iteration settings for shorter test runs',
+        ],
+      },
+      {
+        title: '📄 Pages',
+        items: [
+          'About and Updates pages restored and refreshed',
+        ],
+      },
+      {
+        title: '⚡ Overall Experience',
+        items: [
+          'Smoother round progression and more reliable AI responses',
+        ],
+      },
+    ],
+  },
+  {
     period: 'October 2025',
     date: 'Oct 16, 2025',
     color: 'blue',
