@@ -220,18 +220,16 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ## Test Coverage
 
-This section is auto-generated from Vitest coverage reports. Run:
-
-- `npm run metrics` — executes coverage + type-check + updates this section
-
-When run locally or in CI, the table below is refreshed.
+Last updated: 2025-11-01 20:57Z
 
 | Metric | Percent |
 | - | - |
-| Statements | (run metrics) |
-| Branches | (run metrics) |
-| Functions | (run metrics) |
-| Lines | (run metrics) |
+| Statements | 37.0% |
+| Branches | 22.9% |
+| Functions | 23.4% |
+| Lines | 39.5% |
+
+Run npm run metrics to regenerate.
 
 <!-- COVERAGE_END -->
 
