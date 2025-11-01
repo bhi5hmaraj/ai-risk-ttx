@@ -1,8 +1,8 @@
-# Simulacra - AI Tabletop Exercise
+# Simulacra – AI Tabletop Exercise (Next.js)
 
-A web-based crisis simulation game where you role-play as a key decision-maker during an AI-driven global emergency. Make strategic choices that affect public trust and your secret objectives while an AI Game Master generates dynamic scenarios and consequences.
+A web-based crisis simulation game where you role‑play as a key decision‑maker during an AI‑driven emergency. Make strategic choices that affect public trust and your hidden objectives while an AI Game Master generates dynamic scenarios and consequences.
 
-Named after Jean Baudrillard's concept of *simulacra*—simulations that become more "real" than reality itself—this game explores hyperreality through AI-generated crises where synthetic and human decision-makers interact in emergent narratives.
+This repository has been migrated to Next.js (App Router). If you used the earlier Vite/SPA variant, see Migration Notes below.
 
 ## What is a Tabletop Exercise (TTX)?
 
@@ -26,16 +26,16 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 - **Feedback Collection** - Submit feedback after playing to help improve the game
 
 **Tech Stack:**
-- React 19 + TypeScript + Vite
-- OpenAI SDK for LLM calls (via LiteLLM proxy)
+- Next.js 15 (App Router, Node runtime) + React 19 + TypeScript
+- OpenAI SDK via LiteLLM proxy (server‑side)
 - Zod for schema validation and structured outputs
 - React Flow for action tree visualization
-- Prisma + PostgreSQL for data persistence
-- Vercel serverless functions for API routes
+- Prisma + PostgreSQL for persistence
+- Vercel for deployment
 
 ---
 
-## Quick Start
+## Quick Start (Next.js)
 
 ### Prerequisites
 - Node.js 20+
@@ -54,26 +54,45 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
    npm run db:setup
    ```
 
-3. **Configure environment** (`.env`):
+3. **Configure environment** (`.env.local`):
    ```bash
-   DATABASE_URL="postgresql://yourusername@localhost:5432/ttx-prisma-postgres-local?schema=public"
-   VITE_LITELLM_API_KEY="your-api-key"
-   VITE_LLM_MODEL="gpt-4o-mini"
+   # Database (required for DB‑backed APIs)
+   DATABASE_URL="postgresql://user@localhost:5432/ttx-prisma-postgres-local?schema=public"
+
+   # LLM (server‑side only)
+   LITELLM_API_KEY="your-litellm-api-key"
+   LITELLM_BASE_URL="https://asgard.bhishmaraj.org"   # or your proxy URL
+   LLM_MODEL="gpt-4o-mini"
+
+   # Client‑safe (optional, display only)
+   NEXT_PUBLIC_LLM_MODEL="gpt-4o-mini"
    ```
+
+   Notes:
+   - We fail fast (503) if `LITELLM_API_KEY` is missing on LLM routes, or if `DATABASE_URL` is missing on DB routes (see API Health below).
+   - Migrating from Vite? Replace `VITE_LITELLM_API_KEY`/`VITE_LLM_MODEL` with `LITELLM_API_KEY`/`LLM_MODEL`. Keep `NEXT_PUBLIC_LLM_MODEL` if you want to show the model name in the UI.
 
 4. **Start development server:**
    ```bash
-   npm run dev
+   npm run dev   # http://localhost:3000
    ```
 
 ### Available Commands
 
 ```bash
-npm run dev              # Start Vercel dev server
-npm run build            # Production build
-npm run db:studio        # Open Prisma Studio
-npm run test:api         # Test feedback API
+npm run dev               # Start Next dev server
+npm run build             # Production build
+npm run start             # Start built app
+npm run db:migrate        # Prisma migrate in dev
+npm run db:studio         # Prisma Studio
+npm run analyze           # Analyze feedback (scripts/analyze-feedback.ts)
+npm run scenarios         # Manage scenarios (scripts/manage-scenarios.ts)
 ```
+
+### API Health / Fail‑Fast
+
+- LLM health: `GET /api/llm/health` → 200 when `LITELLM_API_KEY` loaded; 503 JSON with `{ service: "llm", missing: [...] }` when misconfigured.
+- DB routes (`/api/scenarios`, `/api/feedback`) return 503 when `DATABASE_URL` is not set. On Vercel, `PRISMA_DATABASE_URL` is accepted as a fallback.
 
 ---
 
@@ -89,9 +108,9 @@ Admin scripts support multiple environments via environment-specific `.env` file
 .env.production               # Production database
 ```
 
-**Required environment variables for remote databases:**
-- `PRISMA_DATABASE_URL` - Prisma Accelerate connection URL (for preview/production)
-- `DATABASE_URL` - Direct PostgreSQL connection (for local)
+**Required environment variables:**
+- Local dev: `DATABASE_URL`
+- Preview/Production: `PRISMA_DATABASE_URL` (Accelerate) or `DATABASE_URL`
 
 ### Scenario Moderation
 
@@ -171,14 +190,28 @@ npm run analyze -- --help
 
 **Build Settings:**
 - Install Command: `npm ci`
-- Build Command: `npm run build`
-- Output Directory: `dist`
+- Build Command: `npx prisma migrate deploy && npm run build`
+- Output Directory: (Next.js default; no custom output directory)
 - Node.js Version: `20.x`
 
-**Environment Variables:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `VITE_LITELLM_API_KEY` - LiteLLM proxy API key
-- `VITE_LLM_MODEL` - Model name (e.g., `gemini-2.5-flash`, `gpt-4o-mini`)
+**Environment Variables (Preview/Production):**
+- `DATABASE_URL` or `PRISMA_DATABASE_URL` (Accelerate)
+- `LITELLM_API_KEY`
+- `LITELLM_BASE_URL` (if not using the default)
+- `LLM_MODEL`
+- `NEXT_PUBLIC_LLM_MODEL` (optional, display only)
+
+If any required variable is missing, impacted routes will return 503 with a descriptive JSON error.
+
+---
+
+## Migration Notes (from Vite/SPA)
+
+- Replaced Vite dev server with Next.js App Router. The game’s main UI now lives in `app/page.tsx`.
+- API endpoints are Next.js Route Handlers under `app/api/**`.
+- Server‑side LLM config moved to `LITELLM_*` and `LLM_MODEL` (server only). The only client‑exposed var is `NEXT_PUBLIC_LLM_MODEL`.
+- Legacy files removed: Vite entrypoints and Node function handlers under `/api/*`.
+- Added centralized env guard (`server/lib/env.ts`); routes fail fast if misconfigured.
 
 ---
 
