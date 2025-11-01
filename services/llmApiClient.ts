@@ -93,7 +93,7 @@ export const generateActionOptions = async (
   try {
     console.log('[LLM API Client] Calling generateActionOptions...');
 
-    const { res, data } = await fetchJson(`${API_BASE}/action-options`, {
+    const { res, data } = await fetchJson(`${API_BASE}/generate/action-options`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ player, gameState, previousRoundActions }),
@@ -124,7 +124,7 @@ export const generateAIPlayerActions = async (
   try {
     console.log('[LLM API Client] Calling generateAIPlayerActions...');
 
-    const response = await fetch(`${API_BASE}/ai-player-actions`, {
+    const response = await fetch(`${API_BASE}/generate/ai-player-actions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -194,9 +194,9 @@ export const generateCounterfactualConsequences = async (
   gameState: GameState
 ): Promise<AICounterfactualResponse | null> => {
   try {
-    console.log('[LLM API Client] Calling generateCounterfactualConsequences...');
+    console.log('[LLM API Client] Calling generate/counterfactual...');
 
-    const response = await fetch(`${API_BASE}/counterfactual`, {
+    const response = await fetch(`${API_BASE}/generate/counterfactual`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -209,13 +209,13 @@ export const generateCounterfactualConsequences = async (
     const result: ApiResponse<AICounterfactualResponse> = await response.json();
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] generateCounterfactualConsequences failed:', result.error);
+      console.error('[LLM API Client] generate/counterfactual failed:', result.error);
       return null;
     }
 
     return result.data;
   } catch (error) {
-    console.error('[LLM API Client] generateCounterfactualConsequences error:', error);
+    console.error('[LLM API Client] generate/counterfactual error:', error);
     return null;
   }
 };
@@ -227,9 +227,9 @@ export const generateCustomScenario = async (
   scenarioDescription: string
 ): Promise<GameSetup | null> => {
   try {
-    console.log('[LLM API Client] Calling generateCustomScenario...');
+    console.log('[LLM API Client] Calling generate/custom-scenario...');
 
-    const response = await fetch(`${API_BASE}/custom-scenario`, {
+    const response = await fetch(`${API_BASE}/generate/custom-scenario`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -242,13 +242,13 @@ export const generateCustomScenario = async (
     const result: ApiResponse<GameSetup> = await response.json();
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] generateCustomScenario failed:', result.error);
+      console.error('[LLM API Client] generate/custom-scenario failed:', result.error);
       return null;
     }
 
     return result.data;
   } catch (error) {
-    console.error('[LLM API Client] generateCustomScenario error:', error);
+    console.error('[LLM API Client] generate/custom-scenario error:', error);
     return null;
   }
 };
@@ -264,9 +264,9 @@ export const generateAITurn = async (
   previousRoundActions: PlayerRoundActions[] | null
 ): Promise<AITurnResponse | null> => {
   try {
-    console.log(`[LLM API Client] Calling generateAITurn for ${player.role.name}...`);
+    console.log(`[LLM API Client] Calling generate/ai-turn for ${player.role.name}...`);
 
-    const response = await fetch(`${API_BASE}/ai-turn`, {
+    const response = await fetch(`${API_BASE}/generate/ai-turn`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -281,7 +281,7 @@ export const generateAITurn = async (
     const result: ApiResponse<AITurnResponse> = await response.json();
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] generateAITurn failed:', result.error);
+      console.error('[LLM API Client] generate/ai-turn failed:', result.error);
       return null;
     }
 
@@ -289,7 +289,7 @@ export const generateAITurn = async (
 
     return result.data;
   } catch (error) {
-    console.error('[LLM API Client] generateAITurn error:', error);
+    console.error('[LLM API Client] generate/ai-turn error:', error);
     return null;
   }
 };
@@ -317,9 +317,9 @@ export const generateInitialScenarioChat = async (
   players: Player[]
 ): Promise<ChatInitialScenarioResponse | null> => {
   try {
-    console.log('[LLM API Client] Calling chat/initial-scenario...');
+    console.log('[LLM API Client] Calling generate/scenario...');
 
-    const response = await fetch(`${API_BASE}/chat/initial-scenario`, {
+    const response = await fetch(`${API_BASE}/generate/scenario`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -333,13 +333,13 @@ export const generateInitialScenarioChat = async (
     const result: ApiResponse<ChatInitialScenarioResponse> = await response.json();
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] chat/initial-scenario failed:', result.error);
+      console.error('[LLM API Client] generate/scenario failed:', result.error);
       return null;
     }
 
     return result.data;
   } catch (error) {
-    console.error('[LLM API Client] chat/initial-scenario error:', error);
+    console.error('[LLM API Client] generate/scenario error:', error);
     return null;
   }
 };
@@ -355,9 +355,9 @@ export const generateConsequencesChat = async (
   gameSetup: GameSetup
 ): Promise<ChatConsequencesResponse | null> => {
   try {
-    console.log('[LLM API Client] Calling chat/consequences...');
+    console.log('[LLM API Client] Calling generate/consequences...');
 
-    const response = await fetch(`${API_BASE}/chat/consequences`, {
+    const response = await fetch(`${API_BASE}/generate/consequences`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -374,13 +374,13 @@ export const generateConsequencesChat = async (
     const result: ApiResponse<ChatConsequencesResponse> = await response.json();
 
     if (!result.success || !result.data) {
-      console.error('[LLM API Client] chat/consequences failed:', result.error);
+      console.error('[LLM API Client] generate/consequences failed:', result.error);
       return null;
     }
 
     return result.data;
   } catch (error) {
-    console.error('[LLM API Client] chat/consequences error:', error);
+    console.error('[LLM API Client] generate/consequences error:', error);
     return null;
   }
 };
