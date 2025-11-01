@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Store session history for subsequent requests
-    const sessionHistory = session.getHistory();
+    const chatHistory = session.getHistory();
 
-    return NextResponse.json({ success: true, data: result, sessionHistory });
+    return NextResponse.json({ success: true, data: { scenario: result, chatHistory } });
   } catch (error) {
     console.error('[API /llm/chat/initial-scenario] Error:', error);
     return NextResponse.json(
