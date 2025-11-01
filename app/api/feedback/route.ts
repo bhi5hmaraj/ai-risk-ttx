@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
 import { feedbackDataV1Schema, createFeedbackSubmission } from '@/types/feedback';
+import { requireDBEnv } from '@/server/lib/env';
 
 /**
  * POST /api/feedback
@@ -8,6 +9,8 @@ import { feedbackDataV1Schema, createFeedbackSubmission } from '@/types/feedback
  */
 export async function POST(req: NextRequest) {
   try {
+    const envError = requireDBEnv();
+    if (envError) return envError;
     // Parse request body
     const body = await req.json();
 
