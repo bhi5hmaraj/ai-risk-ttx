@@ -118,8 +118,8 @@ if grep -q "Error:.*is not defined" "$LOG_FILE" 2>/dev/null; then
 fi
 
 # Test the API endpoint
-echo "4. Testing POST /api/llm/initial-scenario..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "http://localhost:$PORT/api/llm/initial-scenario" \
+echo "4. Testing POST /api/llm/generate/scenario..."
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "http://localhost:$PORT/api/llm/generate/scenario" \
     -H "Content-Type: application/json" 2>&1)
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)

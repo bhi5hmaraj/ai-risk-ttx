@@ -24,7 +24,7 @@ Chat mode replaces single-shot LLM API calls with a persistent conversation thre
 
 **hooks/useGameController.ts**
 - `chatSessionRef`: Ref to maintain chat session throughout game lifecycle
-- Conditional logic based on `GAME_CONFIG.USE_CHAT_MODE` feature flag
+- Chat mode is the default and only supported path; the previous `GAME_CONFIG.USE_CHAT_MODE` flag has been removed.
 
 ### Message Flow
 
@@ -48,7 +48,7 @@ The implementation is gated behind a feature flag in `constants.tsx`:
 ```typescript
 export const GAME_CONFIG = {
   // ...
-  USE_CHAT_MODE: true, // Enable chat mode for better context and caching
+  // Chat mode is always enabled (flag removed)
 };
 ```
 
@@ -86,7 +86,7 @@ Set to `false` to revert to the original single-shot API call behavior.
 
 ### Backward Compatibility
 
-When `USE_CHAT_MODE` is `false`:
+- Historical note: previous builds had a flag to disable chat mode; that path has been removed.
 - Original `generateInitialScenario()` is called
 - Original `generateConsequences()` is called
 - No chat session is created or maintained
@@ -111,7 +111,7 @@ This allows A/B testing and easy rollback if issues arise.
    - Confirm session cleanup on errors
 
 4. **Comparison Testing**:
-   - Run games with `USE_CHAT_MODE: true` and `USE_CHAT_MODE: false`
+   - Run games with chat mode (always on)
    - Compare narrative quality and coherence
    - Verify both modes produce valid game states
 

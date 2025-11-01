@@ -222,7 +222,7 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ## Test Coverage
 
-Last updated: 2025-11-01 21:04Z
+Last updated: 2025-11-01 21:43Z
 
 | Metric | Percent |
 | - | - |
@@ -271,7 +271,7 @@ LLM_MODE=mock
 
 Behavior:
 - No `LITELLM_API_KEY` required; API health passes.
-- All `/api/llm/**` endpoints return structured mock data:
+- All `/api/llm/generate/**` endpoints return structured mock data:
   - Initial scenario, consequences, action options, counterfactuals, and AI turns are generated locally.
   - Chat‑based routes also short‑circuit to mock responses.
 - Toggle off mock mode to use the real LLM service (requires `LITELLM_API_KEY`).

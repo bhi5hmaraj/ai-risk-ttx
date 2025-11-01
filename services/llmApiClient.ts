@@ -61,11 +61,16 @@ export const generateInitialScenario = async (): Promise<AIConsequenceResponse |
   try {
     console.log('[LLM API Client] Calling generateInitialScenario...');
 
-    const response = await fetch(`${API_BASE}/initial-scenario`, {
+    // Note: backend consolidated to /generate/scenario
+    const response = await fetch(`${API_BASE}/generate/scenario`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      // This endpoint expects { gameSetup, players }. Callers should prefer
+      // generateInitialScenarioChat which provides these. This remains for
+      // legacy compatibility but will likely return 400 without a body.
+      body: JSON.stringify({}),
     });
 
     const result: ApiResponse<AIConsequenceResponse> = await response.json();
@@ -161,7 +166,7 @@ export const generateConsequences = async (
   try {
     console.log('[LLM API Client] Calling generateConsequences...');
 
-    const response = await fetch(`${API_BASE}/consequences`, {
+    const response = await fetch(`${API_BASE}/generate/consequences`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

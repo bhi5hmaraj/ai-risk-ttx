@@ -30,12 +30,12 @@ Browser → llmApiClient.ts → /api/llm/* → llmService.ts → LiteLLM Proxy �
 
 #### 1. API Routes (`api/routes/llm.ts`)
 Hono-based routes handling all LLM endpoints:
-- `POST /api/llm/initial-scenario` - Generate opening scenario
-- `POST /api/llm/action-options` - Generate player action options
-- `POST /api/llm/ai-player-actions` - Generate AI player choices
-- `POST /api/llm/consequences` - Generate round consequences
-- `POST /api/llm/counterfactual` - Generate counterfactual analysis
-- `POST /api/llm/custom-scenario` - Generate custom scenario
+- `POST /api/llm/generate/scenario` - Generate opening scenario
+- `POST /api/llm/generate/action-options` - Generate player action options
+- `POST /api/llm/generate/ai-player-actions` - Generate AI player choices
+- `POST /api/llm/generate/consequences` - Generate round consequences
+- `POST /api/llm/generate/counterfactual` - Generate counterfactual analysis
+- `POST /api/llm/generate/custom-scenario` - Generate custom scenario
 
 #### 2. LLM Service (`api/services/llmService.ts`)
 Server-side version of `geminiService.ts` with:
@@ -43,7 +43,7 @@ Server-side version of `geminiService.ts` with:
 - No `dangerouslyAllowBrowser` flag
 - Same LLM logic, different environment
 
-#### 3. Vercel Handler (`api/llm/[...route].ts`)
+#### 3. Next.js Route Handler (`app/api/llm/generate/[action]/route.ts`)
 Catch-all route that mounts Hono app for `/api/llm/*` paths.
 
 ### Frontend Components
@@ -81,7 +81,7 @@ LLM_MODEL="gpt-4o-mini"          # Optional, has default
 1. ✅ Install Hono framework
 2. ✅ Create `api/services/llmService.ts` (adapted from `geminiService.ts`)
 3. ✅ Create `api/routes/llm.ts` with all endpoints
-4. ✅ Create `api/llm/[...route].ts` Vercel handler
+4. ✅ Create `app/api/llm/generate/[action]/route.ts` handler
 5. ✅ Create `api/types/llm/` request/response types
 6. ✅ Create `services/llmApiClient.ts` frontend client
 7. ✅ Add `AIPlayerActionsResponse` to `types.ts`
@@ -110,7 +110,7 @@ LLM_MODEL="gpt-4o-mini"          # Optional, has default
 ### Generate Initial Scenario
 ```typescript
 // Request
-POST /api/llm/initial-scenario
+POST /api/llm/generate/scenario
 {} // Empty body
 
 // Response
@@ -128,7 +128,7 @@ POST /api/llm/initial-scenario
 ### Generate Action Options
 ```typescript
 // Request
-POST /api/llm/action-options
+POST /api/llm/generate/action-options
 {
   "player": { /* Player object */ },
   "gameState": { /* GameState object */ },
@@ -168,7 +168,7 @@ Frontend client returns `null` on errors (matching original behavior).
 npm run dev
 
 # Test endpoint
-curl -X POST http://localhost:3000/api/llm/initial-scenario
+curl -X POST http://localhost:3000/api/llm/generate/scenario
 
 -H "Content-Type: application/json"
 ```
