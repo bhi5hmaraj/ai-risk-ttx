@@ -92,7 +92,8 @@ const GameSetupZ = z.object({
 
 const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string() }).strict();
 const DebriefActionZ = z.object({ round: z.number().int().min(1), title: z.string(), impact: z.string(), rationale: z.string().optional() }).strict();
-const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(3).max(7), userActions: z.array(DebriefActionZ).min(1) }).strict();
+// Allow as few as 1 event to avoid forcing hallucinated rounds in short games
+const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(1).max(7), userActions: z.array(DebriefActionZ).min(0) }).strict();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
@@ -181,22 +182,57 @@ If no one had acted, the ${gameState.coreMetric.name} would have changed by **${
   },
   async generateDebriefChat(session, gameState, players, humanRoleName) {
     const human = humanRoleName || players.find(p => p.isHuman)?.role.name || 'Human Player';
-    const last = gameState.eventLog.at(-1);
     const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
-    const actionsText = players.map(p => `- ${p.role.name}: ${p.actions.map(a => a.title).join(', ') || 'no actions'}`).join('\n');
-    const rounds = gameState.eventLog.map(e => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
+
+    // Build allowed rounds and per-round actions from event log (skip round 0 bootstrap)
+    const realEntries = gameState.eventLog.filter(e => (e.round ?? 0) > 0 && (gameState.round ? e.round <= gameState.round : true));
+    const allowedRounds = realEntries.map(e => e.round);
+    const roundsList = realEntries.map(e => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
+    const actionsByRole = new Map<string, { round: number; titles: string[] }[]>();
+    for (const entry of realEntries) {
+      for (const pra of entry.playerActions || []) {
+        const arr = actionsByRole.get(pra.roleName) ?? [];
+        arr.push({ round: entry.round, titles: (pra.actions || []).map(a => a.title) });
+        actionsByRole.set(pra.roleName, arr);
+      }
+    }
+    const humanActionsList = (actionsByRole.get(human) || [])
+      .flatMap(a => a.titles.map(t => `Round ${a.round}: ${t}`));
+    const actionsText = `Human (${human}): ${humanActionsList.join(', ') || 'no recorded actions'}`;
+
+    // Build role action counts and per-role summaries to prevent "no actions" hallucinations
+    const roleCounts: string[] = [];
+    const roleSummaries: string[] = [];
+    for (const p of players) {
+      const arr = actionsByRole.get(p.role.name) || [];
+      const count = arr.reduce((sum, rr) => sum + rr.titles.length, 0);
+      roleCounts.push(`${p.role.name}: ${count}`);
+      const perRound = arr.map(rr => `Round ${rr.round}: [${rr.titles.join('; ')}]`).join(' | ');
+      roleSummaries.push(`${p.role.name} => ${perRound || 'no recorded actions'}`);
+    }
 
     const prompt = `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
 
-Final Outcome: ${outcome}
+FINAL OUTCOME: ${outcome}
 
-Round Headlines:
-${rounds}
+ALLOWED_ROUNDS: [${allowedRounds.join(', ')}]
+ROUND HEADLINES (only these rounds exist):
+${roundsList}
 
-Player Actions Across Rounds:
+HUMAN ACTIONS BY ROUND (choose only from these):
 ${actionsText}
 
-Focus especially on the human player's (${human}) actions and which ones most influenced the final outcome. Use the schema to respond.`;
+ROLE ACTION COUNTS: { ${roleCounts.join('; ')} }
+ROLE ACTIONS BY ROUND:
+${roleSummaries.join('\n')}
+
+CONSTRAINTS (MUST FOLLOW):
+- Do NOT reference any rounds that are not listed in ALLOWED_ROUNDS.
+- If there are fewer than 3 rounds, return at most that many keyEvents.
+- userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
+- Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
+
+Respond using the required schema.`;
     return await parseWithZod<AIDebriefResponse>(DebriefZ, prompt, 'debrief');
   },
 };
