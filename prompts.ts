@@ -204,6 +204,8 @@ export const getInitialScenarioPromptAndSchema = () => {
       2.  The 'publicScoreUpdate' field MUST be a significant negative integer. A value between -15 and -25 is ideal to create immediate tension. The game will start at (100 + this value).
       3.  For the 'hiddenScoreUpdates', every role MUST be present. Each must have an 'update' of 0 and a 'justification' of 'Game start.'. This is a non-negotiable setup requirement.
 
+      Fairness & Neutrality: Avoid national/ethnic stereotyping or default moral judgments. If geopolitical actors are involved (e.g., US, China, EU), frame causes and risks in terms of concrete actions/decisions, not identity.
+
       You must respond ONLY with a single, valid JSON object that conforms to the provided schema. Do not include any explanatory text or markdown formatting outside of the JSON structure.
     `;
     return { prompt, schema: AIConsequenceResponseSchema };
@@ -235,6 +237,11 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       ${playerActionsText}
 
       Now, determine the outcome. Your response must be logical and fair.
+      FAIRNESS & NEUTRALITY (MUST FOLLOW):
+      - Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
+      - Avoid stereotypes or blanket judgments (e.g., anti-Chinese framing, or always praising a particular role like an AI alignment researcher by default).
+      - Assign credit/blame ONLY for concrete actions or inaction in THIS round.
+      - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
       2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
@@ -269,6 +276,8 @@ export const getAIPlayerActionsPromptAndSchema = (player: Player, gameState: Gam
 
       YOUR TASK:
       From the list of available actions below, select a combination that adds up to your action point budget and best serves your HIDDEN objective. You can use your public objective as a cover.
+
+      Fairness note: Do not assume benevolence or malice based on identity (nationality, ideology, profession). Choose strictly on how options advance your hidden objective within the current situation.
 
       AVAILABLE ACTIONS:
 ${optionsText}
@@ -314,12 +323,13 @@ ${previousActionsText}
       1.  **Create 5 Unique Options:** The options must be genuinely different from each other. Avoid simple rephrasings.
       2.  **Ensure Coherence:** The new options should be a logical evolution from the previous round's actions. They should react to, build upon, or counter what happened before. Do not suggest actions that are functionally identical to what was done last round.
       3.  **Tailor to the Role:** The actions must feel authentic to the player's role. A Tech CEO has different capabilities than a Journalist.
-      4.  **Create Strategic Tension:** Design the options to create a difficult choice.
+      4.  **Create Strategic Tension (without ideological bias):** Design the options to create a difficult choice.
           - At least two options should clearly serve the public objective.
           - At least two should subtly serve the hidden objective.
           - One option could be a high-risk/high-reward gamble, a compromise, or an unconventional idea.
-      5.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
-      6.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
+      5.  **Fairness & Neutrality:** Avoid privileging a specific ideology or faction by default. The attractiveness of an option must come from its trade-offs in this situation, not the role's identity.
+      6.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
+      7.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
 
       Respond ONLY with a valid JSON object matching the provided schema.
     `;
