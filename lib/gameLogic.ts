@@ -27,7 +27,7 @@ export function createInitialGameStateFromScenario(
     phase: 2, // GamePhase.ACTION, but keep enum-free to avoid import cycles
     round: 1,
     coreMetric: { ...prev.coreMetric, value: newScoreValue },
-    currentEvent: scenario.nextEvent,
+    currentEvent: scenario.nextEvent?.headline ? { id: `evt_${Date.now()}_1`, ...scenario.nextEvent } as any : scenario.nextEvent,
     eventLog: [
       {
         round: 0,
@@ -40,6 +40,7 @@ export function createInitialGameStateFromScenario(
         publicScoreAfter: newScoreValue,
         hiddenScoreChanges: hiddenScoreUpdatesRecord,
         geminiCalls: llmCallsThisRound,
+        citations: (scenario.outcomeTimeline || []).flatMap(i => (i as any).causes || []),
       },
     ],
   };
@@ -96,9 +97,10 @@ export function applyConsequences(
         publicScoreAfter: newScoreValue,
         hiddenScoreChanges: hiddenScoreUpdatesRecord,
         geminiCalls: llmCallsThisRound,
+        citations: (consequence.outcomeTimeline || []).flatMap(i => (i as any).causes || []),
       },
     ],
-    currentEvent: consequence.nextEvent,
+    currentEvent: consequence.nextEvent?.headline ? { id: `evt_${Date.now()}_${currentGameState.round + 1}`, ...consequence.nextEvent } as any : consequence.nextEvent,
   };
 
   const nextPlayers: Player[] = playersWithActions.map((p) => {
@@ -118,4 +120,3 @@ export function applyConsequences(
 
   return { gameState: nextState, players: nextPlayers } as const;
 }
-
