@@ -109,7 +109,6 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           {options.map((opt) => {
             const isSelected = selected.some((s) => s.title === opt.title);
-            const preview = opt.description.length > 110 ? `${opt.description.slice(0, 110).trim()}…` : opt.description;
             const canSelect = pointsRemaining >= opt.cost || isSelected;
             return (
               <button
@@ -128,9 +127,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
-                    <p className={`mt-2 text-sm leading-snug ${isSelected ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {isSelected ? opt.description : preview}
-                    </p>
+                    <p className={`mt-2 text-sm leading-snug text-gray-200 whitespace-pre-line`}>{opt.description}</p>
                   </div>
                   <span className="inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full shrink-0">
                     {opt.cost} AP
@@ -155,4 +152,3 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
     </div>
   );
 };
-
