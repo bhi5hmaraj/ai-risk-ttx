@@ -347,7 +347,12 @@ You must provide:
 3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
 4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
 5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
-6. **nextEvent**: The first actionable crisis the players will face`;
+6. **nextEvent**: The first actionable crisis the players will face
+
+Fairness & Neutrality (must follow):
+- Avoid national/ethnic stereotyping or default moral judgments.
+- If geopolitical actors are involved (e.g., US, China, EU), attribute causes/risks to concrete actions or decisions, not identity.
+- Do not implicitly praise or condemn specific roles by default. Let actions drive tone.`;
 };
 
 export const getChatConsequencesPrompt = (
