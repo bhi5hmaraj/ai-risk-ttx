@@ -97,3 +97,105 @@ Introduce an "advanced" game mode that exposes the numbers behind the narrative 
 - Opponent modeling: keep stochastic policies or give opponents ADA too
 - Multi‑objective exposure: slider or tabs for public vs hidden goals
 
+---
+
+## TypeScript shapes (draft)
+
+```ts
+// ADA core
+export type AdaFactor =
+  | 'public_trust' | 'misinfo_pressure' | 'media_clarity' | 'platform_reliability'
+  | 'backlash' | 'economic_stability' | 'capability' | 'vulnerability' | 'coordination';
+
+export type AdaVector = Record<AdaFactor, number>; // normalized 0–100
+
+export interface AdaActionEffect {
+  factor: AdaFactor;
+  delta: number;      // signed change applied each step
+  duration: number;   // steps horizon for the effect (1–2)
+  confidence: number; // 0–1, shrinks delta when evaluating
+}
+
+export interface AdaCompiledOption {
+  id: string;                // stable key from UI option
+  title: string;             // echo from UI
+  effects: AdaActionEffect[];
+  tags?: string[];
+}
+
+export interface AdaEvaluation {
+  optionId: string;
+  deltaPublic: number; // ΔT
+  confidence: number;  // propagated from effects
+  drivers: { factor: AdaFactor; contribution: number }[]; // sorted desc
+}
+
+// Attribution results for debrief
+export interface AdaAttribution {
+  optionId: string;
+  method: 'loo' | 'mini-shapley';
+  contribution: number; // ΔT share
+}
+```
+
+## Evaluator (pseudo‑code)
+
+```ts
+function evaluateOption(state: AdaVector, opt: AdaCompiledOption, w: AdaVector, horizon=1): AdaEvaluation {
+  // shrink deltas by confidence
+  const shrink = (d: number, c: number) => d * (0.5 + 0.5 * c); // min 50% when c=0
+
+  // apply effects over short horizon
+  const s1: AdaVector = { ...state };
+  const contrib: Record<AdaFactor, number> = {} as any;
+
+  for (const e of opt.effects) {
+    const d = shrink(e.delta, e.confidence);
+    const steps = Math.max(1, Math.min(horizon, e.duration));
+    const inc = d * steps;
+    s1[e.factor] = clamp01(s1[e.factor] + inc);
+    contrib[e.factor] = (contrib[e.factor] || 0) + inc * (w[e.factor] ?? 0);
+  }
+
+  // linear readout for public score
+  const deltaPublic = dot(sub(s1, state), w);
+
+  return {
+    optionId: opt.id,
+    deltaPublic,
+    confidence: Math.min(1, opt.effects.reduce((m, e) => Math.min(m, e.confidence), 1)),
+    drivers: Object.entries(contrib)
+      .map(([factor, contribution]) => ({ factor: factor as AdaFactor, contribution }))
+      .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
+  };
+}
+```
+
+## Compilers (LLM, Zod‑validated)
+
+- Scenario → `AdaVector` S₀ and baseline drift.
+- Actions[] → `AdaCompiledOption[]` (bundle entire round to 1 call).
+- Hard clamps:
+  - deltas ∈ [−20, +20] per round
+  - duration ∈ {1, 2}
+  - confidence ∈ [0, 1]
+
+## Validation & invariants
+
+- Monotonicity when tag contains `reduce_misinfo` ⇒ `misinfo_pressure` delta ≤ 0
+- Never increase two “risk” factors on the same option without compensation tags
+- CI/telemetry: log (state, compiled options, evaluations) to debug buffer in dev
+
+## Flags & dev ergonomics
+
+- `--construct` (advanced mode)
+- `--rounds N`, `--ai K` already supported; reuse
+- Mock compiler returns deterministic effects for e2e testing
+
+## Phase 0 (small epic)
+
+1. Types + pure evaluator + ΔPill on action list (no UI chrome)
+2. Mock compiler + tests (bundle 5 options)
+3. Debrief: LOO attribution table with actor column (no polish)
+4. Feature flag in Lobby; collect feedback
+
