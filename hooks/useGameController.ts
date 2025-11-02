@@ -5,17 +5,15 @@ import type {
   RoleData,
   ActionOption,
   GameLogEntry,
-  HiddenScoreUpdate,
-  AIHiddenScoreUpdate,
   GameSetup,
   CoreMetric,
   PlayerRoundActions,
 } from '../types';
 import { GamePhase } from '../types';
 import { ROLES, GAME_CONFIG } from '../constants';
+import { clampScore, createInitialGameStateFromScenario, applyConsequences } from '../lib/gameLogic';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import {
-  generateConsequences,
   generateActionOptions,
   generateCounterfactualConsequences,
   generateCustomScenario,
@@ -30,7 +28,7 @@ const DEFAULT_CORE_METRIC: CoreMetric = {
   value: 100,
 };
 
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+// clampScore imported from lib/gameLogic
 
 export const useGameController = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -83,9 +81,7 @@ export const useGameController = () => {
     [expandedRound, gameState.eventLog, latestLogEntry]
   );
 
-  const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
-    return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
-  };
+  // No local converters; use helpers in lib/gameLogic where needed
 
   const callLLMAndCount = useCallback(
     async <T extends (...args: any[]) => Promise<any>>(apiFunc: T, ...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | null> => {
@@ -219,68 +215,18 @@ export const useGameController = () => {
       }
 
       if (result) {
-        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-
-        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map((p) => {
-          let availableOptions: ActionOption[] = [];
-          if (p.isHuman) {
-            availableOptions = actionOptions;
-          } else {
-            const aiPlayerIndex = aiPlayers.findIndex((ap) => ap.id === p.id);
-            if (aiPlayerIndex !== -1 && aiTurnResults[aiPlayerIndex]) {
-              availableOptions = aiTurnResults[aiPlayerIndex]?.options || [];
-            }
-          }
-          return {
-            roleName: p.role.name,
-            actions: p.actions,
-            availableOptions,
-            isHuman: p.isHuman,
-          };
-        });
-
-        const newScoreValue = clampScore(currentGameState.coreMetric.value + result.publicScoreUpdate);
-
-        const newGameState: GameState = {
-          ...currentGameState,
-          phase: GamePhase.ACTION,
-          round: currentGameState.round + 1,
-          coreMetric: { ...currentGameState.coreMetric, value: newScoreValue },
-          eventLog: [
-            ...currentGameState.eventLog,
-            {
-              round: currentGameState.round,
-              roundSummary: result.roundSummary,
-              outcomeTimeline: result.outcomeTimeline ?? [],
-              counterfactualNote: result.counterfactualNote ?? '',
-              event: currentGameState.currentEvent,
-              playerActions: playerActionsForLog,
-              publicScoreChange: result.publicScoreUpdate,
-              publicScoreAfter: newScoreValue,
-              hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: llmCallsThisRoundRef.current,
-            },
-          ],
-          currentEvent: result.nextEvent,
-        };
-        const newPlayers = playersWithActions.map((p) => {
-          const pointsSpent = p.actions.reduce((sum, action) => sum + action.cost, 0);
-          const newPoints = Math.min(
-            p.actionPoints - pointsSpent + GAME_CONFIG.ACTION_POINTS_PER_ROUND,
-            GAME_CONFIG.MAX_ACTION_POINTS
-          );
-          return {
-            ...p,
-            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-            actionPoints: newPoints,
-            actions: [],
-            hasSubmittedActions: false,
-          };
-        });
-
+        const { gameState: nextState, players: nextPlayers } = applyConsequences(
+          currentGameState,
+          result,
+          playersWithActions,
+          aiPlayers,
+          aiTurnResults as any,
+          actionOptions,
+          llmCallsThisRoundRef.current,
+        );
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-        setGameState(newGameState);
-        setPlayers(newPlayers);
+        setGameState(nextState);
+        setPlayers(nextPlayers);
         setActionOptions([]);
         setIsLoading(false);
         setLoadingMessage('');
@@ -416,29 +362,7 @@ export const useGameController = () => {
       if (initChat) chatHistoryRef.current = initChat.chatHistory;
 
       if (result) {
-        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-        const newScoreValue = clampScore(gameState.coreMetric.value + result.publicScoreUpdate);
-        const initialGameState: GameState = {
-          ...gameState,
-          phase: GamePhase.ACTION,
-          round: 1,
-          coreMetric: { ...gameState.coreMetric, value: newScoreValue },
-          currentEvent: result.nextEvent,
-          eventLog: [
-            {
-              round: 0,
-              roundSummary: result.roundSummary,
-              outcomeTimeline: result.outcomeTimeline ?? [],
-              counterfactualNote: result.counterfactualNote ?? '',
-              event: null,
-              playerActions: [],
-              publicScoreChange: result.publicScoreUpdate,
-              publicScoreAfter: newScoreValue,
-              hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: llmCallsThisRoundRef.current,
-            },
-          ],
-        };
+        const initialGameState = createInitialGameStateFromScenario(gameState, result, llmCallsThisRoundRef.current);
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
         setGameState(initialGameState);
         setIsLoading(false);
