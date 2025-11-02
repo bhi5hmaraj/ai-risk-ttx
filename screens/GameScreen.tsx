@@ -74,18 +74,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             onViewActionTree={onOpenActionTree}
             canViewActionTree={canViewActionTree}
           />
-          {isHistoryOpen && (
-            <EventLog
-              gameState={gameState}
-              players={players}
-              onViewActionTree={onOpenActionTree}
-              canViewActionTree={canViewActionTree}
-              expandedRound={expandedRound}
-              setExpandedRound={onSetExpandedRound}
-            />
-          )}
         </div>
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3" data-testid="action-selection">
           <ActionSelection
             key={gameState.round}
             options={actionOptions}
@@ -99,6 +89,18 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           />
         </div>
       </div>
+      {isHistoryOpen && (
+        <div className="mt-6" data-testid="event-log">
+          <EventLog
+            gameState={gameState}
+            players={players}
+            onViewActionTree={onOpenActionTree}
+            canViewActionTree={canViewActionTree}
+            expandedRound={expandedRound}
+            setExpandedRound={onSetExpandedRound}
+          />
+        </div>
+      )}
     </div>
   </div>
 );
