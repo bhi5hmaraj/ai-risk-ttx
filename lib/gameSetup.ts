@@ -1,3 +1,4 @@
+import React from 'react';
 import type { GameSetup, GameState, Player, RoleData, CoreMetric } from '../types';
 import { GAME_CONFIG, ROLES } from '../constants';
 
@@ -5,8 +6,11 @@ export function buildRolesFromSetup(setup: GameSetup): RoleData[] {
   return setup.stakeholders.map((s) => {
     const emoji = s.icon || '❓';
     const EmojiIcon = (props: any) =>
-      // avoid importing React in core helpers
-      ({ ...props, 'data-emoji': emoji });
+      React.createElement(
+        'span',
+        { className: 'text-2xl', role: 'img', 'aria-label': 'role icon', ...props },
+        emoji,
+      );
     return {
       name: s.name,
       publicObjective: s.publicObjective,
@@ -62,4 +66,3 @@ export function selectInitialPlayers(selectedRoleName: string, path: 'classic' |
   }));
   return { players, coreMetric } as const;
 }
-
