@@ -78,8 +78,17 @@ export enum GamePhase {
 }
 
 export interface GameEvent {
+  id?: string; // optional stable id for causal linking
   headline: string;
   detail: string;
+}
+
+export type CausalRefType = 'event' | 'action' | 'exogenous';
+
+export interface CausalReference {
+  type: CausalRefType; // what is being cited
+  ref: string;         // event id or action descriptor
+  rationale: string;   // short explanation of the causal link
 }
 
 export interface PlayerRoundActions {
@@ -105,6 +114,7 @@ export interface OutcomeTimelineItem {
   title: string;
   description: string;
   impact: string;
+  causes?: CausalReference[]; // optional interpretability citations
 }
 
 export interface GameLogEntry {
@@ -118,6 +128,7 @@ export interface GameLogEntry {
   publicScoreAfter: number;
   hiddenScoreChanges: Record<string, HiddenScoreUpdate>;
   geminiCalls: number;
+  citations?: CausalReference[]; // optional aggregated citations for the round
 }
 
 export interface GameState {

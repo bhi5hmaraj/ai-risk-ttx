@@ -21,6 +21,19 @@ const AIConsequenceResponseSchema = {
           title: { type: "string", description: "A short label for the moment." },
           description: { type: "string", description: "1-2 sentences describing what happened during this beat." },
           impact: { type: "string", description: "A concise explanation of how this beat affected the core metric or player goals." },
+          causes: {
+            type: "array",
+            description: "Optional causal citations explaining why this beat happened, linking to prior events or actions.",
+            items: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["event", "action", "exogenous"], description: "What is being cited (prior event, player action, or external factor)." },
+                ref: { type: "string", description: "Reference id or descriptor (e.g., prior event id or 'Role:Action@Round')." },
+                rationale: { type: "string", description: "Short explanation of the causal link." }
+              },
+              required: ["type", "ref", "rationale"],
+            }
+          },
         },
         required: ['title', 'description', 'impact'],
       },
@@ -244,6 +257,7 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
       2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
+          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing prior events (use their id or headline) or specific player actions this round or previous rounds.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
       5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
