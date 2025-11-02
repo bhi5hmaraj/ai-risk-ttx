@@ -68,38 +68,10 @@ done
 echo ""
 
 if [ "$READY" -ne 1 ]; then
-  echo -e "${YELLOW}⚠ Vercel dev not ready in ${MAX_WAIT}s, falling back to local Hono server${NC}"
-  # Kill vercel dev attempt
-  kill $SERVER_PID 2>/dev/null || true
-  SERVER_PID=""
-  # Start local Hono server via tsx
-  if command -v tsx >/dev/null 2>&1; then
-    TSX_CMD="tsx"
-  else
-    TSX_CMD="npx -y tsx"
-  fi
-  echo "   Starting local dev server with ${TSX_CMD} scripts/dev-llm.ts ..."
-  sh -c "PORT=${PORT} ${TSX_CMD} scripts/dev-llm.ts" > "$LOG_FILE" 2>&1 &
-  SERVER_PID=$!
-  # Wait again for health
-  COUNTER=0
-  while [ $COUNTER -lt $MAX_WAIT ]; do
-    HTTP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PORT}/api/llm/health" || true)
-    if [ "$HTTP" = "200" ]; then
-      READY=1
-      break
-    fi
-    sleep 1
-    COUNTER=$((COUNTER + 1))
-    echo -n "."
-  done
-  echo ""
-  if [ "$READY" -ne 1 ]; then
-    echo -e "${RED}✗ Local dev server also failed to become ready${NC}"
-    echo "Last 50 lines of log:"
-    tail -50 "$LOG_FILE" || true
-    exit 1
-  fi
+  echo -e "${RED}✗ Vercel dev not ready in ${MAX_WAIT}s${NC}"
+  echo "   Legacy local fallback has been removed. Please ensure 'vercel dev' works locally."
+  echo "   Tip: install Vercel CLI (npm i -g vercel) or run 'npx vercel dev'."
+  exit 1
 fi
 
 echo -e "   ${GREEN}✓${NC} Server ready on port ${PORT}"
