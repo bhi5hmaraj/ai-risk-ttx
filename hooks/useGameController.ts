@@ -12,6 +12,7 @@ import type {
 import { GamePhase } from '../types';
 import { ROLES, GAME_CONFIG } from '../constants';
 import { clampScore, createInitialGameStateFromScenario, applyConsequences } from '../lib/gameLogic';
+import { buildRolesFromSetup as buildRolesFromSetupHelper, selectInitialPlayers, createCanonicalSetup } from '../lib/gameSetup';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import {
   generateActionOptions,
@@ -252,75 +253,19 @@ export const useGameController = () => {
     [gameState, humanPlayer, players, runConsequencePhase]
   );
 
-  const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] =>
-    setup.stakeholders.map((stakeholder) => {
-      const emoji = stakeholder.icon || '❓';
-      const EmojiIcon = (props: React.SVGProps<SVGSVGElement>) =>
-        React.createElement('span', {
-          className: 'text-2xl',
-          role: 'img',
-          'aria-label': 'role icon'
-        }, emoji);
-
-      return {
-        name: stakeholder.name,
-        publicObjective: stakeholder.publicObjective,
-        hiddenObjective: stakeholder.hiddenObjective,
-        resources: stakeholder.resources ?? [],
-        constraints: stakeholder.constraints ?? [],
-        icon: EmojiIcon,
-      };
-    }),
-  []);
+  const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] => buildRolesFromSetupHelper(setup), []);
 
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
     const path = gamePath ?? 'classic';
 
-    let roles: RoleData[] = [];
-    let coreMetric: CoreMetric = { ...DEFAULT_CORE_METRIC };
-
-    if (path === 'custom') {
-      if (!gameSetup) {
-        setError('Cannot start game without a generated scenario.');
-        return;
-      }
-      roles = buildRolesFromSetup(gameSetup);
-      const initial = Number.isFinite(gameSetup.coreMetric.value)
-        ? clampScore(gameSetup.coreMetric.value)
-        : 75;
-      coreMetric = {
-        name: gameSetup.coreMetric.name,
-        description: gameSetup.coreMetric.description,
-        value: initial,
-      };
-    } else if (path === 'ai_safety') {
-      roles = buildRolesFromSetup(AI_SAFETY_SCENARIO);
-      coreMetric = {
-        name: AI_SAFETY_SCENARIO.coreMetric.name,
-        description: AI_SAFETY_SCENARIO.coreMetric.description,
-        value: clampScore(AI_SAFETY_SCENARIO.coreMetric.value),
-      };
-    } else {
-      roles = Object.values(ROLES);
-      coreMetric = { ...DEFAULT_CORE_METRIC };
-    }
-
-    // Determine AI subset based on config
-    const humanRole = roles.find((r) => r.name === selectedRoleName)!;
-    const aiPool = roles.filter((r) => r.name !== selectedRoleName);
-    const limitedAI = aiPool.slice(0, Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS, aiPool.length)));
-    const orderedRoles: RoleData[] = [humanRole, ...limitedAI];
-
-    const initialPlayers: Player[] = orderedRoles.map((role, index) => ({
-      id: role.name === selectedRoleName ? 'human_player' : `ai_${index}`,
-      role,
-      isHuman: role.name === selectedRoleName,
-      hiddenScore: 0,
-      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
-      actions: [],
-      hasSubmittedActions: false,
-    }));
+    const { players: initialPlayers, coreMetric } = selectInitialPlayers(
+      selectedRoleName,
+      path,
+      gameSetup,
+      AI_SAFETY_SCENARIO,
+      DEFAULT_CORE_METRIC,
+    );
 
     setPlayers(initialPlayers);
     setGameState((prev) => ({
@@ -342,19 +287,7 @@ export const useGameController = () => {
       llmCallsThisRoundRef.current = 0;
 
       // Chat mode only: Create and persist canonical setup, then call chat endpoint
-      const setup = gameSetup || {
-        scenarioTitle: 'Election Crisis 2024',
-        scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
-        coreMetric: gameState.coreMetric,
-        stakeholders: players.map(p => ({
-          name: p.role.name,
-          icon: '🎭',
-          publicObjective: p.role.publicObjective,
-          hiddenObjective: p.role.hiddenObjective,
-          resources: p.role.resources,
-          constraints: p.role.constraints,
-        })),
-      };
+      const setup = gameSetup || createCanonicalSetup(gameState, players);
       setGameSetup(setup);
 
       const initChat = await callLLMAndCount(() => generateInitialScenarioChat(setup, players));
