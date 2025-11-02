@@ -222,14 +222,14 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ## Test Coverage
 
-Last updated: 2025-11-02 08:34Z
+Last updated: 2025-11-02 08:55Z
 
 | Metric | Percent |
 | - | - |
-| Statements | 44.3% |
-| Branches | 26.0% |
-| Functions | 34.9% |
-| Lines | 45.3% |
+| Statements | 46.0% |
+| Branches | 31.3% |
+| Functions | 37.9% |
+| Lines | 47.0% |
 
 Run npm run metrics to regenerate.
 
