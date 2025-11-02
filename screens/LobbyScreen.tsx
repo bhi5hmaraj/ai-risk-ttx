@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { GameSetup, RoleData } from '../types';
 import { ROLES } from '../constants';
-import { AI_SAFETY_SCENARIO } from '../presets';
+import { AI_SAFETY_SCENARIO, ELECTION_PRESET_ABOUT } from '../presets';
 import { RoleCard, MakePublicModal } from '../components/game';
 
 interface PublicScenario {
@@ -425,12 +425,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         cta="Start Community Scenario"
       />
     ) : gamePath === 'classic' ? (
-      <RoleSelection
+      <PresetRoleSelection
+        scenarioTitle={ELECTION_PRESET_ABOUT.scenarioTitle}
+        scenarioDescription={ELECTION_PRESET_ABOUT.scenarioDescription}
         roles={Object.values(ROLES)}
         selectedRoleName={selectedRoleName}
         onSelect={setSelectedRoleName}
         onStart={handleStartGame}
-        cta="Start Simulation"
+        cta="Start Classic Simulation"
       />
     ) : gamePath === 'ai_safety' ? (
       <PresetRoleSelection
