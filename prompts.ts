@@ -165,7 +165,7 @@ const GameSetupSchema = {
         },
         stakeholders: {
             type: "array",
-            description: "A list of 4 to 6 relevant and distinct stakeholder roles for this scenario.",
+            description: "A list of 4 to 6 relevant and distinct stakeholder roles for this scenario. Include a balanced cast with both protagonists and antagonists, and mix individuals and institutions.",
             minItems: 4,
             maxItems: 6,
             items: {
@@ -468,7 +468,12 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
           -   The 'initialValue' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
       3.  **Stakeholders (4-6 Roles):**
           -   Create a cast of 4 to 6 distinct, believable stakeholder roles. These should be the key players in the crisis.
-          -   **Crucially, their objectives must create tension and potential conflict.** Give them reasons to disagree and compete.
+          -   Include a balanced mix:
+              • 2–3 protagonists (public‑minded)
+              • 1–2 antagonists/adversaries (e.g., rival state operator, troll‑farm lead, rogue executive)
+              • 1 neutral/referee/regulator role that may constrain others
+          -   Stakeholders can be individuals (e.g., "Chief Epidemiologist"), institutions (e.g., "National Grid Operator"), or organized adversaries (e.g., "Disinformation Cell Director"). Choose what best fits the scenario.
+          -   Do NOT make everyone cooperative; ensure at least one stakeholder is structurally opposed to the others so the game has real conflict.
           -   For each role's 'icon', choose a SINGLE emoji that visually represents their role or domain. Examples: 🔬 (scientist), 💼 (executive), 🏥 (medical), ⚖️ (legal/regulatory), 🎖️ (military), 🏭 (industrial), 🌍 (environmental), 📡 (communications), 🛡️ (security), 💊 (pharmaceutical), etc. The emoji should be intuitive and immediately recognizable.
           -   The 'publicObjective' should be what they say they want in press conferences.
           -   The 'hiddenObjective' should be their true, often selfish or controversial, goal. This is the key to strategic gameplay. Avoid generic goals; make them specific and compelling.
