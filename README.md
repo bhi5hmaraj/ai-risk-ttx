@@ -84,6 +84,7 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 ## Documentation
 
 - Docs live in the `docs/` folder.
+- Session backend (server‑authoritative state) design: `docs/session-backend.md`.
 - Advanced analytics (ADA + CDT + Shapley) design: `docs/ada-cdt-shapley.md`.
 
 ---
@@ -257,6 +258,12 @@ Enable via CLI flag (recommended):
 npm run dev -- --mock-llm
 # or
 npm run dev:mock
+
+# Use server-authoritative session backend in dev
+npm run dev -- --backend
+
+# Combine flags and tuning
+npm run dev -- --backend --mock-llm --rounds 2 --ai 1
 ```
 
 Alternatively, enable in `.env.local`:
