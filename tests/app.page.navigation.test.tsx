@@ -1,17 +1,33 @@
 /**
- * Tests for app/page.tsx navigation logic
- * These tests ensure navigation behavior is preserved during App Router migration
+ * Navigation tests for App Router pages
  */
 
 /* @vitest-environment jsdom */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import HomePage from '../app/page';
+import LobbyPage from '../app/lobby/page';
+import GamePage from '../app/game/page';
+import EndPage from '../app/end/page';
+import { RouteOrchestrator } from '../components/RouteOrchestrator';
 import { GamePhase } from '../types';
 
-// Mock all screen components
+const push = vi.fn();
+const replace = vi.fn();
+const back = vi.fn();
+
+vi.mock('next/navigation', async () => {
+  return {
+    useRouter: () => ({ push, replace, back }),
+    usePathname: () => '/',
+  };
+});
+
 vi.mock('../screens', () => ({
-  LobbyScreen: ({ selectedRoleName }: any) => <div data-testid="lobby-screen">Lobby: {selectedRoleName}</div>,
+  LobbyScreen: ({ selectedRoleName }: any) => (
+    <div data-testid="lobby-screen">Lobby Screen {selectedRoleName}</div>
+  ),
   GameScreen: () => <div data-testid="game-screen">Game Screen</div>,
   EndScreen: () => <div data-testid="end-screen">End Screen</div>,
   LoadingScreen: ({ message }: any) => <div data-testid="loading-screen">{message}</div>,
@@ -32,36 +48,68 @@ vi.mock('../screens', () => ({
   ),
 }));
 
-// Mock game components
 vi.mock('../components/game', () => ({
   ActionTreePortal: () => <div data-testid="action-tree" />,
-  FeedbackBanner: () => <div data-testid="feedback-banner" />,
-  FeedbackModal: () => <div data-testid="feedback-modal" />,
-  MakePublicModal: () => <div data-testid="make-public-modal" />,
+  FeedbackBanner: ({ onOpenFeedback }: any) => (
+    <button data-testid="feedback-banner" onClick={onOpenFeedback}>
+      Feedback
+    </button>
+  ),
+  FeedbackModal: ({ isOpen }: any) => (
+    isOpen ? <div data-testid="feedback-modal">Feedback Modal</div> : null
+  ),
+  MakePublicModal: ({ isOpen, onSubmitSuccess }: any) => (
+    isOpen ? (
+      <div data-testid="make-public-modal">
+        Make Public
+        <button onClick={onSubmitSuccess}>Submit</button>
+      </div>
+    ) : null
+  ),
 }));
 
-// Mock Navigation component
 vi.mock('../components/Navigation', () => ({
-  Navigation: ({ onNavigateHome, onOpenAbout, onOpenUpdates }: any) => (
+  Navigation: ({
+    onNavigateHome,
+    onOpenAbout,
+    onOpenUpdates,
+    onOpenFeedback,
+  }: any) => (
     <nav data-testid="navigation">
       <button onClick={onNavigateHome}>Home</button>
       <button onClick={onOpenAbout}>About</button>
       <button onClick={onOpenUpdates}>Updates</button>
+      <button onClick={onOpenFeedback}>Feedback</button>
     </nav>
   ),
 }));
 
-// Mock useGameController hook
+const mockHumanPlayer = {
+  id: 'player-1',
+  role: {
+    name: 'Prime Minister',
+    publicObjective: 'Objective',
+    hiddenObjective: 'Hidden',
+    resources: [],
+    constraints: [],
+  },
+  isHuman: true,
+  actions: [],
+  actionPoints: 3,
+  hasSubmittedActions: false,
+  hiddenScore: 50,
+};
+
 const mockGameController = {
   state: {
     gameState: {
       phase: GamePhase.LOBBY,
       round: 0,
-      coreMetric: { name: 'Test Metric', description: 'Test', value: 100 },
+      coreMetric: { name: 'Trust', description: 'desc', value: 100 },
       eventLog: [],
       currentEvent: null,
     },
-    players: [],
+    players: [mockHumanPlayer],
     selectedRoleName: null,
     gamePath: null,
     gameSetup: null,
@@ -85,17 +133,17 @@ const mockGameController = {
     setGamePath: vi.fn(),
     setGameSetup: vi.fn(),
     setCustomScenario: vi.fn(),
-    setExpandedRound: vi.fn(),
     setIsActionTreeOpen: vi.fn(),
     handleCustomGameStart: vi.fn(),
     handleStartGame: vi.fn(),
     handleConfirmActions: vi.fn(),
-    resetState: vi.fn(),
-    handleOpenActionTree: vi.fn(),
     handleToggleHistory: vi.fn(),
+    handleOpenActionTree: vi.fn(),
+    setExpandedRound: vi.fn(),
+    resetState: vi.fn(),
   },
   derived: {
-    humanPlayer: null,
+    humanPlayer: mockHumanPlayer,
     handlePauseToggle: vi.fn(),
   },
 };
@@ -104,286 +152,168 @@ vi.mock('../hooks/useGameController', () => ({
   useGameController: () => mockGameController,
 }));
 
-// Import component after mocks are set up
-import Home from '../app/page';
+const resetRouterMocks = () => {
+  push.mockReset();
+  replace.mockReset();
+  back.mockReset();
+};
 
-describe('app/page.tsx - Navigation Logic', () => {
+const resetControllerState = () => {
+  mockGameController.state.gameState = {
+    phase: GamePhase.LOBBY,
+    round: 0,
+    coreMetric: { name: 'Trust', description: 'desc', value: 100 },
+    eventLog: [],
+    currentEvent: null,
+  };
+  mockGameController.state.gamePath = null;
+  mockGameController.state.customScenario = '';
+  mockGameController.state.gameSetup = null;
+  mockGameController.state.isLoading = false;
+  mockGameController.state.loadingMessage = '';
+  mockGameController.state.error = null;
+  mockGameController.derived.humanPlayer = mockHumanPlayer;
+};
+
+describe('App Router pages', () => {
   beforeEach(() => {
+    resetRouterMocks();
+    resetControllerState();
     vi.clearAllMocks();
-    // Reset to default LOBBY phase
-    mockGameController.state.gameState.phase = GamePhase.LOBBY;
   });
 
-  describe('Initial Render', () => {
-    it('renders home screen (GameRulesScreen) by default', () => {
-      render(<Home />);
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
-    });
+  describe('HomePage', () => {
+    it('renders game rules and navigates to lobby', () => {
+      render(<HomePage />);
 
-    it('renders Navigation component', () => {
-      render(<Home />);
-      expect(screen.getByTestId('navigation')).toBeTruthy();
-    });
-  });
-
-  describe('Screen Navigation', () => {
-    it('navigates from home to lobby when clicking "Go to Lobby"', () => {
-      render(<Home />);
-
-      // Start on home screen
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
-
-      // Click "Go to Lobby" button
-      const lobbyButton = screen.getByText('Go to Lobby');
-      fireEvent.click(lobbyButton);
-
-      // Should now show lobby screen
-      expect(screen.getByTestId('lobby-screen')).toBeTruthy();
-      expect(screen.queryByTestId('game-rules-screen')).toBeFalsy();
-    });
-
-    it('navigates to about screen when clicking "About"', () => {
-      render(<Home />);
-
-      const aboutButton = screen.getByText('About');
-      fireEvent.click(aboutButton);
-
-      expect(screen.getByTestId('about-screen')).toBeTruthy();
-    });
-
-    it('navigates to updates screen when clicking "Updates"', () => {
-      render(<Home />);
-
-      const updatesButton = screen.getByText('Updates');
-      fireEvent.click(updatesButton);
-
-      expect(screen.getByTestId('updates-screen')).toBeTruthy();
-    });
-
-    it('navigates back to home from about screen', () => {
-      render(<Home />);
-
-      // Go to about
-      fireEvent.click(screen.getByText('About'));
-      expect(screen.getByTestId('about-screen')).toBeTruthy();
-
-      // Click back button
-      fireEvent.click(screen.getByText('Back'));
-
-      // Should be back on home
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
-    });
-
-    it('navigates back to home from updates screen', () => {
-      render(<Home />);
-
-      // Go to updates
-      fireEvent.click(screen.getByText('Updates'));
-      expect(screen.getByTestId('updates-screen')).toBeTruthy();
-
-      // Click back button
-      fireEvent.click(screen.getByText('Back'));
-
-      // Should be back on home
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
-    });
-
-    it('resets game state when clicking "Home" from navigation', () => {
-      render(<Home />);
-
-      // Navigate to lobby
       fireEvent.click(screen.getByText('Go to Lobby'));
 
-      // Click Home in navigation
-      fireEvent.click(screen.getByText('Home'));
+      expect(push).toHaveBeenCalledWith('/lobby');
+    });
 
-      // Should reset state
-      expect(mockGameController.actions.resetState).toHaveBeenCalled();
+    it('redirects to game when phase becomes ACTION', async () => {
+      const { rerender } = render(
+        <>
+          <RouteOrchestrator />
+          <HomePage />
+        </>
+      );
 
-      // Should be back on home screen
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
+      mockGameController.state.gameState = {
+        ...mockGameController.state.gameState,
+        phase: GamePhase.ACTION,
+      };
+
+      rerender(
+        <>
+          <RouteOrchestrator />
+          <HomePage />
+        </>
+      );
+
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/game');
+      });
     });
   });
 
-  describe('Game Phase Transitions', () => {
-    it('navigates to game screen when phase changes to STARTING', () => {
-      const { rerender } = render(<Home />);
+  describe('LobbyPage', () => {
+    it('renders lobby screen', () => {
+      render(<LobbyPage />);
+      expect(screen.getByTestId('lobby-screen')).toBeTruthy();
+    });
 
-      // Start on home screen
-      expect(screen.getByTestId('game-rules-screen')).toBeTruthy();
+    it('redirects to game when phase transitions to STARTING', async () => {
+      const { rerender } = render(
+        <>
+          <RouteOrchestrator />
+          <LobbyPage />
+        </>
+      );
+      resetRouterMocks();
 
-      // Simulate phase change to STARTING
-      // Need to create new object reference for React to detect change
       mockGameController.state.gameState = {
         ...mockGameController.state.gameState,
         phase: GamePhase.STARTING,
       };
-      mockGameController.derived.humanPlayer = {
-        id: 'player-1',
-        role: { name: 'Test Role', icon: '🎭', publicObjective: 'Test', hiddenObjective: 'Test' },
-        isHuman: true,
-        actions: [],
-        actionPoints: 3,
-        hasSubmittedActions: false,
-        hiddenScore: 50,
+
+      rerender(
+        <>
+          <RouteOrchestrator />
+          <LobbyPage />
+        </>
+      );
+
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/game');
+      });
+    });
+  });
+
+  describe('GamePage', () => {
+    beforeEach(() => {
+      mockGameController.state.gameState = {
+        ...mockGameController.state.gameState,
+        phase: GamePhase.ACTION,
+      };
+    });
+
+    it('shows loading screen when human player not yet ready', () => {
+      mockGameController.derived.humanPlayer = null;
+      render(<GamePage />);
+
+      expect(screen.getByTestId('loading-screen')).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    it('redirects to end page when phase becomes END', async () => {
+      const { rerender } = render(
+        <>
+          <RouteOrchestrator />
+          <GamePage />
+        </>
+      );
+      resetRouterMocks();
+
+      mockGameController.state.gameState = {
+        ...mockGameController.state.gameState,
+        phase: GamePhase.END,
       };
 
-      rerender(<Home />);
+      rerender(
+        <>
+          <RouteOrchestrator />
+          <GamePage />
+        </>
+      );
 
-      // Should automatically navigate to game screen
-      expect(screen.getByTestId('game-screen')).toBeTruthy();
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/end');
+      });
     });
+  });
 
-    it('navigates to game screen when phase changes to ACTION', () => {
-      const { rerender } = render(<Home />);
-
-      mockGameController.state.gameState.phase = GamePhase.ACTION;
-      mockGameController.derived.humanPlayer = {
-        id: 'player-1',
-        role: { name: 'Test Role', icon: '🎭', publicObjective: 'Test', hiddenObjective: 'Test' },
-        isHuman: true,
-        actions: [],
-        actionPoints: 3,
-        hasSubmittedActions: false,
-        hiddenScore: 50,
+  describe('EndPage', () => {
+    it('renders end screen when phase is END', () => {
+      mockGameController.state.gameState = {
+        ...mockGameController.state.gameState,
+        phase: GamePhase.END,
       };
 
-      rerender(<Home />);
-
-      expect(screen.getByTestId('game-screen')).toBeTruthy();
-    });
-
-    it('navigates to game screen when phase changes to CONSEQUENCE', () => {
-      const { rerender } = render(<Home />);
-
-      mockGameController.state.gameState.phase = GamePhase.CONSEQUENCE;
-      rerender(<Home />);
-
-      expect(screen.getByTestId('game-screen')).toBeTruthy();
-    });
-
-    it('navigates to end screen when phase changes to END', () => {
-      const { rerender } = render(<Home />);
-
-      mockGameController.state.gameState.phase = GamePhase.END;
-      rerender(<Home />);
+      render(<EndPage />);
 
       expect(screen.getByTestId('end-screen')).toBeTruthy();
     });
 
-    it('shows loading screen when loading during non-ACTION phase', () => {
-      const { rerender } = render(<Home />);
-
-      // Navigate to game and set loading state
-      mockGameController.state.gameState.phase = GamePhase.STARTING;
-      mockGameController.state.isLoading = true;
-      mockGameController.state.loadingMessage = 'Generating scenario...';
-      mockGameController.derived.humanPlayer = {
-        id: 'player-1',
-        role: { name: 'Test Role', icon: '🎭', publicObjective: 'Test', hiddenObjective: 'Test' },
-        isHuman: true,
-        actions: [],
-        actionPoints: 3,
-        hasSubmittedActions: false,
-        hiddenScore: 50,
+    it('does not self-redirect when phase is not END (orchestrator owns routing)', () => {
+      mockGameController.state.gameState = {
+        ...mockGameController.state.gameState,
+        phase: GamePhase.ACTION,
       };
 
-      rerender(<Home />);
-
-      expect(screen.getByTestId('loading-screen')).toBeTruthy();
-      expect(screen.getByText('Generating scenario...')).toBeTruthy();
-    });
-  });
-
-  describe('State Persistence', () => {
-    it('maintains selected role when navigating between screens', () => {
-      mockGameController.state.selectedRoleName = 'Tech CEO';
-
-      render(<Home />);
-
-      // Navigate to lobby
-      fireEvent.click(screen.getByText('Go to Lobby'));
-
-      // Should show selected role
-      expect(screen.getByText(/Tech CEO/)).toBeTruthy();
-
-      // Navigate to about
-      fireEvent.click(screen.getByText('About'));
-
-      // Navigate back to lobby
-      fireEvent.click(screen.getByText('Back'));
-      fireEvent.click(screen.getByText('Go to Lobby'));
-
-      // Should still show selected role
-      expect(screen.getByText(/Tech CEO/)).toBeTruthy();
-    });
-
-    it('does not reset game state when navigating to about/updates', () => {
-      render(<Home />);
-
-      // Navigate to about
-      fireEvent.click(screen.getByText('About'));
-
-      // Should NOT reset state
-      expect(mockGameController.actions.resetState).not.toHaveBeenCalled();
-
-      // Navigate to updates
-      fireEvent.click(screen.getByText('Back'));
-      fireEvent.click(screen.getByText('Updates'));
-
-      // Should still NOT reset state
-      expect(mockGameController.actions.resetState).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('redirects to lobby if trying to view game screen without human player', () => {
-      const { rerender } = render(<Home />);
-
-      // Set phase to ACTION but no human player
-      mockGameController.state.gameState.phase = GamePhase.ACTION;
-      mockGameController.derived.humanPlayer = null;
-
-      rerender(<Home />);
-
-      // Should show lobby instead of game screen
-      // (The component sets screen to lobby, but since phase is ACTION, it will attempt game screen again)
-      // This tests the safety check in the code
-      expect(screen.queryByTestId('game-screen')).toBeFalsy();
-    });
-
-    it('redirects to lobby if trying to view end screen when phase is not END', () => {
-      render(<Home />);
-
-      // Manually navigate to lobby first
-      fireEvent.click(screen.getByText('Go to Lobby'));
-
-      // Phase is LOBBY, not END, so end screen logic should guard against this
-      mockGameController.state.gameState.phase = GamePhase.LOBBY;
-
-      // Should show lobby
-      expect(screen.getByTestId('lobby-screen')).toBeTruthy();
-    });
-  });
-
-  describe('Navigation Props Passing', () => {
-    it('passes correct navigation handlers to GameRulesScreen', () => {
-      render(<Home />);
-
-      const goToLobbyButton = screen.getByText('Go to Lobby');
-      expect(goToLobbyButton).toBeTruthy();
-    });
-
-    it('passes correct navigation handlers to Navigation component', () => {
-      render(<Home />);
-
-      const navigation = screen.getByTestId('navigation');
-      expect(navigation).toBeTruthy();
-
-      // Verify all buttons exist
-      expect(screen.getByText('Home')).toBeTruthy();
-      expect(screen.getByText('About')).toBeTruthy();
-      expect(screen.getByText('Updates')).toBeTruthy();
+      render(<EndPage />);
+      // Page renders nothing; RouteOrchestrator will handle routing elsewhere
+      expect(replace).not.toHaveBeenCalled();
     });
   });
 });
