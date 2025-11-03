@@ -29,6 +29,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   const pointsRemaining = availablePoints - pointsUsed;
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
   const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+  const human = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
   const confirmDisabled = isLoading || isPaused;
 
   const toggleAction = (option: ActionOption) => {
@@ -44,6 +45,22 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   if (hasSubmitted) {
     return (
       <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
+        {human && Array.isArray(human.actions) && human.actions.length > 0 && (
+          <div className="mb-5 text-left">
+            <h4 className="text-lg font-semibold mb-2">Your submitted actions</h4>
+            <ul className="space-y-2">
+              {human.actions.map((a) => (
+                <li key={a.title} className="bg-gray-700/40 border border-gray-700 rounded px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-200 font-medium">{a.title}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-blue-300">{a.cost} AP</span>
+                  </div>
+                  {a.description && <p className="text-xs text-gray-400 mt-1 whitespace-pre-line">{a.description}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <h3 className="text-xl font-bold mb-4">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
         {!allAIsDone && (
           <div className="space-y-3 text-left">
