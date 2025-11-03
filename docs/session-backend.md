@@ -188,6 +188,72 @@ Revision & Caching
   - Reads: `If-None-Match: <revision>` → 304 if unchanged
 - ETag value is the decimal string of `revision` (Phase 1 simplification).
 
+## Why ETags + Revisions (Motivation)
+
+We want the server to be the single source of truth while keeping polling cheap and writes safe.
+
+- Prevent lost updates: Multiple users might write at once (e.g., host advance and a player submits). `If‑Match` with a monotonic `revision` ensures the server only applies a mutation if the client edited the version it actually saw.
+- Cheap polling: Most of the time nothing changes. `If‑None‑Match: <revision>` lets the server answer `304 Not Modified` with no JSON body.
+- Simple, scalable: A single integer `revision` is easy to reason about and equal to the HTTP `ETag`. No clock skew or hashing needed, and it works well behind CDNs.
+
+### Simple Example
+
+1) Create session (server returns revision=1 and ETag "1")
+
+```http
+POST /api/session
+Content-Type: application/json
+
+{ "mode": "classic" }
+
+HTTP/1.1 201 Created
+ETag: 1
+x-revision: 1
+Content-Type: application/json
+
+{ "success": true, "data": { "id": "sess_...", "revision": 1, "hostToken": "host_...", "state": { ... } } }
+```
+
+2) Efficient polling (client already has revision 1 → send If-None-Match: 1)
+
+```http
+GET /api/session/sess_123
+If-None-Match: 1
+
+HTTP/1.1 304 Not Modified
+ETag: 1
+```
+
+3) Safe write (submit actions with If-Match: 1). Success bumps revision to 2
+
+```http
+POST /api/session/sess_123/actions
+If-Match: 1
+Content-Type: application/json
+
+{ "playerId": "human", "actions": [] }
+
+HTTP/1.1 200 OK
+ETag: 2
+x-revision: 2
+{ "success": true, "data": { "id": "sess_123", "revision": 2, "state": { ... } } }
+```
+
+4) Concurrent write with stale revision (another client still at 1)
+
+```http
+POST /api/session/sess_123/advance
+If-Match: 1
+x-host-token: host_...
+
+HTTP/1.1 409 Conflict
+ETag: 2
+x-revision: 2
+{ "success": false, "error": "Revision mismatch", "latest": { "id": "sess_123", "revision": 2, "state": { ... } } }
+```
+
+Clients resolve by refreshing to the latest snapshot (revision 2) and retrying with `If‑Match: 2`.
+
 Auth & Security (lightweight)
 - `hostToken` returned on session creation; required for `advance`, `patch`, and `debrief`.
 - `playerToken` from `/join` required for submitting actions.
