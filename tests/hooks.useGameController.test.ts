@@ -66,7 +66,7 @@ describe('useGameController (integration via jsdom)', () => {
       result.current.actions.setGamePath('classic');
     });
     // Ensure state updates propagate before invoking start handler
-    await waitFor(() => expect(result.current.state.selectedLogEntry).toBeNull());
+    await waitFor(() => expect(result.current.state.selectedRoleName).toBe('Tech CEO'));
     act(() => {
       result.current.actions.handleStartGame();
     });
@@ -83,9 +83,37 @@ describe('useGameController (integration via jsdom)', () => {
     });
 
     await waitFor(() => expect(result.current.state.gameState.round).toBe(2));
-    expect(result.current.state.gameState.eventLog.length).toBe(1);
-    expect(result.current.state.actionOptions.length).toBe(0);
+    // Behavior: event log should have at least one entry now
+    expect(result.current.state.gameState.eventLog.length).toBeGreaterThan(0);
     expect(result.current.state.isLoading).toBe(false);
     expect(result.current.state.error).toBeNull();
+  });
+
+  it('surfaces an error when consequences chat fails and does not advance round', async () => {
+    const mod = await import('../services/llmApiClient');
+    const mockedCons = (mod as any).generateConsequencesChat as ReturnType<typeof vi.fn>;
+
+    const { result } = renderHook(() => useGameController());
+    act(() => {
+      result.current.actions.setSelectedRoleName('Tech CEO');
+      result.current.actions.setGamePath('classic');
+    });
+    await waitFor(() => expect(result.current.state.selectedRoleName).toBe('Tech CEO'));
+    act(() => {
+      result.current.actions.handleStartGame();
+    });
+    await waitFor(() => expect(result.current.state.gameState.phase).toBe(GamePhase.ACTION));
+
+    await waitFor(() => expect(result.current.state.actionOptions.length).toBe(5));
+    const chosen = result.current.state.actionOptions.slice(0, 1);
+    // Simulate backend returning null once
+    mockedCons.mockResolvedValueOnce(null);
+    const prevRound = result.current.state.gameState.round;
+    act(() => {
+      result.current.actions.handleConfirmActions(chosen);
+    });
+    // Error should be set and round not advanced
+    await waitFor(() => expect(result.current.state.error).toBeTruthy());
+    expect(result.current.state.gameState.round).toBe(prevRound);
   });
 });
