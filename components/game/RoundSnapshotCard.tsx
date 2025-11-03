@@ -1,5 +1,6 @@
 import React from 'react';
 import type { GameState, GameLogEntry } from '../../types';
+import { CauseTag } from './CauseTag';
 
 interface RoundSnapshotCardProps {
   gameState: GameState;
@@ -44,6 +45,14 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 {latestLogEntry.event.detail}
               </p>
             )}
+            {hasLastRound && latestLogEntry?.citations && latestLogEntry.citations.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                {latestLogEntry.citations.slice(0,6).map((c, i) => (
+                  <CauseTag key={`hdr_${lastRoundNumber}_c_${i}`} cause={c as any} logs={gameState.eventLog} />
+                ))}
+              </div>
+            )}
           </div>
           <div className="text-right">
             <p className="text-xs uppercase tracking-wide text-blue-200">Public Score After Round</p>
@@ -77,6 +86,14 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         <p className="text-sm font-semibold text-white">{item.title}</p>
                         <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
                         <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
+                        {Array.isArray((item as any).causes) && (item as any).causes.length > 0 && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                            {(item as any).causes.map((c: any, i: number) => (
+                              <CauseTag key={`km_${lastRoundNumber}_${index}_c_${i}`} cause={c} logs={gameState.eventLog} />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </li>
                   ))}

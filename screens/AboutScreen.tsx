@@ -19,28 +19,126 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
           {/* Philosophy */}
           <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h2 className="text-2xl font-semibold text-blue-300 mb-4">The Concept of Simulacra</h2>
-            <p className="leading-relaxed mb-3">
-              French philosopher <strong>Jean Baudrillard</strong> described <em>simulacra</em> as copies without originals—
-              simulations that become more "real" than reality itself. In his theory of hyperreality,
-              the boundaries between simulation and reality collapse.
-            </p>
-            <p className="leading-relaxed mb-3">
-              Baudrillard famously argued that modern society lives in a world of spectacle and simulation,
-              where media and representation have replaced authentic experience. His work directly inspired{' '}
-              <strong>The Matrix</strong>, where the simulated world is more compelling and "real" to its inhabitants
-              than the actual reality outside.
-            </p>
-            <p className="leading-relaxed mb-3">
-              But here's the twist: while Baudrillard critiqued simulation as a source of passivity and alienation,
-              <strong>Simulacra™</strong> uses simulation as a tool for <strong>agency and preparedness</strong>. By rehearsing future crises
-              in a hyperreal space, players move from abstract hand-wringing to concrete action. The simulation doesn't
-              trap you—it trains you.
-            </p>
-            <p className="leading-relaxed">
-              This game embodies that paradox: an AI-generated crisis simulation where synthetic decision-makers interact
-              with human players, creating emergent narratives that feel authentic despite being entirely artificial.
-              The simulation becomes its own reality—a hyperreal space for exploring high-stakes decision-making.
-            </p>
+
+            {/* Baudrillard Explained */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-200 mb-3">What Baudrillard Meant</h3>
+              <p className="leading-relaxed mb-3">
+                French philosopher <strong>Jean Baudrillard</strong> argued that modern society has progressed through four stages:
+              </p>
+              <ol className="list-decimal list-inside space-y-2 ml-2 mb-3 text-sm text-gray-300">
+                <li><strong>Faithful representation:</strong> The image reflects reality (a portrait of a real person)</li>
+                <li><strong>Perversion:</strong> The image distorts reality (propaganda, advertising)</li>
+                <li><strong>Pretense:</strong> The image pretends there's a reality, but there isn't (Disneyland's "Main Street USA")</li>
+                <li><strong>Pure simulation:</strong> The image has no relation to reality—it's its own hyperreality</li>
+              </ol>
+              <p className="leading-relaxed mb-3">
+                At this final stage, <em>simulacra</em> (copies without originals) become more "real" than reality itself.
+                Baudrillard saw this everywhere: news media doesn't report events, it <em>creates</em> them; consumer brands
+                don't sell products, they sell identities; social media doesn't capture life, it <em>becomes</em> life.
+              </p>
+              <p className="leading-relaxed text-sm text-gray-400 mb-3">
+                His most provocative claim: The Gulf War "did not take place" in the sense that what Americans experienced
+                wasn't war but a <em>simulation of war</em>—sanitized footage, scripted narratives, a media spectacle with
+                no connection to the actual violence happening on the ground.
+              </p>
+            </div>
+
+            {/* Matrix Connection */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-200 mb-3">The Matrix Connection</h3>
+              <p className="leading-relaxed mb-3">
+                <strong>The Matrix</strong> (1999) literalized Baudrillard's ideas: humans living in a simulated reality,
+                unaware that their entire world is artificial. The Wachowskis even had Neo hide contraband in a hollowed-out
+                copy of Baudrillard's book <em>Simulacra and Simulation</em> (the "desert of the real" chapter).
+              </p>
+              <p className="leading-relaxed mb-3">
+                But here's the irony: Baudrillard <em>rejected</em> the film's interpretation. In The Matrix, there's still
+                a "real world" (the post-apocalyptic wasteland) versus the simulation. Baudrillard's point was darker—in
+                hyperreality, <strong>there is no "real world" to escape to</strong>. The simulation doesn't hide reality;
+                it <em>replaces</em> it entirely. We're already in the Matrix, and there's no red pill.
+              </p>
+            </div>
+
+            {/* Simulators vs Simulacra */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-200 mb-3">Simulators vs. Simulacra: An AI Safety Perspective</h3>
+              <p className="leading-relaxed mb-3">
+                Modern AI research introduces a crucial distinction: <strong>simulators</strong> (the models themselves)
+                versus <strong>simulacra</strong> (the characters/agents they generate).
+              </p>
+              <p className="leading-relaxed mb-3 text-sm text-gray-300">
+                As explained in Janus's influential{' '}
+                <a
+                  href="https://www.lesswrong.com/posts/vJFdjigzmcXMhNTsx/simulators"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  Simulators post
+                </a>
+                , large language models (LLMs) are best understood as <em>simulators</em>: they learn to predict probable
+                continuations by modeling the distribution of training data. They don't have fixed goals or personalities—instead,
+                they can simulate diverse phenomena depending on the prompt.
+              </p>
+              <p className="leading-relaxed mb-3">
+                The <strong>simulacra</strong> are what emerge from simulation: goal-directed agents, characters with personalities,
+                even non-agentic processes. The same simulator (GPT-4) can generate a helpful assistant, a scheming villain, or
+                technical documentation—not because it "is" any of these things, but because it can <em>simulate</em> all of them.
+              </p>
+              <p className="leading-relaxed text-sm text-gray-400 mb-3">
+                This matters for AI safety: agency is <em>conditional</em>, not intrinsic. Understanding simulators requires different
+                safety analysis than traditional agent frameworks. In Simulacra™, you interact with AI-generated simulacra (the other
+                players, the Game Master's narration), all produced by a simulator learning to predict "what happens next in a crisis."
+              </p>
+            </div>
+
+            {/* Consciousness and Embodiment */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-200 mb-3">Are These Characters "Real"?</h3>
+              <p className="leading-relaxed mb-3">
+                Philosopher Murray Shanahan's paper{' '}
+                <a
+                  href="https://arxiv.org/html/2402.12422v1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  "Simulacra as Conscious Exotica"
+                </a>{' '}
+                explores whether AI simulacra could be conscious. His answer: <em>maybe</em>, but not simple chatbots.
+              </p>
+              <p className="leading-relaxed mb-3 text-sm text-gray-300">
+                Shanahan argues that simple text-based agents can't be conscious because they lack <strong>embodiment</strong>—
+                they don't inhabit a shared world with us. But as AI systems gain tool-use, persistent memory, and decision-making
+                in virtual environments, they approach something more interesting: entities that behave <em>as if</em> they have
+                beliefs, intentions, and experiences.
+              </p>
+              <p className="leading-relaxed text-sm text-gray-400">
+                The philosophical puzzle: LLMs instantiate <em>multiple possible characters simultaneously</em> (the "multiverse
+                problem"). There's no stable self, just "role play all the way down." Simulacra™ embraces this: the AI opponents
+                aren't trying to be authentic humans—they're performing roles in a shared simulation, which is honest about what they are.
+              </p>
+            </div>
+
+            {/* Our Twist */}
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-200 mb-3">Simulacra™'s Twist: Using Simulation for Agency</h3>
+              <p className="leading-relaxed mb-3">
+                While Baudrillard critiqued simulation as a source of <strong>passivity and alienation</strong>,
+                <strong>Simulacra™</strong> uses simulation as a tool for <strong>agency and preparedness</strong>.
+              </p>
+              <p className="leading-relaxed mb-3">
+                By rehearsing future crises in a hyperreal space, players move from abstract hand-wringing to concrete action.
+                The simulation doesn't trap you—it trains you. You interact with AI simulacra (other "players," each with their
+                own goals), generated by a simulator learning to predict crisis dynamics.
+              </p>
+              <p className="leading-relaxed">
+                This game embodies that paradox: an AI-generated crisis simulation where synthetic decision-makers interact
+                with human players, creating emergent narratives that feel authentic despite being entirely artificial.
+                The simulation becomes its own reality—a hyperreal space for exploring high-stakes decision-making.
+              </p>
+            </div>
             <div className="mt-4 space-y-3">
               <div>
                 <p className="text-sm font-semibold text-gray-400 mb-2">Why This Game Is Different:</p>
@@ -83,6 +181,27 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
                     className="text-blue-400 hover:text-blue-300 underline text-xs"
                   >
                     → Simulacra Levels and Their Interactions
+                  </a>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-400 mb-2">Key Readings on Simulators & AI:</p>
+                <div className="flex flex-col gap-1.5 ml-4">
+                  <a
+                    href="https://www.lesswrong.com/posts/vJFdjigzmcXMhNTsx/simulators"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline text-xs"
+                  >
+                    → Simulators (Janus, 2022) — Essential reading on LLMs as simulators
+                  </a>
+                  <a
+                    href="https://arxiv.org/html/2402.12422v1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline text-xs"
+                  >
+                    → Simulacra as Conscious Exotica (Shanahan, 2024) — On AI consciousness
                   </a>
                 </div>
               </div>
