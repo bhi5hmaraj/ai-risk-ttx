@@ -290,9 +290,16 @@ export const generateAITurn = async (
       return null;
     }
 
-    console.log(`[LLM API Client] AI turn complete: ${result.data.options.length} options, ${result.data.chosenActions.length} chosen`);
+    const optionsLen = Array.isArray(result.data.options) ? result.data.options.length : 0;
+    const chosenLen = Array.isArray(result.data.chosenActions) ? result.data.chosenActions.length : 0;
+    console.log(`[LLM API Client] AI turn complete: ${optionsLen} options, ${chosenLen} chosen`);
 
-    return result.data;
+    return {
+      ...result.data,
+      options: Array.isArray(result.data.options) ? result.data.options : [],
+      chosenActions: Array.isArray(result.data.chosenActions) ? result.data.chosenActions : [],
+      reasoning: result.data.reasoning ?? '',
+    };
   } catch (error) {
     console.error('[LLM API Client] generate/ai-turn error:', error);
     return null;
