@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { RouteOrchestrator } from '@/components/RouteOrchestrator';
+import { FocusBoundary } from '@/components/FocusBoundary';
+import { StartProgress } from '@/components/StartProgress';
 
 export const metadata: Metadata = {
   title: 'Simulacra - AI Risk Tabletop Exercise',
@@ -14,7 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        {/* Client-side orchestrator for route decisions */}
+        <RouteOrchestrator />
+        <FocusBoundary>
+          <StartProgress />
+          {children}
+        </FocusBoundary>
       </body>
     </html>
   );
