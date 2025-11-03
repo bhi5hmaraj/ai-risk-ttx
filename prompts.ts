@@ -257,7 +257,11 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
       2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
-          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing prior events (use their id or headline) or specific player actions this round or previous rounds.
+          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing prior events (use their id or exact headline) or specific player actions this round or previous rounds.
+          - For action causes, set ref to "Role:Exact Action Title@Round" and write a mechanism‑focused rationale (what changed, how it propagated, over what timeframe).
+          - For event causes, use the prior event id or exact headline and explain the causal link (not just correlation).
+          - Keep rationales specific (1–2 sentences) and avoid repeating the same generic text.
+          - Consider long‑horizon dependencies: include at least one root‑cause citation from earlier rounds when appropriate, not only immediate antecedents.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
       5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
@@ -392,7 +396,30 @@ ${gameState.currentEvent?.detail}
 ${playerActionsText}
 
 ## Counterfactual Analysis
-If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.`;
+If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.
+
+## Output (Structured)
+Return a JSON object matching this structure:
+- roundSummary (string)
+- outcomeTimeline (array of 3-5 items), each item has:
+   - title (string)
+   - description (string)
+   - impact (string)
+   - causes (optional, array) with entries: { type: 'event'|'action'|'exogenous', ref: string, rationale: string }
+- counterfactualNote (string)
+- publicScoreUpdate (number)
+- hiddenScoreUpdates (array, one per role)
+- nextEvent { headline, detail }
+
+Fairness & Neutrality (must follow):
+- Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
+- Avoid stereotypes or blanket judgments; assign credit/blame only for concrete actions this round.
+- Hidden score updates must be action-justified.
+
+Long‑horizon dependencies (must consider):
+- When selecting causes, include immediate antecedents and, when relevant, a root‑cause from prior rounds to show the causal chain.
+- For action refs use "Role:Exact Action Title@Round"; for events include the original round in the ref if possible (e.g., evt_r2_k1 or "Exact Headline @Round 2").
+`;
 };
 
 export const getDebriefPrompt = (
