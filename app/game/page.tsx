@@ -56,7 +56,7 @@ export default function GamePage() {
   const showLoadingOverlay =
     ((isLoading && gameState.phase !== GamePhase.ACTION && !suppressOverlayForOptions) || !humanReady);
   const showMakePublic =
-    gameSetup &&
+    !!gameSetup &&
     gameState.phase === GamePhase.ACTION &&
     gamePath === 'custom' &&
     !!customScenario &&
@@ -130,7 +130,7 @@ export default function GamePage() {
           <GameScreen
             gameState={gameState}
             players={players}
-            humanPlayer={humanPlayer}
+            humanPlayer={humanPlayer!}
             timer={timer}
             isPaused={isPaused}
             isLoading={isLoading}

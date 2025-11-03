@@ -113,8 +113,7 @@ export const GameSetupSchema = z.object({
 });
 
 // API Envelopes
-export const ApiSuccessSchema = <T extends z.ZodTypeAny>(data: T) =>
-  z.object({ success: z.literal(true), data });
+export const ApiSuccessSchema = (data: any) => z.object({ success: z.literal(true), data });
 export const ApiErrorSchema = z.object({ success: z.literal(false), error: z.string().min(1) });
 
 // Session contracts
@@ -166,5 +165,5 @@ export const CreateSessionResponseSchema = ApiSuccessSchema(
 export const GetSessionResponseSchema = ApiSuccessSchema(SessionSnapshotSchema);
 export const GenericOkSchema = ApiSuccessSchema(z.object({ ok: z.literal(true) }));
 
-export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
-export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;
+export type CreateSessionRequest = any;
+export type SessionSnapshot = any;

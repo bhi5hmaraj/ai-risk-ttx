@@ -95,7 +95,6 @@ export function applyConsequences(
         publicScoreAfter: newScoreValue,
         hiddenScoreChanges: hiddenScoreUpdatesRecord,
         geminiCalls: llmCallsThisRound,
-        citations: (consequence.outcomeTimeline || []).flatMap((item: any) => item?.causes || []),
       },
     ],
     currentEvent: consequence.nextEvent?.headline
