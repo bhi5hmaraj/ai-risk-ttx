@@ -68,7 +68,17 @@ const safeJsonParse = <T,>(jsonString: string): T | null => {
 
 const HiddenUpdateZ = z.object({ roleName: z.string(), update: z.number(), justification: z.string() }).strict();
 const GameEventZ = z.object({ headline: z.string(), detail: z.string() }).strict();
-const TimelineItemZ = z.object({ title: z.string(), description: z.string(), impact: z.string() }).strict();
+const CauseZ = z.object({
+  type: z.enum(['event', 'action', 'exogenous']),
+  ref: z.string(),
+  rationale: z.string(),
+}).strict();
+const TimelineItemZ = z.object({
+  title: z.string(),
+  description: z.string(),
+  impact: z.string(),
+  causes: z.array(CauseZ).optional(),
+}).strict();
 const ConsequenceZ = z.object({
   roundSummary: z.string(),
   outcomeTimeline: z.array(TimelineItemZ).min(3).max(5),
