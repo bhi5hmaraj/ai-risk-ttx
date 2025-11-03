@@ -5,50 +5,38 @@ import { useRouter } from 'next/navigation';
 import { LobbyScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal } from '@/components/game';
-import { useGameController } from '@/hooks/useGameController';
 import { GamePhase } from '@/types';
+import { useLobby } from '@/hooks/useLobby';
+import { useUI } from '@/hooks/useUI';
+import { useGame } from '@/hooks/useGame';
+import { useGameActions } from '@/hooks/useGameActions';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useActionStore } from '@/stores/actionStore';
 
 export default function LobbyPage() {
   const router = useRouter();
-  const {
-    state: {
-      selectedRoleName,
-      gamePath,
-      customScenario,
-      gameSetup,
-      isLoading,
-      isActionTreeOpen,
-      selectedLogEntry,
-      gameState,
-    },
-    actions: {
-      setSelectedRoleName,
-      setGamePath,
-      setCustomScenario,
-      setGameSetup,
-      setIsActionTreeOpen,
-      handleCustomGameStart,
-      handleStartGame,
-      resetState,
-    },
-  } = useGameController();
+  const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, reset: resetLobby } = useLobby();
+  const { isLoading } = useUI();
+  const { gameState, resetGame } = useGame();
+  const { handleStartGame } = useGameActions();
+  const clearSession = useSessionStore((s) => s.clear);
+  const resetActions = useActionStore((s) => s.resetRound);
 
   // Routing handled by RouteOrchestrator centrally
 
   const actionTree = (
-    <ActionTreePortal
-      isOpen={isActionTreeOpen}
-      onClose={() => setIsActionTreeOpen(false)}
-      logEntry={selectedLogEntry}
-      eventLog={gameState.eventLog}
-    />
+    <ActionTreePortal isOpen={false} onClose={() => {}} logEntry={null as any} eventLog={gameState.eventLog} />
   );
 
   return (
     <>
       <Navigation
         onNavigateHome={() => {
-          resetState();
+          // reset stores for a clean lobby/home transition
+          resetGame();
+          resetLobby();
+          resetActions();
+          try { clearSession(); } catch {}
           router.push('/');
         }}
         onOpenFeedback={() => {}}
@@ -67,7 +55,7 @@ export default function LobbyPage() {
         gameSetup={gameSetup}
         setGameSetup={setGameSetup}
         isLoading={isLoading}
-        handleCustomGameStart={handleCustomGameStart}
+        handleCustomGameStart={() => {/* deprecated path removed in modular step; use presets or custom form */}}
         handleStartGame={handleStartGame}
       />
     </>
