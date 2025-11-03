@@ -22,6 +22,10 @@ import {
   generateInitialScenarioChat,
   generateConsequencesChat,
 } from '../services/llmApiClient';
+import { SessionService } from '@/services/SessionService';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useGameStore } from '@/stores/gameStore';
+import { useUIStore } from '@/stores/uiStore';
 
 const DEFAULT_CORE_METRIC: CoreMetric = {
   name: 'Democratic Legitimacy',
@@ -32,17 +36,16 @@ const DEFAULT_CORE_METRIC: CoreMetric = {
 // clampScore imported from lib/gameLogic
 
 export const useGameController = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    phase: GamePhase.LOBBY,
-    round: 0,
-    coreMetric: { ...DEFAULT_CORE_METRIC },
-    eventLog: [],
-    currentEvent: null,
-  });
-  const [players, setPlayers] = useState<Player[]>([]);
+  const gameState = useGameStore((s) => s.gameState);
+  const players = useGameStore((s) => s.players);
+  const setGameStateStore = useGameStore((s) => s.setGameState);
+  const setPlayersStore = useGameStore((s) => s.setPlayers);
+  const resetGameStore = useGameStore((s) => s.reset);
   const [selectedRoleName, setSelectedRoleName] = useState<string | null>(null);
   const [gamePath, setGamePath] = useState<'classic' | 'custom' | 'ai_safety' | null>(null);
-  const [gameSetup, setGameSetup] = useState<GameSetup | null>(null);
+  const gameSetup = useGameStore((s) => s.gameSetup);
+  const setGameSetupStore = useGameStore((s) => s.setGameSetup);
+  const setGameSetup = setGameSetupStore;
   const [customScenario, setCustomScenario] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -57,6 +60,25 @@ export const useGameController = () => {
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<{ id: string; revision: number; hostToken: string } | null>(null);
+  const sessionStreamRef = useRef<EventSource | null>(null);
+  const USE_BACKEND_STATE = useMemo(() => {
+    try { return (process as any)?.env?.NEXT_PUBLIC_BACKEND_STATE === '1'; } catch { return false; }
+  }, []);
+  const { setStartIntent, clear: clearSessionStore } = useSessionStore();
+  const BACKEND_MODE = useMemo(() => USE_BACKEND_STATE || sessionMeta !== null, [USE_BACKEND_STATE, sessionMeta]);
+  const setStartStep = useUIStore((s) => s.setStartStep);
+  const resetUI = useUIStore((s) => s.reset);
+
+  // wrappers so existing code continues to work
+  const setGameState = useCallback(
+    (next: GameState | ((prev: GameState) => GameState)) => setGameStateStore(next as any),
+    [setGameStateStore]
+  );
+  const setPlayers = useCallback(
+    (next: Player[] | ((prev: Player[]) => Player[])) => setPlayersStore(next as any),
+    [setPlayersStore]
+  );
 
   // Chat history for maintaining conversation context (managed client-side, sent to backend)
   const chatHistoryRef = useRef<any[] | null>(null);
@@ -98,8 +120,7 @@ export const useGameController = () => {
   );
 
   const resetState = useCallback(() => {
-    setGameState({ phase: GamePhase.LOBBY, round: 0, coreMetric: { ...DEFAULT_CORE_METRIC }, eventLog: [], currentEvent: null });
-    setPlayers([]);
+    resetGameStore();
     setSelectedRoleName(null);
     setGamePath(null);
     setGameSetup(null);
@@ -115,7 +136,10 @@ export const useGameController = () => {
     setExpandedRound(null);
     // Clean up chat history
     chatHistoryRef.current = null;
-  }, []);
+    try { setStartIntent(false); } catch {}
+    try { clearSessionStore(); } catch {}
+    try { resetUI(); } catch {}
+  }, [resetGameStore, clearSessionStore, setStartIntent]);
 
   const handleCustomGameStart = useCallback(async () => {
     if (!customScenario.trim()) return;
@@ -136,6 +160,10 @@ export const useGameController = () => {
 
   const runConsequencePhase = useCallback(
     async (currentPlayers: Player[], currentGameState: GameState) => {
+      if (BACKEND_MODE) {
+        // Server-authoritative mode handles consequences via /advance + SSE.
+        return;
+      }
       setIsLoading(true);
 
       let playersWithActions = [...currentPlayers];
@@ -195,6 +223,8 @@ export const useGameController = () => {
       }
 
       // Chat mode only: always call chat consequences endpoint
+      // Ensure we always send a valid setup to the chat endpoint.
+      const setupForChat: GameSetup = (gameSetup ?? createCanonicalSetup(currentGameState, currentPlayers));
       let result;
       const cons = await callLLMAndCount(
         () => generateConsequencesChat(
@@ -202,7 +232,7 @@ export const useGameController = () => {
           playersWithActions,
           counterfactualResult.publicScoreUpdate,
           chatHistoryRef.current || [],
-          gameSetup!
+          setupForChat
         )
       );
       if (cons) {
@@ -245,12 +275,77 @@ export const useGameController = () => {
   const handleConfirmActions = useCallback(
     (actions: ActionOption[]) => {
       if (!humanPlayer) return;
+      // Server-authoritative path: submit and advance via /api/session
+      if (BACKEND_MODE) {
+        (async () => {
+          setIsLoading(true);
+          setLoadingMessage('Locking in your actions...');
+          try {
+            // Ensure a session exists
+            let meta = sessionMeta;
+            if (!meta) {
+              const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: gameSetup || undefined });
+              meta = { id: created.id, revision: created.revision, hostToken: created.hostToken };
+              setSessionMeta(meta);
+            }
+            // Optimistically show user's submitted actions and switch to waiting UI
+            setPlayers((prev) =>
+              prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p))
+            );
+            const aiRoles = players.filter((p) => !p.isHuman).map((p) => p.role.name);
+            if (aiRoles.length > 0) {
+              setAiCompletionStatus(Object.fromEntries(aiRoles.map((name) => [name, false])));
+            }
+            // Submit actions with optimistic concurrency
+            const s1 = await SessionService.submitActions(meta!.id, humanPlayer.id || 'human', actions, meta!.revision);
+            setSessionMeta((prev) => (prev ? { ...prev, revision: s1.revision } : { id: meta!.id, revision: s1.revision, hostToken: meta!.hostToken }));
+
+            // Fire-and-forget advance; rely on SSE to update state/progress
+            sessionClient
+              .advance(
+                meta!.id,
+                s1.revision,
+                meta!.hostToken,
+                {
+                  humanRoleName: humanPlayer.role.name,
+                  humanPlayerId: humanPlayer.id || 'human',
+                  humanActions: actions,
+                  humanAvailableOptions: actionOptions,
+                }
+              )
+              .then((adv) => {
+                setSessionMeta({ id: meta!.id, revision: adv.revision, hostToken: meta!.hostToken });
+                if (adv.state) {
+                  setGameState(adv.state as GameState);
+                }
+                // Do not clear human actions here; let the SSE/next-round snapshot drive UI reset
+                // Keep AI progress until server signals advance via SSE
+              })
+              .catch((err) => {
+                setError(err?.message || 'Failed to advance round');
+                setIsLoading(false);
+                setLoadingMessage('');
+              });
+
+            setIsLoading(false);
+            setLoadingMessage('');
+            setActionOptions([]);
+          } catch (e: any) {
+            setError(e?.message || 'Failed to submit actions to server');
+            setIsLoading(false);
+            setLoadingMessage('');
+            // Roll back optimistic submitted flag on failure
+            setPlayers((prev) => prev.map((p) => (p.isHuman ? { ...p, hasSubmittedActions: false } : p)));
+          }
+        })();
+        return;
+      }
       const updatedPlayer = { ...humanPlayer, actions, hasSubmittedActions: true };
       const updatedPlayers = players.map((p) => (p.isHuman ? updatedPlayer : p));
       setPlayers(updatedPlayers);
       runConsequencePhase(updatedPlayers, gameState);
     },
-    [gameState, humanPlayer, players, runConsequencePhase]
+    [USE_BACKEND_STATE, gamePath, gameSetup, gameState, humanPlayer, players, runConsequencePhase, sessionMeta]
   );
 
   const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] => buildRolesFromSetupHelper(setup), []);
@@ -258,6 +353,30 @@ export const useGameController = () => {
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
     const path = gamePath ?? 'classic';
+    try { setStartIntent(true); } catch {}
+    // Reset and start progress indicator
+    try {
+      setStartStep('creatingSession', USE_BACKEND_STATE ? 'running' : 'done');
+      setStartStep('buildingPlayers', 'running');
+      setStartStep('generatingScenario', 'idle');
+      setStartStep('connectingStream', USE_BACKEND_STATE ? 'running' : 'idle');
+      setStartStep('ready', 'idle');
+    } catch {}
+
+    // Initialize a server session in the background when feature flag is on
+    if (USE_BACKEND_STATE && !sessionMeta) {
+      (async () => {
+        try {
+          const created = await SessionService.create({ mode: path as any, setup: path === 'custom' ? gameSetup || undefined : undefined });
+          setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken });
+          try { setStartStep('creatingSession', 'done'); } catch {}
+        } catch (e) {
+          // non-fatal for client path; we still start game locally
+          try { console.warn('[useGameController] createSession failed (non-fatal):', e); } catch {}
+          try { setStartStep('creatingSession', 'error'); } catch {}
+        }
+      })();
+    }
 
     const { players: initialPlayers, coreMetric } = selectInitialPlayers(
       selectedRoleName,
@@ -268,6 +387,7 @@ export const useGameController = () => {
     );
 
     setPlayers(initialPlayers);
+    try { setStartStep('buildingPlayers', 'done'); } catch {}
     setGameState((prev) => ({
       ...prev,
       phase: GamePhase.STARTING,
@@ -278,6 +398,7 @@ export const useGameController = () => {
     }));
     setIsLoading(true);
     setLoadingMessage('AI Game Master is generating the initial scenario...');
+    try { setStartStep('generatingScenario', 'running'); } catch {}
   }, [selectedRoleName, gamePath, gameSetup, buildRolesFromSetup]);
 
   useEffect(() => {
@@ -288,7 +409,7 @@ export const useGameController = () => {
 
       // Chat mode only: Create and persist canonical setup, then call chat endpoint
       const setup = gameSetup || createCanonicalSetup(gameState, players);
-      setGameSetup(setup);
+      setGameSetupStore(setup);
 
       const initChat = await callLLMAndCount(() => generateInitialScenarioChat(setup, players));
       const result = initChat ? initChat.scenario : null;
@@ -300,11 +421,16 @@ export const useGameController = () => {
         setGameState(initialGameState);
         setIsLoading(false);
         setLoadingMessage('');
+        try {
+          setStartStep('generatingScenario', 'done');
+          setStartStep('ready', 'done');
+        } catch {}
       } else {
         setError('The AI Game Master failed to initialize the game. Please refresh and try again.');
         setGameState((prev) => ({ ...prev, phase: GamePhase.LOBBY }));
         setIsLoading(false);
         setLoadingMessage('');
+        try { setStartStep('generatingScenario', 'error'); } catch {}
       }
     };
 
@@ -312,7 +438,7 @@ export const useGameController = () => {
       llmCallsThisRoundRef.current = 0;
 
       // Persist canonical setup for AI Safety / predefined scenarios
-      setGameSetup(setup);
+      setGameSetupStore(setup);
 
       // Initialize chat history for preset scenarios (chat mode only)
       chatHistoryRef.current = [];
@@ -345,6 +471,10 @@ export const useGameController = () => {
       setGameState(initialGameState);
       setIsLoading(false);
       setLoadingMessage('');
+      try {
+        setStartStep('generatingScenario', 'done');
+        setStartStep('ready', 'done');
+      } catch {}
     };
 
     if (gamePath === 'classic' || !gamePath) {
@@ -377,12 +507,33 @@ export const useGameController = () => {
         setLoadingMessage('Generating action options...');
         llmCallsThisRoundRef.current = 0;
         try {
-          const res = await callLLMAndCount(
-            generateActionOptions,
-            humanPlayer,
-            gameState,
-            lastCompletedLogEntry?.playerActions || null
-          );
+          let res: { options: ActionOption[] } | null = null;
+          if (BACKEND_MODE) {
+            // Ensure a session exists before fetching options
+            let meta = sessionMeta;
+            if (!meta) {
+              try {
+                const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: gameSetup || undefined });
+                meta = { id: created.id, revision: created.revision, hostToken: created.hostToken };
+                setSessionMeta(meta);
+              } catch (e) {
+                console.warn('[UI] createSession failed in backend mode:', e);
+              }
+            }
+            if (meta) {
+              console.log(`[UI] fetching server action-options for player=${humanPlayer.role.name} session=${meta.id}`);
+              const data = await SessionService.getActionOptions(meta.id, humanPlayer.id || 'human', humanPlayer.role.name);
+              res = { options: data.options };
+            }
+          }
+          if (!res) {
+            res = await callLLMAndCount(
+              generateActionOptions,
+              humanPlayer,
+              gameState,
+              lastCompletedLogEntry?.playerActions || null
+            );
+          }
           if (res) {
             // Helpful debug breadcrumb in dev
             try { console.log('[UI] action-options loaded:', res.options?.length ?? 0); } catch {}
@@ -400,7 +551,7 @@ export const useGameController = () => {
         }
       })();
     }
-  }, [actionOptions.length, callLLMAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
+  }, [BACKEND_MODE, sessionMeta, gameSetup, gamePath, actionOptions.length, callLLMAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -421,11 +572,114 @@ export const useGameController = () => {
     }
   }, [gameState.coreMetric.value, gameState.phase, gameState.round]);
 
+  // When the game ends, clear the start intent so the router doesn't bounce back to /game.
+  useEffect(() => {
+    if (gameState.phase === GamePhase.END) {
+      try { setStartIntent(false); } catch {}
+    }
+  }, [gameState.phase]);
+
   useEffect(() => {
     if (!isHistoryOpen) {
       setExpandedRound(null);
     }
   }, [isHistoryOpen]);
+
+  useEffect(() => {
+    if (!USE_BACKEND_STATE) return;
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+    if (!sessionMeta?.id) {
+      if (sessionStreamRef.current) {
+        sessionStreamRef.current.close();
+        sessionStreamRef.current = null;
+      }
+      return;
+    }
+
+    if (sessionStreamRef.current) {
+      sessionStreamRef.current.close();
+      sessionStreamRef.current = null;
+    }
+
+    const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
+    sessionStreamRef.current = source;
+
+    const handleSessionEvent = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data || '{}');
+        const snapshot = payload?.snapshot;
+        if (!snapshot) return;
+        try {
+          console.log('[SSE] event', payload?.type || 'snapshot', 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
+        } catch {}
+
+        setSessionMeta((prev) => (prev ? { ...prev, revision: snapshot.revision } : prev));
+        try { setStartStep('connectingStream', 'done'); } catch {}
+        if (snapshot.state) {
+          setGameState(snapshot.state as GameState);
+        }
+        if (snapshot.setup) {
+          setGameSetupStore((prev) => prev ?? (snapshot.setup as GameSetup));
+        }
+        const submitted = snapshot.submitted ?? {};
+        const serverPlayers: Array<{ id?: string; role?: { name: string }; actions?: ActionOption[]; hasSubmittedActions?: boolean }> =
+          (snapshot.players as any) ?? [];
+        setPlayers((prev) => {
+          if (prev.length === 0) return prev;
+          return prev.map((p) => {
+            const match = serverPlayers.find((sp) => sp.id === p.id || sp.role?.name === p.role.name);
+            const serverId = match?.id ?? p.id;
+            const mergedActions = Array.isArray(match?.actions) ? (match!.actions as ActionOption[]) : p.actions;
+            const submittedFlag =
+              typeof submitted[serverId] === 'boolean'
+                ? submitted[serverId]
+                : match?.hasSubmittedActions ?? p.hasSubmittedActions;
+            return {
+              ...p,
+              actions: mergedActions,
+              hasSubmittedActions: submittedFlag,
+            };
+          });
+        });
+        const progressMeta = payload?.payload;
+        if (progressMeta?.role) {
+          setAiCompletionStatus((prev) => ({ ...prev, [progressMeta.role as string]: true }));
+        }
+        if (payload?.type === 'advance') {
+          setAiCompletionStatus({});
+        }
+        if (payload?.type === 'advance') {
+          setIsLoading(false);
+          setLoadingMessage('');
+          setError(null);
+          setActionOptions([]);
+          try { setStartStep('ready', 'done'); } catch {}
+        }
+      } catch (err) {
+        try { console.warn('[useGameController] SSE parse error:', err); } catch {}
+      }
+    };
+
+    const handleError = () => {
+      try { console.warn('[useGameController] SSE stream error, closing'); } catch {}
+      source.close();
+      if (sessionStreamRef.current === source) {
+        sessionStreamRef.current = null;
+      }
+    };
+
+    source.addEventListener('session', handleSessionEvent as EventListener);
+    source.addEventListener('error', handleError as EventListener);
+
+    return () => {
+      source.removeEventListener('session', handleSessionEvent as EventListener);
+      source.removeEventListener('error', handleError as EventListener);
+      source.close();
+      if (sessionStreamRef.current === source) {
+        sessionStreamRef.current = null;
+      }
+    };
+  }, [USE_BACKEND_STATE, sessionMeta?.id]);
 
   const handleOpenActionTree = useCallback(() => {
     setIsActionTreeOpen(true);
@@ -462,7 +716,7 @@ export const useGameController = () => {
     actions: {
       setSelectedRoleName,
       setGamePath,
-      setGameSetup,
+      setGameSetup: setGameSetupStore,
       setCustomScenario,
       setExpandedRound,
       setIsActionTreeOpen,
