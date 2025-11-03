@@ -1,65 +1,50 @@
-/* Simple debug logger and helpers for API */
+/**
+ * Minimal server-side logger with per-request correlation IDs.
+ */
 
-export const DEBUG_API =
-  process.env.DEBUG_API === '1' ||
-  process.env.DEBUG_API === 'true' ||
-  process.env.NODE_ENV === 'development';
+type LogFields = Record<string, unknown> | undefined;
 
-export const makeReqId = () =>
-  Math.random().toString(36).slice(2, 8).toUpperCase();
-
-export const mask = (value?: string | null) => {
-  if (!value) return 'null';
-  const s = String(value);
-  if (s.length <= 8) return '********';
-  return `${'*'.repeat(Math.max(0, s.length - 4))}${s.slice(-4)}`;
-};
-
-export const sanitizeHeaders = (headers?: Headers | Record<string, any> | null) => {
-  const out: Record<string, string> = {};
-  if (!headers) return out;
-  const iter = headers instanceof Headers ? headers.entries() : Object.entries(headers as Record<string, any>);
-  for (const [k, v] of iter as any) {
-    const key = String(k).toLowerCase();
-    const value = Array.isArray(v) ? v.join(',') : String(v ?? '');
-    if (key === 'cookie' || key === 'set-cookie') {
-      out[key] = '[omitted]';
-    } else if (key.includes('authorization') || key.includes('api-key')) {
-      out[key] = mask(value);
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
-};
-
-export const logDebug = (...args: any[]) => {
-  if (!DEBUG_API) return;
-  // eslint-disable-next-line no-console
-  console.log('[API DEBUG]', ...args);
-};
-
-export const logInfo = (...args: any[]) => {
-  // eslint-disable-next-line no-console
-  console.log('[API]', ...args);
-};
-
-// Return a sanitized snapshot of selected env vars.
-// Secrets are masked: we only show last 4 characters.
-export function sanitizeEnv(keys: string[]): Record<string, string> {
-  const out: Record<string, string> = {};
-  const secretPatterns = /(key|token|secret|password|pwd|database_url|api|access|bearer)/i;
-  for (const k of keys) {
-    const val = process.env[k];
-    if (val == null) {
-      out[k] = 'unset';
-      continue;
-    }
-    if (secretPatterns.test(k)) {
-      out[k] = mask(val);
-    } else {
-      out[k] = String(val);
-    }
-  }
-  return out;
+export function createReqId(seed?: string) {
+  const rand = Math.random().toString(36).slice(2, 8);
+  const ts = Date.now().toString(36);
+  return (seed ? String(seed) + '-' : '') + ts + '-' + rand;
 }
+
+export function getReqIdFromHeaders(headers: Headers | Record<string, string | undefined>) {
+  try {
+    if (headers instanceof Headers) {
+      return headers.get('x-req-id') || headers.get('x-request-id') || undefined;
+    }
+    const h = headers as Record<string, string | undefined>;
+    return h['x-req-id'] || h['x-request-id'] || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function fmt(fields: LogFields) {
+  if (!fields) return '';
+  try {
+    const flat = Object.entries(fields)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+      .join(' ');
+    return flat ? ' ' + flat : '';
+  } catch {
+    return '';
+  }
+}
+
+export function slog(rid: string, msg: string, fields?: LogFields) {
+  // Keep noise low in production unless explicitly enabled
+  const level = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+  const line = `[SVR] rid=${rid} ${msg}${fmt(fields)}`;
+  if (level === 'silent') return;
+  console.log(line);
+}
+
+export function serr(rid: string, msg: string, fields?: LogFields) {
+  const line = `[SVR] rid=${rid} ${msg}${fmt(fields)}`;
+  console.error(line);
+}
+
