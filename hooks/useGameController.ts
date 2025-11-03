@@ -23,6 +23,7 @@ import {
   generateConsequencesChat,
 } from '../services/llmApiClient';
 import { SessionService } from '@/services/SessionService';
+import { useGameActions as useModularGameActions } from '@/hooks/useGameActions';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useGameStore } from '@/stores/gameStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -722,8 +723,8 @@ export const useGameController = () => {
       setIsActionTreeOpen,
       setIsPaused,
       handleCustomGameStart,
-      handleStartGame,
-      handleConfirmActions,
+      handleStartGame: modularStart,
+      handleConfirmActions: modularConfirm,
       resetState,
       handleOpenActionTree,
       handleToggleHistory,
@@ -734,3 +735,5 @@ export const useGameController = () => {
     },
   } as const;
 };
+  // Modular actions (compat shim): allow pages to keep using useGameController while we migrate
+  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm, runConsequencePhase: modularConsequence } = useModularGameActions();
