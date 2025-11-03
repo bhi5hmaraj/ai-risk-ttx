@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { requireLLMEnv } from '@/server/lib/env';
+import { createReqId, getReqIdFromHeaders, slog } from '@/server/lib/logger';
 import {
   generateInitialScenarioChat,
   generateConsequencesChat,
@@ -26,9 +27,10 @@ export async function handleGenerateScenario(body: {
   players: Player[];
 }) {
   const started = Date.now();
+  const rid = createReqId('llm');
   const scenarioTitle = body?.gameSetup?.scenarioTitle || 'n/a';
   const playerCount = body?.players?.length || 0;
-  console.log(`[generate/scenario]: scenario="${scenarioTitle}" playerCount=${playerCount}`);
+  slog(rid, `[generate/scenario] start`, { scenario: scenarioTitle, playerCount });
 
   if (!body.gameSetup || !body.players || body.players.length === 0) {
     return NextResponse.json(
@@ -40,7 +42,7 @@ export async function handleGenerateScenario(body: {
   const session = createGameSession(body.gameSetup, body.players);
   const result = await generateInitialScenarioChat(session);
 
-  console.log(`[generate/scenario]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+  slog(rid, `[generate/scenario] done`, { ok: !!result, dt: Date.now() - started });
 
   if (!result) {
     return NextResponse.json(
@@ -64,8 +66,9 @@ export async function handleGenerateConsequences(body: {
   gameSetup: GameSetup;
 }) {
   const started = Date.now();
+  const rid = createReqId('llm');
   const round = body?.gameState?.round || 'n/a';
-  console.log(`[generate/consequences]: round=${round}`);
+  slog(rid, `[generate/consequences] start`, { round });
 
   if (!body.gameState || !body.players || !body.chatHistory || !body.gameSetup) {
     return NextResponse.json(
@@ -88,7 +91,7 @@ export async function handleGenerateConsequences(body: {
     body.counterfactualScoreChange
   );
 
-  console.log(`[generate/consequences]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+  slog(rid, `[generate/consequences] done`, { ok: !!result, dt: Date.now() - started });
 
   if (!result) {
     return NextResponse.json(
@@ -112,7 +115,8 @@ export async function handleGenerateDebrief(body: {
   chatHistory?: any[];
 }) {
   const started = Date.now();
-  console.log(`[generate/debrief]: round=${body.gameState?.round || 'n/a'}`);
+  const rid = createReqId('llm');
+  slog(rid, `[generate/debrief] start`, { round: body.gameState?.round || 'n/a' });
 
   if (!body.gameState || !body.players) {
     return NextResponse.json(
@@ -217,7 +221,8 @@ export async function handleGenerateCustomScenario(body: {
   scenarioDescription: string;
 }) {
   const started = Date.now();
-  console.log(`[generate/custom-scenario]: descLength=${body.scenarioDescription?.length || 0}`);
+  const rid = createReqId('llm');
+  slog(rid, `[generate/custom-scenario] start`, { len: body.scenarioDescription?.length || 0 });
 
   if (!body.scenarioDescription || body.scenarioDescription.trim().length === 0) {
     return NextResponse.json(
@@ -228,7 +233,7 @@ export async function handleGenerateCustomScenario(body: {
 
   const result = await generateCustomScenario(body.scenarioDescription);
 
-  console.log(`[generate/custom-scenario]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+  slog(rid, `[generate/custom-scenario] done`, { ok: !!result, dt: Date.now() - started });
 
   if (!result) {
     return NextResponse.json(
@@ -248,8 +253,9 @@ export async function handleGenerateCounterfactual(body: {
 }) {
   try {
     const started = Date.now();
+    const rid = createReqId('llm');
     const round = body?.gameState?.round || 'n/a';
-    console.log(`[generate/counterfactual]: round=${round}`);
+    slog(rid, `[generate/counterfactual] start`, { round });
 
     if (!body.gameState) {
       return NextResponse.json(
@@ -260,7 +266,7 @@ export async function handleGenerateCounterfactual(body: {
 
     const result = await generateCounterfactualConsequences(body.gameState);
 
-    console.log(`[generate/counterfactual]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+    slog(rid, `[generate/counterfactual] done`, { ok: !!result, dt: Date.now() - started });
 
     if (!result) {
       return NextResponse.json(
@@ -288,9 +294,10 @@ export async function handleGenerateActionOptions(body: {
 }) {
   try {
     const started = Date.now();
+    const rid = createReqId('llm');
     const playerName = body?.player?.role?.name || 'n/a';
     const round = body?.gameState?.round || 'n/a';
-    console.log(`[generate/action-options]: player=${playerName} round=${round}`);
+    slog(rid, `[generate/action-options] start`, { player: playerName, round });
 
     if (!body.player || !body.gameState) {
       return NextResponse.json(
@@ -305,7 +312,7 @@ export async function handleGenerateActionOptions(body: {
       body.previousRoundActions ?? null
     );
 
-    console.log(`[generate/action-options]: result=${result ? 'OK' : 'NULL'} in ${Date.now() - started}ms`);
+    slog(rid, `[generate/action-options] done`, { ok: !!result, dt: Date.now() - started });
 
     if (!result) {
       return NextResponse.json(
@@ -332,9 +339,10 @@ export async function handleGenerateAIPlayerActions(body: {
   options: ActionOption[];
 }) {
   const started = Date.now();
+  const rid = createReqId('llm');
   const playerName = body?.player?.role?.name || 'n/a';
   const round = body?.gameState?.round || 'n/a';
-  console.log(`[generate/ai-player-actions]: player=${playerName} round=${round} optionsCount=${body?.options?.length || 0}`);
+  slog(rid, `[generate/ai-player-actions] start`, { player: playerName, round, options: body?.options?.length || 0 });
 
   if (!body.player || !body.gameState || !body.options) {
     return NextResponse.json(
@@ -349,7 +357,7 @@ export async function handleGenerateAIPlayerActions(body: {
     body.options
   );
 
-  console.log(`[generate/ai-player-actions]: result=${result ? `${result.length} actions` : 'NULL'} in ${Date.now() - started}ms`);
+  slog(rid, `[generate/ai-player-actions] done`, { actions: result ? result.length : 0, ok: !!result, dt: Date.now() - started });
 
   if (!result) {
     return NextResponse.json(
