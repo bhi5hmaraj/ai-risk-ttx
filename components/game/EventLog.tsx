@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { GameState, Player } from '../../types';
+import { CauseTag } from './CauseTag';
 
 interface EventLogProps {
   gameState: GameState;
@@ -175,18 +176,11 @@ export const EventLog: React.FC<EventLogProps> = ({
                             <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
                             <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
                             {item.causes && item.causes.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-[11px] uppercase tracking-wide text-gray-400">Because:</p>
-                                <ul className="mt-1 space-y-1">
-                                  {item.causes.map((c, i) => (
-                                    <li key={`${log.round}_${index}_c_${i}`} className="text-xs text-gray-300">
-                                      <span className="font-semibold text-gray-400">{c.type}:</span> {c.rationale}
-                                      {c.ref && (
-                                        <span className="text-gray-500"> (ref: {c.ref})</span>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
+                              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                                <p className="text-[11px] uppercase tracking-wide text-gray-400 mr-1">Because:</p>
+                                {item.causes.map((c, i) => (
+                                  <CauseTag key={`${log.round}_${index}_c_${i}`} cause={c as any} logs={gameState.eventLog} />
+                                ))}
                               </div>
                             )}
                           </div>

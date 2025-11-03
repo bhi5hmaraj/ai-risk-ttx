@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChatBubbleLeftIcon } from '../components/Icons';
 import type { GameState, Player } from '../types';
+import { CauseTag } from '../components/game/CauseTag';
 import type { AIDebriefResponse } from '../server/types/core';
 
 interface EndScreenProps {
@@ -104,6 +105,14 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                     {finalLogEntry.event.detail}
                   </p>
                 )}
+                {finalLogEntry.citations && finalLogEntry.citations.length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                    {finalLogEntry.citations.slice(0, 8).map((c, i) => (
+                      <CauseTag key={`end_hdr_c_${i}`} cause={c as any} logs={gameState.eventLog} />
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Public Score After Round</p>
@@ -123,6 +132,35 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                 <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">{finalLogEntry.roundSummary}</p>
               </div>
             )}
+
+            {/* Final Round Key Moments with contextual citations */}
+            {finalLogEntry?.outcomeTimeline?.length ? (
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-wide text-blue-200">Key Moments (Final Round)</p>
+                <ol className="space-y-3">
+                  {finalLogEntry.outcomeTimeline.map((item, index) => (
+                    <li key={`end_km_${index}`} className="flex gap-3">
+                      <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-sm flex items-center justify-center">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 bg-gray-900/60 border border-gray-800 rounded-md p-3 space-y-1">
+                        <p className="text-sm font-semibold text-white">{item.title}</p>
+                        <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
+                        <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
+                        {Array.isArray((item as any).causes) && (item as any).causes.length > 0 && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                            {(item as any).causes.map((c: any, i: number) => (
+                              <CauseTag key={`end_km_${index}_c_${i}`} cause={c} logs={gameState.eventLog} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
 
             {finalLogEntry.outcomeTimeline?.length ? (
               <div className="space-y-3">
