@@ -301,7 +301,7 @@ export const useGameController = () => {
             setSessionMeta((prev) => (prev ? { ...prev, revision: s1.revision } : { id: meta!.id, revision: s1.revision, hostToken: meta!.hostToken }));
 
             // Fire-and-forget advance; rely on SSE to update state/progress
-            sessionClient
+            SessionService
               .advance(
                 meta!.id,
                 s1.revision,
@@ -313,7 +313,7 @@ export const useGameController = () => {
                   humanAvailableOptions: actionOptions,
                 }
               )
-              .then((adv) => {
+              .then((adv: any) => {
                 setSessionMeta({ id: meta!.id, revision: adv.revision, hostToken: meta!.hostToken });
                 if (adv.state) {
                   setGameState(adv.state as GameState);
@@ -321,7 +321,7 @@ export const useGameController = () => {
                 // Do not clear human actions here; let the SSE/next-round snapshot drive UI reset
                 // Keep AI progress until server signals advance via SSE
               })
-              .catch((err) => {
+              .catch((err: any) => {
                 setError(err?.message || 'Failed to advance round');
                 setIsLoading(false);
                 setLoadingMessage('');

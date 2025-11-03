@@ -55,7 +55,7 @@ export async function handleSessionRequest(
         if (ok.success) {
           setup = ok.data;
         } else {
-          console.warn('[session-router] create: dropping invalid setup payload; using fallback. reasons=', ok.error.issues.map(i => i.path.join('.')).join(','));
+          console.warn('[session-router] create: dropping invalid setup payload; using fallback. reasons=', ok.error.issues.map((i: any) => i.path.join('.')).join(','));
         }
       }
       setup = setup ?? createValidGameSetup();
