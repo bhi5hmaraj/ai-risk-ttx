@@ -5,21 +5,20 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal, FeedbackModal } from '@/components/game';
 import { EndScreen } from '@/screens';
-import { useGameController } from '@/hooks/useGameController';
+import { useGame } from '@/hooks/useGame';
+import { useLobby } from '@/hooks/useLobby';
+import { useUI } from '@/hooks/useUI';
+import { useSession } from '@/hooks/useSession';
 import { GamePhase } from '@/types';
 
 export default function EndPage() {
   const router = useRouter();
-  const {
-    state: {
-      gameState,
-      players,
-      gameSetup,
-      isActionTreeOpen,
-      selectedLogEntry,
-    },
-    actions: { resetState, setIsActionTreeOpen },
-  } = useGameController();
+  const { gameState, players, latestLogEntry, resetGame } = useGame();
+  const { gameSetup } = useLobby();
+  const { resetUI } = useUI();
+  const { clear: clearSession } = useSession();
+  const [isActionTreeOpen, setIsActionTreeOpen] = React.useState(false);
+  const selectedLogEntry = latestLogEntry;
 
   // Route decisions are owned by RouteOrchestrator. If not END, render nothing
   // and let the orchestrator navigate.
@@ -38,7 +37,9 @@ export default function EndPage() {
     <>
       <Navigation
         onNavigateHome={() => {
-          resetState();
+          resetGame();
+          resetUI();
+          clearSession();
           router.push('/');
         }}
         onOpenFeedback={() => {}}
@@ -60,7 +61,9 @@ export default function EndPage() {
         gameState={gameState}
         players={players}
         onReset={() => {
-          resetState();
+          resetGame();
+          resetUI();
+          clearSession();
           router.push('/');
         }}
         onOpenFeedback={() => {}}

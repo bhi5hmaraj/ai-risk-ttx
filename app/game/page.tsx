@@ -10,7 +10,9 @@ import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
 import { useGameActions } from '@/hooks/useGameActions';
+import { useRoundOptions } from '@/hooks/useRoundOptions';
 import { GamePhase } from '@/types';
+import { useTimer } from '@/hooks/useTimer';
 import type { GameMetadata } from '@/types/feedback';
 
 export default function GamePage() {
@@ -20,6 +22,7 @@ export default function GamePage() {
   const { actionOptions, aiCompletionStatus } = useActions();
   const { gameSetup, customScenario, gamePath } = useLobby();
   const { handleConfirmActions } = useGameActions();
+  const { loadHumanOptions } = useRoundOptions();
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   // Keep UI store in sync when toggling history from GameScreen
@@ -37,20 +40,12 @@ export default function GamePage() {
     () => gameState.eventLog.some((e) => e.playerActions.length > 0),
     [gameState.eventLog]
   );
-  const [timer, setTimer] = useState(300);
-  const [isPaused, setIsPaused] = useState(false);
-  const handlePauseToggle = () => setIsPaused((v) => !v);
-
-  // Minimal timer effect (parity with prior behavior)
-  React.useEffect(() => {
-    let interval: any;
-    if (timer > 0 && gameState.phase === GamePhase.ACTION && !isPaused && !(humanPlayer?.hasSubmittedActions)) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    } else if (timer <= 0 && gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions) {
-      handleConfirmActions([]);
-    }
-    return () => interval && clearInterval(interval);
-  }, [timer, gameState.phase, isPaused, humanPlayer, handleConfirmActions]);
+  const { timer, isPaused, togglePause: handlePauseToggle } = useTimer({
+    phase: gameState.phase,
+    humanHasSubmitted: Boolean(humanPlayer?.hasSubmittedActions),
+    onTimeout: () => handleConfirmActions([]),
+    initial: 300,
+  });
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -99,6 +94,19 @@ export default function GamePage() {
     setIsHistoryOpen(next);
     setHistoryOpen(next);
   };
+
+  // Trigger human action options load when entering ACTION phase and none are present
+  React.useEffect(() => {
+    if (
+      gameState.phase === GamePhase.ACTION &&
+      humanPlayer &&
+      !humanPlayer.hasSubmittedActions &&
+      actionOptions.length === 0 &&
+      !isLoading
+    ) {
+      loadHumanOptions().catch(() => {});
+    }
+  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, loadHumanOptions]);
 
   return (
     <>
