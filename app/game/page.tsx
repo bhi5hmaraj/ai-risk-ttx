@@ -16,12 +16,13 @@ import type { GameMetadata } from '@/types/feedback';
 export default function GamePage() {
   const router = useRouter();
   const { gameState, players } = useGame();
-  const { isLoading, loadingMessage, error, setHistoryOpen: handleToggleHistory } = useUI();
+  const { isLoading, loadingMessage, error, setHistoryOpen } = useUI();
   const { actionOptions, aiCompletionStatus } = useActions();
   const { gameSetup, customScenario, gamePath } = useLobby();
   const { handleConfirmActions } = useGameActions();
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+  // Keep UI store in sync when toggling history from GameScreen
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
   const latestLogEntry = useMemo(
@@ -92,6 +93,12 @@ export default function GamePage() {
       eventLog={gameState.eventLog}
     />
   );
+  const handleOpenActionTree = () => setIsActionTreeOpen(true);
+  const handleToggleHistory = () => {
+    const next = !isHistoryOpen;
+    setIsHistoryOpen(next);
+    setHistoryOpen(next);
+  };
 
   return (
     <>

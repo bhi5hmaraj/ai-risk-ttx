@@ -100,56 +100,47 @@ const mockHumanPlayer = {
   hiddenScore: 50,
 };
 
-const mockGameController = {
-  state: {
-    gameState: {
-      phase: GamePhase.LOBBY,
-      round: 0,
-      coreMetric: { name: 'Trust', description: 'desc', value: 100 },
-      eventLog: [],
-      currentEvent: null,
-    },
-    players: [mockHumanPlayer],
-    selectedRoleName: null,
-    gamePath: null,
-    gameSetup: null,
-    customScenario: '',
-    isLoading: false,
-    loadingMessage: '',
-    error: null,
-    timer: 300,
-    isPaused: false,
-    actionOptions: [],
-    aiCompletionStatus: {},
-    isActionTreeOpen: false,
-    isHistoryOpen: true,
-    expandedRound: null,
-    latestLogEntry: null,
-    selectedLogEntry: null,
-    canViewActionTree: false,
-  },
-  actions: {
-    setSelectedRoleName: vi.fn(),
-    setGamePath: vi.fn(),
-    setGameSetup: vi.fn(),
-    setCustomScenario: vi.fn(),
-    setIsActionTreeOpen: vi.fn(),
-    handleCustomGameStart: vi.fn(),
-    handleStartGame: vi.fn(),
-    handleConfirmActions: vi.fn(),
-    handleToggleHistory: vi.fn(),
-    handleOpenActionTree: vi.fn(),
-    setExpandedRound: vi.fn(),
-    resetState: vi.fn(),
-  },
-  derived: {
-    humanPlayer: mockHumanPlayer,
-    handlePauseToggle: vi.fn(),
-  },
+// Modular hooks used by LobbyPage and GamePage
+let mockGameState = {
+  phase: GamePhase.LOBBY,
+  round: 0,
+  coreMetric: { name: 'Trust', description: 'desc', value: 100 },
+  eventLog: [],
+  currentEvent: null,
 };
+let mockPlayers = [mockHumanPlayer] as any[];
+let mockIsLoading = false;
+let mockLoadingMessage = '';
+let mockError: string | null = null;
+let mockActionOptions: any[] = [];
+let mockAiStatus: Record<string, boolean> = {};
+let mockGameSetup: any = null;
+let mockCustomScenario = '';
+let mockGamePath: any = null;
 
+vi.mock('../hooks/useGame', () => ({
+  useGame: () => ({ gameState: mockGameState as any, players: mockPlayers as any }),
+}));
+vi.mock('../hooks/useUI', () => ({
+  useUI: () => ({ isLoading: mockIsLoading, loadingMessage: mockLoadingMessage, error: mockError, setHistoryOpen: vi.fn() }),
+}));
+vi.mock('../hooks/useActions', () => ({
+  useActions: () => ({ actionOptions: mockActionOptions, aiCompletionStatus: mockAiStatus }),
+}));
+vi.mock('../hooks/useLobby', () => ({
+  useLobby: () => ({ gameSetup: mockGameSetup, customScenario: mockCustomScenario, gamePath: mockGamePath, setSelectedRoleName: vi.fn(), setGamePath: vi.fn(), setCustomScenario: vi.fn(), setGameSetup: vi.fn(), reset: vi.fn() }),
+}));
+vi.mock('../hooks/useGameActions', () => ({
+  useGameActions: () => ({ handleConfirmActions: vi.fn(), handleStartGame: vi.fn(), runConsequencePhase: vi.fn() }),
+}));
+
+// EndPage still uses useGameController; provide a minimal shim for its state
 vi.mock('../hooks/useGameController', () => ({
-  useGameController: () => mockGameController,
+  useGameController: () => ({
+    state: { gameState: mockGameState as any, players: mockPlayers as any },
+    actions: { resetState: vi.fn(), setIsActionTreeOpen: vi.fn() },
+    derived: { humanPlayer: mockPlayers.find((p:any)=>p.isHuman) || null },
+  }),
 }));
 
 const resetRouterMocks = () => {
@@ -159,20 +150,16 @@ const resetRouterMocks = () => {
 };
 
 const resetControllerState = () => {
-  mockGameController.state.gameState = {
-    phase: GamePhase.LOBBY,
-    round: 0,
-    coreMetric: { name: 'Trust', description: 'desc', value: 100 },
-    eventLog: [],
-    currentEvent: null,
-  };
-  mockGameController.state.gamePath = null;
-  mockGameController.state.customScenario = '';
-  mockGameController.state.gameSetup = null;
-  mockGameController.state.isLoading = false;
-  mockGameController.state.loadingMessage = '';
-  mockGameController.state.error = null;
-  mockGameController.derived.humanPlayer = mockHumanPlayer;
+  mockGameState = { phase: GamePhase.LOBBY, round: 0, coreMetric: { name: 'Trust', description: 'desc', value: 100 }, eventLog: [], currentEvent: null } as any;
+  mockPlayers = [mockHumanPlayer] as any[];
+  mockIsLoading = false;
+  mockLoadingMessage = '';
+  mockError = null;
+  mockActionOptions = [];
+  mockAiStatus = {};
+  mockGameSetup = null;
+  mockCustomScenario = '';
+  mockGamePath = null;
 };
 
 describe('App Router pages', () => {
@@ -199,10 +186,7 @@ describe('App Router pages', () => {
         </>
       );
 
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.ACTION,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.ACTION } as any;
 
       rerender(
         <>
@@ -232,10 +216,7 @@ describe('App Router pages', () => {
       );
       resetRouterMocks();
 
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.STARTING,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.STARTING } as any;
 
       rerender(
         <>
@@ -252,14 +233,11 @@ describe('App Router pages', () => {
 
   describe('GamePage', () => {
     beforeEach(() => {
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.ACTION,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.ACTION } as any;
     });
 
     it('shows loading screen when human player not yet ready', () => {
-      mockGameController.derived.humanPlayer = null;
+      mockPlayers = [] as any[];
       render(<GamePage />);
 
       expect(screen.getByTestId('loading-screen')).toBeTruthy();
@@ -275,10 +253,7 @@ describe('App Router pages', () => {
       );
       resetRouterMocks();
 
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.END,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.END } as any;
 
       rerender(
         <>
@@ -295,10 +270,7 @@ describe('App Router pages', () => {
 
   describe('EndPage', () => {
     it('renders end screen when phase is END', () => {
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.END,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.END } as any;
 
       render(<EndPage />);
 
@@ -306,10 +278,7 @@ describe('App Router pages', () => {
     });
 
     it('does not self-redirect when phase is not END (orchestrator owns routing)', () => {
-      mockGameController.state.gameState = {
-        ...mockGameController.state.gameState,
-        phase: GamePhase.ACTION,
-      };
+      mockGameState = { ...(mockGameState as any), phase: GamePhase.ACTION } as any;
 
       render(<EndPage />);
       // Page renders nothing; RouteOrchestrator will handle routing elsewhere

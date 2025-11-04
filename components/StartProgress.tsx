@@ -14,12 +14,35 @@ const StepRow = ({ label, state }: { label: string; state: 'idle' | 'running' | 
   );
 };
 
+// Ensure only a single instance renders to avoid duplicate HUDs in tests or accidental double mounts
+let __startProgressMounted = false;
+
 export function StartProgress() {
+  const [allowRender, setAllowRender] = React.useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !__startProgressMounted;
+  });
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!__startProgressMounted) {
+      __startProgressMounted = true;
+      setAllowRender(true);
+    } else {
+      setAllowRender(false);
+    }
+    return () => {
+      __startProgressMounted = false;
+    };
+  }, []);
+
+  if (!allowRender) return null;
   const progress = useUIStore((s) => s.startProgress);
 
   const visible = useMemo(() => {
     const vals = Object.values(progress);
-    return vals.some((v) => v === 'running') || (vals.includes('done') && !vals.every((v) => v === 'done'));
+    // Show whenever any step is not idle (running or done)
+    return vals.some((v) => v === 'running' || v === 'done');
   }, [progress]);
 
   if (!visible) return null;

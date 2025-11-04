@@ -18,6 +18,7 @@ import {
 import { selectInitialPlayers, createCanonicalSetup } from '@/lib/gameSetup';
 import { createInitialGameStateFromScenario, applyConsequences } from '@/lib/gameLogic';
 import { GAME_CONFIG } from '@/constants';
+import { AI_SAFETY_SCENARIO } from '@/presets';
 
 export function useGameActions() {
   const { gameState, players, setGameState, setPlayers } = useGame();
@@ -153,7 +154,7 @@ export function useGameActions() {
       setStartStep('connectingStream', isBackendMode ? 'running' : 'idle');
       setStartStep('ready', 'idle');
     } catch {}
-    const { players: initialPlayers, coreMetric } = selectInitialPlayers(selectedRoleName, path, gameSetup, undefined as any, { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 });
+    const { players: initialPlayers, coreMetric } = selectInitialPlayers(selectedRoleName, path, gameSetup, AI_SAFETY_SCENARIO, { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 });
     setPlayers(initialPlayers);
     setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
     setLoading(true, 'AI Game Master is generating the initial scenario...');

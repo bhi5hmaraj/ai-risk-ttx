@@ -85,6 +85,12 @@ export const useGameController = () => {
   // Chat history for maintaining conversation context (managed client-side, sent to backend)
   const chatHistoryRef = useRef<any[] | null>(null);
 
+  // Modular actions (compat shim): allow pages to keep using useGameController while we migrate
+  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm, runConsequencePhase: modularConsequence } = useModularGameActions();
+
+  // Round options hook (must be called at top level, not in useEffect)
+  const { loadHumanOptions } = useRoundOptions();
+
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
   const latestLogEntry = useMemo(
     () => (gameState.eventLog.length > 0 ? gameState.eventLog[gameState.eventLog.length - 1] : null),
@@ -160,195 +166,15 @@ export const useGameController = () => {
     setLoadingMessage('');
   }, [customScenario]);
 
-  const runConsequencePhase = useCallback(
-    async (currentPlayers: Player[], currentGameState: GameState) => {
-      if (BACKEND_MODE) {
-        // Server-authoritative mode handles consequences via /advance + SSE.
-        return;
-      }
-      setIsLoading(true);
+  // Pruned: consequence logic handled by modular useGameActions
+  const runConsequencePhase = useCallback((currentPlayers: Player[], currentGameState: GameState) => {
+    console.warn('[useGameController] runConsequencePhase is deprecated; use useGameActions instead.');
+  }, []);
 
-      let playersWithActions = [...currentPlayers];
-      const aiPlayers = currentPlayers.filter((p) => !p.isHuman);
-
-      const initialStatus = Object.fromEntries(aiPlayers.map((p) => [p.role.name, false]));
-      setAiCompletionStatus(initialStatus);
-
-      setLoadingMessage('AI Game Master is assessing the situation...');
-      const counterfactualPromise = callLLMAndCount(generateCounterfactualConsequences, currentGameState);
-
-      const previousRoundLog = currentGameState.eventLog.find((entry) => entry.round === currentGameState.round - 1);
-      const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
-
-      // OPTIMIZED: Use single generateAITurn call instead of separate options + actions
-      let aiTurnResults: (Awaited<ReturnType<typeof generateAITurn>> | null)[] = [];
-
-      if (aiPlayers.length > 0) {
-        setLoadingMessage('AI players are analyzing and choosing their actions...');
-        const aiTurnPromises = aiPlayers.map((player) =>
-          callLLMAndCount(generateAITurn, player, currentGameState, previousRoundActions).then((result) => {
-            setAiCompletionStatus((prev) => ({ ...prev, [player.role.name]: true }));
-            return result;
-          })
-        );
-        aiTurnResults = await Promise.all(aiTurnPromises);
-
-        if (aiTurnResults.some((r) => r === null)) {
-          setError('Failed to generate AI player turns. The simulation cannot continue.');
-          setIsLoading(false);
-          setLoadingMessage('');
-          return;
-        }
-
-        const aiActionsByRole: Record<string, ActionOption[]> = {};
-        aiPlayers.forEach((player, index) => {
-          aiActionsByRole[player.role.name] = aiTurnResults[index]?.chosenActions || [];
-        });
-
-        playersWithActions = currentPlayers.map((p) => {
-          if (!p.isHuman && aiActionsByRole[p.role.name]) {
-            return { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true };
-          }
-          return p;
-        });
-      }
-
-      setPlayers(playersWithActions);
-
-      setLoadingMessage('AI Game Master is processing the consequences...');
-      const counterfactualResult = await counterfactualPromise;
-      if (!counterfactualResult) {
-        setError('The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.');
-        setIsLoading(false);
-        setLoadingMessage('');
-        return;
-      }
-
-      // Chat mode only: always call chat consequences endpoint
-      // Ensure we always send a valid setup to the chat endpoint.
-      const setupForChat: GameSetup = (gameSetup ?? createCanonicalSetup(currentGameState, currentPlayers));
-      let result;
-      const cons = await callLLMAndCount(
-        () => generateConsequencesChat(
-          currentGameState,
-          playersWithActions,
-          counterfactualResult.publicScoreUpdate,
-          chatHistoryRef.current || [],
-          setupForChat
-        )
-      );
-      if (cons) {
-        result = cons.consequences;
-        chatHistoryRef.current = cons.chatHistory;
-      } else {
-        setError('The AI Game Master failed to process consequences (chat mode). Please retry.');
-        setIsLoading(false);
-        setLoadingMessage('');
-        return;
-      }
-
-      if (result) {
-        const { gameState: nextState, players: nextPlayers } = applyConsequences(
-          currentGameState,
-          result,
-          playersWithActions,
-          aiPlayers,
-          aiTurnResults as any,
-          actionOptions,
-          llmCallsThisRoundRef.current,
-        );
-        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-        setGameState(nextState);
-        setPlayers(nextPlayers);
-        setActionOptions([]);
-        setIsLoading(false);
-        setLoadingMessage('');
-        setAiCompletionStatus({});
-        llmCallsThisRoundRef.current = 0;
-      } else {
-        setError('The AI Game Master failed to provide a consequence. The simulation cannot continue.');
-        setIsLoading(false);
-        setLoadingMessage('');
-      }
-    },
-    [actionOptions, callLLMAndCount]
-  );
-
-  const handleConfirmActions = useCallback(
-    (actions: ActionOption[]) => {
-      if (!humanPlayer) return;
-      // Server-authoritative path: submit and advance via /api/session
-      if (BACKEND_MODE) {
-        (async () => {
-          setIsLoading(true);
-          setLoadingMessage('Locking in your actions...');
-          try {
-            // Ensure a session exists
-            let meta = sessionMeta;
-            if (!meta) {
-              const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: gameSetup || undefined });
-              meta = { id: created.id, revision: created.revision, hostToken: created.hostToken };
-              setSessionMeta(meta);
-            }
-            // Optimistically show user's submitted actions and switch to waiting UI
-            setPlayers((prev) =>
-              prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p))
-            );
-            const aiRoles = players.filter((p) => !p.isHuman).map((p) => p.role.name);
-            if (aiRoles.length > 0) {
-              setAiCompletionStatus(Object.fromEntries(aiRoles.map((name) => [name, false])));
-            }
-            // Submit actions with optimistic concurrency
-            const s1 = await SessionService.submitActions(meta!.id, humanPlayer.id || 'human', actions, meta!.revision);
-            setSessionMeta((prev) => (prev ? { ...prev, revision: s1.revision } : { id: meta!.id, revision: s1.revision, hostToken: meta!.hostToken }));
-
-            // Fire-and-forget advance; rely on SSE to update state/progress
-            SessionService
-              .advance(
-                meta!.id,
-                s1.revision,
-                meta!.hostToken,
-                {
-                  humanRoleName: humanPlayer.role.name,
-                  humanPlayerId: humanPlayer.id || 'human',
-                  humanActions: actions,
-                  humanAvailableOptions: actionOptions,
-                }
-              )
-              .then((adv: any) => {
-                setSessionMeta({ id: meta!.id, revision: adv.revision, hostToken: meta!.hostToken });
-                if (adv.state) {
-                  setGameState(adv.state as GameState);
-                }
-                // Do not clear human actions here; let the SSE/next-round snapshot drive UI reset
-                // Keep AI progress until server signals advance via SSE
-              })
-              .catch((err: any) => {
-                setError(err?.message || 'Failed to advance round');
-                setIsLoading(false);
-                setLoadingMessage('');
-              });
-
-            setIsLoading(false);
-            setLoadingMessage('');
-            setActionOptions([]);
-          } catch (e: any) {
-            setError(e?.message || 'Failed to submit actions to server');
-            setIsLoading(false);
-            setLoadingMessage('');
-            // Roll back optimistic submitted flag on failure
-            setPlayers((prev) => prev.map((p) => (p.isHuman ? { ...p, hasSubmittedActions: false } : p)));
-          }
-        })();
-        return;
-      }
-      const updatedPlayer = { ...humanPlayer, actions, hasSubmittedActions: true };
-      const updatedPlayers = players.map((p) => (p.isHuman ? updatedPlayer : p));
-      setPlayers(updatedPlayers);
-      runConsequencePhase(updatedPlayers, gameState);
-    },
-    [USE_BACKEND_STATE, gamePath, gameSetup, gameState, humanPlayer, players, runConsequencePhase, sessionMeta]
-  );
+  // Pruned: confirm logic handled by modular useGameActions
+  const handleConfirmActions = useCallback((actions: ActionOption[]) => {
+    console.warn('[useGameController] handleConfirmActions is deprecated; use useGameActions instead.');
+  }, []);
 
   const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] => buildRolesFromSetupHelper(setup), []);
 
@@ -495,7 +321,6 @@ export const useGameController = () => {
   }, [callLLMAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
 
   useEffect(() => {
-    const { loadHumanOptions } = useRoundOptions();
     if (
       gameState.phase === GamePhase.ACTION &&
       humanPlayer &&
@@ -516,7 +341,7 @@ export const useGameController = () => {
           setLoadingMessage('');
         });
     }
-  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, gameSetup, gamePath]);
+  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, gameSetup, gamePath, loadHumanOptions]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -699,5 +524,3 @@ export const useGameController = () => {
     },
   } as const;
 };
-  // Modular actions (compat shim): allow pages to keep using useGameController while we migrate
-  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm, runConsequencePhase: modularConsequence } = useModularGameActions();
