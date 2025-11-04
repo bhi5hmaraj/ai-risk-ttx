@@ -19,7 +19,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }));
 
-// Mock useGameController
+// Mock game state
 let mockGameState: GameState = {
   phase: GamePhase.LOBBY,
   round: 0,
@@ -30,13 +30,14 @@ let mockGameState: GameState = {
 
 let mockPlayers: Player[] = [];
 
-vi.mock('@/hooks/useGameController', () => ({
-  useGameController: () => ({
-    state: {
-      gameState: mockGameState,
-      players: mockPlayers,
-    },
-  }),
+// Mock useGameStore
+vi.mock('@/stores/gameStore', () => ({
+  useGameStore: (selector: any) => {
+    if (typeof selector === 'function') {
+      return selector({ gameState: mockGameState, players: mockPlayers });
+    }
+    return { gameState: mockGameState, players: mockPlayers };
+  },
 }));
 
 // Mock sessionStore
