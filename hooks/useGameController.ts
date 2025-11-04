@@ -27,6 +27,7 @@ import { useGameActions as useModularGameActions } from '@/hooks/useGameActions'
 import { useSessionStore } from '@/stores/sessionStore';
 import { useGameStore } from '@/stores/gameStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useRoundOptions } from '@/hooks/useRoundOptions';
 
 const DEFAULT_CORE_METRIC: CoreMetric = {
   name: 'Democratic Legitimacy',
@@ -494,6 +495,7 @@ export const useGameController = () => {
   }, [callLLMAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
 
   useEffect(() => {
+    const { loadHumanOptions } = useRoundOptions();
     if (
       gameState.phase === GamePhase.ACTION &&
       humanPlayer &&
@@ -502,57 +504,19 @@ export const useGameController = () => {
       !isLoading &&
       !actionReqInFlightRef.current
     ) {
-      (async () => {
-        actionReqInFlightRef.current = true;
-        setIsLoading(true);
-        setLoadingMessage('Generating action options...');
-        llmCallsThisRoundRef.current = 0;
-        try {
-          let res: { options: ActionOption[] } | null = null;
-          if (BACKEND_MODE) {
-            // Ensure a session exists before fetching options
-            let meta = sessionMeta;
-            if (!meta) {
-              try {
-                const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: gameSetup || undefined });
-                meta = { id: created.id, revision: created.revision, hostToken: created.hostToken };
-                setSessionMeta(meta);
-              } catch (e) {
-                console.warn('[UI] createSession failed in backend mode:', e);
-              }
-            }
-            if (meta) {
-              console.log(`[UI] fetching server action-options for player=${humanPlayer.role.name} session=${meta.id}`);
-              const data = await SessionService.getActionOptions(meta.id, humanPlayer.id || 'human', humanPlayer.role.name);
-              res = { options: data.options };
-            }
-          }
-          if (!res) {
-            res = await callLLMAndCount(
-              generateActionOptions,
-              humanPlayer,
-              gameState,
-              lastCompletedLogEntry?.playerActions || null
-            );
-          }
-          if (res) {
-            // Helpful debug breadcrumb in dev
-            try { console.log('[UI] action-options loaded:', res.options?.length ?? 0); } catch {}
-            setActionOptions(res.options);
-          } else {
-            setError('Failed to generate action options. You may not be able to proceed.');
-          }
-        } catch (e) {
-          setError('Action options request failed. Check console for details.');
-          try { console.error('[UI] action-options error:', e); } catch {}
-        } finally {
+      actionReqInFlightRef.current = true;
+      setIsLoading(true);
+      setLoadingMessage('Generating action options...');
+      llmCallsThisRoundRef.current = 0;
+      loadHumanOptions()
+        .catch(() => {})
+        .finally(() => {
           actionReqInFlightRef.current = false;
           setIsLoading(false);
           setLoadingMessage('');
-        }
-      })();
+        });
     }
-  }, [BACKEND_MODE, sessionMeta, gameSetup, gamePath, actionOptions.length, callLLMAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
+  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, gameSetup, gamePath]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
