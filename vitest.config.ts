@@ -6,6 +6,11 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
+    // Run single-threaded in CI/pre-commit to avoid flaky coverage .tmp reads
+    // @ts-expect-error Vitest v4 pool options not reflected in our InlineConfig typing
+    pool: 'threads',
+    // @ts-expect-error Vitest v4 pool options not reflected in our InlineConfig typing
+    poolOptions: { threads: { maxThreads: 1, minThreads: 1 } },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

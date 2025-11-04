@@ -29,50 +29,28 @@ vi.mock('../screens', () => ({
   LoadingScreen: ({ message }: any) => <div data-testid="loading-screen">{message}</div>,
 }));
 
-const mockController: any = {
-  state: {
+// Migrate test to modular hooks used by GamePage
+vi.mock('../hooks/useGame', () => ({
+  useGame: () => ({
     gameState: { phase: GamePhase.ACTION, round: 1, coreMetric: { name: 'Trust', description: '', value: 100 }, eventLog: [], currentEvent: { headline: 'h', detail: 'd' } },
     players: [{ id: 'human', isHuman: true, role: { name: 'Leader' }, actionPoints: 3, actions: [], hasSubmittedActions: false, hiddenScore: 0 }],
-    isLoading: true,
-    loadingMessage: 'Generating action options... please wait',
-    error: null,
-    actionOptions: [],
-    aiCompletionStatus: {},
-    isActionTreeOpen: false,
-    isHistoryOpen: true,
-    expandedRound: null,
-    latestLogEntry: null,
-    selectedLogEntry: null,
-    canViewActionTree: false,
-    gameSetup: null,
-    customScenario: '',
-    gamePath: 'classic',
-    timer: 60,
-    isPaused: false,
-    selectedRoleName: null,
-  },
-  actions: {
-    handleConfirmActions: vi.fn(),
-    handleToggleHistory: vi.fn(),
-    handleOpenActionTree: vi.fn(),
-    setExpandedRound: vi.fn(),
-    setIsActionTreeOpen: vi.fn(),
-    resetState: vi.fn(),
-    setSelectedRoleName: vi.fn(),
-    setGamePath: vi.fn(),
-    setGameSetup: vi.fn(),
-    setCustomScenario: vi.fn(),
-    handleCustomGameStart: vi.fn(),
-    handleStartGame: vi.fn(),
-  },
-  derived: {
-    humanPlayer: { id: 'human', isHuman: true, role: { name: 'Leader' }, actionPoints: 3, actions: [], hasSubmittedActions: false, hiddenScore: 0 },
-    handlePauseToggle: vi.fn(),
-  },
-};
+  }),
+}));
 
-vi.mock('../hooks/useGameController', () => ({
-  useGameController: () => mockController,
+vi.mock('../hooks/useUI', () => ({
+  useUI: () => ({ isLoading: true, loadingMessage: 'Generating action options... please wait', error: null, setHistoryOpen: vi.fn() }),
+}));
+
+vi.mock('../hooks/useActions', () => ({
+  useActions: () => ({ actionOptions: [], aiCompletionStatus: {} }),
+}));
+
+vi.mock('../hooks/useLobby', () => ({
+  useLobby: () => ({ gameSetup: null, customScenario: '', gamePath: 'classic' }),
+}));
+
+vi.mock('../hooks/useGameActions', () => ({
+  useGameActions: () => ({ handleConfirmActions: vi.fn(), handleStartGame: vi.fn(), runConsequencePhase: vi.fn() }),
 }));
 
 describe('GamePage overlay behavior', () => {
