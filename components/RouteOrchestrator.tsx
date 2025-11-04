@@ -2,16 +2,15 @@
 
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useGameController } from '@/hooks/useGameController';
+import { useGameStore } from '@/stores/gameStore';
 import { GamePhase } from '@/types';
 import { useSessionStore } from '@/stores/sessionStore';
 
 export function RouteOrchestrator() {
   const router = useRouter();
   const pathname = usePathname();
-  const {
-    state: { gameState, players },
-  } = useGameController();
+  const gameState = useGameStore((state) => state.gameState);
+  const players = useGameStore((state) => state.players);
   const { hasStartIntent, sessionMeta } = useSessionStore();
 
   useEffect(() => {
@@ -44,7 +43,7 @@ export function RouteOrchestrator() {
     ) {
       router.replace('/lobby');
     }
-  }, [router, pathname, hasStartIntent, players.length, gameState.phase]);
+  }, [router, pathname, hasStartIntent, players.length, gameState.phase, sessionMeta]);
 
   return null;
 }
