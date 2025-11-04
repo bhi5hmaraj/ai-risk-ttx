@@ -5,43 +5,51 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
 import { GameScreen, LoadingScreen } from '@/screens';
-import { useGameController } from '@/hooks/useGameController';
+import { useGame } from '@/hooks/useGame';
+import { useUI } from '@/hooks/useUI';
+import { useActions } from '@/hooks/useActions';
+import { useLobby } from '@/hooks/useLobby';
+import { useGameActions } from '@/hooks/useGameActions';
 import { GamePhase } from '@/types';
 import type { GameMetadata } from '@/types/feedback';
 
 export default function GamePage() {
   const router = useRouter();
-  const {
-    state: {
-      gameState,
-      players,
-      timer,
-      isPaused,
-      isLoading,
-      loadingMessage,
-      error,
-      actionOptions,
-      aiCompletionStatus,
-      isActionTreeOpen,
-      isHistoryOpen,
-      expandedRound,
-      latestLogEntry,
-      selectedLogEntry,
-      canViewActionTree,
-      gameSetup,
-      customScenario,
-      gamePath,
-    },
-    actions: {
-      handleConfirmActions,
-      handleToggleHistory,
-      handleOpenActionTree,
-      setExpandedRound,
-      setIsActionTreeOpen,
-      resetState,
-    },
-    derived: { humanPlayer, handlePauseToggle },
-  } = useGameController();
+  const { gameState, players } = useGame();
+  const { isLoading, loadingMessage, error, setHistoryOpen: handleToggleHistory } = useUI();
+  const { actionOptions, aiCompletionStatus } = useActions();
+  const { gameSetup, customScenario, gamePath } = useLobby();
+  const { handleConfirmActions } = useGameActions();
+  const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+  const [expandedRound, setExpandedRound] = useState<number | null>(null);
+  const humanPlayer = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
+  const latestLogEntry = useMemo(
+    () => (gameState.eventLog.length > 0 ? gameState.eventLog[gameState.eventLog.length - 1] : null),
+    [gameState.eventLog]
+  );
+  const selectedLogEntry = useMemo(
+    () => (expandedRound != null ? gameState.eventLog.find((e) => e.round === expandedRound) ?? latestLogEntry : latestLogEntry),
+    [expandedRound, gameState.eventLog, latestLogEntry]
+  );
+  const canViewActionTree = useMemo(
+    () => gameState.eventLog.some((e) => e.playerActions.length > 0),
+    [gameState.eventLog]
+  );
+  const [timer, setTimer] = useState(300);
+  const [isPaused, setIsPaused] = useState(false);
+  const handlePauseToggle = () => setIsPaused((v) => !v);
+
+  // Minimal timer effect (parity with prior behavior)
+  React.useEffect(() => {
+    let interval: any;
+    if (timer > 0 && gameState.phase === GamePhase.ACTION && !isPaused && !(humanPlayer?.hasSubmittedActions)) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    } else if (timer <= 0 && gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions) {
+      handleConfirmActions([]);
+    }
+    return () => interval && clearInterval(interval);
+  }, [timer, gameState.phase, isPaused, humanPlayer, handleConfirmActions]);
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -89,7 +97,6 @@ export default function GamePage() {
     <>
       <Navigation
         onNavigateHome={() => {
-          resetState();
           router.push('/');
         }}
         onOpenFeedback={() => setShowFeedbackModal(true)}
