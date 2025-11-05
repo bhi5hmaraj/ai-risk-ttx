@@ -56,12 +56,12 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, className = '', child
 
       {/* Desktop hover / anchored popover */}
       <span
-        className={`absolute z-50 left-1/2 -translate-x-1/2 -top-2 translate-y-[-100%] min-w-[220px] max-w-[320px] ${
+        className={`absolute z-50 left-1/2 -translate-x-1/2 -top-2 translate-y-[-100%] min-w-[260px] max-w-[40rem] ${
           isTouch ? 'hidden' : 'hidden group-hover:block'
         } ${open && !isTouch ? '!block' : ''}`}
         role="tooltip"
       >
-        <span className="block rounded-md border border-gray-700 bg-gray-900/80 backdrop-blur-sm shadow-xl p-3 text-xs text-gray-200 ring-1 ring-white/10">
+        <span className="block rounded-md border border-gray-700 bg-gray-900/80 backdrop-blur-sm shadow-xl p-3 text-xs text-gray-200 ring-1 ring-white/10 max-h-96 overflow-auto whitespace-pre-wrap break-words">
           {content}
         </span>
       </span>
@@ -77,7 +77,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, className = '', child
             onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); }}
           />
           <div className="fixed z-[61] left-1/2 -translate-x-1/2 bottom-24 w-[92vw] max-w-sm" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
-            <div className="rounded-lg border border-gray-700 bg-gray-900/85 backdrop-blur-md shadow-2xl p-3 text-xs text-gray-200 ring-1 ring-white/10">
+            <div className="rounded-lg border border-gray-700 bg-gray-900/85 backdrop-blur-md shadow-2xl p-3 text-xs text-gray-200 ring-1 ring-white/10 max-h-[70vh] overflow-auto">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">{content}</div>
                 <button
