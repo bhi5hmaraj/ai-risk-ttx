@@ -296,6 +296,50 @@ Goal: Clarify runtime boundaries and stop mixing backend and isomorphic code. To
 - [ ] Add ESLint import-boundary rules
 - [ ] Update aliases and codemod imports
 
+### Phase 2.5 Implementation Plan (TDD approach)
+
+**Status**: 🔄 IN PROGRESS (2025-11-05)
+
+**Current State**:
+- ✅ `lib/prisma.ts` deleted (duplicate of `server/lib/prisma.ts`)
+- Backend logic scattered: `lib/api/session-router.ts`, `lib/api/llm-handlers.ts`
+- Client logic mixed: `lib/gameSetup.ts` has React dependencies
+
+**Target State**:
+```
+server/api/
+  ├── session-router.ts       (from lib/api/)
+  ├── session-router.test.ts  (from lib/api/)
+  └── llm-handlers.ts         (from lib/api/)
+```
+
+**TDD Approach**:
+1. ✅ Document plan in MIGRATION_STATUS.md
+2. ✅ Write tests for target import paths (test files should import from @/server/api/)
+3. ✅ Verify tests FAIL (imports don't exist yet) - 4 failures as expected
+4. ✅ Move files to server/api/
+5. ✅ Update all imports to use new paths (7 files updated)
+6. ✅ Verify tests PASS - consolidation.test.ts: 6/6 passing
+7. ✅ Clean up empty lib/api/
+
+**Result**: ✅ All 220 tests passing, no regressions detected.
+
+**Affected Files** (7 imports to update):
+```
+./tests/api/llm-routes.test.ts:              from lib/api/llm-handlers
+./tests/api/llm-handlers-debrief.test.ts:    from lib/api/llm-handlers
+./tests/e2e.session-golden-path.test.ts:     from lib/api/session-router
+./tests/api.session.lifecycle.integration.test.ts: from @/lib/api/session-router
+./app/api/llm/generate/[action]/route.ts:    from @/lib/api/llm-handlers
+./app/api/llm/meta/status/route.ts:          from @/lib/api/llm-handlers
+./app/api/session/[[...parts]]/route.ts:     from @/lib/api/session-router
+```
+
+**Test Strategy**:
+- Unit: Verify all test files can import from @/server/api/ after move
+- Integration: Run full test suite to catch any missed imports
+- Build: Ensure Next.js build succeeds with new paths
+
 ---
 
 ## 🔗 Deep Link Routing: `/game/:sessionId` (Epic)
@@ -485,25 +529,35 @@ Introduce parametric deep links for sessions (SSR bootstrap + SSE) so refresh/re
 
   Migration Plan
 
-  - Phase 0: Stabilize (quick fixes)
-      - Always pass full canonical setup on create in client (classic/custom/ai_safety).
-      - Require initialize after create; remove fallback setup on server.
-      - Remove duplicate SSE effect from hooks/useSession (keep components/SessionMonitor).
-  - Phase 1: Canonicalize schema
-      - Add server/types/scenario.ts; refactor lib/api/session-router.ts to validate/require it
+  - Phase 0: Stabilize (quick fixes) ✅ COMPLETE (2025-11-05)
+      - ✅ Always pass full canonical setup on create in client (classic/custom/ai_safety).
+      - ✅ Require initialize after create; remove fallback setup on server.
+      - ✅ Remove duplicate SSE effect from hooks/useSession (keep components/SessionMonitor).
+      - ✅ Fix round termination logic - respect maxRounds from setup (not hardcoded).
+  - Phase 1: Canonicalize schema ✅ COMPLETE (2025-11-05)
+      - ✅ Add server/types/scenario.ts; refactor lib/api/session-router.ts to validate/require it
   on create.
-      - Update server/services/llm/openaiService.ts to use the canonical schema for prompts and
-  outputs.
-  - Phase 2: Server-only logic
-      - Delete client chat-mode: remove generateConsequencesChat, runConsequencePhase calls from
+      - ✅ Update server/types/session.ts to use canonical schema (CanonicalGameSetupSchema).
+      - ✅ Ensure maxRounds/maxAIPlayers always present (nullable) in schema.
+  - Phase 2: Server-only logic ✅ COMPLETE (2025-11-05)
+      - ✅ Delete client chat-mode: remove generateConsequencesChat, runConsequencePhase calls from
   client codepaths.
-      - Ensure useGameActions only calls SessionService.* (no LLM client).
-  - Phase 3: UI + SSE polish
+      - ✅ Ensure useGameActions only calls SessionService.* (no LLM client).
+      - ✅ Tests verified no client-side LLM calls remain.
+  - Phase 2.5: Code Consolidation ✅ PARTIAL (2025-11-05)
+      - ✅ Move backend logic from lib/ to server/ (lib/api/ → server/api/).
+      - ✅ Remove duplicate lib/prisma.ts (canonical: server/lib/prisma.ts).
+      - ✅ Update all 7 import references to use @/server/api/.
+      - ✅ TDD approach: test → fail → implement → pass (all 220 tests passing).
+      - ⏳ Split mixed files (lib/gameSetup.ts → shared/ + ui/) - deferred.
+      - ⏳ Consolidate types/ and server/types/ - deferred.
+      - ⏳ Update path aliases and add ESLint import boundaries - deferred.
+  - Phase 3: UI + SSE polish ⏳ PENDING
       - Ensure SessionMonitor is the only SSE subscriber; make merges id-first then role fallback.
       - Confirm per-actor progress updates and end-of-round reset.
-  - Phase 4: Persistence
+  - Phase 4: Persistence ⏳ PENDING
       - Gate with NEXT_PUBLIC_BACKEND_STATE=1 + PRISMA_URL. Swap Memory store with Prisma store.
-  - Phase 5: Cleanup
+  - Phase 5: Cleanup ⏳ PENDING
       - Remove dead routes/docs; update MIGRATION_STATUS.md.
 
   Testing
