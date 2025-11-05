@@ -180,7 +180,7 @@ function createAdvanceState(llmDep: LLMFacade) {
 
     // Check if game should end based on round limit or core metric failure
     const maxRounds = (session.setup as any)?.maxRounds as number; // normalized at create time
-    const shouldEnd = nextState.round >= maxRounds || nextState.coreMetric.value <= 0;
+    const shouldEnd = nextState.round > maxRounds || nextState.coreMetric.value <= 0;
     const finalPhase = shouldEnd ? GamePhase.END : GamePhase.ACTION;
 
     const result = {
@@ -191,7 +191,7 @@ function createAdvanceState(llmDep: LLMFacade) {
       nextRound: result.state.round,
       phase: finalPhase,
       shouldEnd,
-      reason: shouldEnd ? (nextState.round >= maxRounds ? 'max rounds' : 'core metric depleted') : undefined,
+      reason: shouldEnd ? (nextState.round > maxRounds ? 'max rounds' : 'core metric depleted') : undefined,
       llmCalls
     });
     return result;
