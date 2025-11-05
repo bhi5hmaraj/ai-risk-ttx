@@ -18,6 +18,7 @@ interface UIStore {
   isHistoryOpen: boolean;
   expandedRound: number | null;
   startProgress: StartProgressState;
+  showStartHUD: boolean;
   setLoading: (isLoading: boolean, message?: string) => void;
   setError: (err: string | null) => void;
   setActionTreeOpen: (open: boolean) => void;
@@ -25,6 +26,8 @@ interface UIStore {
   setExpandedRound: (round: number | null) => void;
   setStartProgress: (partial: Partial<StartProgressState>) => void;
   setStartStep: (key: keyof StartProgressState, state: StepState) => void;
+  setShowStartHUD: (show: boolean) => void;
+  toggleStartHUD: () => void;
   reset: () => void;
 }
 
@@ -42,6 +45,7 @@ export const useUIStore = create<UIStore>((set) => ({
     connectingStream: 'idle',
     ready: 'idle',
   },
+  showStartHUD: false,
   setLoading: (isLoading, message = '') => set({ isLoading, loadingMessage: message }),
   setError: (error) => set({ error }),
   setActionTreeOpen: (open) => set({ isActionTreeOpen: open }),
@@ -49,6 +53,8 @@ export const useUIStore = create<UIStore>((set) => ({
   setExpandedRound: (round) => set({ expandedRound: round }),
   setStartProgress: (partial) => set((s) => ({ startProgress: { ...s.startProgress, ...partial } })),
   setStartStep: (key, state) => set((s) => ({ startProgress: { ...s.startProgress, [key]: state } })),
+  setShowStartHUD: (show) => set({ showStartHUD: show }),
+  toggleStartHUD: () => set((s) => ({ showStartHUD: !s.showStartHUD })),
   reset: () => set({
     isLoading: false,
     loadingMessage: '',
@@ -63,5 +69,6 @@ export const useUIStore = create<UIStore>((set) => ({
       connectingStream: 'idle',
       ready: 'idle',
     },
+    showStartHUD: false,
   }),
 }));
