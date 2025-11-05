@@ -233,9 +233,32 @@ export const getInitialScenarioPromptAndSchema = () => {
  */
 export const getConsequencesPromptAndSchema = (gameState: GameState, players: Player[], counterfactualScoreChange: number) => {
     const playerActionsText = players.map(p => {
-        const actionTitles = p.actions.length > 0 ? p.actions.map(a => a.title).join(", ") : 'Took no action';
+        const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
         return `  - ${p.role.name} (Secret Goal: ${p.role.hiddenObjective}): ${actionTitles}.`
     }).join("\n");
+
+    const historyBlocks = (gameState.eventLog || [])
+      .filter(e => (e.round ?? 0) > 0 && e.round < gameState.round)
+      .map(e => {
+        const actions = (e.playerActions || [])
+          .map(pa => {
+            const titles = (pa.actions || []).map(a => a.title).join('; ');
+            return `    <actor name="${pa.roleName}" human="${pa.isHuman}">${titles || 'none'}</actor>`;
+          })
+          .join('\n');
+        return [
+          `<round n="${e.round}">`,
+          `  <headline>${e.event?.headline || ''}</headline>`,
+          `  <summary>${e.roundSummary}</summary>`,
+          `  <publicScoreChange>${e.publicScoreChange}</publicScoreChange>`,
+          `  <publicScoreAfter>${e.publicScoreAfter}</publicScoreAfter>`,
+          `  <actions>`,
+          actions,
+          `  </actions>`,
+          `</round>`
+        ].join('\n');
+      })
+      .join('\n');
 
     const prompt = `
       You are the Game Master for 'Crisis Command', and you are the impartial arbiter of consequences.
@@ -249,6 +272,11 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       PLAYER ACTIONS TAKEN:
       ${playerActionsText}
 
+      PRIOR ROUND HISTORY (use for long‑horizon causes):
+      <rounds>
+${historyBlocks || '        <!-- no prior rounds -->'}
+      </rounds>
+
       Now, determine the outcome. Your response must be logical and fair.
       FAIRNESS & NEUTRALITY (MUST FOLLOW):
       - Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
@@ -257,11 +285,13 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
       2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
-          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing prior events (use their id or exact headline) or specific player actions this round or previous rounds.
+          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing:
+            • prior events (use their id or exact headline) or
+            • specific player actions from this round or previous rounds.
           - For action causes, set ref to "Role:Exact Action Title@Round" and write a mechanism‑focused rationale (what changed, how it propagated, over what timeframe).
           - For event causes, use the prior event id or exact headline and explain the causal link (not just correlation).
           - Keep rationales specific (1–2 sentences) and avoid repeating the same generic text.
-          - Consider long‑horizon dependencies: include at least one root‑cause citation from earlier rounds when appropriate, not only immediate antecedents.
+          - Consider long‑horizon dependencies: include at least one root‑cause citation from earlier rounds when appropriate, not only immediate antecedents. You may reference data from the <rounds> XML blocks above.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
       5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
@@ -385,6 +415,29 @@ export const getChatConsequencesPrompt = (
     })
     .join("\n");
 
+  const historyBlocks = (gameState.eventLog || [])
+    .filter(e => (e.round ?? 0) > 0 && e.round < gameState.round)
+    .map(e => {
+      const actions = (e.playerActions || [])
+        .map(pa => {
+          const titles = (pa.actions || []).map(a => a.title).join('; ');
+          return `    <actor name="${pa.roleName}" human="${pa.isHuman}">${titles || 'none'}</actor>`;
+        })
+        .join('\n');
+      return [
+        `<round n="${e.round}">`,
+        `  <headline>${e.event?.headline || ''}</headline>`,
+        `  <summary>${e.roundSummary}</summary>`,
+        `  <publicScoreChange>${e.publicScoreChange}</publicScoreChange>`,
+        `  <publicScoreAfter>${e.publicScoreAfter}</publicScoreAfter>`,
+        `  <actions>`,
+        actions,
+        `  </actions>`,
+        `</round>`
+      ].join('\n');
+    })
+    .join('\n');
+
   return `# Round ${gameState.round} - Determine Consequences
 
 ## Current Status
@@ -394,6 +447,11 @@ ${gameState.currentEvent?.detail}
 
 ## Player Actions This Round
 ${playerActionsText}
+
+## Prior Round History (XML blocks)
+<rounds>
+${historyBlocks || '  <!-- no prior rounds -->'}
+</rounds>
 
 ## Counterfactual Analysis
 If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.
@@ -417,7 +475,7 @@ Fairness & Neutrality (must follow):
 - Hidden score updates must be action-justified.
 
 Long‑horizon dependencies (must consider):
-- When selecting causes, include immediate antecedents and, when relevant, a root‑cause from prior rounds to show the causal chain.
+- When selecting causes, include immediate antecedents and, when relevant, a root‑cause from earlier rounds using the <rounds> XML blocks above.
 - For action refs use "Role:Exact Action Title@Round"; for events include the original round in the ref if possible (e.g., evt_r2_k1 or "Exact Headline @Round 2").
 `;
 };
