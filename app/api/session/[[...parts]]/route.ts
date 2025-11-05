@@ -6,6 +6,7 @@ import { applyConsequences, buildPlayersFromSetup } from '@/server/services/sess
 import * as llmService from '@/server/services/llmService';
 import { GamePhase, type Player, type PlayerRoundActions, type ActionOption } from '@/server/types/core';
 import { createReqId, getReqIdFromHeaders, slog, serr } from '@/server/lib/logger';
+import { GAME_CONFIG } from '@/gameConfig';
 
 export const runtime = 'nodejs';
 
@@ -31,7 +32,14 @@ const llm: LLMFacade = {
   },
 };
 
-const store = new MemorySessionStore({ advanceState: createAdvanceState(llm) });
+// Singleton pattern to survive HMR in development
+// In production, this should be replaced with Redis/database-backed store
+const globalForStore = globalThis as unknown as { sessionStore?: MemorySessionStore };
+const store = globalForStore.sessionStore ?? new MemorySessionStore({ advanceState: createAdvanceState(llm) });
+if (process.env.NODE_ENV !== 'production') {
+  globalForStore.sessionStore = store;
+  console.log('[route.ts] Using singleton store instance - sessions will survive HMR');
+}
 
 function ensureHumanRole(context: AdvanceContext | undefined, session: SessionSnapshot): { roleName: string; playerId: string } {
   const fallbackRole =
@@ -170,11 +178,22 @@ function createAdvanceState(llmDep: LLMFacade) {
       llmCalls,
     );
 
+    // Check if game should end based on round limit or core metric failure
+    const maxRounds = session.setup?.maxRounds ?? GAME_CONFIG.MAX_ROUNDS;
+    const shouldEnd = nextState.round >= maxRounds || nextState.coreMetric.value <= 0;
+    const finalPhase = shouldEnd ? GamePhase.END : GamePhase.ACTION;
+
     const result = {
-      state: { ...nextState, phase: GamePhase.ACTION },
+      state: { ...nextState, phase: finalPhase },
       players: nextPlayers,
     };
-    slog(rid, 'advance:done', { nextRound: result.state.round, llmCalls });
+    slog(rid, 'advance:done', {
+      nextRound: result.state.round,
+      phase: finalPhase,
+      shouldEnd,
+      reason: shouldEnd ? (nextState.round >= maxRounds ? 'max rounds' : 'core metric depleted') : undefined,
+      llmCalls
+    });
     return result;
   };
 }

@@ -10,7 +10,7 @@ import {
 } from '@/server/types/session';
 import type { SessionStore } from '@/server/stores/sessionStore';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
-import { createValidGameState, createValidGameSetup } from '@/tests/fixtures/session-data';
+import { createValidGameState } from '@/tests/fixtures/session-data';
 import { GAME_CONFIG } from '../../gameConfig';
 import type { Player, RoleDataCore, PlayerRoundActions, GameState, ActionOption, AIConsequenceResponse, AITurnResponse, AICounterfactualResponse } from '@/server/types/core';
 
@@ -49,16 +49,30 @@ export async function handleSessionRequest(
       const s0 = Date.now();
       const req = (body ?? {}) as any;
       const mode = (req.mode === 'ai_safety' || req.mode === 'custom' || req.mode === 'classic') ? req.mode : 'classic';
-      let setup = undefined as any;
-      if (req.setup) {
-        const ok = GameSetupSchema.safeParse(req.setup);
-        if (ok.success) {
-          setup = ok.data;
-        } else {
-          console.warn('[session-router] create: dropping invalid setup payload; using fallback. reasons=', ok.error.issues.map((i: any) => i.path.join('.')).join(','));
-        }
+
+      // Setup is now REQUIRED (Phase 0.2: Remove fallback)
+      if (!req.setup) {
+        return json(400, { success: false, error: 'setup is required' });
       }
-      setup = setup ?? createValidGameSetup();
+
+      const ok = GameSetupSchema.safeParse(req.setup);
+      if (!ok.success) {
+        const reasons = ok.error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join(', ');
+        return json(400, { success: false, error: `Invalid setup: ${reasons}` });
+      }
+
+      const setup = ok.data;
+
+      // Validate stakeholder count (4-6 for classic/ai_safety, flexible for custom)
+      const stakeholderCount = setup.stakeholders?.length ?? 0;
+      if (mode === 'classic' || mode === 'ai_safety') {
+        if (stakeholderCount < 4 || stakeholderCount > 6) {
+          return json(400, { success: false, error: `${mode} mode requires 4-6 stakeholders, got ${stakeholderCount}` });
+        }
+      } else if (stakeholderCount < 2) {
+        return json(400, { success: false, error: `At least 2 stakeholders required, got ${stakeholderCount}` });
+      }
+
       const state = createValidGameState({
         phase: 0 as any, // LOBBY
         round: 0,
@@ -68,7 +82,7 @@ export async function handleSessionRequest(
       }) as any;
 
       const created = await deps.store.create({ state, setup });
-      console.log(`[session-router] create: OK in ${Date.now() - s0}ms`);
+      console.log(`[session-router] create: OK with ${stakeholderCount} stakeholders in ${Date.now() - s0}ms`);
       return json(
         201,
         { success: true, data: { id: created.id, revision: created.revision, hostToken: created.hostToken, state: created.state } },
@@ -168,6 +182,30 @@ export async function handleSessionRequest(
       const adv = await deps.store.advance(sessionId, expected, parsed as any);
       console.log(`[session-router] advance:${sessionId} OK in ${Date.now() - s0}ms`);
       return json(200, { success: true, data: { id: adv.id, state: adv.state, revision: adv.revision } }, { ETag: etagFromRev(adv.revision), 'x-revision': String(adv.revision) });
+    }
+
+    if (method === 'POST' && action === 'initialize') {
+      const s0 = Date.now();
+      const snap = await deps.store.get(sessionId);
+      if (!snap) return json(404, { success: false, error: 'Not Found' });
+
+      console.log(`[session-router] initialize:${sessionId} starting scenario generation`);
+      // Initialize with basic event from setup - move from LOBBY to ACTION phase
+      const updated = await deps.store.update(sessionId, snap.revision, (state) => ({
+        ...state,
+        phase: 2, // ACTION
+        round: 1,
+        currentEvent: {
+          headline: snap.setup?.scenarioTitle || 'Crisis Develops',
+          detail: snap.setup?.scenarioDescription || 'A situation requires immediate attention.',
+        },
+      } as any));
+
+      console.log(`[session-router] initialize:${sessionId} OK in ${Date.now() - s0}ms`);
+      return json(200, {
+        success: true,
+        data: { id: updated.id, state: updated.state, revision: updated.revision }
+      }, { ETag: etagFromRev(updated.revision), 'x-revision': String(updated.revision) });
     }
 
     if (method === 'POST' && action === 'debrief') {

@@ -92,6 +92,15 @@ export async function advance(
   return body.data as { id: string; state: any; revision: number };
 }
 
+export async function initializeSession(id: string) {
+  const { res, body } = await fetchJson(`${BASE}/${id}/initialize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!body?.success) throw new Error(body?.error || `HTTP ${res.status}`);
+  return body.data as { id: string; state: any; revision: number };
+}
+
 export async function debrief(id: string) {
   const { res, body } = await fetchJson(`${BASE}/${id}/debrief`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
   if (!body?.success) throw new Error(body?.error || `HTTP ${res.status}`);

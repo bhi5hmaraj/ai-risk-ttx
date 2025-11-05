@@ -26,6 +26,10 @@ export class SessionService {
     return sessionClient.submitActions(sessionId, playerId, actions, expectedRevision);
   }
 
+  static async initialize(sessionId: string) {
+    return sessionClient.initializeSession(sessionId);
+  }
+
   static async advance(
     sessionId: string,
     expectedRevision: number,
