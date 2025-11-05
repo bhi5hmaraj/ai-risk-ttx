@@ -422,7 +422,7 @@ export const useGameController = () => {
           setGameSetupStore((prev) => prev ?? (snapshot.setup as GameSetup));
         }
         const submitted = snapshot.submitted ?? {};
-        const serverPlayers: Array<{ id?: string; role?: { name: string }; actions?: ActionOption[]; hasSubmittedActions?: boolean }> =
+        const serverPlayers: Array<{ id?: string; role?: { name: string }; actions?: ActionOption[]; hasSubmittedActions?: boolean; hiddenScore?: number; actionPoints?: number }> =
           (snapshot.players as any) ?? [];
         setPlayers((prev) => {
           if (prev.length === 0) return prev;
@@ -436,8 +436,11 @@ export const useGameController = () => {
                 : match?.hasSubmittedActions ?? p.hasSubmittedActions;
             return {
               ...p,
+              id: serverId,
               actions: mergedActions,
               hasSubmittedActions: submittedFlag,
+              hiddenScore: typeof match?.hiddenScore === 'number' ? match!.hiddenScore : p.hiddenScore,
+              actionPoints: typeof match?.actionPoints === 'number' ? match!.actionPoints : p.actionPoints,
             };
           });
         });

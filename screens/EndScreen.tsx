@@ -162,25 +162,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
               </div>
             ) : null}
 
-            {finalLogEntry.outcomeTimeline?.length ? (
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Key Moments</p>
-                <ol className="space-y-3">
-                  {finalLogEntry.outcomeTimeline.map((item, index) => (
-                    <li key={`${item.title}_${index}`} className="flex gap-3">
-                      <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-sm flex items-center justify-center">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 bg-gray-900/70 border border-gray-700 rounded-md p-3 space-y-1">
-                        <p className="text-sm font-semibold text-white">{item.title}</p>
-                        <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
-                        <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
+            {/* Removed duplicate Key Moments block without causes to avoid duplication */}
 
             {finalLogEntry.counterfactualNote && (
               <div className="bg-gray-900/40 border border-blue-800/40 rounded-md p-4 text-sm text-blue-100/90">
