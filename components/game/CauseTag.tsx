@@ -15,7 +15,7 @@ function resolveGist(cause: CausalReference, logs: GameLogEntry[]) {
     if (found?.event) {
       return {
         title: found.event.headline,
-        detail: truncate(found.event.detail || ''),
+        detail: (found.event.detail || ''),
         round: found.round,
       };
     }
@@ -33,7 +33,7 @@ function resolveGist(cause: CausalReference, logs: GameLogEntry[]) {
         const action = pa.actions.find((a) => a.title === actionTitle)!;
         return {
           title: `${pa.roleName} — ${action.title}`,
-          detail: truncate(action.description || ''),
+          detail: (action.description || ''),
           round: l.round,
         };
       }
@@ -42,7 +42,7 @@ function resolveGist(cause: CausalReference, logs: GameLogEntry[]) {
   // exogenous or unresolved
   return {
     title: cause.type === 'exogenous' ? 'External Factor' : 'Cited Reference',
-    detail: truncate(cause.rationale || ''),
+    detail: (cause.rationale || ''),
     round: undefined,
   };
 }
@@ -72,13 +72,13 @@ export const CauseTag: React.FC<CauseTagProps> = ({ cause, logs }) => {
       )}
       {/* Prefer showing a single clear reason line; fall back to context */}
       {same && (rationale || detail) && (
-        <p className="text-xs text-amber-300/90 mt-2">Reason: {truncate(rationale || detail, 160)}</p>
+        <p className="text-xs text-amber-300/90 mt-2">Reason: {rationale || detail}</p>
       )}
       {!same && detail && (
-        <p className="text-xs text-gray-300 mt-2 leading-snug">Context: {truncate(detail, 160)}</p>
+        <p className="text-xs text-gray-300 mt-2 leading-snug">Context: {detail}</p>
       )}
       {!same && rationale && (
-        <p className="text-xs text-amber-300/90 mt-1">Reason: {truncate(rationale, 160)}</p>
+        <p className="text-xs text-amber-300/90 mt-1">Reason: {rationale}</p>
       )}
     </div>
   );
