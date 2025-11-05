@@ -15,7 +15,7 @@ import { useActionStore } from '@/stores/actionStore';
 
 export default function LobbyPage() {
   const router = useRouter();
-  const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, reset: resetLobby } = useLobby();
+  const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, reset: resetLobby } = useLobby();
   const { isLoading } = useUI();
   const { gameState, resetGame } = useGame();
   const { handleStartGame } = useGameActions();
@@ -54,6 +54,10 @@ export default function LobbyPage() {
         setCustomScenario={setCustomScenario}
         gameSetup={gameSetup}
         setGameSetup={setGameSetup}
+        maxAIPlayers={maxAIPlayers}
+        setMaxAIPlayers={setMaxAIPlayers}
+        maxRounds={maxRounds}
+        setMaxRounds={setMaxRounds}
         isLoading={isLoading}
         handleCustomGameStart={() => {/* deprecated path removed in modular step; use presets or custom form */}}
         handleStartGame={handleStartGame}

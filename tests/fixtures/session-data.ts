@@ -67,8 +67,34 @@ export function createValidGameSetup(overrides: Partial<GameSetup> = {}): GameSe
         resources: ['Infra'],
         constraints: ['PR risk'],
       },
+      {
+        name: 'Journalist',
+        icon: '📰',
+        publicObjective: 'Inform the public accurately',
+        hiddenObjective: 'Break the story first',
+        resources: ['Media'],
+        constraints: ['Ethics'],
+      },
+      {
+        name: 'Federal Regulator',
+        icon: '🏛️',
+        publicObjective: 'Uphold fair elections',
+        hiddenObjective: 'Avoid political backlash',
+        resources: ['Authority'],
+        constraints: ['Process'],
+      },
+      {
+        name: 'Campaign Manager',
+        icon: '🎯',
+        publicObjective: 'Mobilize voters',
+        hiddenObjective: 'Win at any cost',
+        resources: ['Volunteers'],
+        constraints: ['Budget'],
+      },
     ],
+    // Canonical required+nullable keys
+    maxRounds: 5,
+    maxAIPlayers: 2,
     ...overrides,
   };
 }
-

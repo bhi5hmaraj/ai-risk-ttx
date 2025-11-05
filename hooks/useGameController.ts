@@ -85,7 +85,7 @@ export const useGameController = () => {
   const chatHistoryRef = useRef<any[] | null>(null);
 
   // Modular actions (compat shim): allow pages to keep using useGameController while we migrate
-  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm, runConsequencePhase: modularConsequence } = useModularGameActions();
+  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm } = useModularGameActions();
 
   // Round options hook (must be called at top level, not in useEffect)
   const { loadHumanOptions } = useRoundOptions();
@@ -322,7 +322,7 @@ export const useGameController = () => {
       }
       initializePresetScenario(setup);
     }
-  }, [callLLMAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
+  }, [callLLMAndCount, gamePath, gameSetup, gameState]);
 
   useEffect(() => {
     if (

@@ -84,6 +84,27 @@ vi.mock('../components/Navigation', () => ({
   ),
 }));
 
+// Ensure RouteOrchestrator sees a start intent when phases advance
+vi.mock('../stores/sessionStore', () => {
+  const state = { hasStartIntent: true, sessionMeta: null } as any;
+  const hook = (selector?: any) => (selector ? selector(state) : state);
+  hook.getState = () => state;
+  hook.setState = (partial: any) => Object.assign(state, typeof partial === 'function' ? partial(state) : partial);
+  return { useSessionStore: hook };
+});
+
+// Mock game store used by RouteOrchestrator
+vi.mock('../stores/gameStore', () => {
+  const state = {
+    get gameState() { return mockGameState as any; },
+    get players() { return mockPlayers as any; },
+  } as any;
+  const hook = (selector?: any) => (selector ? selector(state) : state);
+  hook.getState = () => state;
+  hook.setState = (partial: any) => Object.assign(state, typeof partial === 'function' ? partial(state) : partial);
+  return { useGameStore: hook };
+});
+
 const mockHumanPlayer = {
   id: 'player-1',
   role: {

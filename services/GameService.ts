@@ -13,9 +13,10 @@ export class GameService {
     selectedRoleName: string,
     path: 'classic' | 'custom' | 'ai_safety',
     setup: GameSetup | null,
-    defaultCoreMetric: CoreMetric
+    defaultCoreMetric: CoreMetric,
+    opts?: { aiCount?: number }
   ) {
-    return selectInitialPlayers(selectedRoleName, path, setup, AI_SAFETY_SCENARIO, defaultCoreMetric);
+    return selectInitialPlayers(selectedRoleName, path, setup, AI_SAFETY_SCENARIO, defaultCoreMetric, opts);
   }
 
   static applyRound(
@@ -39,4 +40,3 @@ export class GameService {
     return { nextState: { ...nextState, phase: GamePhase.ACTION }, nextPlayers };
   }
 }
-

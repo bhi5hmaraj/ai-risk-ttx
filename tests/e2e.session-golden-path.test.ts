@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { handleSessionRequest, makeTestRouterDeps } from '../lib/api/session-router';
+import { createValidGameSetup } from './fixtures/session-data';
 
 async function parse(res: Response) {
   const body = res.status === 304 ? null : await res.json();
@@ -11,7 +12,7 @@ describe('E2E (pure) — session golden path', () => {
     const deps = makeTestRouterDeps();
 
     // 1) Create session
-    const create = await parse(await handleSessionRequest('POST', [], {}, { mode: 'classic' }, deps));
+    const create = await parse(await handleSessionRequest('POST', [], {}, { mode: 'classic', setup: createValidGameSetup() }, deps));
     expect(create.res.status).toBe(201);
     const id = create.body.data.id as string;
     let rev = Number(create.res.headers.get('etag'));
@@ -50,4 +51,3 @@ describe('E2E (pure) — session golden path', () => {
     expect(deb.body.data.summary).toBeDefined();
   });
 });
-

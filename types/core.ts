@@ -51,6 +51,9 @@ export interface GameSetup {
     scenarioDescription: string;
     coreMetric: CoreMetric;
     stakeholders: StakeholderData[];
+    // Canonical optional overrides; nullable for server schema compatibility
+    maxRounds?: number | null;
+    maxAIPlayers?: number | null;
 }
 
 export interface ActionOption {
