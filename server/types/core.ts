@@ -120,8 +120,17 @@ export interface AITurnResponse {
   reasoning: string;
 }
 
+// Causal reference types
+export type CausalRefType = 'event' | 'action' | 'exogenous';
+
+export interface CausalReference {
+  type: CausalRefType; // what is being cited
+  ref: string;         // event id or action descriptor
+  rationale: string;   // short explanation of the causal link
+}
+
 // Debrief types
-export interface AIDebriefEvent { round: number; title: string; description: string; impact: string; actor: string | null }
+export interface AIDebriefEvent { round: number; title: string; description: string; impact: string; actor: string | null; causes?: CausalReference[] }
 export interface AIDebriefAction { round: number; title: string; impact: string; rationale: string | null }
 export interface AIDebriefResponse {
   summary: string;

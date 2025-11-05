@@ -104,7 +104,7 @@ const GameSetupZ = z.object({
 }).strict();
 
 // Per OpenAI Structured Outputs guidelines, all fields must be required; use nullables for optional semantics
-const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string(), actor: z.string().nullable() }).strict();
+const DebriefEventZ = z.object({ round: z.number().int().min(1), title: z.string(), description: z.string(), impact: z.string(), actor: z.string().nullable(), causes: z.array(CauseZ).optional() }).strict();
 const DebriefActionZ = z.object({ round: z.number().int().min(1), title: z.string(), impact: z.string(), rationale: z.string().nullable() }).strict();
 // Allow as few as 1 event to avoid forcing hallucinated rounds in short games
 const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(1).max(7), userActions: z.array(DebriefActionZ).min(0) }).strict();

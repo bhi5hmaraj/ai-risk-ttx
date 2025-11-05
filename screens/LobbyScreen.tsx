@@ -500,7 +500,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         />
         <div className="text-center mt-6">
           <button
-            onClick={handleCustomGameStart}
+            onClick={() => {
+              console.log('[LobbyScreen Button] Generate Scenario button clicked');
+              console.log('[LobbyScreen Button] customScenario:', customScenario);
+              console.log('[LobbyScreen Button] isLoading:', isLoading);
+              console.log('[LobbyScreen Button] Calling handleCustomGameStart...');
+              handleCustomGameStart();
+            }}
             disabled={!customScenario || isLoading}
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
