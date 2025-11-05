@@ -205,11 +205,11 @@ export const getInitialScenarioPromptAndSchema = () => {
     const prompt = `
       You are a master storyteller and the Game Master for 'Crisis Command', a serious simulation game.
       Your primary task is to establish a tense, realistic, and thought-provoking starting scenario.
-      The game begins with the 'Democratic Legitimacy' score at a fragile 100.
+      The game begins with the core metric at a fragile 100. Do not assume a specific metric name; choose a scenario-appropriate one (e.g., "Global Stability", "Public Trust").
 
       Tell the story in a way that players can scan quickly:
       - Use the 'roundSummary' field for a tight plain-language recap (no more than 3 sentences).
-      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects Democratic Legitimacy or the players.
+      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects the core metric or the players.
       - The 'counterfactualNote' should begin with "If no one had acted..." and briefly explain the expected score change (remember, this is the first round so reference the escalating crisis rather than player decisions).
 
       Here are your strict instructions for the response:
@@ -291,6 +291,7 @@ ${historyBlocks || '        <!-- no prior rounds -->'}
           - For action causes, set ref to "Role:Exact Action Title@Round" and write a mechanism‑focused rationale (what changed, how it propagated, over what timeframe).
           - For event causes, use the prior event id or exact headline and explain the causal link (not just correlation).
           - Keep rationales specific (1–2 sentences) and avoid repeating the same generic text.
+          - Keep each causes.rationale concise (<= 180 characters).
           - Consider long‑horizon dependencies: include at least one root‑cause citation from earlier rounds when appropriate, not only immediate antecedents. You may reference data from the <rounds> XML blocks above.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
@@ -475,8 +476,9 @@ Fairness & Neutrality (must follow):
 - Hidden score updates must be action-justified.
 
 Long‑horizon dependencies (must consider):
-- When selecting causes, include immediate antecedents and, when relevant, a root‑cause from earlier rounds using the <rounds> XML blocks above.
-- For action refs use "Role:Exact Action Title@Round"; for events include the original round in the ref if possible (e.g., evt_r2_k1 or "Exact Headline @Round 2").
+  - When selecting causes, include immediate antecedents and, when relevant, a root‑cause from earlier rounds using the <rounds> XML blocks above.
+  - For action refs use "Role:Exact Action Title@Round"; for events include the original round in the ref if possible (e.g., evt_r2_k1 or "Exact Headline @Round 2").
+  - Keep each causes.rationale concise (<= 180 characters).
 `;
 };
 

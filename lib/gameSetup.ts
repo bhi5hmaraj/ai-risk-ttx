@@ -25,8 +25,8 @@ export function buildRolesFromSetup(setup: GameSetup): RoleData[] {
 export function createCanonicalSetup(
   gameState: GameState,
   players: Player[],
-  fallbackTitle = 'Election Crisis 2024',
-  fallbackDesc = 'A rapidly escalating crisis threatens democratic legitimacy.',
+  fallbackTitle = 'Crisis Scenario',
+  fallbackDesc = 'A fast-moving crisis is unfolding with competing objectives and public stakes.',
   overrides?: { maxRounds?: number | null; maxAIPlayers?: number | null }
 ): GameSetup {
   const setup: any = {
