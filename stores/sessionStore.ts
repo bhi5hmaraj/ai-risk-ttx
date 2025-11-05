@@ -4,7 +4,6 @@ type SessionMeta = { id: string; revision: number; hostToken: string } | null;
 
 interface SessionStore {
   sessionMeta: SessionMeta;
-  isBackendMode: boolean;
   hasStartIntent: boolean;
   setSessionMeta: (meta: SessionMeta) => void;
   setStartIntent: (v: boolean) => void;
@@ -13,9 +12,6 @@ interface SessionStore {
 
 export const useSessionStore = create<SessionStore>((set) => ({
   sessionMeta: null,
-  // Backend mode is now always enabled - all game logic runs on the server
-  // TODO: Remove isBackendMode flag entirely and clean up conditional client-side code
-  isBackendMode: true,
   hasStartIntent: false,
   setSessionMeta: (meta) => {
     console.log('[sessionStore] setSessionMeta called with:', meta);
@@ -27,4 +23,3 @@ export const useSessionStore = create<SessionStore>((set) => ({
     set({ sessionMeta: null, hasStartIntent: false });
   },
 }));
-

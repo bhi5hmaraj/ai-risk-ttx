@@ -4,14 +4,9 @@
  * Safe to import from both frontend and backend (API routes)
  */
 
-const n = (v: string | undefined, def: number) => {
-  const x = v && Number.parseInt(v, 10);
-  return Number.isFinite(x as number) && (x as number) > 0 ? (x as number) : def;
-};
-
-// Allow runtime overrides via env (Next.js: use NEXT_PUBLIC_* on client; server: non-public fallback)
-const MAX_ROUNDS = n(process.env.NEXT_PUBLIC_GAME_MAX_ROUNDS || process.env.GAME_MAX_ROUNDS, 5);
-const MAX_AI_PLAYERS = n(process.env.NEXT_PUBLIC_GAME_AI_PLAYERS || process.env.GAME_AI_PLAYERS, 5);
+// Static defaults; authoritative values come from session setup
+const MAX_ROUNDS = 5;
+const MAX_AI_PLAYERS = 5;
 
 export const GAME_CONFIG = {
   MAX_ROUNDS,

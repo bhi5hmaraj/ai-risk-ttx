@@ -17,11 +17,7 @@ describe('sessionStore', () => {
       expect(hasStartIntent).toBe(false);
     });
 
-    it('should check isBackendMode from environment', () => {
-      const { isBackendMode } = useSessionStore.getState();
-      // Will be true or false depending on NEXT_PUBLIC_BACKEND_STATE env var
-      expect(typeof isBackendMode).toBe('boolean');
-    });
+    // isBackendMode flag removed; server-authoritative mode is always on
   });
 
   describe('setSessionMeta', () => {
@@ -142,14 +138,7 @@ describe('sessionStore', () => {
       expect(state.hasStartIntent).toBe(false);
     });
 
-    it('should not affect isBackendMode', () => {
-      const { isBackendMode: before } = useSessionStore.getState();
-
-      useSessionStore.getState().clear();
-
-      const { isBackendMode: after } = useSessionStore.getState();
-      expect(after).toBe(before);
-    });
+    // isBackendMode flag removed; clear() affects only sessionMeta and hasStartIntent
   });
 
   describe('Session Flow', () => {

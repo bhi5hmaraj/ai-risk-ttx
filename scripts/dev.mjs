@@ -38,9 +38,7 @@ if (aiIdx !== -1 && args[aiIdx + 1]) {
 }
 
 if (backendIdx !== -1) {
-  env.BACKEND_STATE = '1';
-  env.NEXT_PUBLIC_BACKEND_STATE = '1';
-  console.log('[dev] BACKEND_STATE enabled (server-authoritative state)');
+  // Server-authoritative mode is always on now; no flag needed.
 }
 
 const child = spawn('next', ['dev', ...forward], { stdio: 'inherit', env });
