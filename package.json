@@ -25,6 +25,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ci": "node scripts/vitest-runner.mjs",
     "test:watch": "vitest --watch",
+    "test:redis": "node scripts/test-redis.mjs",
     "type-check": "tsc --noEmit",
     "coverage:readme": "node scripts/update-coverage-readme.mjs",
     "metrics": "npm run test:coverage && npm run type-check && npm run coverage:readme"
@@ -41,6 +42,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.65.0",
     "reactflow": "^11.11.4",
+    "redis": "^5.9.0",
     "zod": "^3.25.6",
     "zustand": "^4.5.2"
   },

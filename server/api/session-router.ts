@@ -148,8 +148,13 @@ export async function handleSessionRequest(
     if (method === 'POST' && action === 'action-options') {
       const parsed = ActionOptionsRequestSchema.parse(body ?? {});
       const s0 = Date.now();
+      console.log(`[generate/action-options]: sessionId=${sessionId}, playerId=${parsed.playerId}, role=${parsed.playerRoleName}`);
       const snap = await deps.store.get(sessionId);
-      if (!snap) return json(404, { success: false, error: 'Not Found' });
+      if (!snap) {
+        console.error(`[generate/action-options]: session not found: ${sessionId}`);
+        return json(404, { success: false, error: 'Not Found' });
+      }
+      console.log(`[generate/action-options]: session found, round=${snap.state.round}, phase=${snap.state.phase}, setup=${!!snap.setup}`);
       // Build Player from setup + roleName; if not provided, use first stakeholder
       const roleName = parsed.playerRoleName ?? snap.setup?.stakeholders?.[0]?.name ?? 'Unknown';
       const stakeholder = snap.setup?.stakeholders?.find(s => s.name === roleName) || snap.setup?.stakeholders?.[0];
@@ -170,8 +175,9 @@ export async function handleSessionRequest(
         hasSubmittedActions: false,
       };
       const prev = snap.state.eventLog.find(e => e.round === snap.state.round - 1)?.playerActions ?? null;
+      console.log(`[generate/action-options]: calling LLM for player ${player.role.name}`);
       const data = await deps.llm.generateActionOptions({ player, gameState: snap.state, previousRoundActions: prev });
-      console.log(`[generate/action-options]: result=OK in ${Date.now() - s0}ms`);
+      console.log(`[generate/action-options]: result=OK, options=${data?.options?.length || 0} in ${Date.now() - s0}ms`);
       return json(200, { success: true, data }, {});
     }
 
