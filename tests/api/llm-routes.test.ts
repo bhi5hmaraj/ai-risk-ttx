@@ -9,7 +9,7 @@ import {
   handleGenerateAITurn,
   handleGenerateCounterfactual,
   handleGenerateActionOptions,
-} from '../../lib/api/llm-handlers';
+} from '../../server/api/llm-handlers';
 import * as llmService from '../../server/services/llmService';
 import { mockPlayer, mockGameState, mockAITurnResponse } from '../fixtures/game-data';
 

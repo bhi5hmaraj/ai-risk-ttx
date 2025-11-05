@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { handleGenerateDebrief } from '../../lib/api/llm-handlers';
+import { handleGenerateDebrief } from '../../server/api/llm-handlers';
 
 vi.mock('../../server/services/llmService', () => {
   return {
