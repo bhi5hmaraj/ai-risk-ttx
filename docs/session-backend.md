@@ -14,6 +14,7 @@ Non‑Goals (Phase 1)
 - Real‑time push (SSE/WebSocket). Start with polling/ETag.
 - Full auth suite. Use lightweight host/player tokens first.
 - Complex persistence schema. Begin with JSON state + a few tables.
+- _Comment (2025-03): SSE is now wired into the Next.js route; update this section to clarify that polling was the initial step but live streams are in production so readers are not misled._
 
 Why Now
 - Eliminates divergent client state and reduces 404/shape drift during LLM route migrations.
@@ -46,6 +47,7 @@ model GameSession {
   revision   Int      // bump on each write
   Players    Player[]
 }
+- _Comment: to support debrief replay we should add an append-only `SessionEvent` (or `SessionRevision`) table keyed by `(sessionId, revision)` that stores each mutation payload. That keeps retrospectives and analytics possible without overloading the mutable `state` column._
 
 model Player {
   id         String   @id @default(cuid())
@@ -68,6 +70,7 @@ model Action {
   submittedAt DateTime @default(now())
   @@index([sessionId, round])
 }
+- _Comment: consider adding explicit relations (`@relation` fields) plus metadata such as `source` (`human|ai`), `consequenceDelta`, and an LLM trace id so downstream reporting can distinguish AI vs human choices._
 ```
 
 Additional Models (Rooms / Multiplayer)
@@ -107,6 +110,7 @@ model Seat {
   @@unique([roomId, roleName])
 }
 ```
+- _Comment: if rooms can archive multiple past sessions, it may be clearer to model a separate `RoomSession` join table rather than a nullable `currentSessionId`, and enforce the link with an actual relation so dangling references cannot persist._
 
 Store Abstraction
 ```ts
@@ -120,10 +124,12 @@ export interface SessionStore {
   setDebrief(id: string, expectedRev: number, debrief: Debrief): Promise<Session>;
 }
 ```
+- _Comment: alongside these commands we should define an event log interface (`appendEvent`, `listEvents(sessionId)`) to formalize the CQRS/event-sourcing pattern we discussed for audit trails._
 
 Implementations
 - MemorySessionStore (Phase 1): in‑memory Map with TTL for development/tests.
 - PrismaSessionStore (Phase 1): JSON `state` + relational tables for players/actions, `revision` integer.
+- _Comment: a Redis-backed store would give us shared-nothing scale-out; documenting a Phase 1.5 adapter here would help production planning._
 
 Room Store (Phase 1)
 - MemoryRoomStore + PrismaRoomStore exposing: `createRoom`, `joinRoom`, `claimSeat`, `releaseSeat`, `startSession`, `getRoom`, presence heartbeats.
@@ -258,6 +264,7 @@ Auth & Security (lightweight)
 - `hostToken` returned on session creation; required for `advance`, `patch`, and `debrief`.
 - `playerToken` from `/join` required for submitting actions.
 - Tokens are opaque random strings (stored server‑side) and sent as HttpOnly cookies; header fallback for tests.
+- _Comment: worth clarifying storage—if tokens live in `GameSession` rows today we should move them into a dedicated table so list queries can’t leak them and so we can rotate/expire tokens without rewriting session JSON._
 
 Auth additions (Rooms)
 - Room `code` enables invite URLs like `/r/A1B2C3`.
@@ -286,6 +293,7 @@ Lifecycle Flows
    - `POST /session/:id/advance` (host)
 3) End
    - `POST /session/:id/debrief`
+- _Comment: add an explicit “Persist revision snapshot & emit SessionEvent” step after each mutation so the retrospective pipeline is part of the documented lifecycle._
 
 Multiplayer Lifecycle (Rooms → Session)
 1) `POST /rooms` → `{ roomId, code, hostToken }`
@@ -312,6 +320,7 @@ Performance & Scaling
 - Phase 1: request/response with polling and ETags; keep payloads compact by trimming transient fields (e.g., omit large chat history unless needed).
 - Phase 2 (optional): SSE channel for session updates; backpressure via `revision` window.
  - Pub/Sub: for production real‑time, integrate Upstash Redis Pub/Sub or Vercel Realtime to fan‑out room/session updates across instances.
+- _Comment: we should quantify current payload sizes and outline a cap/compaction strategy for long chat histories to avoid surprising limits when >5 rounds are added._
 
 Migration Plan
 1) Implement `SessionStore` + Memory impl.
