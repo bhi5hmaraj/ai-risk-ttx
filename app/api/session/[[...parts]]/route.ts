@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { handleSessionRequest, type LLMFacade } from '@/server/api/session-router';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
+import { RedisSessionStore } from '@/server/stores/sessionStore.redis';
 import type { AdvanceContext, SessionEvent, SessionSnapshot } from '@/server/stores/sessionStore';
 import { applyConsequences, buildPlayersFromSetup } from '@/server/services/sessionEngine';
 import * as llmService from '@/server/services/llmService';
@@ -33,9 +34,23 @@ const llm: LLMFacade = {
 };
 
 // Singleton pattern to survive HMR in development
-// In production, this should be replaced with Redis/database-backed store
-const globalForStore = globalThis as unknown as { sessionStore?: MemorySessionStore };
-const store = globalForStore.sessionStore ?? new MemorySessionStore({ advanceState: createAdvanceState(llm) });
+// Use Redis if SESSION_STORE_TYPE=redis, otherwise use in-memory store
+const globalForStore = globalThis as unknown as { sessionStore?: MemorySessionStore | RedisSessionStore };
+
+function createStore() {
+  const storeType = process.env.SESSION_STORE_TYPE;
+  const advanceState = createAdvanceState(llm);
+
+  if (storeType === 'redis') {
+    console.log('[route.ts] Creating Redis session store');
+    return new RedisSessionStore({ advanceState });
+  }
+
+  console.log('[route.ts] Creating memory session store');
+  return new MemorySessionStore({ advanceState });
+}
+
+const store = globalForStore.sessionStore ?? createStore();
 if (process.env.NODE_ENV !== 'production') {
   globalForStore.sessionStore = store;
   console.log('[route.ts] Using singleton store instance - sessions will survive HMR');

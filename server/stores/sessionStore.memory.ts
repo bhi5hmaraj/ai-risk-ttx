@@ -41,6 +41,7 @@ export class MemorySessionStore implements SessionStore {
   private sessions = new Map<string, SessionSnapshot>();
   private readonly advanceState: AdvanceStateFn;
   private listeners = new Map<string, Set<SessionSubscriber>>();
+  protected className = 'MemorySessionStore';
 
   constructor(opts: MemoryOpts) {
     this.advanceState = opts.advanceState;
@@ -137,12 +138,12 @@ export class MemorySessionStore implements SessionStore {
     const set = this.listeners.get(id) ?? new Set<SessionSubscriber>();
     set.add(subscriber);
     this.listeners.set(id, set);
-    console.log(`[MemorySessionStore] subscribe: ${id} - now ${set.size} listener(s)`);
+    console.log(`[${this.className}] subscribe: ${id} - now ${set.size} listener(s)`);
     return () => {
       const bucket = this.listeners.get(id);
       if (!bucket) return;
       bucket.delete(subscriber);
-      console.log(`[MemorySessionStore] unsubscribe: ${id} - now ${bucket.size} listener(s)`);
+      console.log(`[${this.className}] unsubscribe: ${id} - now ${bucket.size} listener(s)`);
       if (bucket.size === 0) {
         this.listeners.delete(id);
       }
@@ -155,7 +156,7 @@ export class MemorySessionStore implements SessionStore {
 
   private emit(id: string, type: SessionEventType, snapshot: SessionSnapshot, payload?: Record<string, unknown>) {
     const bucket = this.listeners.get(id);
-    console.log(`[MemorySessionStore] emit ${type} for ${id} - ${bucket?.size || 0} listener(s)`);
+    console.log(`[${this.className}] emit ${type} for ${id} - ${bucket?.size || 0} listener(s)`);
     if (!bucket || bucket.size === 0) return;
     bucket.forEach((listener) => {
       try {
