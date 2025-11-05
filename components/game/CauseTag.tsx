@@ -54,16 +54,31 @@ export const CauseTag: React.FC<CauseTagProps> = ({ cause, logs }) => {
     cause.type === 'action' ? 'bg-green-800/30 text-green-200 border-green-700/50' :
     'bg-purple-800/30 text-purple-200 border-purple-700/50';
 
+  // Build tooltip lines with de-dup logic so we don't show "<text>  Why: <text>" twice
+  const rationale = (cause.rationale || '').trim();
+  const detail = (gist.detail || '').trim();
+  const same = rationale && detail
+    ? rationale.toLowerCase() === detail.toLowerCase()
+      || rationale.toLowerCase().includes(detail.toLowerCase())
+      || detail.toLowerCase().includes(rationale.toLowerCase())
+    : false;
+
   const tip = (
     <div>
       <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">{cause.type === 'exogenous' ? 'External' : cause.type}</p>
       <p className="font-semibold text-gray-100 text-sm leading-snug">{gist.title}</p>
-      {gist.detail && <p className="text-xs text-gray-300 mt-1 leading-snug">{gist.detail}</p>}
       {gist.round !== undefined && (
-        <p className="text-[11px] text-gray-400 mt-1">Round {gist.round}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">Round {gist.round}</p>
       )}
-      {cause.rationale && cause.rationale.trim() !== (gist.detail || '').trim() && (
-        <p className="text-[11px] text-amber-300/90 mt-2">Why: {truncate(cause.rationale, 160)}</p>
+      {/* Prefer showing a single clear reason line; fall back to context */}
+      {same && (rationale || detail) && (
+        <p className="text-xs text-amber-300/90 mt-2">Reason: {truncate(rationale || detail, 160)}</p>
+      )}
+      {!same && detail && (
+        <p className="text-xs text-gray-300 mt-2 leading-snug">Context: {truncate(detail, 160)}</p>
+      )}
+      {!same && rationale && (
+        <p className="text-xs text-amber-300/90 mt-1">Reason: {truncate(rationale, 160)}</p>
       )}
     </div>
   );
