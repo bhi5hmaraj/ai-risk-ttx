@@ -10,7 +10,7 @@ import { useSession } from '@/hooks/useSession';
 import { useUIStore } from '@/stores/uiStore';
 import { SessionService } from '@/services/SessionService';
 import { selectInitialPlayers, createCanonicalSetup } from '@/lib/gameSetup';
-import { AI_SAFETY_SCENARIO } from '@/presets';
+import { AI_SAFETY_SCENARIO, ELECTION_PRESET_ABOUT } from '@/presets';
 
 export function useGameActions() {
   const { gameState, players, setGameState, setPlayers } = useGame();
@@ -54,10 +54,7 @@ export function useGameActions() {
             setLoading(false);
           }
         })();
-        return;
       }
-      const updatedPlayers = players.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p));
-      setPlayers(updatedPlayers);
     },
     [players, sessionMeta, gamePath, gameSetup, setSessionMeta, setPlayers, setLoading, setError, actionOptions, gameState]
   );
@@ -114,11 +111,17 @@ export function useGameActions() {
               maxAIPlayers: desiredAI,
             } as any;
           } else {
+            const fbTitle = path === 'ai_safety'
+              ? AI_SAFETY_SCENARIO.scenarioTitle
+              : ELECTION_PRESET_ABOUT.scenarioTitle;
+            const fbDesc = path === 'ai_safety'
+              ? AI_SAFETY_SCENARIO.scenarioDescription
+              : ELECTION_PRESET_ABOUT.scenarioDescription;
             canonicalSetup = createCanonicalSetup(
               { ...gameState, coreMetric },
               initialPlayers,
-              'Election Crisis 2024',
-              'A rapidly escalating crisis threatens democratic legitimacy.',
+              fbTitle,
+              fbDesc,
               { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null }
             );
           }
