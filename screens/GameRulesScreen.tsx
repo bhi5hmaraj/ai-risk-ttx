@@ -1,11 +1,14 @@
 import React from 'react';
 import { GAME_CONFIG } from '../gameConfig';
+import { useLobby } from '@/hooks/useLobby';
 
 interface GameRulesScreenProps {
   onNavigateToLobby: () => void;
 }
 
 export const GameRulesScreen: React.FC<GameRulesScreenProps> = ({ onNavigateToLobby }) => {
+  const { maxRounds } = useLobby();
+  const cap = maxRounds ?? GAME_CONFIG.MAX_ROUNDS;
   const handleContinue = () => {
     onNavigateToLobby();
   };
@@ -28,7 +31,7 @@ export const GameRulesScreen: React.FC<GameRulesScreenProps> = ({ onNavigateToLo
           <h2 className="text-2xl font-bold mb-4 text-blue-400">🎯 Game Overview</h2>
           <p className="text-gray-300 leading-relaxed mb-4">
             You are a key stakeholder navigating a complex crisis scenario. Make strategic decisions
-            across {GAME_CONFIG.MAX_ROUNDS} rounds to manage the shared public metric while pursuing your secret objectives.
+            across {cap} rounds to manage the shared public metric while pursuing your secret objectives.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="bg-gray-900/50 p-4 rounded-lg">
@@ -38,7 +41,7 @@ export const GameRulesScreen: React.FC<GameRulesScreenProps> = ({ onNavigateToLo
             </div>
             <div className="bg-gray-900/50 p-4 rounded-lg">
               <div className="text-3xl mb-2">🎲</div>
-              <div className="font-semibold text-blue-300">{GAME_CONFIG.MAX_ROUNDS} Rounds Total</div>
+              <div className="font-semibold text-blue-300">{cap} Rounds Total</div>
               <div className="text-sm text-gray-400">Navigate the evolving crisis</div>
             </div>
             <div className="bg-gray-900/50 p-4 rounded-lg">
@@ -183,7 +186,7 @@ export const GameRulesScreen: React.FC<GameRulesScreenProps> = ({ onNavigateToLo
             <div className="bg-green-900/30 p-4 rounded-lg border border-green-700">
               <h3 className="font-bold text-lg mb-2 text-green-300">✅ Victory Conditions</h3>
               <ul className="text-gray-300 space-y-2 ml-4">
-                <li>• Survive all {GAME_CONFIG.MAX_ROUNDS} rounds with the core metric above 0</li>
+                <li>• Survive all {cap} rounds with the core metric above 0</li>
                 <li>• Maximize your <strong>hidden score</strong> to achieve personal objectives</li>
                 <li>• Balance self-interest with collective survival</li>
               </ul>

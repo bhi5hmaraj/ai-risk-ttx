@@ -171,6 +171,7 @@ export default function GamePage() {
             isCustomScenario={showMakePublic}
             onMakePublic={() => setShowMakePublicModal(true)}
             onOpenFeedback={() => setShowFeedbackModal(true)}
+            maxRounds={gameSetup?.maxRounds ?? undefined}
           />
         </>
       )}
