@@ -13,12 +13,14 @@ interface GameStatusPanelProps {
   isCustomScenario?: boolean;
   onMakePublic?: () => void;
   onOpenFeedback?: () => void;
+  maxRounds?: number; // display denominator; defaults to GAME_CONFIG.MAX_ROUNDS
 }
 
-export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback }) => {
+export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback, maxRounds }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
   const [showHiddenObjective, setShowHiddenObjective] = useState(false);
+  const roundCap = typeof maxRounds === 'number' && maxRounds > 0 ? maxRounds : GAME_CONFIG.MAX_ROUNDS;
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 md:p-5 mb-6 space-y-3">
@@ -55,7 +57,7 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 lg:flex-nowrap lg:gap-8 w-full lg:w-auto">
-          <MetricPill label="Round" value={`${gameState.round} / ${GAME_CONFIG.MAX_ROUNDS}`} accent="text-blue-300" />
+          <MetricPill label="Round" value={`${gameState.round} / ${roundCap}`} accent="text-blue-300" />
           <MetricPill label={gameState.coreMetric.name} value={`${metricValue}%`} accent={metricClass} />
           <MetricPill label="Personal Score" value={player.hiddenScore.toString()} accent="text-amber-300" />
           <div className="flex items-center gap-3">

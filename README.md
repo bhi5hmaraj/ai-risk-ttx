@@ -223,12 +223,12 @@ If any required variable is missing, impacted routes will return 503 with a desc
 
 ## Test Coverage
 
-Last updated: 2025-11-05 11:00Z
+Last updated: 2025-11-05 11:08Z
 
 | Metric | Percent |
 | - | - |
 | Statements | 46.7% |
-| Branches | 34.7% |
+| Branches | 34.8% |
 | Functions | 45.0% |
 | Lines | 48.0% |
 

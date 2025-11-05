@@ -358,13 +358,14 @@ export const useGameController = () => {
   }, [gameState.phase, handleConfirmActions, humanPlayer, isPaused, timer]);
 
   useEffect(() => {
+    const maxRounds = (gameSetup as any)?.maxRounds ?? GAME_CONFIG.MAX_ROUNDS;
     if (
-      (gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.coreMetric.value <= 0 && gameState.round > 0)) &&
+      (gameState.round > maxRounds || (gameState.coreMetric.value <= 0 && gameState.round > 0)) &&
       gameState.phase !== GamePhase.END
     ) {
       setGameState((prev) => ({ ...prev, phase: GamePhase.END }));
     }
-  }, [gameState.coreMetric.value, gameState.phase, gameState.round]);
+  }, [gameSetup, gameState.coreMetric.value, gameState.phase, gameState.round]);
 
   // When the game ends, clear the start intent so the router doesn't bounce back to /game.
   useEffect(() => {
