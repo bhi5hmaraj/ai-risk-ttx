@@ -14,6 +14,10 @@ export function RouteOrchestrator() {
   const { hasStartIntent, sessionMeta } = useSessionStore();
 
   useEffect(() => {
+    // Always allow visiting Home explicitly
+    if (pathname === '/') {
+      return;
+    }
     // End of game: always land on /end and stop evaluating other rules
     if (gameState.phase === GamePhase.END) {
       if (pathname !== '/end') {
