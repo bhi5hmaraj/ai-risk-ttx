@@ -37,6 +37,9 @@ export interface GameSetup {
   scenarioDescription: string;
   coreMetric: CoreMetric;
   stakeholders: StakeholderData[];
+  // Phase 1: Add optional game configuration (from canonical schema)
+  maxRounds?: number | null;
+  maxAIPlayers?: number | null;
 }
 
 export interface ActionOption {

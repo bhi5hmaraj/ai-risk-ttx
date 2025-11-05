@@ -62,13 +62,12 @@ export const useGameController = () => {
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
-  const [sessionMeta, setSessionMeta] = useState<{ id: string; revision: number; hostToken: string } | null>(null);
   const sessionStreamRef = useRef<EventSource | null>(null);
-  const USE_BACKEND_STATE = useMemo(() => {
-    try { return (process as any)?.env?.NEXT_PUBLIC_BACKEND_STATE === '1'; } catch { return false; }
-  }, []);
-  const { setStartIntent, clear: clearSessionStore } = useSessionStore();
-  const BACKEND_MODE = useMemo(() => USE_BACKEND_STATE || sessionMeta !== null, [USE_BACKEND_STATE, sessionMeta]);
+  // Backend mode is now always enabled - all game logic runs on the server
+  // TODO: Remove USE_BACKEND_STATE/BACKEND_MODE entirely, simplify all conditional logic
+  const USE_BACKEND_STATE = true;
+  const { sessionMeta, setSessionMeta, setStartIntent, clear: clearSessionStore } = useSessionStore();
+  const BACKEND_MODE = true;
   const setStartStep = useUIStore((s) => s.setStartStep);
   const resetUI = useUIStore((s) => s.reset);
 
@@ -191,21 +190,7 @@ export const useGameController = () => {
       setStartStep('ready', 'idle');
     } catch {}
 
-    // Initialize a server session in the background when feature flag is on
-    if (USE_BACKEND_STATE && !sessionMeta) {
-      (async () => {
-        try {
-          const created = await SessionService.create({ mode: path as any, setup: path === 'custom' ? gameSetup || undefined : undefined });
-          setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken });
-          try { setStartStep('creatingSession', 'done'); } catch {}
-        } catch (e) {
-          // non-fatal for client path; we still start game locally
-          try { console.warn('[useGameController] createSession failed (non-fatal):', e); } catch {}
-          try { setStartStep('creatingSession', 'error'); } catch {}
-        }
-      })();
-    }
-
+    // Build players FIRST so we can create proper setup for session
     const { players: initialPlayers, coreMetric } = selectInitialPlayers(
       selectedRoleName,
       path,
@@ -215,6 +200,25 @@ export const useGameController = () => {
     );
 
     setPlayers(initialPlayers);
+
+    // Initialize a server session in the background when feature flag is on
+    // Must happen AFTER players are built so we can create canonical setup
+    if (USE_BACKEND_STATE && !sessionMeta) {
+      (async () => {
+        try {
+          // Build canonical setup from players (all modes need full roster)
+          const tempState = { phase: GamePhase.LOBBY, round: 0, coreMetric, eventLog: [], currentEvent: null } as GameState;
+          const canonicalSetup = gameSetup || createCanonicalSetup(tempState, initialPlayers);
+          const created = await SessionService.create({ mode: path as any, setup: canonicalSetup });
+          setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken });
+          try { setStartStep('creatingSession', 'done'); } catch {}
+        } catch (e) {
+          // non-fatal for client path; we still start game locally
+          try { console.warn('[useGameController] createSession failed (non-fatal):', e); } catch {}
+          try { setStartStep('creatingSession', 'error'); } catch {}
+        }
+      })();
+    }
     try { setStartStep('buildingPlayers', 'done'); } catch {}
     setGameState((prev) => ({
       ...prev,
@@ -376,9 +380,17 @@ export const useGameController = () => {
   }, [isHistoryOpen]);
 
   useEffect(() => {
-    if (!USE_BACKEND_STATE) return;
-    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+    console.log('[SSE] useEffect triggered - BACKEND_MODE:', BACKEND_MODE, 'sessionMeta:', sessionMeta);
+    if (!BACKEND_MODE) {
+      console.log('[SSE] BACKEND_MODE is false, skipping');
+      return;
+    }
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
+      console.log('[SSE] window or EventSource undefined');
+      return;
+    }
     if (!sessionMeta?.id) {
+      console.log('[SSE] No sessionMeta.id, closing any existing stream');
       if (sessionStreamRef.current) {
         sessionStreamRef.current.close();
         sessionStreamRef.current = null;
@@ -387,10 +399,12 @@ export const useGameController = () => {
     }
 
     if (sessionStreamRef.current) {
+      console.log('[SSE] Closing existing stream');
       sessionStreamRef.current.close();
       sessionStreamRef.current = null;
     }
 
+    console.log('[SSE] Opening new stream for session:', sessionMeta.id);
     const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
     sessionStreamRef.current = source;
 
@@ -403,7 +417,9 @@ export const useGameController = () => {
           console.log('[SSE] event', payload?.type || 'snapshot', 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
         } catch {}
 
-        setSessionMeta((prev) => (prev ? { ...prev, revision: snapshot.revision } : prev));
+        if (sessionMeta) {
+          setSessionMeta({ ...sessionMeta, revision: snapshot.revision });
+        }
         try { setStartStep('connectingStream', 'done'); } catch {}
         if (snapshot.state) {
           setGameState(snapshot.state as GameState);
@@ -469,7 +485,7 @@ export const useGameController = () => {
         sessionStreamRef.current = null;
       }
     };
-  }, [USE_BACKEND_STATE, sessionMeta?.id]);
+  }, [BACKEND_MODE, sessionMeta?.id]);
 
   const handleOpenActionTree = useCallback(() => {
     setIsActionTreeOpen(true);

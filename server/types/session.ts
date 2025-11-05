@@ -1,11 +1,15 @@
 import { z } from 'zod';
+import {
+  CoreMetricSchema,
+  CanonicalGameSetupSchema,
+  type CanonicalGameSetup,
+  type CoreMetric,
+  type Stakeholder,
+} from './scenario';
 
-// Core primitives reused by multiple contracts
-export const CoreMetricSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().min(1),
-  value: z.number().int().min(0).max(100),
-});
+// Re-export canonical schema types for backward compatibility
+export { CoreMetricSchema, type CoreMetric, type Stakeholder };
+export type GameSetup = CanonicalGameSetup;
 
 export const ActionOptionSchema = z.object({
   title: z.string().min(1),
@@ -96,21 +100,8 @@ export const GameStateSchema = z.object({
   currentEvent: GameEventSchema.nullable(),
 });
 
-export const GameSetupSchema = z.object({
-  scenarioTitle: z.string().min(1),
-  scenarioDescription: z.string().min(1),
-  coreMetric: CoreMetricSchema,
-  stakeholders: z.array(
-    z.object({
-      name: z.string().min(1),
-      icon: z.string().min(1), // emoji string
-      publicObjective: z.string().min(1),
-      hiddenObjective: z.string().min(1),
-      resources: z.array(z.string()).default([]),
-      constraints: z.array(z.string()).default([]),
-    })
-  ),
-});
+// Use canonical schema from scenario.ts (Phase 1: Unified schema)
+export const GameSetupSchema = CanonicalGameSetupSchema;
 
 // API Envelopes
 export const ApiSuccessSchema = (data: any) => z.object({ success: z.literal(true), data });
@@ -119,9 +110,11 @@ export const ApiErrorSchema = z.object({ success: z.literal(false), error: z.str
 // Session contracts
 export const CreateSessionRequestSchema = z.object({
   mode: z.enum(['classic', 'ai_safety', 'custom']).default('classic'),
-  setup: GameSetupSchema.optional(),
+  // Phase 0.2: setup is now REQUIRED (no fallbacks)
+  // Phase 1: Uses canonical schema from scenario.ts
+  setup: GameSetupSchema,
   maxRounds: z.number().int().min(1).max(50).optional(),
-  aiPlayers: z.number().int().min(0).max(10).optional(),
+  aiPlayers: z.number().int().min(1).max(10).optional(),
 });
 
 export const SessionSnapshotSchema = z.object({

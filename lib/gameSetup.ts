@@ -22,7 +22,12 @@ export function buildRolesFromSetup(setup: GameSetup): RoleData[] {
   });
 }
 
-export function createCanonicalSetup(gameState: GameState, players: Player[], fallbackTitle = 'Election Crisis 2024', fallbackDesc = 'A rapidly escalating crisis threatens democratic legitimacy.'): GameSetup {
+export function createCanonicalSetup(
+  gameState: GameState,
+  players: Player[],
+  fallbackTitle = 'Election Crisis 2024',
+  fallbackDesc = 'A rapidly escalating crisis threatens democratic legitimacy.'
+): GameSetup {
   return {
     scenarioTitle: gameState.currentEvent?.headline || fallbackTitle,
     scenarioDescription: gameState.currentEvent?.detail || fallbackDesc,
@@ -35,6 +40,9 @@ export function createCanonicalSetup(gameState: GameState, players: Player[], fa
       resources: p.role.resources,
       constraints: p.role.constraints,
     })),
+    // Canonical schema requires these fields to exist (nullable allowed)
+    maxRounds: null,
+    maxAIPlayers: null,
   };
 }
 

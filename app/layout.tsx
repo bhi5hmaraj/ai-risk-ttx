@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { RouteOrchestrator } from '@/components/RouteOrchestrator';
+import { SessionMonitor } from '@/components/SessionMonitor';
 import { FocusBoundary } from '@/components/FocusBoundary';
 import { StartProgress } from '@/components/StartProgress';
 
@@ -19,6 +20,8 @@ export default function RootLayout({
       <body className="antialiased">
         {/* Client-side orchestrator for route decisions */}
         <RouteOrchestrator />
+        {/* SSE connection monitor for real-time backend updates */}
+        <SessionMonitor />
         <FocusBoundary>
           <StartProgress />
           {children}

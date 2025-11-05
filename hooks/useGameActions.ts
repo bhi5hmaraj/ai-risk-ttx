@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from 'react';
-import { GamePhase, type ActionOption, type GameSetup, type Player, type GameState } from '@/types';
+import { GamePhase, type ActionOption } from '@/types';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
@@ -9,100 +9,20 @@ import { useLobby } from '@/hooks/useLobby';
 import { useSession } from '@/hooks/useSession';
 import { useUIStore } from '@/stores/uiStore';
 import { SessionService } from '@/services/SessionService';
-import {
-  generateCounterfactualConsequences,
-  generateAITurn,
-  generateInitialScenarioChat,
-  generateConsequencesChat,
-} from '@/services/llmApiClient';
 import { selectInitialPlayers, createCanonicalSetup } from '@/lib/gameSetup';
-import { createInitialGameStateFromScenario, applyConsequences } from '@/lib/gameLogic';
-import { GAME_CONFIG } from '@/constants';
 import { AI_SAFETY_SCENARIO } from '@/presets';
 
 export function useGameActions() {
   const { gameState, players, setGameState, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
-  const { actionOptions, setActionOptions, setAICompletionStatus, updateAICompletion } = useActions();
+  const { actionOptions, setActionOptions } = useActions();
   const { selectedRoleName, gamePath, gameSetup, setGameSetup } = useLobby();
   const { sessionMeta, isBackendMode, setSessionMeta } = useSession();
   const setStartStep = useUIStore((s) => s.setStartStep);
-  const llmCallsThisRoundRef = useRef(0);
-  const chatHistoryRef = useRef<any[] | null>(null);
+  // Phase 2: client-side LLM/chat paths removed
+  const sessionCreationInFlightRef = useRef(false);
 
-  const runConsequencePhase = useCallback(
-    async (currentPlayers: Player[], currentGameState: GameState) => {
-      if (isBackendMode) return;
-      setLoading(true, 'AI Game Master is assessing the situation...');
-
-      let playersWithActions = [...currentPlayers];
-      const aiPlayers = currentPlayers.filter((p) => !p.isHuman);
-      setAICompletionStatus(Object.fromEntries(aiPlayers.map((p) => [p.role.name, false])));
-
-      const counterfactualPromise = generateCounterfactualConsequences(currentGameState);
-      const prev = currentGameState.eventLog.find((e) => e.round === currentGameState.round - 1);
-      const previousRoundActions = prev ? prev.playerActions : null;
-
-      let aiTurnResults: (Awaited<ReturnType<typeof generateAITurn>> | null)[] = [];
-      if (aiPlayers.length > 0) {
-        const aiTurnPromises = aiPlayers.map((player) =>
-          generateAITurn(player, currentGameState, previousRoundActions).then((res) => {
-            updateAICompletion(player.role.name, true);
-            return res;
-          })
-        );
-        aiTurnResults = await Promise.all(aiTurnPromises);
-        if (aiTurnResults.some((r) => r === null)) {
-          setError('Failed to generate AI player turns. The simulation cannot continue.');
-          setLoading(false);
-          return;
-        }
-        const aiActionsByRole: Record<string, ActionOption[]> = {};
-        aiPlayers.forEach((p, i) => (aiActionsByRole[p.role.name] = aiTurnResults[i]?.chosenActions || []));
-        playersWithActions = currentPlayers.map((p) => (!p.isHuman && aiActionsByRole[p.role.name] ? { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true } : p));
-      }
-
-      setPlayers(playersWithActions);
-      const counterfactual = await counterfactualPromise;
-      if (!counterfactual) {
-        setError('The AI Game Master failed to calculate the counterfactual.');
-        setLoading(false);
-        return;
-      }
-
-      const setupForChat: GameSetup = gameSetup ?? createCanonicalSetup(currentGameState, currentPlayers);
-      const cons = await generateConsequencesChat(
-        currentGameState,
-        playersWithActions,
-        counterfactual.publicScoreUpdate,
-        chatHistoryRef.current || [],
-        setupForChat
-      );
-      if (!cons) {
-        setError('The AI Game Master failed to process consequences (chat mode).');
-        setLoading(false);
-        return;
-      }
-      chatHistoryRef.current = cons.chatHistory;
-      const result = cons.consequences;
-      const { gameState: nextState, players: nextPlayers } = applyConsequences(
-        currentGameState,
-        result,
-        playersWithActions,
-        currentPlayers.filter((p) => !p.isHuman),
-        aiTurnResults as any,
-        actionOptions,
-        llmCallsThisRoundRef.current
-      );
-      setGameState(nextState);
-      setPlayers(nextPlayers);
-      setActionOptions([]);
-      setLoading(false);
-      setAICompletionStatus({});
-      llmCallsThisRoundRef.current = 0;
-    },
-    [isBackendMode, setLoading, setError, setAICompletionStatus, setPlayers, setGameState, gameSetup, actionOptions, setActionOptions]
-  );
+  // no-op: client consequence path removed
 
   const handleConfirmActions = useCallback(
     (actions: ActionOption[]) => {
@@ -114,7 +34,10 @@ export function useGameActions() {
           try {
             let meta = sessionMeta;
             if (!meta) {
-              const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: gameSetup || undefined });
+              // TODO: Remove this fallback - session should ONLY be created in handleStartGame
+              // This fallback creates race conditions (MIGRATION_STATUS.md line 300)
+              const canonicalSetup = gameSetup || createCanonicalSetup(gameState, players);
+              const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: canonicalSetup });
               meta = { id: created.id, revision: created.revision, hostToken: created.hostToken } as any;
               setSessionMeta(meta as any);
             }
@@ -139,9 +62,9 @@ export function useGameActions() {
       }
       const updatedPlayers = players.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p));
       setPlayers(updatedPlayers);
-      runConsequencePhase(updatedPlayers, gameState);
+      setError('Backend session mode is required.');
     },
-    [players, isBackendMode, sessionMeta, gamePath, gameSetup, setSessionMeta, setPlayers, setLoading, setError, actionOptions, runConsequencePhase, gameState]
+    [players, isBackendMode, sessionMeta, gamePath, gameSetup, setSessionMeta, setPlayers, setLoading, setError, actionOptions, gameState]
   );
 
   const handleStartGame = useCallback(() => {
@@ -159,36 +82,60 @@ export function useGameActions() {
     setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
     setLoading(true, 'AI Game Master is generating the initial scenario...');
 
-    if (isBackendMode && !sessionMeta) {
+    if (isBackendMode && !sessionMeta && !sessionCreationInFlightRef.current) {
+      console.log('[useGameActions] Starting session creation - mode:', path, 'hasSetup:', !!gameSetup);
+      sessionCreationInFlightRef.current = true;
       (async () => {
         try {
-          const created = await SessionService.create({ mode: path, setup: path === 'custom' ? gameSetup || undefined : undefined });
+          // Build canonical setup for ALL modes (not just custom)
+          // This ensures server gets full roster and can create all AI players
+          const baseSetup = gameSetup || createCanonicalSetup(
+            { ...gameState, coreMetric },
+            initialPlayers,
+            'Election Crisis 2024',
+            'A rapidly escalating crisis threatens democratic legitimacy.'
+          );
+          // Ensure required+nullable fields exist per canonical schema
+          const canonicalSetup = {
+            ...baseSetup,
+            maxRounds: (baseSetup as any).maxRounds ?? null,
+            maxAIPlayers: (baseSetup as any).maxAIPlayers ?? null,
+          } as any;
+
+          console.log('[useGameActions] Calling SessionService.create with setup:', {
+            mode: path,
+            stakeholders: canonicalSetup.stakeholders.length,
+            roles: canonicalSetup.stakeholders.map(s => s.name)
+          });
+          const created = await SessionService.create({ mode: path, setup: canonicalSetup });
+          console.log('[useGameActions] Session created successfully! ID:', created.id, 'revision:', created.revision);
           setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken } as any);
           setStartStep('creatingSession', 'done');
-        } catch {
+
+          // Initialize session with scenario so backend has game state for action-options
+          console.log('[useGameActions] Initializing session scenario...');
+          const initSnap = await SessionService.initialize(created.id);
+          // Update sessionMeta with latest revision from initialize
+          setSessionMeta({ id: created.id, revision: initSnap.revision, hostToken: created.hostToken } as any);
+          console.log('[useGameActions] Session initialized successfully at rev', initSnap.revision);
+        } catch (e) {
+          console.error('[useGameActions] Session creation/initialization failed:', e);
           setStartStep('creatingSession', 'error');
+        } finally {
+          sessionCreationInFlightRef.current = false;
         }
       })();
+    } else {
+      console.log('[useGameActions] Skipping session creation - isBackendMode:', isBackendMode, 'hasSessionMeta:', !!sessionMeta, 'inFlight:', sessionCreationInFlightRef.current);
     }
 
     (async () => {
       const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers);
       setGameSetup(setup);
-      const initChat = await generateInitialScenarioChat(setup, initialPlayers);
-      const result = initChat?.scenario;
-      if (initChat) chatHistoryRef.current = initChat.chatHistory;
-      if (result) {
-        const initialGameState = createInitialGameStateFromScenario(gameState, result, llmCallsThisRoundRef.current);
-        setGameState(initialGameState);
-        setLoading(false);
-        setStartStep('generatingScenario', 'done');
-        setStartStep('ready', 'done');
-      } else {
-        setError('The AI Game Master failed to initialize the game.');
-        setGameState((prev) => ({ ...prev, phase: GamePhase.LOBBY }));
-        setLoading(false);
-        setStartStep('generatingScenario', 'error');
-      }
+      // Phase 2: The server initializes; SSE will update the stores. No client LLM initialization.
+      setLoading(false);
+      setStartStep('generatingScenario', 'done');
+      setStartStep('ready', 'done');
     })();
   }, [selectedRoleName, gamePath, gameSetup, isBackendMode, sessionMeta, setSessionMeta, setPlayers, setGameState, setLoading, setError]);
 

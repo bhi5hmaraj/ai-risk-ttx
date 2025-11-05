@@ -269,3 +269,203 @@ Execution Plan:
 - Comprehensive test coverage protects against regressions
 - Feature flag allows gradual rollout
 - Pure SPA mode still works (backward compatible)
+
+
+# UPDATE
+
+
+  Canonical Scenario + Server-Authoritative Game
+
+  - Owner: Platform
+  - Status: Proposed
+  - Goals: unify scenario shape; move all game logic to server; make client intent-only; eliminate
+  client/server divergence; fix progress UX.
+
+  Summary
+
+  - Problem: Frontend and backend both model “game” and can compute turns. In classic mode the
+  server falls back to a minimal setup while the client assumes a full roster. SSE and store merges
+  race. Result: stuck AI spinners, mismatched rounds, clunky load states.
+  - Direction: Canonicalize scenarios to a single schema the server owns. The client only chooses
+  options and sends intents; all state and computation live on the server. SSE is the sole real-
+  time channel.
+
+  Diagnosis (today’s failure)
+
+  - Mismatched rosters: Client builds 5–6 actors from constants.tsx, while server creates a 1-
+  stakeholder fallback for classic. Only that actor progresses; others spin forever.
+  - Dual engines: Client chat-mode consequences (legacy) vs server advance pipeline; both can run.
+  - Duplicate SSE: SessionMonitor and an earlier effect in useSession both bind SSE; merges are
+  non-deterministic.
+  - Racy session init: Options loader can create a “minimal” session before Start sets a full setup.
+
+  File references
+
+  - Server pipeline: app/api/session/[[...parts]]/route.ts:52 (advance state), server/services/
+  sessionEngine.ts:59 (applyConsequences)
+  - Session router: lib/api/session-router.ts:130 (action-options), :158 (advance), :173
+  (initialize)
+  - Client actions: hooks/useGameActions.ts:110 (confirm), :150 (start/creation/init)
+  - Options loader: hooks/useRoundOptions.ts:31 (create on-demand, setup optional)
+  - SSE client: components/SessionMonitor.tsx:56 (event handling)
+
+  Principles
+
+  - Single source of truth: All game state and progression are computed on the server.
+  - Canonical schema: One scenario schema used end-to-end (persisted, versioned).
+  - Intent-only client: Client sends intents (create, join, select, confirm) and renders server
+  snapshots.
+  - Streaming-first UX: Server emits granular progress; client renders partial completion (actors go
+  green as done).
+  - Deterministic IDs: Stable player.id and role.name across client/server/SSE for merges.
+
+  Canonical Scenario Schema
+
+  - Type file: server/types/scenario.ts
+  - Shape (Zod + TS; all fields required, nullable where optional semantics needed):
+      - id: string (ULID), version: number
+      - scenarioTitle: string
+      - scenarioDescription: string
+      - coreMetric: { name: string; description: string; value: number }
+      - stakeholders: Array<{ name: string; icon: string; publicObjective: string; hiddenObjective:
+  string; resources: string[]; constraints: string[] }>
+      - roundSettings: { maxRounds: number; actionPointsPerRound: number; actionTimerSec: number }
+      - prompts: { system?: string | null; hints?: string[] | null } (nullable)
+      - metadata: { mode: 'classic' | 'custom' | 'ai_safety'; seed?: string | null }
+  - Server is the canonical producer/consumer; client never mutates. For LLM structured outputs,
+  ensure no .optional()—use .nullable() and strict objects (see prior SDK warning).
+
+  Player Identity
+
+  - Server creates full roster from scenario via buildPlayersFromSetup() and assigns stable ids:
+      - human_player for human; ai_1..ai_N for AIs (or ULIDs if we want).
+  - Role names must exactly match stakeholders[i].name. UI merges SSE by id first, then role.name.
+
+  Session Lifecycle (server)
+
+  - POST /api/session create
+      - Body: { mode, setup: CanonicalScenario, maxRounds?, aiPlayers? }
+      - Store snapshot: { state: { phase: LOBBY }, setup, players? [] }, revision=1
+  - POST /api/session/:id/initialize initialize
+      - Server sets phase=ACTION, round=1, seeds currentEvent from setup; builds full players from
+  setup; emits initial snapshot via SSE.
+  - POST /api/session/:id/action-options generate human options
+      - Body: { playerId, playerRoleName }
+      - Returns { options: ActionOption[] }
+  - POST /api/session/:id/actions submit human actions
+      - Headers: If-Match: <revision>
+      - Body: { playerId, actions }
+      - Server marks submitted, updates submitted map and players[]. emits update.
+  - POST /api/session/:id/advance advance round
+      - Headers: If-Match, x-host-token
+      - Body: { humanRoleName, humanPlayerId, humanActions, humanAvailableOptions }
+      - Server pipeline:
+          - Run counterfactual + AI turns in parallel
+          - emit('progress', { role, stage: 'ai-turn' }) as each completes
+          - Generate consequences, applyConsequences, produce next state (phase back to ACTION),
+  reset submitted
+          - emit('advance', snapshot) then return response
+  - GET /api/session/:id with ETag
+  - GET /api/session/:id/stream SSE:
+      - Events: session with { type: 'snapshot' | 'update' | 'progress' | 'advance', snapshot,
+  payload? }; ping.
+
+  Client Responsibilities
+
+  - Choose scenario mode and role; send Start intent; never compute turns.
+  - Render from stores fed by SSE snapshots only.
+  - Call:
+      - SessionService.create({ mode, setup })
+      - SessionService.initialize(id) immediately after create (server becomes authoritative)
+      - SessionService.getActionOptions(id, human.id, human.role.name)
+      - SessionService.submitActions(id, human.id, actions, rev)
+      - SessionService.advance(id, rev, host, {human...})
+  - Subscribe once via SessionMonitor and drop a second SSE hook.
+
+  API Contract Updates
+
+  - Make setup required in POST /api/session for all modes.
+  - Ensure initialize always expands full roster from setup (no fallback “single stakeholder”).
+  - Enforce stakeholders.length ∈ [4,6] for classic; server validates (Zod).
+
+  UX: Progress
+
+  - Client shows inline loaders per actor fed by progress events; turn cells go green as true.
+  - Suppress global overlay except for irreversible transitions (Start, Debrief).
+
+  Persistence
+
+  - Replace in-memory store with Prisma-backed store (planetscale/neon):
+      - Tables: Session { id, revision, hostToken, createdAt }, SessionState { sessionId, jsonb },
+  SessionSetup { sessionId, jsonb }, SessionPlayers { sessionId, jsonb }, EventLog { sessionId,
+  round, jsonb }.
+      - Write-through on every update/advance, ETag = revision.
+
+  Migration Plan
+
+  - Phase 0: Stabilize (quick fixes)
+      - Always pass full canonical setup on create in client (classic/custom/ai_safety).
+      - Require initialize after create; remove fallback setup on server.
+      - Remove duplicate SSE effect from hooks/useSession (keep components/SessionMonitor).
+  - Phase 1: Canonicalize schema
+      - Add server/types/scenario.ts; refactor lib/api/session-router.ts to validate/require it
+  on create.
+      - Update server/services/llm/openaiService.ts to use the canonical schema for prompts and
+  outputs.
+  - Phase 2: Server-only logic
+      - Delete client chat-mode: remove generateConsequencesChat, runConsequencePhase calls from
+  client codepaths.
+      - Ensure useGameActions only calls SessionService.* (no LLM client).
+  - Phase 3: UI + SSE polish
+      - Ensure SessionMonitor is the only SSE subscriber; make merges id-first then role fallback.
+      - Confirm per-actor progress updates and end-of-round reset.
+  - Phase 4: Persistence
+      - Gate with NEXT_PUBLIC_BACKEND_STATE=1 + PRISMA_URL. Swap Memory store with Prisma store.
+  - Phase 5: Cleanup
+      - Remove dead routes/docs; update MIGRATION_STATUS.md.
+
+  Testing
+
+  - Unit (server)
+      - Router: create/init/options/actions/advance/debrief happy paths; 400/403/409 cases
+      - LLM adapters: schema conformance (no .optional() fields)
+      - Store: revision conflicts, snapshots, SSE publish
+  - Unit (client)
+      - SessionMonitor merges; progress marks AI complete
+      - RouteOrchestrator redirects; no page-level router.replace
+      - GamePage shows per-actor spinners; no full overlay during options
+  - E2E (pure)
+      - create → initialize → options → actions → advance → repeat → debrief, assert SSE progress
+  ordering and round increments
+  - Contract
+      - JSON schema tests for scenario payloads (classic/custom)
+
+  Risks & Mitigations
+
+  - Drift in role names → stuck merges: enforce role names from setup end-to-end; add asserts in
+  SessionMonitor when snapshot players don’t cover expected roles (warn and hide unknown locals).
+  - LLM structured outputs change: pin schemas; no .optional(), use .nullable().
+  - Event floods over SSE: throttle progress sends to first-complete per AI or coalesce every N ms.
+
+  Work Breakdown (bd)
+
+  - ai-risk-ttx-110 P1 Canonical scenario schema + server validation
+  - ai-risk-ttx-111 P1 Require setup in POST /session; delete fallback
+  - ai-risk-ttx-112 P1 Initialize builds full roster; Remove client chat-mode paths
+  - ai-risk-ttx-113 P1 Client always POSTs setup for classic/custom/ai_safety
+  - ai-risk-ttx-114 P2 Single SSE subscriber; remove useSession SSE effect
+  - ai-risk-ttx-115 P2 Progress UI: per-actor green-updates; reset on advance
+  - ai-risk-ttx-116 P2 Tests: server routes, SessionMonitor, E2E golden path
+  - ai-risk-ttx-117 P3 Swap MemoryStore → Prisma store (feature-flagged)
+  - ai-risk-ttx-118 P3 Docs: remove deprecated LLM client docs
+
+  Acceptance Criteria
+
+  - Classic start yields identical player roster on server and client.
+  - No client LLM calls in production path; network tab shows only /api/session*.
+  - Per-actor progress updates appear during advance; no full-screen overlay while options are
+  loading.
+  - E2E passes for two rounds; Debrief renders user actions.
+
+
+

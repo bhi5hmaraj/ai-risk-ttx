@@ -23,6 +23,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:ci": "node scripts/vitest-runner.mjs",
     "test:watch": "vitest --watch",
     "type-check": "tsc --noEmit",
     "coverage:readme": "node scripts/update-coverage-readme.mjs",

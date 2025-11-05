@@ -21,8 +21,8 @@ npm run export   # outputs static site to out/
 
 Set `DOCS_BASE_PATH=/docs` before build if the site will be served from `/docs` on your main domain.
 
-## Content
+## Content source
 
-- Pages live in `docs-site/pages/`.
-- We will gradually port files from the repo’s `docs/` into this site. For now, both coexist.
-
+- Canonical source of docs lives in the repo’s root `docs/` folder.
+- The dev/build scripts make `docs-site/pages` a symlink to `../docs` (or copy as a fallback).
+- Edit files in `docs/`; Nextra will render them automatically.
