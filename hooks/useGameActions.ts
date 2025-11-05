@@ -104,8 +104,8 @@ export function useGameActions() {
 
           console.log('[useGameActions] Calling SessionService.create with setup:', {
             mode: path,
-            stakeholders: canonicalSetup.stakeholders.length,
-            roles: canonicalSetup.stakeholders.map(s => s.name)
+            stakeholders: (canonicalSetup.stakeholders as any[]).length,
+            roles: (canonicalSetup.stakeholders as any[]).map((s: any) => s.name)
           });
           const created = await SessionService.create({ mode: path, setup: canonicalSetup });
           console.log('[useGameActions] Session created successfully! ID:', created.id, 'revision:', created.revision);
@@ -139,5 +139,5 @@ export function useGameActions() {
     })();
   }, [selectedRoleName, gamePath, gameSetup, isBackendMode, sessionMeta, setSessionMeta, setPlayers, setGameState, setLoading, setError]);
 
-  return { handleStartGame, handleConfirmActions, runConsequencePhase } as const;
+  return { handleStartGame, handleConfirmActions } as const;
 }

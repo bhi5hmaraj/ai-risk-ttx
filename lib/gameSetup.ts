@@ -26,9 +26,10 @@ export function createCanonicalSetup(
   gameState: GameState,
   players: Player[],
   fallbackTitle = 'Election Crisis 2024',
-  fallbackDesc = 'A rapidly escalating crisis threatens democratic legitimacy.'
+  fallbackDesc = 'A rapidly escalating crisis threatens democratic legitimacy.',
+  overrides?: { maxRounds?: number | null; maxAIPlayers?: number | null }
 ): GameSetup {
-  return {
+  const setup: any = {
     scenarioTitle: gameState.currentEvent?.headline || fallbackTitle,
     scenarioDescription: gameState.currentEvent?.detail || fallbackDesc,
     coreMetric: gameState.coreMetric,
@@ -40,13 +41,21 @@ export function createCanonicalSetup(
       resources: p.role.resources,
       constraints: p.role.constraints,
     })),
-    // Canonical schema requires these fields to exist (nullable allowed)
-    maxRounds: null,
-    maxAIPlayers: null,
   };
+  // Canonical schema requires these fields to exist (nullable allowed)
+  setup.maxRounds = overrides?.maxRounds ?? setup.maxRounds ?? null;
+  setup.maxAIPlayers = overrides?.maxAIPlayers ?? setup.maxAIPlayers ?? null;
+  return setup as GameSetup;
 }
 
-export function selectInitialPlayers(selectedRoleName: string, path: 'classic' | 'custom' | 'ai_safety' | null, setup: GameSetup | null, aiSafetyPreset: GameSetup, coreMetricDefault: CoreMetric) {
+export function selectInitialPlayers(
+  selectedRoleName: string,
+  path: 'classic' | 'custom' | 'ai_safety' | null,
+  setup: GameSetup | null,
+  aiSafetyPreset: GameSetup,
+  coreMetricDefault: CoreMetric,
+  opts?: { aiCount?: number }
+) {
   let roles: RoleData[] = [];
   let coreMetric: CoreMetric = { ...coreMetricDefault };
   if (path === 'custom' && setup) {
@@ -61,7 +70,12 @@ export function selectInitialPlayers(selectedRoleName: string, path: 'classic' |
   }
   const humanRole = roles.find((r) => r.name === selectedRoleName)!;
   const aiPool = roles.filter((r) => r.name !== selectedRoleName);
-  const limitedAI = aiPool.slice(0, Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS, aiPool.length)));
+  const limit = Math.max(0, Math.min(
+    opts?.aiCount != null ? opts.aiCount : GAME_CONFIG.MAX_AI_PLAYERS,
+    5,
+    aiPool.length,
+  ));
+  const limitedAI = aiPool.slice(0, limit);
   const ordered = [humanRole, ...limitedAI];
   const players = ordered.map((role, idx) => ({
     id: role.name === selectedRoleName ? 'human_player' : `ai_${idx}`,
