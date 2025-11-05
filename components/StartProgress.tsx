@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useUIStore } from '@/stores/uiStore';
 
 const StepRow = ({ label, state }: { label: string; state: 'idle' | 'running' | 'done' | 'error' }) => {
@@ -38,12 +38,7 @@ export function StartProgress() {
 
   if (!allowRender) return null;
   const progress = useUIStore((s) => s.startProgress);
-
-  const visible = useMemo(() => {
-    const vals = Object.values(progress);
-    // Show whenever any step is not idle (running or done)
-    return vals.some((v) => v === 'running' || v === 'done');
-  }, [progress]);
+  const visible = useUIStore((s) => s.showStartHUD);
 
   if (!visible) return null;
 

@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Bars3Icon, XMarkIcon, HomeIcon, ChatBubbleLeftIcon, InformationCircleIcon, BellIcon } from './Icons';
+import { useUIStore } from '@/stores/uiStore';
 
 interface NavigationProps {
   onNavigateHome: () => void;
@@ -17,6 +20,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   showFeedback = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const toggleStartHUD = useUIStore((s) => s.toggleStartHUD);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -46,7 +50,14 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo/Title */}
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-blue-300">Simulacra</h1>
+            <button
+              className="text-left"
+              onClick={handleNavigateHome}
+              aria-label="Go to Home"
+              title="Go to Home"
+            >
+              <h1 className="text-xl font-bold text-blue-300 hover:text-white transition-colors">Simulacra</h1>
+            </button>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs text-gray-500">AI Tabletop Exercise</span>
               <ModelInfo />
@@ -62,6 +73,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             <NavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <NavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
+            <button
+              onClick={() => toggleStartHUD()}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+              title="Show Game Setup Progress"
+            >
+              <span className="h-5 w-5 inline-block">🧭</span>
+              <span>Setup Progress</span>
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,6 +108,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             <MobileNavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <MobileNavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
+            <button
+              onClick={() => { toggleStartHUD(); closeMenu(); }}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-md text-left text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+            >
+              <span className="h-5 w-5 inline-block">🧭</span>
+              <span className="font-medium">Setup Progress</span>
+            </button>
           </div>
         </div>
       )}
