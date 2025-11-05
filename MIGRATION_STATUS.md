@@ -95,7 +95,7 @@
 
 ---
 
-## ⏳ Phase 2: App Router Pages + Modular Controller — IN PROGRESS
+## ⏳ Phase 2: App Router Pages + Modular Controller — IN PROGRESS (updated)
 
 ### 📋 Remaining Work
 
@@ -165,6 +165,19 @@ app/
 - Implemented SSE progress payload delivery and client handling for per-AI readiness
 - Suppressed full-screen overlay during action-options fetch (inline spinner only)
 - Tests added: StartProgress HUD, SSE progress handling, overlay behavior, EndPage routing ownership
+
+### Phase 2 Progress (tracked items)
+- [x] Delete client-side chat-mode and LLM calls (useGameActions Phase 2 cleanup)
+  - Client consequence path removed; backend is the sole source of truth.
+- [x] Create integration test for session lifecycle
+  - `tests/api.session.lifecycle.integration.test.ts`: create → initialize → options → actions → advance → debrief.
+- [x] Keep sessionMeta.revision in sync
+  - After initialize and on SSE snapshot events.
+- [x] Canonical GameSetup always sent on session create (all modes)
+- [x] GamePage: wire `useTimer` and keep per-actor progress UI
+- [x] RouteOrchestrator reads from stores directly; page-level redirects trimmed
+- [~] Replace legacy controller tests with modular equivalents
+  - Skipped legacy suites remain; modular replacements to be added next.
 
 ---
 
@@ -238,6 +251,75 @@ Execution Plan:
 - Add WebSocket support for real-time updates
 
 **Phase 4**: Prisma Session Store
+
+---
+
+## 🧱 Layering & Folder Structure Cleanup (Planned)
+
+Goal: Clarify runtime boundaries and stop mixing backend and isomorphic code. Today, some backend logic lives under `lib/`, and some UI concerns live next to shared helpers. This section tracks the consolidation plan.
+
+### Current Boundaries (intent)
+- `server/`: backend-only logic
+  - Route handlers, pure routers (session), SSE, stores, LLM adapters, session engine, backend types.
+- `shared/` (new; or repurpose `lib/`): isomorphic code
+  - Pure helpers and schemas with zero React/Node assumptions (e.g., gameConfig, canonical setup normalizers).
+- `app/, hooks/, components/, screens/`: frontend-only (React)
+  - React hooks/components, role icons, UI helpers.
+
+### Problems Today (examples)
+- `lib/api/session-router.ts` is backend logic but sits in `lib/`.
+- `lib/gameSetup.ts` mixes React role icons (UI) with canonical setup helpers (shared).
+- Types present in both `types/` and `server/types/` with blurred ownership; canonical schemas now live in `server/types/*`.
+
+### Plan
+1) Create `shared/` for isomorphic helpers
+   - Move canonical helpers: `createCanonicalSetup` → `shared/gameSetup.ts`.
+   - Keep UI-only role icon builders in a UI file: `ui/gameRoles.tsx` (consumed by components only).
+2) Move backend-only logic under `server/`
+   - `lib/api/session-router.ts` → `server/api/session-router.ts` (or `server/lib/api`).
+   - Update imports in `app/api/session/[[...parts]]/route.ts`.
+3) Types and schemas
+   - Canonical runtime schemas: `server/types/*` (Zod + TS). Frontend may re-export types but must not import React into server.
+4) Import boundaries
+   - Add ESLint rules to forbid importing `server/*` from client code and `app/*` from server code.
+5) Codemod
+   - Update aliases: `@shared/*` → `shared/*`, `@server/*` → `server/*`, and continue `@/*` for UI.
+
+### Pros / Cons
+- Pros: safer imports, fewer runtime surprises, simpler tests (shared: unit; server: integration; UI: jsdom).
+- Cons: short path churn; some tests need path updates.
+
+### Tasks (Beads)
+- [ ] Create `shared/` and move isomorphic helpers (createCanonicalSetup)
+- [ ] Split `lib/gameSetup.ts` into `shared/gameSetup.ts` and `ui/gameRoles.tsx`
+- [ ] Move `lib/api/session-router.ts` under `server/`
+- [ ] Add ESLint import-boundary rules
+- [ ] Update aliases and codemod imports
+
+---
+
+## 🔗 Deep Link Routing: `/game/:sessionId` (Epic)
+
+Introduce parametric deep links for sessions (SSR bootstrap + SSE) so refresh/reconnect are deterministic and shareable. See Beads epic "App Router: Session Routing (/game/:sessionId)".
+
+### Architecture
+- `app/game/[sessionId]/page.tsx` (Server) fetches snapshot (ETag) and hydrates stores.
+- `GamePageClient` (Client) seeds Zustand stores and lets `SessionMonitor` open SSE for `:id`.
+- `/game` becomes a redirector: route to `/game/:id` (if remembered) or `/lobby`.
+- Host token never in URL; keep in sessionStorage/memory and send via `x-host-token`.
+
+### Pros / Cons
+- Pros: shareable links, multi-tab friendly, deterministic refresh.
+- Cons: need 404/expired UX, host token handling, URL becomes a primary input.
+
+### Tasks (Beads)
+- [ ] SSR bootstrap for `/game/:id` (server fetch + hydrate)
+- [ ] `SessionMonitor` reads param and connects SSE
+- [ ] `/game` redirector + RouteOrchestrator cleanup
+- [ ] Host token persistence (non-URL)
+- [ ] NotFound/Expired session UX for 404/410
+- [ ] Deep link + reconnect tests
+- [ ] Docs in Nextra: session routing architecture
 - Replace MemorySessionStore with PrismaSessionStore
 - Add GameSession table to schema
 - Enable persistence across server restarts
@@ -466,6 +548,4 @@ Execution Plan:
   - Per-actor progress updates appear during advance; no full-screen overlay while options are
   loading.
   - E2E passes for two rounds; Debrief renders user actions.
-
-
 
