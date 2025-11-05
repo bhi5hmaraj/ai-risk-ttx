@@ -90,20 +90,44 @@ export function useGameActions() {
       sessionCreationInFlightRef.current = true;
       (async () => {
         try {
-          // Build canonical setup for ALL modes (not just custom)
-          // This ensures server gets full roster and can create all AI players
-          const baseSetup = gameSetup || createCanonicalSetup(
-            { ...gameState, coreMetric },
-            initialPlayers,
-            'Election Crisis 2024',
-            'A rapidly escalating crisis threatens democratic legitimacy.',
-            { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null }
-          );
+          // Build canonical setup for ALL modes.
+          // If a custom/public setup exists, normalize it to canonical and prune stakeholders to match slider.
+          let canonicalSetup: any;
+          if (gameSetup) {
+            const desiredAI = typeof maxAIPlayers === 'number' ? Math.max(0, Math.min(5, Math.floor(maxAIPlayers))) : 5;
+            const cm = gameSetup.coreMetric || (coreMetric as any);
+            const cmValue = Number.isFinite((cm as any)?.value) ? Math.max(0, Math.min(100, Math.round((cm as any).value))) : coreMetric.value;
+            const normalizedCore = {
+              name: (cm as any)?.name || coreMetric.name,
+              description: (cm as any)?.description || coreMetric.description,
+              value: cmValue,
+            };
+            const all = Array.isArray((gameSetup as any).stakeholders) ? [...(gameSetup as any).stakeholders] : [];
+            const idx = all.findIndex((s: any) => s?.name === selectedRoleName);
+            const human = idx >= 0 ? all.splice(idx, 1)[0] : { name: selectedRoleName, icon: '🎯', publicObjective: '', hiddenObjective: '', resources: [], constraints: [] };
+            const ai = all.filter((s: any) => s && s.name).slice(0, desiredAI);
+            const pruned = [human, ...ai];
+            canonicalSetup = {
+              ...gameSetup,
+              coreMetric: normalizedCore,
+              stakeholders: pruned,
+              maxRounds: maxRounds ?? null,
+              maxAIPlayers: desiredAI,
+            } as any;
+          } else {
+            canonicalSetup = createCanonicalSetup(
+              { ...gameState, coreMetric },
+              initialPlayers,
+              'Election Crisis 2024',
+              'A rapidly escalating crisis threatens democratic legitimacy.',
+              { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null }
+            );
+          }
           // Ensure required+nullable fields exist per canonical schema
-          const canonicalSetup = {
-            ...baseSetup,
-            maxRounds: (baseSetup as any).maxRounds ?? null,
-            maxAIPlayers: (baseSetup as any).maxAIPlayers ?? null,
+          canonicalSetup = {
+            ...canonicalSetup,
+            maxRounds: (canonicalSetup as any).maxRounds ?? null,
+            maxAIPlayers: (canonicalSetup as any).maxAIPlayers ?? null,
           } as any;
 
           console.log('[useGameActions] Calling SessionService.create with setup:', {
