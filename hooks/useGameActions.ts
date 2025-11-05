@@ -16,7 +16,7 @@ export function useGameActions() {
   const { gameState, players, setGameState, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
   const { actionOptions, setActionOptions } = useActions();
-  const { selectedRoleName, gamePath, gameSetup, setGameSetup } = useLobby();
+  const { selectedRoleName, gamePath, gameSetup, setGameSetup, maxAIPlayers, maxRounds } = useLobby();
   const { sessionMeta, isBackendMode, setSessionMeta } = useSession();
   const setStartStep = useUIStore((s) => s.setStartStep);
   // Phase 2: client-side LLM/chat paths removed
@@ -32,14 +32,10 @@ export function useGameActions() {
         (async () => {
           setLoading(true, 'Locking in your actions...');
           try {
-            let meta = sessionMeta;
+            const meta = sessionMeta;
             if (!meta) {
-              // TODO: Remove this fallback - session should ONLY be created in handleStartGame
-              // This fallback creates race conditions (MIGRATION_STATUS.md line 300)
-              const canonicalSetup = gameSetup || createCanonicalSetup(gameState, players);
-              const created = await SessionService.create({ mode: (gamePath || 'classic') as any, setup: canonicalSetup });
-              meta = { id: created.id, revision: created.revision, hostToken: created.hostToken } as any;
-              setSessionMeta(meta as any);
+              setError('Session not initialized. Please click Start again.');
+              return;
             }
             setPlayers((prev) => prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p)));
             const s1 = await SessionService.submitActions(meta!.id, human.id || 'human', actions, meta!.revision);
@@ -77,7 +73,14 @@ export function useGameActions() {
       setStartStep('connectingStream', isBackendMode ? 'running' : 'idle');
       setStartStep('ready', 'idle');
     } catch {}
-    const { players: initialPlayers, coreMetric } = selectInitialPlayers(selectedRoleName, path, gameSetup, AI_SAFETY_SCENARIO, { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 });
+    const { players: initialPlayers, coreMetric } = selectInitialPlayers(
+      selectedRoleName,
+      path,
+      gameSetup,
+      AI_SAFETY_SCENARIO,
+      { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 },
+      { aiCount: typeof maxAIPlayers === 'number' ? maxAIPlayers : undefined }
+    );
     setPlayers(initialPlayers);
     setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
     setLoading(true, 'AI Game Master is generating the initial scenario...');
@@ -93,7 +96,8 @@ export function useGameActions() {
             { ...gameState, coreMetric },
             initialPlayers,
             'Election Crisis 2024',
-            'A rapidly escalating crisis threatens democratic legitimacy.'
+            'A rapidly escalating crisis threatens democratic legitimacy.',
+            { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null }
           );
           // Ensure required+nullable fields exist per canonical schema
           const canonicalSetup = {
@@ -130,7 +134,7 @@ export function useGameActions() {
     }
 
     (async () => {
-      const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers);
+      const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers, undefined, undefined, { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null });
       setGameSetup(setup);
       // Phase 2: The server initializes; SSE will update the stores. No client LLM initialization.
       setLoading(false);
