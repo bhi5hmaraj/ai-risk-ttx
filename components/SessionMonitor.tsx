@@ -70,11 +70,17 @@ export function SessionMonitor() {
         }
 
         const submitted = snapshot.submitted ?? {};
-        const serverPlayers: Array<{ id?: string; role?: { name: string }; actions?: ActionOption[]; hasSubmittedActions?: boolean }> =
-          (snapshot.players as any) ?? [];
+        const serverPlayers: Array<{
+          id?: string;
+          role?: { name: string };
+          actions?: ActionOption[];
+          hasSubmittedActions?: boolean;
+          hiddenScore?: number;
+          actionPoints?: number;
+        }> = (snapshot.players as any) ?? [];
 
         setPlayers((prev) => {
-          if (prev.length === 0) return prev;
+          if (prev.length === 0) return prev; // keep FE role icons; initial hydration happens elsewhere
           return prev.map((p) => {
             const match = serverPlayers.find((sp) => sp.id === p.id || sp.role?.name === p.role.name);
             const serverId = match?.id ?? p.id;
@@ -83,10 +89,14 @@ export function SessionMonitor() {
               typeof submitted[serverId] === 'boolean'
                 ? submitted[serverId]
                 : match?.hasSubmittedActions ?? p.hasSubmittedActions;
+            const mergedHidden = typeof match?.hiddenScore === 'number' ? (match!.hiddenScore as number) : p.hiddenScore;
+            const mergedAP = typeof match?.actionPoints === 'number' ? (match!.actionPoints as number) : p.actionPoints;
             return {
               ...p,
               actions: mergedActions,
               hasSubmittedActions: submittedFlag,
+              hiddenScore: mergedHidden,
+              actionPoints: mergedAP,
             };
           });
         });
