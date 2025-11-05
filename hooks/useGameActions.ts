@@ -65,7 +65,7 @@ export function useGameActions() {
 
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
-    const path = (gamePath ?? 'classic') as 'classic' | 'custom' | 'ai_safety';
+    const path = (gamePath ?? (gameSetup ? 'custom' : 'classic')) as 'classic' | 'custom' | 'ai_safety';
     try {
       setStartStep('creatingSession', isBackendMode ? 'running' : 'done');
       setStartStep('buildingPlayers', 'running');

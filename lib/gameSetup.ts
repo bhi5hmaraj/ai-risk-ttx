@@ -70,11 +70,9 @@ export function selectInitialPlayers(
   }
   const humanRole = roles.find((r) => r.name === selectedRoleName)!;
   const aiPool = roles.filter((r) => r.name !== selectedRoleName);
-  const limit = Math.max(0, Math.min(
-    opts?.aiCount != null ? opts.aiCount : GAME_CONFIG.MAX_AI_PLAYERS,
-    5,
-    aiPool.length,
-  ));
+  const requested = opts?.aiCount != null ? opts.aiCount : GAME_CONFIG.MAX_AI_PLAYERS;
+  const minForMode = (path === 'classic' || path === 'ai_safety') ? 3 : 0;
+  const limit = Math.max(minForMode, Math.min(requested, 5, aiPool.length));
   const limitedAI = aiPool.slice(0, limit);
   const ordered = [humanRole, ...limitedAI];
   const players = ordered.map((role, idx) => ({
