@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { handleSessionRequest, makeTestRouterDeps } from '../lib/api/session-router';
+import { handleSessionRequest, makeTestRouterDeps } from '../server/api/session-router';
 import { createValidGameSetup } from './fixtures/session-data';
 
 async function parse(res: Response) {

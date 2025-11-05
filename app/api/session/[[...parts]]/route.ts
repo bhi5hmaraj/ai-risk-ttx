@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { handleSessionRequest, type LLMFacade } from '@/lib/api/session-router';
+import { handleSessionRequest, type LLMFacade } from '@/server/api/session-router';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
 import type { AdvanceContext, SessionEvent, SessionSnapshot } from '@/server/stores/sessionStore';
 import { applyConsequences, buildPlayersFromSetup } from '@/server/services/sessionEngine';

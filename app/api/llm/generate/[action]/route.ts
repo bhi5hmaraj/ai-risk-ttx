@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireLLMEnv } from '@/server/lib/env';
-import { LLM_HANDLERS, type LLMAction } from '@/lib/api/llm-handlers';
+import { LLM_HANDLERS, type LLMAction } from '@/server/api/llm-handlers';
 import { createReqId, getReqIdFromHeaders, slog } from '@/server/lib/logger';
 
 export const runtime = 'nodejs';

@@ -1,4 +1,4 @@
-import { handleMetaStatus } from '@/lib/api/llm-handlers';
+import { handleMetaStatus } from '@/server/api/llm-handlers';
 
 export const runtime = 'nodejs';
 
