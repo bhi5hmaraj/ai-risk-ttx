@@ -181,7 +181,8 @@ const PresetRoleSelection: React.FC<{
   setMaxAIPlayers?: (n: number) => void;
   maxRounds?: number;
   setMaxRounds?: (n: number) => void;
-}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds }) => (
+  minAiPlayers?: number;
+}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0 }) => (
   <div className="max-w-7xl mx-auto">
     <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
       <h2 className="text-3xl font-bold text-purple-300 mb-2">{scenarioTitle}</h2>
@@ -196,11 +197,11 @@ const PresetRoleSelection: React.FC<{
       )}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-          <label className="block text-sm text-gray-400 mb-1">Max AI Players (0–5)</label>
+          <label className="block text-sm text-gray-400 mb-1">Max AI Players ({minAiPlayers}–5)</label>
           <div className="flex items-center gap-3">
             <input
               type="range"
-              min={0}
+              min={minAiPlayers}
               max={5}
               value={typeof maxAIPlayers === 'number' ? maxAIPlayers : 5}
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value, 10))}
@@ -208,7 +209,7 @@ const PresetRoleSelection: React.FC<{
             />
             <input
               type="number"
-              min={0}
+              min={minAiPlayers}
               max={5}
               value={typeof maxAIPlayers === 'number' ? maxAIPlayers : 5}
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value || '0', 10))}
@@ -496,6 +497,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         setMaxAIPlayers={setMaxAIPlayers}
         maxRounds={maxRounds}
         setMaxRounds={setMaxRounds}
+        minAiPlayers={0}
       />
     ) : gamePath === 'classic' ? (
       <PresetRoleSelection
@@ -510,6 +512,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         setMaxAIPlayers={setMaxAIPlayers}
         maxRounds={maxRounds}
         setMaxRounds={setMaxRounds}
+        minAiPlayers={3}
       />
     ) : gamePath === 'ai_safety' ? (
       <PresetRoleSelection
@@ -524,6 +527,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         setMaxAIPlayers={setMaxAIPlayers}
         maxRounds={maxRounds}
         setMaxRounds={setMaxRounds}
+        minAiPlayers={3}
       />
     ) : gameSetup ? (
       <>
@@ -540,6 +544,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           setMaxAIPlayers={setMaxAIPlayers}
           maxRounds={maxRounds}
           setMaxRounds={setMaxRounds}
+          minAiPlayers={0}
         />
         <MakePublicModal
           isOpen={isMakePublicModalOpen}
