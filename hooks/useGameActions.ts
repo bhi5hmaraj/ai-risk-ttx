@@ -17,7 +17,7 @@ export function useGameActions() {
   const { setLoading, setError } = useUI();
   const { actionOptions, setActionOptions } = useActions();
   const { selectedRoleName, gamePath, gameSetup, setGameSetup, maxAIPlayers, maxRounds } = useLobby();
-  const { sessionMeta, isBackendMode, setSessionMeta } = useSession();
+  const { sessionMeta, setSessionMeta } = useSession();
   const setStartStep = useUIStore((s) => s.setStartStep);
   // Phase 2: client-side LLM/chat paths removed
   const sessionCreationInFlightRef = useRef(false);
@@ -28,7 +28,7 @@ export function useGameActions() {
     (actions: ActionOption[]) => {
       const human = players.find((p) => p.isHuman);
       if (!human) return;
-      if (isBackendMode) {
+      {
         (async () => {
           setLoading(true, 'Locking in your actions...');
           try {
@@ -58,19 +58,18 @@ export function useGameActions() {
       }
       const updatedPlayers = players.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p));
       setPlayers(updatedPlayers);
-      setError('Backend session mode is required.');
     },
-    [players, isBackendMode, sessionMeta, gamePath, gameSetup, setSessionMeta, setPlayers, setLoading, setError, actionOptions, gameState]
+    [players, sessionMeta, gamePath, gameSetup, setSessionMeta, setPlayers, setLoading, setError, actionOptions, gameState]
   );
 
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
     const path = (gamePath ?? (gameSetup ? 'custom' : 'classic')) as 'classic' | 'custom' | 'ai_safety';
     try {
-      setStartStep('creatingSession', isBackendMode ? 'running' : 'done');
+      setStartStep('creatingSession', 'running');
       setStartStep('buildingPlayers', 'running');
       setStartStep('generatingScenario', 'idle');
-      setStartStep('connectingStream', isBackendMode ? 'running' : 'idle');
+      setStartStep('connectingStream', 'running');
       setStartStep('ready', 'idle');
     } catch {}
     const { players: initialPlayers, coreMetric } = selectInitialPlayers(
@@ -85,7 +84,7 @@ export function useGameActions() {
     setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
     setLoading(true, 'AI Game Master is generating the initial scenario...');
 
-    if (isBackendMode && !sessionMeta && !sessionCreationInFlightRef.current) {
+    if (!sessionMeta && !sessionCreationInFlightRef.current) {
       console.log('[useGameActions] Starting session creation - mode:', path, 'hasSetup:', !!gameSetup);
       sessionCreationInFlightRef.current = true;
       (async () => {
@@ -154,7 +153,7 @@ export function useGameActions() {
         }
       })();
     } else {
-      console.log('[useGameActions] Skipping session creation - isBackendMode:', isBackendMode, 'hasSessionMeta:', !!sessionMeta, 'inFlight:', sessionCreationInFlightRef.current);
+      console.log('[useGameActions] Skipping session creation - hasSessionMeta:', !!sessionMeta, 'inFlight:', sessionCreationInFlightRef.current);
     }
 
     (async () => {
@@ -165,7 +164,7 @@ export function useGameActions() {
       setStartStep('generatingScenario', 'done');
       setStartStep('ready', 'done');
     })();
-  }, [selectedRoleName, gamePath, gameSetup, isBackendMode, sessionMeta, setSessionMeta, setPlayers, setGameState, setLoading, setError]);
+  }, [selectedRoleName, gamePath, gameSetup, sessionMeta, setSessionMeta, setPlayers, setGameState, setLoading, setError]);
 
   return { handleStartGame, handleConfirmActions } as const;
 }

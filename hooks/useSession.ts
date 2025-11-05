@@ -11,10 +11,8 @@ import { useSessionStore } from '@/stores/sessionStore';
  */
 export function useSession() {
   const sessionMeta = useSessionStore((s) => s.sessionMeta);
-  const isBackendMode = useSessionStore((s) => s.isBackendMode);
   const setSessionMeta = useSessionStore((s) => s.setSessionMeta);
   const clear = useSessionStore((s) => s.clear);
 
-  return { sessionMeta, isBackendMode, setSessionMeta, clear } as const;
+  return { sessionMeta, setSessionMeta, clear } as const;
 }
-

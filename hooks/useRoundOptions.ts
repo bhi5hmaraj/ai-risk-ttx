@@ -13,7 +13,7 @@ export function useRoundOptions() {
     const human = players.find((p) => p.isHuman) || null;
     return { gameState, humanPlayer: human } as const;
   })();
-  const { sessionMeta, isBackendMode } = useSession();
+  const { sessionMeta } = useSession();
   const { setLoading, setError } = useUI();
   const { setActionOptions } = useActions();
   const inFlightRef = useRef(false);
@@ -24,10 +24,6 @@ export function useRoundOptions() {
     inFlightRef.current = true;
     setLoading(true, 'Generating action options...');
     try {
-      if (!isBackendMode) {
-        setError('Backend session mode is required.');
-        return;
-      }
       if (!sessionMeta) {
         setError('Game session not initialized. Please return to lobby and start again.');
         return;
@@ -41,7 +37,7 @@ export function useRoundOptions() {
       inFlightRef.current = false;
       setLoading(false);
     }
-  }, [humanPlayer, isBackendMode, sessionMeta, gameState, setLoading, setError, setActionOptions]);
+  }, [humanPlayer, sessionMeta, gameState, setLoading, setError, setActionOptions]);
 
   return { loadHumanOptions } as const;
 }

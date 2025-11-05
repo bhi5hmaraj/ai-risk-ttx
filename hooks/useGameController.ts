@@ -63,11 +63,8 @@ export const useGameController = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
   const sessionStreamRef = useRef<EventSource | null>(null);
-  // Backend mode is now always enabled - all game logic runs on the server
-  // TODO: Remove USE_BACKEND_STATE/BACKEND_MODE entirely, simplify all conditional logic
-  const USE_BACKEND_STATE = true;
+  // Backend mode always on
   const { sessionMeta, setSessionMeta, setStartIntent, clear: clearSessionStore } = useSessionStore();
-  const BACKEND_MODE = true;
   const setStartStep = useUIStore((s) => s.setStartStep);
   const resetUI = useUIStore((s) => s.reset);
 
@@ -183,10 +180,10 @@ export const useGameController = () => {
     try { setStartIntent(true); } catch {}
     // Reset and start progress indicator
     try {
-      setStartStep('creatingSession', USE_BACKEND_STATE ? 'running' : 'done');
+      setStartStep('creatingSession', 'running');
       setStartStep('buildingPlayers', 'running');
       setStartStep('generatingScenario', 'idle');
-      setStartStep('connectingStream', USE_BACKEND_STATE ? 'running' : 'idle');
+      setStartStep('connectingStream', 'running');
       setStartStep('ready', 'idle');
     } catch {}
 
@@ -203,7 +200,7 @@ export const useGameController = () => {
 
     // Initialize a server session in the background when feature flag is on
     // Must happen AFTER players are built so we can create canonical setup
-    if (USE_BACKEND_STATE && !sessionMeta) {
+    if (!sessionMeta) {
       (async () => {
         try {
           // Build canonical setup from players (all modes need full roster)
@@ -381,11 +378,7 @@ export const useGameController = () => {
   }, [isHistoryOpen]);
 
   useEffect(() => {
-    console.log('[SSE] useEffect triggered - BACKEND_MODE:', BACKEND_MODE, 'sessionMeta:', sessionMeta);
-    if (!BACKEND_MODE) {
-      console.log('[SSE] BACKEND_MODE is false, skipping');
-      return;
-    }
+    console.log('[SSE] useEffect triggered - sessionMeta:', sessionMeta);
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       console.log('[SSE] window or EventSource undefined');
       return;
@@ -486,7 +479,7 @@ export const useGameController = () => {
         sessionStreamRef.current = null;
       }
     };
-  }, [BACKEND_MODE, sessionMeta?.id]);
+  }, [sessionMeta?.id]);
 
   const handleOpenActionTree = useCallback(() => {
     setIsActionTreeOpen(true);
