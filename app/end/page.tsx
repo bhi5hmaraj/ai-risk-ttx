@@ -14,10 +14,11 @@ import { GamePhase } from '@/types';
 export default function EndPage() {
   const router = useRouter();
   const { gameState, players, latestLogEntry, resetGame } = useGame();
-  const { gameSetup } = useLobby();
+  const { gameSetup, gamePath, customScenario } = useLobby();
   const { resetUI } = useUI();
   const { clear: clearSession } = useSession();
   const [isActionTreeOpen, setIsActionTreeOpen] = React.useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = React.useState(false);
   const selectedLogEntry = latestLogEntry;
 
   // Route decisions are owned by RouteOrchestrator. If not END, render nothing
@@ -42,21 +43,25 @@ export default function EndPage() {
           clearSession();
           router.push('/');
         }}
-        onOpenFeedback={() => {}}
+        onOpenFeedback={() => setIsFeedbackOpen(true)}
         onOpenAbout={() => router.push('/about')}
         onOpenUpdates={() => router.push('/updates')}
         showFeedback={false}
       />
       {actionTree}
-      <FeedbackModal isOpen={false} onClose={() => {}} gameMetadata={{
-        model: process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'unknown',
-        scenarioType: gameSetup ? 'custom' : 'classic',
-        rolePlayed: 'Unknown',
-        roundsCompleted: gameState.round,
-        finalPublicScore: gameState.coreMetric.value,
-        customPromptUsed: false,
-        customPrompt: undefined,
-      }} />
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        gameMetadata={{
+          model: process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'unknown',
+          scenarioType: gamePath === 'ai_safety' ? 'ai_safety' : gamePath === 'custom' ? 'custom' : 'classic',
+          rolePlayed: players.find((p) => p.isHuman)?.role.name || 'Unknown',
+          roundsCompleted: gameState.round,
+          finalPublicScore: gameState.coreMetric.value,
+          customPromptUsed: gamePath === 'custom' && !!customScenario,
+          customPrompt: gamePath === 'custom' ? (customScenario || '') : undefined,
+        }}
+      />
       <EndScreen
         gameState={gameState}
         players={players}
@@ -66,7 +71,7 @@ export default function EndPage() {
           clearSession();
           router.push('/');
         }}
-        onOpenFeedback={() => {}}
+        onOpenFeedback={() => setIsFeedbackOpen(true)}
         gameSetup={gameSetup}
       />
     </>
