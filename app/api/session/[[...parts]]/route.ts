@@ -179,7 +179,7 @@ function createAdvanceState(llmDep: LLMFacade) {
     );
 
     // Check if game should end based on round limit or core metric failure
-    const maxRounds = (session.setup as any)?.maxRounds ?? GAME_CONFIG.MAX_ROUNDS;
+    const maxRounds = (session.setup as any)?.maxRounds as number; // normalized at create time
     const shouldEnd = nextState.round >= maxRounds || nextState.coreMetric.value <= 0;
     const finalPhase = shouldEnd ? GamePhase.END : GamePhase.ACTION;
 

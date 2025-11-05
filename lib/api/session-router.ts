@@ -8,6 +8,8 @@ import {
   DebriefRequestSchema,
   GameSetupSchema,
 } from '@/server/types/session';
+import { normalizeGameSetup } from '@/server/types/scenario';
+import type { GameSetup as CoreGameSetup } from '@/server/types/core';
 import type { SessionStore } from '@/server/stores/sessionStore';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
 import { createValidGameState } from '@/tests/fixtures/session-data';
@@ -61,7 +63,22 @@ export async function handleSessionRequest(
         return json(400, { success: false, error: `Invalid setup: ${reasons}` });
       }
 
-      const setup = ok.data;
+      const norm = normalizeGameSetup(ok.data as any);
+      const setup: CoreGameSetup = {
+        scenarioTitle: norm.scenarioTitle,
+        scenarioDescription: norm.scenarioDescription,
+        coreMetric: norm.coreMetric,
+        stakeholders: norm.stakeholders.map((s) => ({
+          name: s.name,
+          icon: s.icon,
+          publicObjective: s.publicObjective,
+          hiddenObjective: s.hiddenObjective,
+          resources: s.resources ?? [],
+          constraints: s.constraints ?? [],
+        })),
+        maxRounds: norm.maxRounds,
+        maxAIPlayers: norm.maxAIPlayers,
+      };
 
       // Validate stakeholder count (4-6 for classic/ai_safety, flexible for custom)
       const stakeholderCount = setup.stakeholders?.length ?? 0;
