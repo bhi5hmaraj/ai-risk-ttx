@@ -547,6 +547,10 @@ CONSTRAINTS (MUST FOLLOW):
 - userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
 - Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
 - For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
+- For each keyEvent, OPTIONALLY include a "causes" array citing the specific prior events or actions that led to this decisive moment. Each cause must be:
+  * type: "event" (for a prior round's headline), "action" (for a player action), or "exogenous" (for external/systemic factors)
+  * ref: For "event", use the event headline. For "action", use format "RoleName:ActionTitle@RoundNumber". For "exogenous", use a brief descriptor.
+  * rationale: A short explanation of why this cause was significant (1-2 sentences)
 
 Respond using the required schema.`;
 };

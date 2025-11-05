@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
@@ -12,15 +12,59 @@ import { useGame } from '@/hooks/useGame';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useActionStore } from '@/stores/actionStore';
+import { generateCustomScenario } from '@/services/llmApiClient';
 
 export default function LobbyPage() {
   const router = useRouter();
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, reset: resetLobby } = useLobby();
-  const { isLoading } = useUI();
+  const { isLoading, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
   const { handleStartGame } = useGameActions();
-  const clearSession = useSessionStore((s) => s.clear);
+  const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
+
+  // Reset lobby state on mount to always show the scenario catalog
+  useEffect(() => {
+    console.log('[LobbyPage] Component mounted, resetting lobby state');
+    resetLobby();
+  }, []); // Empty dependency array = run once on mount
+
+  // Handler for custom scenario generation
+  const handleCustomGameStart = async () => {
+    console.log('[LobbyPage] handleCustomGameStart called');
+    console.log('[LobbyPage] customScenario:', customScenario);
+    console.log('[LobbyPage] customScenario length:', customScenario?.length);
+    console.log('[LobbyPage] isLoading:', isLoading);
+
+    if (!customScenario || !customScenario.trim()) {
+      console.log('[LobbyPage] No scenario text, returning early');
+      return;
+    }
+
+    try {
+      console.log('[LobbyPage] Setting loading state...');
+      setLoading(true, 'Generating custom scenario...');
+
+      console.log('[LobbyPage] Calling generateCustomScenario API...');
+      const result = await generateCustomScenario(customScenario);
+      console.log('[LobbyPage] API result:', result);
+
+      if (result) {
+        console.log('[LobbyPage] Success! Setting gameSetup:', result);
+        setGameSetup(result);
+        setError(null);
+      } else {
+        console.error('[LobbyPage] API returned null');
+        setError('Failed to generate custom scenario. Please try again.');
+      }
+    } catch (error) {
+      console.error('[LobbyPage] Error in handleCustomGameStart:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      console.log('[LobbyPage] Clearing loading state');
+      setLoading(false);
+    }
+  };
 
   // Routing handled by RouteOrchestrator centrally
 
@@ -59,7 +103,7 @@ export default function LobbyPage() {
         maxRounds={maxRounds}
         setMaxRounds={setMaxRounds}
         isLoading={isLoading}
-        handleCustomGameStart={() => {/* deprecated path removed in modular step; use presets or custom form */}}
+        handleCustomGameStart={handleCustomGameStart}
         handleStartGame={handleStartGame}
       />
     </>

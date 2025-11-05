@@ -230,10 +230,10 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             <h2 className="text-2xl md:text-3xl font-bold">Debrief</h2>
             <button
               onClick={handleGenerateDebrief}
-              disabled={debriefLoading}
-              className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium"
+              disabled={debriefLoading || !!debrief}
+              className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium"
             >
-              {debriefLoading ? 'Generating…' : 'Generate Debrief'}
+              {debriefLoading ? 'Generating…' : debrief ? 'Debrief Generated' : 'Generate Debrief'}
             </button>
           </div>
           {debriefError && (
@@ -302,7 +302,17 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.actor ?? '—'}</td>
                             <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
                             <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-300 whitespace-pre-wrap">{ev.description}</td>
+                            <td className="px-3 py-2 border-b border-gray-800 text-gray-300">
+                              <div className="whitespace-pre-wrap">{ev.description}</div>
+                              {ev.causes && ev.causes.length > 0 && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                                  {ev.causes.map((c, i) => (
+                                    <CauseTag key={`debrief_ev_${idx}_c_${i}`} cause={c} logs={gameState.eventLog} />
+                                  ))}
+                                </div>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
