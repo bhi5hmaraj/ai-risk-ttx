@@ -31,18 +31,24 @@ export const CoreMetricSchema = z.object({
 /**
  * Stakeholder: A single actor/role in the scenario
  * Each stakeholder becomes a Player (human or AI) during the game
+ *
+ * BACKWARD COMPATIBILITY: icon, resources, and constraints are optional
+ * to support old public scenarios created before these fields were added.
+ * New scenarios from LLM should include all fields.
  */
 export const StakeholderSchema = z.object({
   name: z.string().min(1, "Stakeholder name required"),
-  icon: z.string().min(1, "Stakeholder icon (emoji) required"),
+
+  // Optional with default to support old scenarios missing this field
+  icon: z.string().min(1).optional().default("🎯"),
+
   publicObjective: z.string().min(1, "Public objective required"),
   hiddenObjective: z.string().min(1, "Hidden objective required"),
 
-  // Resources and constraints are arrays of strings
-  // Use .nullable() to allow LLM to omit or explicitly set null
-  // Empty arrays should be passed as [], not null
-  resources: z.array(z.string()).nullable(),
-  constraints: z.array(z.string()).nullable(),
+  // Optional with default empty arrays to support old scenarios
+  // New LLM outputs should include these fields (can be null or [])
+  resources: z.array(z.string()).nullable().optional().default([]),
+  constraints: z.array(z.string()).nullable().optional().default([]),
 });
 
 /**
@@ -81,11 +87,11 @@ export interface CoreMetric {
 
 export interface Stakeholder {
   name: string;
-  icon: string;
+  icon: string; // Will be "🎯" if missing in old data
   publicObjective: string;
   hiddenObjective: string;
-  resources: string[] | null;
-  constraints: string[] | null;
+  resources: string[] | null; // Will be [] if missing in old data
+  constraints: string[] | null; // Will be [] if missing in old data
 }
 
 export interface CanonicalGameSetup {
