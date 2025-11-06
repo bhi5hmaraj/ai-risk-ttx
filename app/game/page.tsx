@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
+import { ConnectionStatusPill } from '@/components/ConnectionStatus';
 import { GameScreen, LoadingScreen } from '@/screens';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
@@ -97,6 +98,15 @@ export default function GamePage() {
 
   // Trigger human action options load when entering ACTION phase and none are present
   React.useEffect(() => {
+    console.log('[GamePage] Action options effect triggered:', {
+      phase: gameState.phase,
+      hasHumanPlayer: !!humanPlayer,
+      hasSubmitted: humanPlayer?.hasSubmittedActions,
+      optionsCount: actionOptions.length,
+      isLoading,
+      willLoad: gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0 && !isLoading
+    });
+
     if (
       gameState.phase === GamePhase.ACTION &&
       humanPlayer &&
@@ -104,9 +114,10 @@ export default function GamePage() {
       actionOptions.length === 0 &&
       !isLoading
     ) {
+      console.log('[GamePage] Loading action options for human player');
       loadHumanOptions().catch(() => {});
     }
-  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, loadHumanOptions]);
+  }, [gameState.phase, humanPlayer, actionOptions.length, isLoading, loadHumanOptions]);
 
   return (
     <>
@@ -119,6 +130,9 @@ export default function GamePage() {
         onOpenUpdates={() => router.push('/updates')}
         showFeedback
       />
+      <div className="fixed top-4 right-4 z-50">
+        <ConnectionStatusPill />
+      </div>
       {actionTree}
       {showLoadingOverlay ? (
         <LoadingScreen

@@ -2,9 +2,10 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LobbyScreen } from '@/screens';
+import { LobbyScreen, LoadingScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal } from '@/components/game';
+import { ConnectionStatusPill } from '@/components/ConnectionStatus';
 import { GamePhase } from '@/types';
 import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
@@ -17,7 +18,7 @@ import { generateCustomScenario } from '@/services/llmApiClient';
 export default function LobbyPage() {
   const router = useRouter();
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, reset: resetLobby } = useLobby();
-  const { isLoading, setLoading, setError } = useUI();
+  const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
   const { handleStartGame } = useGameActions();
   const clearSession = useSessionStore ((s) => s.clear);
@@ -72,6 +73,13 @@ export default function LobbyPage() {
     <ActionTreePortal isOpen={false} onClose={() => {}} logEntry={null as any} eventLog={gameState.eventLog} />
   );
 
+  // Show loading overlay when starting game (backend connection, session creation, scenario generation)
+  // Keep inline loading for custom scenario generation from text input
+  const startGameLoadingMessages = ['backend', 'setting up game', 'game master', 'generating the initial'];
+  const showLoadingOverlay = isLoading && startGameLoadingMessages.some(msg =>
+    (loadingMessage || '').toLowerCase().includes(msg)
+  );
+
   return (
     <>
       <Navigation
@@ -88,24 +96,34 @@ export default function LobbyPage() {
         onOpenUpdates={() => router.push('/updates')}
         showFeedback={false}
       />
+      <div className="fixed top-4 right-4 z-50">
+        <ConnectionStatusPill />
+      </div>
       {actionTree}
-      <LobbyScreen
-        selectedRoleName={selectedRoleName}
-        setSelectedRoleName={setSelectedRoleName}
-        gamePath={gamePath}
-        setGamePath={setGamePath}
-        customScenario={customScenario}
-        setCustomScenario={setCustomScenario}
-        gameSetup={gameSetup}
-        setGameSetup={setGameSetup}
-        maxAIPlayers={maxAIPlayers}
-        setMaxAIPlayers={setMaxAIPlayers}
-        maxRounds={maxRounds}
-        setMaxRounds={setMaxRounds}
-        isLoading={isLoading}
-        handleCustomGameStart={handleCustomGameStart}
-        handleStartGame={handleStartGame}
-      />
+      {showLoadingOverlay ? (
+        <LoadingScreen
+          message={loadingMessage || 'Starting game...'}
+          error={error}
+        />
+      ) : (
+        <LobbyScreen
+          selectedRoleName={selectedRoleName}
+          setSelectedRoleName={setSelectedRoleName}
+          gamePath={gamePath}
+          setGamePath={setGamePath}
+          customScenario={customScenario}
+          setCustomScenario={setCustomScenario}
+          gameSetup={gameSetup}
+          setGameSetup={setGameSetup}
+          maxAIPlayers={maxAIPlayers}
+          setMaxAIPlayers={setMaxAIPlayers}
+          maxRounds={maxRounds}
+          setMaxRounds={setMaxRounds}
+          isLoading={isLoading}
+          handleCustomGameStart={handleCustomGameStart}
+          handleStartGame={handleStartGame}
+        />
+      )}
     </>
   );
 }

@@ -42,5 +42,9 @@ export class SessionService {
   static createEventSource(sessionId: string): EventSource {
     return new EventSource(`/api/session/${sessionId}/stream`);
   }
+
+  static async healthCheck() {
+    return sessionClient.healthCheck();
+  }
 }
 

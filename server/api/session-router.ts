@@ -47,6 +47,36 @@ export async function handleSessionRequest(
   const t0 = Date.now();
   const route = `/${parts.join('/')}` || '/';
   try {
+    // Health check endpoint - tests entire backend stack
+    if (method === 'GET' && parts.length === 1 && parts[0] === 'health') {
+      const s0 = Date.now();
+      const health: Record<string, any> = {
+        api: true,
+        timestamp: Date.now(),
+        store: 'unknown',
+        storeLatency: 0,
+      };
+
+      // Test session store connectivity (works with any store implementation)
+      try {
+        const testStart = Date.now();
+        // Try to get a non-existent session - fast operation that tests store connectivity
+        await deps.store.get('health-check-probe');
+        health.store = 'ok';
+        health.storeLatency = Date.now() - testStart;
+      } catch (err: any) {
+        health.store = 'error';
+        health.storeError = err?.message || 'Unknown error';
+      }
+
+      const latency = Date.now() - s0;
+      console.log(`[session-router] health check: store=${health.store}, latency=${latency}ms`);
+
+      // Return 503 if store is down, 200 if everything is ok
+      const status = health.store === 'ok' ? 200 : 503;
+      return json(status, { success: health.store === 'ok', data: health });
+    }
+
     if (method === 'POST' && parts.length === 0) {
       const s0 = Date.now();
       const req = (body ?? {}) as any;
