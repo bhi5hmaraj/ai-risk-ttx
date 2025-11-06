@@ -179,7 +179,10 @@ export function useGameActions() {
           // CRITICAL: Wait for SSE connection to be ACTUALLY established before initializing
           // Production environments have higher latency than localhost, so a fixed delay doesn't work
           // Instead, we poll for sseStatus.state === 'connected' which is set when first SSE event arrives
-          console.log('[useGameActions] Waiting for SSE connection to establish...');
+          console.log('[useGameActions] 🔍 Waiting for SSE connection to establish...');
+          console.log('[useGameActions] Session ID:', created.id);
+          console.log('[useGameActions] Scenario:', (canonicalSetup.scenarioTitle as string)?.substring(0, 50));
+          const pollStartTime = Date.now();
           const maxWaitTime = 5000; // 5 seconds max wait
           const pollInterval = 100; // Check every 100ms
           let waited = 0;
@@ -187,12 +190,25 @@ export function useGameActions() {
           while (waited < maxWaitTime) {
             // Import sseStatus from sessionStore
             const { sseStatus } = await import('@/stores/sessionStore').then(m => m.useSessionStore.getState());
+
+            if (waited % 500 === 0 || sseStatus.state !== 'connecting') {
+              // Log every 500ms or on state change
+              console.log('[useGameActions] SSE poll check:', {
+                waited,
+                state: sseStatus.state,
+                lastEventType: sseStatus.lastEventType,
+                lastEventTime: sseStatus.lastEventTime,
+                error: sseStatus.error
+              });
+            }
+
             if (sseStatus.state === 'connected') {
-              console.log('[useGameActions] SSE connected after', waited, 'ms');
+              console.log('[useGameActions] ✅ SSE connected after', waited, 'ms');
+              console.log('[useGameActions] Last event:', sseStatus.lastEventType, 'at', sseStatus.lastEventTime);
               break;
             }
             if (sseStatus.state === 'error') {
-              console.error('[useGameActions] SSE connection failed:', sseStatus.error);
+              console.error('[useGameActions] ❌ SSE connection failed:', sseStatus.error);
               setError('Failed to establish connection to game server. Please try again.');
               setLoading(false);
               return;
@@ -202,7 +218,10 @@ export function useGameActions() {
           }
 
           if (waited >= maxWaitTime) {
-            console.warn('[useGameActions] SSE connection timeout after', waited, 'ms - proceeding anyway');
+            const { sseStatus: finalStatus } = await import('@/stores/sessionStore').then(m => m.useSessionStore.getState());
+            console.warn('[useGameActions] ⚠️ SSE connection timeout after', waited, 'ms');
+            console.warn('[useGameActions] Final SSE state:', finalStatus.state);
+            console.warn('[useGameActions] Proceeding anyway - scenario:', (canonicalSetup.scenarioTitle as string)?.substring(0, 50));
           }
 
           // CRITICAL: Clear loading BEFORE initializing to avoid race condition
