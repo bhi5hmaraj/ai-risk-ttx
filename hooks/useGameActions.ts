@@ -176,12 +176,34 @@ export function useGameActions() {
           const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers, undefined, undefined, { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null });
           setGameSetup(setup);
 
-          // CRITICAL: Wait for SSE connection to be established before initializing
-          // The SSE subscription happens asynchronously in useGameController
-          // If we call initialize() too quickly, the update event will be emitted
-          // before the SSE listener is subscribed, causing the frontend to miss the phase transition
+          // CRITICAL: Wait for SSE connection to be ACTUALLY established before initializing
+          // Production environments have higher latency than localhost, so a fixed delay doesn't work
+          // Instead, we poll for sseStatus.state === 'connected' which is set when first SSE event arrives
           console.log('[useGameActions] Waiting for SSE connection to establish...');
-          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay for SSE to connect
+          const maxWaitTime = 5000; // 5 seconds max wait
+          const pollInterval = 100; // Check every 100ms
+          let waited = 0;
+
+          while (waited < maxWaitTime) {
+            // Import sseStatus from sessionStore
+            const { sseStatus } = await import('@/stores/sessionStore').then(m => m.useSessionStore.getState());
+            if (sseStatus.state === 'connected') {
+              console.log('[useGameActions] SSE connected after', waited, 'ms');
+              break;
+            }
+            if (sseStatus.state === 'error') {
+              console.error('[useGameActions] SSE connection failed:', sseStatus.error);
+              setError('Failed to establish connection to game server. Please try again.');
+              setLoading(false);
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+            waited += pollInterval;
+          }
+
+          if (waited >= maxWaitTime) {
+            console.warn('[useGameActions] SSE connection timeout after', waited, 'ms - proceeding anyway');
+          }
 
           // CRITICAL: Clear loading BEFORE initializing to avoid race condition
           // When initialize() triggers SSE update with ACTION phase, isLoading must already be false
