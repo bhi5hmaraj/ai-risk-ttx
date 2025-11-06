@@ -31,6 +31,7 @@ export function SessionMonitor() {
 
   useEffect(() => {
     console.log('[SSE] SessionMonitor useEffect triggered - sessionMeta:', sessionMeta);
+    console.log('[SSE] Timestamp:', new Date().toISOString());
 
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       console.log('[SSE] window or EventSource undefined');
@@ -48,12 +49,13 @@ export function SessionMonitor() {
     }
 
     if (sessionStreamRef.current) {
-      console.log('[SSE] Closing existing stream');
+      console.log('[SSE] Closing existing stream for session:', sessionStreamRef.current.url);
       sessionStreamRef.current.close();
       sessionStreamRef.current = null;
     }
 
     console.log('[SSE] Opening new stream for session:', sessionMeta.id);
+    console.log('[SSE] Connection start timestamp:', Date.now());
     setSSEState('connecting');
     const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
     sessionStreamRef.current = source;
@@ -62,10 +64,21 @@ export function SessionMonitor() {
       try {
         const payload = JSON.parse(event.data || '{}');
         const snapshot = payload?.snapshot;
-        if (!snapshot) return;
+        if (!snapshot) {
+          console.warn('[SSE] Received event with no snapshot:', event.data?.substring(0, 100));
+          return;
+        }
 
         const eventType = payload?.type || 'snapshot';
-        console.log('[SSE] event', eventType, 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
+        const connectionTime = Date.now();
+        console.log('[SSE] ✅ EVENT RECEIVED:', {
+          type: eventType,
+          revision: snapshot.revision,
+          round: snapshot.state?.round,
+          phase: snapshot.state?.phase,
+          timestamp: connectionTime,
+          scenarioTitle: snapshot.setup?.scenarioTitle?.substring(0, 30)
+        });
 
         // Mark SSE as connected when we receive first event
         setSSEState('connected');
