@@ -66,6 +66,13 @@ export function useGameActions() {
     // Show loading screen immediately
     setLoading(true, 'Checking backend connection...');
 
+    // CRITICAL FIX: Reset sessionCreationInFlightRef if no session exists
+    // This prevents the ref from blocking session creation after the user has cleared the session
+    // (e.g., when restarting the game after completion)
+    if (!sessionMeta) {
+      sessionCreationInFlightRef.current = false;
+    }
+
     if (!sessionMeta && !sessionCreationInFlightRef.current) {
       console.log('[useGameActions] Starting session creation - mode:', path, 'hasSetup:', !!gameSetup);
       sessionCreationInFlightRef.current = true;

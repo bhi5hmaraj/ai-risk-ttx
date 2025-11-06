@@ -97,27 +97,28 @@ export default function GamePage() {
   };
 
   // Trigger human action options load when entering ACTION phase and none are present
+  // CRITICAL FIX: Removed !isLoading condition to fix race condition
+  // The loadHumanOptions function has its own inFlightRef guard to prevent duplicate calls
+  // The !isLoading check created timing issues where the SSE event arrived before React re-rendered
   React.useEffect(() => {
     console.log('[GamePage] Action options effect triggered:', {
       phase: gameState.phase,
       hasHumanPlayer: !!humanPlayer,
       hasSubmitted: humanPlayer?.hasSubmittedActions,
       optionsCount: actionOptions.length,
-      isLoading,
-      willLoad: gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0 && !isLoading
+      willLoad: gameState.phase === GamePhase.ACTION && humanPlayer && !humanPlayer.hasSubmittedActions && actionOptions.length === 0
     });
 
     if (
       gameState.phase === GamePhase.ACTION &&
       humanPlayer &&
       !humanPlayer.hasSubmittedActions &&
-      actionOptions.length === 0 &&
-      !isLoading
+      actionOptions.length === 0
     ) {
       console.log('[GamePage] Loading action options for human player');
       loadHumanOptions().catch(() => {});
     }
-  }, [gameState.phase, humanPlayer, actionOptions.length, isLoading, loadHumanOptions]);
+  }, [gameState.phase, humanPlayer, actionOptions.length, loadHumanOptions]);
 
   return (
     <>
