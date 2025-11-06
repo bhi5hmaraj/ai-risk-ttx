@@ -246,37 +246,39 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
               {/* Round Impact Table (accurate deltas from event log) */}
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-blue-200">Round Impact (Score Changes)</p>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                    <thead className="bg-gray-900/70 text-gray-300">
-                      <tr>
-                        <th className="px-3 py-2 border-b border-gray-700">Round</th>
-                        <th className="px-3 py-2 border-b border-gray-700">Headline</th>
-                        <th className="px-3 py-2 border-b border-gray-700">Δ Score</th>
-                        <th className="px-3 py-2 border-b border-gray-700">Δ %</th>
-                        <th className="px-3 py-2 border-b border-gray-700">After</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gameState.eventLog
-                        .filter((e) => (e.round ?? 0) >= 0)
-                        .map((e) => {
-                          const delta = e.publicScoreChange || 0;
-                          const prev = (e.publicScoreAfter ?? 0) - delta;
-                          const rel = prev !== 0 ? (delta / prev) * 100 : 0;
-                          const color = delta >= 0 ? 'text-green-300' : 'text-red-300';
-                          return (
-                            <tr key={`r_${e.round}`} className="odd:bg-gray-900/40">
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{e.round}</td>
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{e.event?.headline || '—'}</td>
-                              <td className={`px-3 py-2 border-b border-gray-800 font-semibold ${color}`}>{delta > 0 ? `+${delta}` : delta}</td>
-                              <td className={`px-3 py-2 border-b border-gray-800 ${color}`}>{(rel >= 0 ? '+' : '') + rel.toFixed(1)}%</td>
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{e.publicScoreAfter}%</td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
+                <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
+                  <div className="inline-block min-w-full align-middle">
+                    <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
+                      <thead className="bg-gray-900/70 text-gray-300">
+                        <tr>
+                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[150px]">Headline</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Δ Score</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Δ %</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">After</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {gameState.eventLog
+                          .filter((e) => (e.round ?? 0) >= 0)
+                          .map((e) => {
+                            const delta = e.publicScoreChange || 0;
+                            const prev = (e.publicScoreAfter ?? 0) - delta;
+                            const rel = prev !== 0 ? (delta / prev) * 100 : 0;
+                            const color = delta >= 0 ? 'text-green-300' : 'text-red-300';
+                            return (
+                              <tr key={`r_${e.round}`} className="odd:bg-gray-900/40">
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.round}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.event?.headline || '—'}</td>
+                                <td className={`px-2 md:px-3 py-2 border-b border-gray-800 font-semibold ${color}`}>{delta > 0 ? `+${delta}` : delta}</td>
+                                <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${color}`}>{(rel >= 0 ? '+' : '') + rel.toFixed(1)}%</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.publicScoreAfter}%</td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -284,39 +286,41 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
               {debrief.keyEvents?.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-blue-200">Key Decisive Events</p>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                      <thead className="bg-gray-900/70 text-gray-300">
-                        <tr>
-                          <th className="px-3 py-2 border-b border-gray-700">Round</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Actor</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Title</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Impact</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Description</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {debrief.keyEvents.map((ev, idx) => (
-                          <tr key={`ev_${idx}`} className="odd:bg-gray-900/40">
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.round}</td>
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.actor ?? '—'}</td>
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
-                            <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-300">
-                              <div className="whitespace-pre-wrap">{ev.description}</div>
-                              {ev.causes && ev.causes.length > 0 && (
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                  <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
-                                  {ev.causes.map((c, i) => (
-                                    <CauseTag key={`debrief_ev_${idx}_c_${i}`} cause={c} logs={gameState.eventLog} />
-                                  ))}
-                                </div>
-                              )}
-                            </td>
+                  <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
+                    <div className="inline-block min-w-full align-middle">
+                      <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
+                        <thead className="bg-gray-900/70 text-gray-300">
+                          <tr>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[100px]">Actor</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[120px]">Title</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[100px]">Impact</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[200px]">Description</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {debrief.keyEvents.map((ev, idx) => (
+                            <tr key={`ev_${idx}`} className="odd:bg-gray-900/40">
+                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.round}</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.actor ?? '—'}</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
+                              <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-300">
+                                <div className="whitespace-pre-wrap">{ev.description}</div>
+                                {ev.causes && ev.causes.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                                    {ev.causes.map((c, i) => (
+                                      <CauseTag key={`debrief_ev_${idx}_c_${i}`} cause={c} logs={gameState.eventLog} />
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -325,33 +329,35 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
               {debrief.userActions && (
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-amber-200">Your Influential Actions</p>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                      <thead className="bg-gray-900/70 text-gray-300">
-                        <tr>
-                          <th className="px-3 py-2 border-b border-gray-700">Round</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Action</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Impact</th>
-                          <th className="px-3 py-2 border-b border-gray-700">Rationale</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {debrief.userActions.length > 0 ? (
-                          debrief.userActions.map((ac, idx) => (
-                            <tr key={`act_${idx}`} className="odd:bg-gray-900/40">
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ac.round}</td>
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-200">{ac.title}</td>
-                              <td className={`px-3 py-2 border-b border-gray-800 ${impactClass(ac.impact)}`}>{ac.impact}</td>
-                              <td className="px-3 py-2 border-b border-gray-800 text-gray-300">{ac.rationale ?? '—'}</td>
-                            </tr>
-                          ))
-                        ) : (
+                  <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
+                    <div className="inline-block min-w-full align-middle">
+                      <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
+                        <thead className="bg-gray-900/70 text-gray-300">
                           <tr>
-                            <td className="px-3 py-2 border-b border-gray-800 text-gray-400" colSpan={4}>No recorded human actions.</td>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[120px]">Action</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[100px]">Impact</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[150px]">Rationale</th>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {debrief.userActions.length > 0 ? (
+                            debrief.userActions.map((ac, idx) => (
+                              <tr key={`act_${idx}`} className="odd:bg-gray-900/40">
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ac.round}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ac.title}</td>
+                                <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${impactClass(ac.impact)}`}>{ac.impact}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-300">{ac.rationale ?? '—'}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-400" colSpan={4}>No recorded human actions.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
