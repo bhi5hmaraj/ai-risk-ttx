@@ -62,30 +62,53 @@ export function useGameActions() {
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
     const path = (gamePath ?? (gameSetup ? 'custom' : 'classic')) as 'classic' | 'custom' | 'ai_safety';
-    try {
-      setStartStep('creatingSession', 'running');
-      setStartStep('buildingPlayers', 'running');
-      setStartStep('generatingScenario', 'idle');
-      setStartStep('connectingStream', 'running');
-      setStartStep('ready', 'idle');
-    } catch {}
-    const { players: initialPlayers, coreMetric } = selectInitialPlayers(
-      selectedRoleName,
-      path,
-      gameSetup,
-      AI_SAFETY_SCENARIO,
-      { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 },
-      { aiCount: typeof maxAIPlayers === 'number' ? maxAIPlayers : undefined }
-    );
-    setPlayers(initialPlayers);
-    setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
-    setLoading(true, 'AI Game Master is generating the initial scenario...');
+
+    // Show loading screen immediately
+    setLoading(true, 'Checking backend connection...');
 
     if (!sessionMeta && !sessionCreationInFlightRef.current) {
       console.log('[useGameActions] Starting session creation - mode:', path, 'hasSetup:', !!gameSetup);
       sessionCreationInFlightRef.current = true;
       (async () => {
         try {
+          // Check backend health before creating session
+          console.log('[useGameActions] Running backend health check...');
+          const healthResult = await SessionService.healthCheck();
+          console.log('[useGameActions] Health check result:', healthResult);
+
+          if (!healthResult.success) {
+            const errorMsg = healthResult.error || `Backend unavailable: ${healthResult.store === 'error' ? 'Session store error' : 'API unreachable'}`;
+            console.error('[useGameActions] Health check failed:', errorMsg);
+            setStartStep('creatingSession', 'error');
+            setError(`Backend connection failed: ${errorMsg}. Please refresh and try again.`);
+            setLoading(false);
+            return;
+          }
+
+          console.log('[useGameActions] Health check passed! Store latency:', healthResult.storeLatency, 'ms');
+
+          // Initialize game state and players AFTER health check passes
+          setLoading(true, 'Setting up game...');
+          try {
+            setStartStep('creatingSession', 'running');
+            setStartStep('buildingPlayers', 'running');
+            setStartStep('generatingScenario', 'idle');
+            setStartStep('connectingStream', 'running');
+            setStartStep('ready', 'idle');
+          } catch {}
+
+          const { players: initialPlayers, coreMetric } = selectInitialPlayers(
+            selectedRoleName,
+            path,
+            gameSetup,
+            AI_SAFETY_SCENARIO,
+            { name: 'Democratic Legitimacy', description: "Public's trust in the democratic process.", value: 100 },
+            { aiCount: typeof maxAIPlayers === 'number' ? maxAIPlayers : undefined }
+          );
+          setPlayers(initialPlayers);
+          setGameState((prev) => ({ ...prev, phase: GamePhase.STARTING, coreMetric, eventLog: prev.phase === GamePhase.LOBBY ? [] : prev.eventLog, round: prev.phase === GamePhase.LOBBY ? 0 : prev.round, currentEvent: null }));
+          setLoading(true, 'AI Game Master is generating the initial scenario...');
+
           // Build canonical setup for ALL modes.
           // If a custom/public setup exists, normalize it to canonical and prune stakeholders to match slider.
           let canonicalSetup: any;
@@ -142,31 +165,43 @@ export function useGameActions() {
           setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken } as any);
           setStartStep('creatingSession', 'done');
 
+          // Finalize setup before initialize
+          const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers, undefined, undefined, { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null });
+          setGameSetup(setup);
+
+          // CRITICAL: Wait for SSE connection to be established before initializing
+          // The SSE subscription happens asynchronously in useGameController
+          // If we call initialize() too quickly, the update event will be emitted
+          // before the SSE listener is subscribed, causing the frontend to miss the phase transition
+          console.log('[useGameActions] Waiting for SSE connection to establish...');
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay for SSE to connect
+
+          // CRITICAL: Clear loading BEFORE initializing to avoid race condition
+          // When initialize() triggers SSE update with ACTION phase, isLoading must already be false
+          // so that the action options useEffect can trigger
+          setLoading(false);
+          setStartStep('generatingScenario', 'done');
+          setStartStep('ready', 'done');
+
           // Initialize session with scenario so backend has game state for action-options
           console.log('[useGameActions] Initializing session scenario...');
           const initSnap = await SessionService.initialize(created.id);
           // Update sessionMeta with latest revision from initialize
           setSessionMeta({ id: created.id, revision: initSnap.revision, hostToken: created.hostToken } as any);
           console.log('[useGameActions] Session initialized successfully at rev', initSnap.revision);
+          console.log('[useGameActions] Game start complete - ready for action phase');
         } catch (e) {
           console.error('[useGameActions] Session creation/initialization failed:', e);
           setStartStep('creatingSession', 'error');
+          setLoading(false);
         } finally {
           sessionCreationInFlightRef.current = false;
         }
       })();
     } else {
       console.log('[useGameActions] Skipping session creation - hasSessionMeta:', !!sessionMeta, 'inFlight:', sessionCreationInFlightRef.current);
-    }
-
-    (async () => {
-      const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers, undefined, undefined, { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null });
-      setGameSetup(setup);
-      // Phase 2: The server initializes; SSE will update the stores. No client LLM initialization.
       setLoading(false);
-      setStartStep('generatingScenario', 'done');
-      setStartStep('ready', 'done');
-    })();
+    }
   }, [selectedRoleName, gamePath, gameSetup, sessionMeta, setSessionMeta, setPlayers, setGameState, setLoading, setError]);
 
   return { handleStartGame, handleConfirmActions } as const;

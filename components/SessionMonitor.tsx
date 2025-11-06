@@ -15,6 +15,8 @@ import type { GameState, ActionOption, GameSetup } from '@/types';
 export function SessionMonitor() {
   const { sessionMeta } = useSessionStore();
   const setSessionMeta = useSessionStore((s) => s.setSessionMeta);
+  const setSSEState = useSessionStore((s) => s.setSSEState);
+  const setSSEEvent = useSessionStore((s) => s.setSSEEvent);
   const setGameState = useGameStore((s) => s.setGameState);
   const setPlayers = useGameStore((s) => s.setPlayers);
   const players = useGameStore((s) => s.players);
@@ -41,6 +43,7 @@ export function SessionMonitor() {
         sessionStreamRef.current.close();
         sessionStreamRef.current = null;
       }
+      setSSEState('disconnected');
       return;
     }
 
@@ -51,6 +54,7 @@ export function SessionMonitor() {
     }
 
     console.log('[SSE] Opening new stream for session:', sessionMeta.id);
+    setSSEState('connecting');
     const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
     sessionStreamRef.current = source;
 
@@ -60,7 +64,12 @@ export function SessionMonitor() {
         const snapshot = payload?.snapshot;
         if (!snapshot) return;
 
-        console.log('[SSE] event', payload?.type || 'snapshot', 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
+        const eventType = payload?.type || 'snapshot';
+        console.log('[SSE] event', eventType, 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
+
+        // Mark SSE as connected when we receive first event
+        setSSEState('connected');
+        setSSEEvent(eventType);
 
         if (snapshot.state) {
           setGameState(snapshot.state as GameState);
@@ -127,8 +136,10 @@ export function SessionMonitor() {
       }
     };
 
-    const handleError = () => {
+    const handleError = (event: Event) => {
       console.warn('[SessionMonitor] SSE stream error, closing');
+      const errorMsg = (event as any)?.message || 'Connection error';
+      setSSEState('error', errorMsg);
       source.close();
       if (sessionStreamRef.current === source) {
         sessionStreamRef.current = null;
@@ -139,14 +150,16 @@ export function SessionMonitor() {
     source.addEventListener('error', handleError as EventListener);
 
     return () => {
+      console.log('[SSE] Cleaning up stream');
       source.removeEventListener('session', handleSessionEvent as EventListener);
       source.removeEventListener('error', handleError as EventListener);
       source.close();
       if (sessionStreamRef.current === source) {
         sessionStreamRef.current = null;
+        setSSEState('disconnected');
       }
     };
-  }, [sessionMeta?.id, setGameState, setPlayers, setGameSetup, updateAICompletion, setAICompletionStatus, setLoading, setError, setActionOptions, setStartStep]);
+  }, [sessionMeta?.id, setGameState, setPlayers, setGameSetup, updateAICompletion, setAICompletionStatus, setLoading, setError, setActionOptions, setStartStep, setSSEState, setSSEEvent]);
 
   return null; // This component doesn't render anything
 }

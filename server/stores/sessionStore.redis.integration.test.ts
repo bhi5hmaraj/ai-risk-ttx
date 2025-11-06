@@ -182,8 +182,12 @@ describe('Redis Integration Tests', () => {
       const created = await store.create({
         state: gsLobby(),
         setup: {
-          scenarioId: 'test',
-          stakeholders: [{ name: 'Player1', icon: '🎯', publicObjective: 'test', hiddenObjective: 'test', resources: [], constraints: [] }]
+          scenarioTitle: 'Test Scenario',
+          scenarioDescription: 'Test description',
+          coreMetric: { name: 'Test Metric', description: 'Test metric description', value: 100 },
+          stakeholders: [{ name: 'Player1', icon: '🎯', publicObjective: 'test', hiddenObjective: 'test', resources: [], constraints: [] }],
+          maxRounds: null,
+          maxAIPlayers: null
         }
       });
       testKeys.push(`session:${created.id}`);

@@ -6,16 +6,37 @@
 import type { GameSetup, ActionOption } from '../types/core';
 
 const BASE = '/api/session';
+const DEFAULT_TIMEOUT = 30000; // 30 seconds for normal operations
+const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds for health checks
 
-async function fetchJson(url: string, init?: RequestInit) {
-  const res = await fetch(url, init);
-  const rid = res.headers?.get('x-req-id') || undefined;
+async function fetchJson(url: string, init?: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    console.log('[SessionClient]', init?.method || 'GET', url, 'status=', res.status, rid ? `rid=${rid}` : '');
-  } catch {}
-  if (res.status === 304) return { res, body: null } as const;
-  const body = await res.json().catch(() => ({ success: false, error: 'Invalid JSON' }));
-  return { res, body } as const;
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    const rid = res.headers?.get('x-req-id') || undefined;
+    try {
+      console.log('[SessionClient]', init?.method || 'GET', url, 'status=', res.status, rid ? `rid=${rid}` : '');
+    } catch {}
+
+    if (res.status === 304) return { res, body: null } as const;
+    const body = await res.json().catch(() => ({ success: false, error: 'Invalid JSON response from server' }));
+    return { res, body } as const;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+
+    // Provide helpful error messages based on error type
+    if (err.name === 'AbortError') {
+      throw new Error(`Backend connection timeout after ${timeoutMs / 1000}s. Please check your network connection and try again.`);
+    }
+    if (err.message?.includes('Failed to fetch')) {
+      throw new Error('Cannot reach backend server. Please check your internet connection.');
+    }
+    throw new Error(`Network error: ${err.message || 'Unknown error'}`);
+  }
 }
 
 export async function createSession(args: { mode: 'classic' | 'ai_safety' | 'custom'; setup?: GameSetup; maxRounds?: number; aiPlayers?: number; }) {
@@ -105,4 +126,54 @@ export async function debrief(id: string) {
   const { res, body } = await fetchJson(`${BASE}/${id}/debrief`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
   if (!body?.success) throw new Error(body?.error || `HTTP ${res.status}`);
   return body.data as { summary: string; keyEvents: any[]; userActions: any[] };
+}
+
+/**
+ * Health check - tests backend infrastructure (API + session store)
+ * Returns detailed health status including latency metrics
+ */
+export async function healthCheck(): Promise<{
+  success: boolean;
+  api: boolean;
+  store: string;
+  storeLatency: number;
+  timestamp: number;
+  error?: string;
+}> {
+  try {
+    const { res, body } = await fetchJson(`${BASE}/health`, { method: 'GET' }, HEALTH_CHECK_TIMEOUT);
+
+    if (res.status === 200 && body?.success) {
+      return {
+        success: true,
+        api: body.data.api,
+        store: body.data.store,
+        storeLatency: body.data.storeLatency,
+        timestamp: body.data.timestamp,
+      };
+    }
+
+    // 503 means backend is up but store is down
+    if (res.status === 503) {
+      return {
+        success: false,
+        api: true,
+        store: body?.data?.store || 'error',
+        storeLatency: body?.data?.storeLatency || 0,
+        timestamp: body?.data?.timestamp || Date.now(),
+        error: body?.data?.storeError || 'Session store unavailable',
+      };
+    }
+
+    throw new Error(`Health check failed: HTTP ${res.status}`);
+  } catch (err: any) {
+    return {
+      success: false,
+      api: false,
+      store: 'unknown',
+      storeLatency: 0,
+      timestamp: Date.now(),
+      error: err.message || 'Health check failed',
+    };
+  }
 }

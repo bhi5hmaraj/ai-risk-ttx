@@ -37,7 +37,7 @@ export function useRoundOptions() {
       inFlightRef.current = false;
       setLoading(false);
     }
-  }, [humanPlayer, sessionMeta, gameState, setLoading, setError, setActionOptions]);
+  }, [humanPlayer, sessionMeta, setLoading, setError, setActionOptions]);
 
   return { loadHumanOptions } as const;
 }
