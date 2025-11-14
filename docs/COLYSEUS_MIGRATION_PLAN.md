@@ -2018,43 +2018,205 @@ function RoomCard({ room }: { room: RoomInfo }) {
 
 ---
 
-## Prompt Management System (Version-Controlled)
+## Remote Config & Feature Flags (ConfigCat/Flagsmith)
 
 ### Overview
 
-**Problem:** During IRL event, you need to tweak prompts quickly without:
-- Losing old versions
-- Breaking active games
-- Unclear what prompt was used in each game
+**Problem:** During IRL event, you need to change configuration quickly without:
+- Losing old versions (audit trail)
+- Breaking active games (consistency)
+- Deploying code
+- Reinventing the wheel (version control, admin UI, SDKs)
 
-**Solution:** Version-controlled, append-only prompt system with admin UI
+**Solution:** Use existing remote config + feature flag service
 
-### Database Schema
+### Service Comparison
+
+| Feature | ConfigCat | Flagsmith |
+|---------|-----------|-----------|
+| **Deployment** | Hosted SaaS | Hosted OR Self-hosted |
+| **Pricing** | Free tier (7-day audit) | Free (unlimited self-hosted) |
+| **Audit Retention** | 7d → 35d → 2yr | Unlimited (self-hosted) |
+| **Versioning** | Via audit logs | Via audit logs + change requests |
+| **Admin UI** | ✅ Built-in | ✅ Built-in |
+| **TypeScript SDK** | ✅ Official | ✅ Official |
+| **Audit "Why" Field** | ✅ Mandatory (SOC2) | ⚠️ Via comments |
+| **JSON Values** | ✅ Feature flags + config | ✅ Feature flags + config |
+| **Webhooks** | ✅ | ✅ |
+| **Cloud Run Compatible** | N/A (hosted) | ✅ (self-host) |
+
+**Recommendation:**
+- **ConfigCat** if you want zero ops (hosted, simple, SOC2)
+- **Flagsmith** if you want control (self-host on Cloud Run, audit webhooks to your DB)
+
+### What You'll Configure
+
+Instead of just prompts, manage **all runtime config**:
+
+```typescript
+// Configuration structure
+{
+  // Prompts (JSON strings)
+  "prompt_system": "You are a Game Master...",
+  "prompt_consequence": "Generate consequences...",
+  "prompt_action_options": "Generate 5 actions...",
+  "prompt_counterfactual": "What if no one acted?",
+
+  // Game parameters (numbers)
+  "game_timer_seconds": 300,
+  "game_max_rounds": 5,
+  "game_action_points": 3,
+
+  // Feature flags (booleans)
+  "feature_multiplayer_enabled": false,    // 0% → 50% → 100% rollout
+  "feature_debug_mode": false,
+  "feature_tutorial_flow_v2": false,
+
+  // AI config (strings/JSON)
+  "ai_model": "gemini-2.5-flash",
+  "ai_temperature": 0.7,
+  "ai_fallback_model": "gpt-4o-mini",
+
+  // A/B tests (JSON arrays)
+  "prompt_variants": [
+    { name: "optimistic", tone: 0.7 },
+    { name: "neutral", tone: 0.5 },
+    { name: "pessimistic", tone: 0.3 }
+  ]
+}
+```
+
+### Setup: ConfigCat
+
+**1. Install SDK:**
+
+```bash
+npm install configcat-node
+```
+
+**2. Create ConfigService:**
+
+```typescript
+// services/configService.ts
+import * as configcat from 'configcat-node';
+
+class ConfigService {
+  private client: configcat.IConfigCatClient;
+
+  constructor() {
+    this.client = configcat.getClient(
+      process.env.CONFIGCAT_SDK_KEY!,
+      configcat.PollingMode.AutoPoll,
+      {
+        pollIntervalSeconds: 60, // Check for updates every minute
+        logger: configcat.createConsoleLogger(configcat.LogLevel.Info),
+      }
+    );
+  }
+
+  async getPrompt(type: string): Promise<string> {
+    return await this.client.getValueAsync(`prompt_${type}`, '');
+  }
+
+  async getGameParam(key: string, defaultValue: number): Promise<number> {
+    return await this.client.getValueAsync(`game_${key}`, defaultValue);
+  }
+
+  async isFeatureEnabled(feature: string): Promise<boolean> {
+    return await this.client.getValueAsync(`feature_${feature}`, false);
+  }
+
+  async getJSON<T>(key: string, defaultValue: T): Promise<T> {
+    const json = await this.client.getValueAsync(key, JSON.stringify(defaultValue));
+    return JSON.parse(json);
+  }
+
+  // Get snapshot of ALL config (for audit trail)
+  async getAllValues(): Promise<Record<string, any>> {
+    const snapshot = await this.client.getAllValuesAsync();
+    return snapshot.reduce((acc, item) => {
+      acc[item.settingKey] = item.settingValue;
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
+  dispose() {
+    this.client.dispose();
+  }
+}
+
+export const configService = new ConfigService();
+```
+
+**3. Environment Variable:**
+
+```bash
+# .env
+CONFIGCAT_SDK_KEY=your-sdk-key-from-dashboard
+```
+
+### Setup: Flagsmith (Alternative)
+
+**1. Install SDK:**
+
+```bash
+npm install flagsmith-nodejs
+```
+
+**2. Create ConfigService:**
+
+```typescript
+// services/configService.ts
+import Flagsmith from 'flagsmith-nodejs';
+
+class ConfigService {
+  private client: Flagsmith;
+
+  constructor() {
+    this.client = new Flagsmith({
+      environmentKey: process.env.FLAGSMITH_ENV_KEY!,
+      // Optional: self-hosted API
+      apiUrl: process.env.FLAGSMITH_API_URL || 'https://edge.api.flagsmith.com/api/v1/',
+    });
+  }
+
+  async init() {
+    await this.client.getEnvironmentFlags();
+  }
+
+  async getPrompt(type: string): Promise<string> {
+    const flags = await this.client.getEnvironmentFlags();
+    return flags.getFeatureValue(`prompt_${type}`) || '';
+  }
+
+  async getGameParam(key: string, defaultValue: number): Promise<number> {
+    const flags = await this.client.getEnvironmentFlags();
+    return Number(flags.getFeatureValue(`game_${key}`)) || defaultValue;
+  }
+
+  async isFeatureEnabled(feature: string): Promise<boolean> {
+    const flags = await this.client.getEnvironmentFlags();
+    return flags.isFeatureEnabled(`feature_${feature}`);
+  }
+
+  async getAllValues(): Promise<Record<string, any>> {
+    const flags = await this.client.getEnvironmentFlags();
+    return flags.allFlags().reduce((acc, flag) => {
+      acc[flag.feature.name] = flag.enabled ? flag.feature_state_value : false;
+      return acc;
+    }, {} as Record<string, any>);
+  }
+}
+
+export const configService = new ConfigService();
+```
+
+### Database Schema (Snapshots Only)
+
+**Updated GameSnapshot** to store config keys instead of custom tables:
 
 ```prisma
 // prisma/schema.prisma
-
-model PromptVersion {
-  id          String   @id @default(cuid())
-  version     Int      @default(autoincrement())
-  type        String   // "system" | "consequence" | "action_options" | "counterfactual"
-  content     String   @db.Text
-  parameters  Json     // { tone: "serious", detailLevel: 3, optimismBias: 0.3 }
-
-  // Audit trail
-  createdBy   String   // Admin email/ID
-  createdAt   DateTime @default(now())
-  activatedAt DateTime? // When made live (null = draft)
-  deactivatedAt DateTime? // When replaced
-  isActive    Boolean  @default(false)
-  notes       String?  @db.Text // "Fixed pessimism bias in round 3"
-
-  // Usage tracking
-  gamesUsed   GameSnapshot[] @relation("PromptUsage")
-
-  @@index([type, isActive])
-  @@index([createdAt])
-}
 
 model GameSnapshot {
   id            String   @id @default(cuid())
@@ -2066,10 +2228,8 @@ model GameSnapshot {
   gameState     Json     // Complete game state (players, scores, phase)
   events        Json     // What just happened (actions, consequences)
 
-  // Prompt tracking (which version was used)
-  systemPromptId       String?
-  consequencePromptId  String?
-  systemPrompt         PromptVersion? @relation("PromptUsage", fields: [systemPromptId], references: [id])
+  // Config snapshot (what was active at this moment)
+  configSnapshot Json    // { prompt_system: "v7", prompt_consequence: "v3", game_timer_seconds: 300 }
 
   // Performance metrics
   aiLatency     Int?     // Milliseconds for AI call
@@ -2082,272 +2242,45 @@ model GameSnapshot {
 }
 ```
 
-### Admin API Endpoints
-
-```typescript
-// pages/api/admin/prompts/create.ts
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Auth check
-  if (req.headers.authorization !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { type, content, parameters, notes } = req.body;
-
-  // Create new version (never edit existing)
-  const newVersion = await db.promptVersion.create({
-    data: {
-      type,
-      content,
-      parameters,
-      notes,
-      createdBy: req.body.adminEmail, // From auth
-      isActive: false, // Drafts start inactive
-    },
-  });
-
-  res.json({ success: true, version: newVersion });
-}
-```
-
-```typescript
-// pages/api/admin/prompts/activate.ts
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Auth check
-  if (req.headers.authorization !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { promptId } = req.body;
-
-  await db.$transaction(async (tx) => {
-    // Deactivate current active prompt of same type
-    const prompt = await tx.promptVersion.findUnique({ where: { id: promptId } });
-
-    await tx.promptVersion.updateMany({
-      where: { type: prompt.type, isActive: true },
-      data: {
-        isActive: false,
-        deactivatedAt: new Date(),
-      },
-    });
-
-    // Activate new version
-    await tx.promptVersion.update({
-      where: { id: promptId },
-      data: {
-        isActive: true,
-        activatedAt: new Date(),
-      },
-    });
-  });
-
-  res.json({ success: true });
-}
-```
-
-```typescript
-// pages/api/admin/prompts/list.ts
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { type } = req.query;
-
-  const prompts = await db.promptVersion.findMany({
-    where: type ? { type: type as string } : undefined,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: {
-        select: { gamesUsed: true }, // How many games used this prompt
-      },
-    },
-  });
-
-  res.json({ prompts });
-}
-```
-
-### Admin UI: Prompt Manager
-
-**URL:** `/admin/prompts`
-
-**Features:**
-1. List all prompt versions (grouped by type)
-2. Create new version
-3. Activate version (makes it live)
-4. See history (who created, when, why)
-5. Compare versions (diff view)
-
-**Component:**
-
-```typescript
-// pages/admin/prompts.tsx
-export default function PromptManager() {
-  const [prompts, setPrompts] = useState<PromptVersion[]>([]);
-  const [selectedType, setSelectedType] = useState<string>('system');
-  const [creating, setCreating] = useState(false);
-
-  return (
-    <div className="p-8 bg-gray-900 min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-8">Prompt Manager</h1>
-
-      {/* Type selector */}
-      <div className="flex gap-4 mb-8">
-        {['system', 'consequence', 'action_options'].map(type => (
-          <button
-            key={type}
-            onClick={() => setSelectedType(type)}
-            className={`px-4 py-2 rounded ${
-              selectedType === type ? 'bg-blue-600' : 'bg-gray-700'
-            }`}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-
-      {/* Active version (highlighted) */}
-      <div className="mb-8 p-6 bg-green-900 border-2 border-green-600 rounded-lg">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h2 className="text-xl font-bold">Active Version</h2>
-            <p className="text-sm text-gray-300">
-              v{activePrompt.version} • Activated {formatDate(activePrompt.activatedAt)}
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-green-600 rounded text-sm">LIVE</span>
-        </div>
-        <pre className="bg-gray-800 p-4 rounded overflow-auto max-h-64">
-          {activePrompt.content}
-        </pre>
-        <div className="mt-4 text-sm">
-          <p><strong>Parameters:</strong> {JSON.stringify(activePrompt.parameters)}</p>
-          <p><strong>Used by:</strong> {activePrompt._count.gamesUsed} games</p>
-        </div>
-      </div>
-
-      {/* Version history */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Version History</h2>
-          <button
-            onClick={() => setCreating(true)}
-            className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
-          >
-            + Create New Version
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {prompts.filter(p => p.type === selectedType && !p.isActive).map(prompt => (
-            <PromptVersionCard
-              key={prompt.id}
-              prompt={prompt}
-              onActivate={() => activatePrompt(prompt.id)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Create modal */}
-      {creating && (
-        <CreatePromptModal
-          type={selectedType}
-          onClose={() => setCreating(false)}
-          onCreated={(newPrompt) => {
-            setPrompts([newPrompt, ...prompts]);
-            setCreating(false);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function PromptVersionCard({ prompt, onActivate }: {
-  prompt: PromptVersion;
-  onActivate: () => void;
-}) {
-  return (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-semibold">v{prompt.version}</h3>
-          <p className="text-sm text-gray-400">
-            {prompt.createdBy} • {formatDate(prompt.createdAt)}
-          </p>
-          {prompt.notes && (
-            <p className="text-sm text-gray-300 mt-1">{prompt.notes}</p>
-          )}
-        </div>
-        <button
-          onClick={onActivate}
-          className="px-3 py-1 bg-green-600 rounded text-sm hover:bg-green-700"
-        >
-          Activate
-        </button>
-      </div>
-      <details>
-        <summary className="cursor-pointer text-sm text-blue-400">
-          View Content
-        </summary>
-        <pre className="bg-gray-900 p-3 rounded mt-2 text-xs overflow-auto">
-          {prompt.content}
-        </pre>
-      </details>
-      <div className="mt-2 text-xs text-gray-500">
-        Used by {prompt._count.gamesUsed} games
-      </div>
-    </div>
-  );
-}
-```
+**No PromptVersion table needed** - ConfigCat/Flagsmith handles versioning for you!
 
 ### Usage in GameRoom
 
 ```typescript
 // game-server/rooms/GameRoom.ts
+import { configService } from '../services/configService';
+
 export class GameRoom extends Room<GameState> {
-  private activePrompts: Map<string, PromptVersion> = new Map();
+  private configSnapshot: Record<string, any> = {};
 
   async onCreate(options: any) {
-    // Load active prompts on room creation
-    await this.loadActivePrompts();
+    // Snapshot ALL config at room creation (consistency)
+    this.configSnapshot = await configService.getAllValues();
 
-    // Store which prompts this game is using
-    this.metadata.promptVersions = {
-      system: this.activePrompts.get('system')?.id,
-      consequence: this.activePrompts.get('consequence')?.id,
-    };
-  }
-
-  private async loadActivePrompts() {
-    const prompts = await db.promptVersion.findMany({
-      where: { isActive: true },
+    logger.info('Room created with config snapshot', {
+      roomId: this.roomId,
+      config: this.configSnapshot,
     });
-
-    for (const prompt of prompts) {
-      this.activePrompts.set(prompt.type, prompt);
-    }
   }
 
   async generateConsequences() {
-    const consequencePrompt = this.activePrompts.get('consequence');
+    // Use snapshot (doesn't change mid-game)
+    const promptTemplate = this.configSnapshot['prompt_consequence'];
+    const temperature = this.configSnapshot['ai_temperature'];
 
-    // Use versioned prompt
-    const systemMessage = this.interpolatePrompt(
-      consequencePrompt.content,
-      consequencePrompt.parameters
-    );
+    const response = await geminiService.generate(promptTemplate, {
+      temperature,
+      model: this.configSnapshot['ai_model'],
+    });
 
-    const response = await geminiService.generate(systemMessage);
-
-    // Record snapshot with prompt version
+    // Save snapshot for replay
     await db.gameSnapshot.create({
       data: {
         gameId: this.roomId,
         round: this.state.round,
         gameState: this.state.toJSON(),
         events: { consequences: response },
-        consequencePromptId: consequencePrompt.id,
+        configSnapshot: this.configSnapshot, // Which config was used
         aiLatency: response.latency,
       },
     });
@@ -2355,40 +2288,107 @@ export class GameRoom extends Room<GameState> {
     return response;
   }
 
-  private interpolatePrompt(template: string, params: any): string {
-    return template
-      .replace('{tone}', params.tone || 'neutral')
-      .replace('{detail}', params.detailLevel || 'medium')
-      .replace('{optimism}', params.optimismBias || '0.5');
+  async checkFeatureFlag(feature: string): Promise<boolean> {
+    // Feature flags can check live (for debugging mid-game)
+    return await configService.isFeatureEnabled(feature);
   }
 }
 ```
+
+### Admin UI (Provided by Service)
+
+**ConfigCat Dashboard:**
+- URL: `https://app.configcat.com`
+- Create/edit settings (flags, strings, JSON)
+- See audit log (who changed what, when, why)
+- Compare versions
+- **Mandatory "Reason" field** for every change (SOC2 compliance)
+
+**Flagsmith Dashboard:**
+- URL: `https://flagsmith.com` (hosted) or `https://your-flagsmith.example.com` (self-hosted)
+- Create/edit features and remote config
+- Audit log with webhooks
+- Change requests (approval workflow)
+- Environments (dev, staging, prod)
+
+**No custom UI needed** - they provide professional dashboards!
 
 ### Event Day Workflow
 
 **Scenario: AI is too pessimistic in Round 3**
 
-1. **Admin opens** `/admin/prompts`
-2. **Clicks** "consequence" tab
-3. **Clicks** "+ Create New Version"
-4. **Edits** prompt:
+#### ConfigCat:
+1. **Open** ConfigCat dashboard (`app.configcat.com`)
+2. **Navigate** to `prompt_consequence` setting
+3. **Click** "Edit"
+4. **Change value:**
    ```
    Old: "Describe realistic consequences..."
    New: "Describe consequences with cautious optimism..."
    ```
-5. **Sets parameters:** `{ optimismBias: 0.7 }` (was 0.3)
-6. **Adds note:** "Fixed pessimism bias - IRL event feedback"
-7. **Clicks** "Create Draft"
-8. **Reviews** diff against active version
-9. **Clicks** "Activate" when ready
-10. **New games** use new prompt immediately
-11. **Old games** continue with their original prompt (consistency)
+5. **Enter reason:** "Fixed pessimism bias - IRL event Round 3 feedback"
+6. **Save** (SOC2-required reason field enforced)
+7. **New games** pick up change within 60 seconds (AutoPoll)
+8. **Active games** continue with their snapshot (consistency)
+
+#### Flagsmith:
+1. **Open** Flagsmith dashboard
+2. **Edit** `prompt_consequence` remote config value
+3. **Add comment:** "Fixed pessimism - Round 3 feedback"
+4. **Save** (webhooks notify your logging system)
+5. **Check webhook** in admin dashboard for confirmation
 
 **Benefits:**
-- ✅ Takes 2 minutes
+- ✅ Takes 30 seconds
 - ✅ No code deploy
-- ✅ Full audit trail
-- ✅ Can rollback instantly
+- ✅ Full audit trail (built-in)
+- ✅ Can rollback via dashboard
+- ✅ No database migrations
+- ✅ Professional UI with RBAC
+- ✅ Webhooks for Slack/Discord notifications
+
+### Integration with Session Replay
+
+When viewing replays, you'll see **which config was active**:
+
+```typescript
+// pages/admin/replay/[gameId].tsx
+function ReplayViewer({ game }: { game: Game }) {
+  const [snapshots, setSnapshots] = useState<GameSnapshot[]>([]);
+
+  return (
+    <div>
+      <h2>Config Used in This Game</h2>
+      <pre>{JSON.stringify(snapshots[0].configSnapshot, null, 2)}</pre>
+
+      {/* Example output:
+      {
+        "prompt_system": "You are a Game Master (v7)",
+        "prompt_consequence": "Generate consequences (v3 - pessimism fix)",
+        "game_timer_seconds": 300,
+        "feature_debug_mode": false
+      }
+      */}
+    </div>
+  );
+}
+```
+
+### Cost Estimate
+
+**ConfigCat:**
+- Free: 1 environment, 7-day audit, 10 team members
+- Pro ($49/mo): 35-day audit, unlimited team
+- Enterprise: 2-year audit, SSO, SLA
+
+**Flagsmith:**
+- Self-hosted: **FREE** (run on Cloud Run, ~$5/mo compute)
+- Cloud Starter: Free for 50k requests/mo
+- Cloud Pro ($29/mo): 1M requests, audit logs, webhooks
+
+**Recommendation for IRL Event:**
+- Start with **Flagsmith self-hosted** (free, audit control)
+- Or **ConfigCat Free** if you want zero ops
 
 ---
 
