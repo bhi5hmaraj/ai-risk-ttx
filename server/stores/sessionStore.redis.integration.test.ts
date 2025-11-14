@@ -51,11 +51,8 @@ describe('Redis Integration Tests', () => {
       await Promise.all(testKeys.map(key => redis.del(key).catch(() => {})));
     }
 
-    // Close connection
-    if (redis) {
-      await redis.quit();
-      console.log('✓ Redis connection closed');
-    }
+    // Note: Upstash Redis (REST API) doesn't need explicit connection close
+    console.log('✓ Cleanup complete');
   });
 
   describe('Redis Client', () => {
@@ -80,7 +77,7 @@ describe('Redis Integration Tests', () => {
       const data = { foo: 'bar', count: 42 };
       await redis.set(key, JSON.stringify(data));
       const raw = await redis.get(key);
-      const parsed = JSON.parse(raw!);
+      const parsed = JSON.parse(raw as string);
 
       expect(parsed).toEqual(data);
     });
@@ -89,16 +86,16 @@ describe('Redis Integration Tests', () => {
       const key = 'test:hash:' + Date.now();
       testKeys.push(key);
 
-      await redis.hSet(key, {
+      await redis.hset(key, {
         name: 'test-session',
         data: JSON.stringify({ round: 1 })
       });
 
-      const name = await redis.hGet(key, 'name');
-      const data = await redis.hGet(key, 'data');
+      const name = await redis.hget(key, 'name');
+      const data = await redis.hget(key, 'data');
 
       expect(name).toBe('test-session');
-      expect(JSON.parse(data!)).toEqual({ round: 1 });
+      expect(JSON.parse(data as string)).toEqual({ round: 1 });
     });
 
     it('should support TTL expiration', async () => {
@@ -136,10 +133,10 @@ describe('Redis Integration Tests', () => {
       expect(created.state.round).toBe(0);
 
       // Verify it's actually in Redis
-      const redisData = await redis.hGet(`session:${created.id}`, 'data');
+      const redisData = await redis.hget(`session:${created.id}`, 'data');
       expect(redisData).toBeTruthy();
 
-      const parsed = JSON.parse(redisData!);
+      const parsed = JSON.parse(redisData as string);
       expect(parsed.id).toBe(created.id);
       expect(parsed.revision).toBe(1);
     });
@@ -172,8 +169,8 @@ describe('Redis Integration Tests', () => {
       expect(updated.state.round).toBe(5);
 
       // Verify in Redis
-      const redisData = await redis.hGet(`session:${created.id}`, 'data');
-      const parsed = JSON.parse(redisData!);
+      const redisData = await redis.hget(`session:${created.id}`, 'data');
+      const parsed = JSON.parse(redisData as string);
       expect(parsed.revision).toBe(2);
       expect(parsed.state.round).toBe(5);
     });
@@ -201,8 +198,8 @@ describe('Redis Integration Tests', () => {
       expect(updated.submitted[playerId]).toBe(true);
 
       // Verify in Redis
-      const redisData = await redis.hGet(`session:${created.id}`, 'data');
-      const parsed = JSON.parse(redisData!);
+      const redisData = await redis.hget(`session:${created.id}`, 'data');
+      const parsed = JSON.parse(redisData as string);
       expect(parsed.submitted[playerId]).toBe(true);
     });
 

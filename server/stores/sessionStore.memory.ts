@@ -51,7 +51,7 @@ interface MemoryOpts {
 }
 
 export class MemorySessionStore implements SessionStore {
-  private sessions = new Map<string, SessionSnapshot>();
+  protected sessions = new Map<string, SessionSnapshot>();
   private readonly advanceState: AdvanceStateFn;
   private listeners = new Map<string, Set<SessionSubscriber>>();
   protected className = 'MemorySessionStore';

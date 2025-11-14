@@ -31,6 +31,7 @@
     "metrics": "npm run test:coverage && npm run type-check && npm run coverage:readme"
   },
   "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@prisma/client": "^6.17.1",
     "@upstash/redis": "^1.35.6",
     "autoprefixer": "^10.4.21",
