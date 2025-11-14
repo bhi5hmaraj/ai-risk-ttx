@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import type { GameState, ActionOption, GameSetup, Player } from '../../types/core';
 import type {
   SessionStore,
@@ -25,12 +24,26 @@ export type AdvanceStateFn = (
   }
 ) => Promise<AdvanceResult> | AdvanceResult;
 
-function rid(prefix: string) {
+/**
+ * Generate random ID using Web Crypto API (Edge Runtime compatible)
+ * Falls back to Math.random if crypto is not available
+ */
+function rid(prefix: string): string {
   try {
-    return `${prefix}_${randomBytes(6).toString('hex')}`;
-  } catch {
-    return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+    // Use Web Crypto API (available in Edge Runtime)
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const bytes = new Uint8Array(6);
+      crypto.getRandomValues(bytes);
+      const hex = Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      return `${prefix}_${hex}`;
+    }
+  } catch (err) {
+    console.warn('[rid] Web Crypto unavailable, using Math.random fallback');
   }
+  // Fallback for environments without crypto
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 interface MemoryOpts {

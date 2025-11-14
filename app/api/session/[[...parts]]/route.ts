@@ -9,7 +9,8 @@ import { GamePhase, type Player, type PlayerRoundActions, type ActionOption } fr
 import { createReqId, getReqIdFromHeaders, slog, serr } from '@/server/lib/logger';
 import { GAME_CONFIG } from '@/gameConfig';
 
-export const runtime = 'nodejs';
+// Use Edge runtime for compatibility with Upstash Redis
+export const runtime = 'edge';
 
 const textEncoder = new TextEncoder();
 

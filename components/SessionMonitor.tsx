@@ -124,9 +124,18 @@ export function SessionMonitor() {
         });
 
         // Keep sessionMeta.revision in sync with server snapshots
+        // CRITICAL: Don't update revision during ACTION phase to prevent race conditions
+        // when user is submitting actions. The submitActions response will update the revision.
         try {
           if (sessionMeta?.id) {
-            setSessionMeta({ id: sessionMeta.id, revision: snapshot.revision, hostToken: sessionMeta.hostToken });
+            const phase = snapshot.state?.phase;
+            const isActionPhase = phase === 2; // GamePhase.ACTION
+            if (!isActionPhase) {
+              setSessionMeta({ id: sessionMeta.id, revision: snapshot.revision, hostToken: sessionMeta.hostToken });
+              console.log('[SSE] Updated sessionMeta.revision to', snapshot.revision, '(phase:', phase, ')');
+            } else {
+              console.log('[SSE] Skipping revision update during ACTION phase (revision:', snapshot.revision, ')');
+            }
           }
         } catch {}
 
