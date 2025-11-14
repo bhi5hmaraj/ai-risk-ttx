@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useActionStore } from '@/stores/actionStore';
+import { SSEMetricsTracker } from '@/lib/observability';
 import type { GameState, ActionOption, GameSetup } from '@/types';
 
 /**
  * SessionMonitor - Sets up SSE connection to backend for real-time game updates
  * This component must be mounted at the root level to maintain the SSE connection
+ *
+ * Uses @microsoft/fetch-event-source for automatic reconnection with exponential backoff
+ * Includes comprehensive observability via SSEMetricsTracker
  */
 export function SessionMonitor() {
   const { sessionMeta } = useSessionStore();
@@ -27,40 +32,49 @@ export function SessionMonitor() {
   const setActionOptions = useActionStore((s) => s.setActionOptions);
   const setAICompletionStatus = useActionStore((s) => s.setAICompletionStatus);
   const updateAICompletion = useActionStore((s) => s.updateAICompletion);
-  const sessionStreamRef = useRef<EventSource | null>(null);
+
+  // Store AbortController to cancel fetch-event-source connection
+  const abortControllerRef = useRef<AbortController | null>(null);
+  // Track SSE connection metrics
+  const metricsTrackerRef = useRef<SSEMetricsTracker | null>(null);
 
   useEffect(() => {
     console.log('[SSE] SessionMonitor useEffect triggered - sessionMeta:', sessionMeta);
     console.log('[SSE] Timestamp:', new Date().toISOString());
 
-    if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
-      console.log('[SSE] window or EventSource undefined');
+    if (typeof window === 'undefined') {
+      console.log('[SSE] window undefined (SSR)');
       return;
     }
 
     if (!sessionMeta?.id) {
-      console.log('[SSE] No sessionMeta.id, closing any existing stream');
-      if (sessionStreamRef.current) {
-        sessionStreamRef.current.close();
-        sessionStreamRef.current = null;
+      console.log('[SSE] No sessionMeta.id, aborting any existing stream');
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
       setSSEState('disconnected');
       return;
     }
 
-    if (sessionStreamRef.current) {
-      console.log('[SSE] Closing existing stream for session:', sessionStreamRef.current.url);
-      sessionStreamRef.current.close();
-      sessionStreamRef.current = null;
+    // Close existing connection if any
+    if (abortControllerRef.current) {
+      console.log('[SSE] Aborting existing stream for session:', sessionMeta.id);
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
 
     console.log('[SSE] Opening new stream for session:', sessionMeta.id);
     console.log('[SSE] Connection start timestamp:', Date.now());
     setSSEState('connecting');
-    const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
-    sessionStreamRef.current = source;
 
-    const handleSessionEvent = (event: MessageEvent) => {
+    // Initialize metrics tracker
+    metricsTrackerRef.current = new SSEMetricsTracker(sessionMeta.id);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const handleSessionEvent = (event: { data: string; event?: string; id?: string }) => {
       try {
         const payload = JSON.parse(event.data || '{}');
         const snapshot = payload?.snapshot;
@@ -158,30 +172,100 @@ export function SessionMonitor() {
       }
     };
 
-    const handleError = (event: Event) => {
-      console.warn('[SessionMonitor] SSE stream error, closing');
-      const errorMsg = (event as any)?.message || 'Connection error';
-      setSSEState('error', errorMsg);
-      source.close();
-      if (sessionStreamRef.current === source) {
-        sessionStreamRef.current = null;
+    // Start fetchEventSource connection with automatic reconnection
+    fetchEventSource(`/api/session/${sessionMeta.id}/stream`, {
+      signal: abortController.signal,
+
+      async onopen(response) {
+        if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
+          console.log('[SSE] ✅ Stream opened successfully');
+          setSSEState('connected');
+          return; // Success - connection established
+        } else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          // Client error (4xx except 429) - don't retry
+          console.error('[SSE] ❌ Client error, will not retry:', response.status, response.statusText);
+          throw new Error(`Client error: ${response.status} ${response.statusText}`);
+        } else {
+          // Server error or 429 - will retry with backoff
+          console.warn('[SSE] ⚠️ Server error, will retry:', response.status, response.statusText);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+      },
+
+      onmessage(event) {
+        // Track event in metrics
+        metricsTrackerRef.current?.trackEvent(event.event || 'unknown');
+
+        // Handle different event types
+        if (event.event === 'session') {
+          handleSessionEvent(event);
+        } else if (event.event === 'ping') {
+          // Heartbeat - update connection status to show connection is alive
+          console.log('[SSE] 💓 Heartbeat received');
+          setSSEState('connected');
+          setSSEEvent('💓'); // Update status pill to show heartbeat
+        } else if (event.event === 'error') {
+          console.error('[SSE] ❌ Error event from server:', event.data);
+          setSSEState('error', 'Server error');
+          metricsTrackerRef.current?.setState('error', 'Server sent error event');
+        }
+      },
+
+      onerror(err) {
+        // This is called for network errors and other issues
+        // fetchEventSource will automatically retry with exponential backoff
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.warn('[SSE] ⚠️ Connection error, will auto-retry:', errorMsg);
+
+        setSSEState('connecting', 'Reconnecting...');
+        metricsTrackerRef.current?.setState('reconnecting', errorMsg);
+
+        // Return retry interval in ms (exponential backoff)
+        // Start with 1s, library will increase on subsequent failures
+        return 1000;
+      },
+
+      onclose() {
+        // Called when connection is closed by server
+        console.log('[SSE] 🔌 Stream closed by server');
+        setSSEState('disconnected');
+        metricsTrackerRef.current?.setState('disconnected', 'Server closed connection');
+      },
+
+      // Keep connection alive when tab is hidden
+      openWhenHidden: true,
+    }).catch((err) => {
+      // Final error if connection fails permanently
+      if (err.name !== 'AbortError') {
+        console.error('[SSE] ❌ Fatal error:', err);
+        setSSEState('error', err.message || 'Connection failed');
       }
-    };
+    });
 
-    source.addEventListener('session', handleSessionEvent as EventListener);
-    source.addEventListener('error', handleError as EventListener);
-
+    // Cleanup on unmount or sessionMeta change
     return () => {
       console.log('[SSE] Cleaning up stream');
-      source.removeEventListener('session', handleSessionEvent as EventListener);
-      source.removeEventListener('error', handleError as EventListener);
-      source.close();
-      if (sessionStreamRef.current === source) {
-        sessionStreamRef.current = null;
-        setSSEState('disconnected');
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
+      setSSEState('disconnected');
     };
-  }, [sessionMeta?.id, setGameState, setPlayers, setGameSetup, updateAICompletion, setAICompletionStatus, setLoading, setError, setActionOptions, setStartStep, setSSEState, setSSEEvent]);
+  }, [
+    sessionMeta?.id,
+    setSessionMeta,
+    setGameState,
+    setPlayers,
+    setGameSetup,
+    updateAICompletion,
+    setAICompletionStatus,
+    setLoading,
+    setError,
+    setActionOptions,
+    setStartStep,
+    setSSEState,
+    setSSEEvent
+  ]);
 
   return null; // This component doesn't render anything
 }

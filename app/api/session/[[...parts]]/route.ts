@@ -269,7 +269,16 @@ function streamSession(sessionId: string, req: NextRequest) {
 
   const heartbeatInterval = 15_000;
   const rid = getReqIdFromHeaders(req.headers) || createReqId('sse');
-  slog(rid, `SSE open /api/session/${sessionId}/stream`, { ua: req.headers.get('user-agent') || '' });
+  const connectionStartTime = Date.now();
+
+  // SSE Metrics tracking
+  let eventsSent = 0;
+  let heartbeatsSent = 0;
+
+  slog(rid, `SSE open /api/session/${sessionId}/stream`, {
+    ua: req.headers.get('user-agent') || '',
+    lastEventId: req.headers.get('Last-Event-ID') || 'none',
+  });
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -282,15 +291,39 @@ function streamSession(sessionId: string, req: NextRequest) {
         return;
       }
 
-      const send = (event: string, payload: unknown) => {
+      // SSE reconnection hint: guide client to retry every 15s if connection drops
+      controller.enqueue(textEncoder.encode(`retry: 15000\n`));
+
+      const send = (event: string, payload: unknown, revision?: number) => {
+        // Include revision as event ID for resumption support
+        if (revision !== undefined) {
+          controller.enqueue(textEncoder.encode(`id: ${revision}\n`));
+        }
         controller.enqueue(textEncoder.encode(`event: ${event}\n`));
         controller.enqueue(textEncoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+
+        // Track metrics
+        if (event === 'ping') {
+          heartbeatsSent++;
+        } else {
+          eventsSent++;
+        }
       };
 
-      send('session', { type: 'snapshot', snapshot });
+      // Check if client is resuming from a previous connection
+      const lastEventId = req.headers.get('Last-Event-ID');
+      const lastRevision = lastEventId ? parseInt(lastEventId, 10) : undefined;
+
+      // If client is resuming and snapshot is already at that revision, skip initial snapshot
+      // Otherwise send current snapshot to seed the client state
+      if (!lastRevision || snapshot.revision > lastRevision) {
+        send('session', { type: 'snapshot', snapshot }, snapshot.revision);
+      } else {
+        slog(rid, `SSE resume from revision ${lastRevision}, current ${snapshot.revision} (skipping snapshot)`);
+      }
 
       const listener = (evt: SessionEvent) => {
-        send('session', { type: evt.type, snapshot: evt.snapshot, payload: evt.payload });
+        send('session', { type: evt.type, snapshot: evt.snapshot, payload: evt.payload }, evt.snapshot.revision);
       };
 
       const unsubscribe = store.subscribe(sessionId, listener);
@@ -301,12 +334,23 @@ function streamSession(sessionId: string, req: NextRequest) {
 
       const abort = req.signal;
       const cleanup = () => {
+        const connectionDuration = Date.now() - connectionStartTime;
+        const durationSec = Math.floor(connectionDuration / 1000);
+
         clearInterval(interval);
         unsubscribe();
         try {
           controller.close();
         } catch {}
-        slog(rid, `SSE close /api/session/${sessionId}/stream`);
+
+        // Log comprehensive connection metrics
+        slog(rid, `SSE close /api/session/${sessionId}/stream`, {
+          durationSec,
+          eventsSent,
+          heartbeatsSent,
+          reason: abort.aborted ? 'client-abort' : 'server-close',
+          hit60sLimit: durationSec >= 55 && durationSec <= 65, // Flag if likely Vercel timeout
+        });
       };
 
       if (abort.aborted) {
