@@ -62,7 +62,7 @@ export const useGameController = () => {
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
-  const sessionStreamRef = useRef<EventSource | null>(null);
+  // sessionStreamRef removed - SSE now managed by SessionMonitor component
   // Backend mode always on
   const { sessionMeta, setSessionMeta, setStartIntent, clear: clearSessionStore } = useSessionStore();
   const setStartStep = useUIStore((s) => s.setStartStep);
@@ -377,112 +377,9 @@ export const useGameController = () => {
     }
   }, [isHistoryOpen]);
 
-  useEffect(() => {
-    console.log('[SSE] useEffect triggered - sessionMeta:', sessionMeta);
-    if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
-      console.log('[SSE] window or EventSource undefined');
-      return;
-    }
-    if (!sessionMeta?.id) {
-      console.log('[SSE] No sessionMeta.id, closing any existing stream');
-      if (sessionStreamRef.current) {
-        sessionStreamRef.current.close();
-        sessionStreamRef.current = null;
-      }
-      return;
-    }
-
-    if (sessionStreamRef.current) {
-      console.log('[SSE] Closing existing stream');
-      sessionStreamRef.current.close();
-      sessionStreamRef.current = null;
-    }
-
-    console.log('[SSE] Opening new stream for session:', sessionMeta.id);
-    const source = new EventSource(`/api/session/${sessionMeta.id}/stream`);
-    sessionStreamRef.current = source;
-
-    const handleSessionEvent = (event: MessageEvent) => {
-      try {
-        const payload = JSON.parse(event.data || '{}');
-        const snapshot = payload?.snapshot;
-        if (!snapshot) return;
-        try {
-          console.log('[SSE] event', payload?.type || 'snapshot', 'rev=', snapshot.revision, 'round=', snapshot.state?.round);
-        } catch {}
-
-        if (sessionMeta) {
-          setSessionMeta({ ...sessionMeta, revision: snapshot.revision });
-        }
-        try { setStartStep('connectingStream', 'done'); } catch {}
-        if (snapshot.state) {
-          setGameState(snapshot.state as GameState);
-        }
-        if (snapshot.setup) {
-          setGameSetupStore((prev) => prev ?? (snapshot.setup as GameSetup));
-        }
-        const submitted = snapshot.submitted ?? {};
-        const serverPlayers: Array<{ id?: string; role?: { name: string }; actions?: ActionOption[]; hasSubmittedActions?: boolean; hiddenScore?: number; actionPoints?: number }> =
-          (snapshot.players as any) ?? [];
-        setPlayers((prev) => {
-          if (prev.length === 0) return prev;
-          return prev.map((p) => {
-            const match = serverPlayers.find((sp) => sp.id === p.id || sp.role?.name === p.role.name);
-            const serverId = match?.id ?? p.id;
-            const mergedActions = Array.isArray(match?.actions) ? (match!.actions as ActionOption[]) : p.actions;
-            const submittedFlag =
-              typeof submitted[serverId] === 'boolean'
-                ? submitted[serverId]
-                : match?.hasSubmittedActions ?? p.hasSubmittedActions;
-            return {
-              ...p,
-              id: serverId,
-              actions: mergedActions,
-              hasSubmittedActions: submittedFlag,
-              hiddenScore: typeof match?.hiddenScore === 'number' ? match!.hiddenScore : p.hiddenScore,
-              actionPoints: typeof match?.actionPoints === 'number' ? match!.actionPoints : p.actionPoints,
-            };
-          });
-        });
-        const progressMeta = payload?.payload;
-        if (progressMeta?.role) {
-          setAiCompletionStatus((prev) => ({ ...prev, [progressMeta.role as string]: true }));
-        }
-        if (payload?.type === 'advance') {
-          setAiCompletionStatus({});
-        }
-        if (payload?.type === 'advance') {
-          setIsLoading(false);
-          setLoadingMessage('');
-          setError(null);
-          setActionOptions([]);
-          try { setStartStep('ready', 'done'); } catch {}
-        }
-      } catch (err) {
-        try { console.warn('[useGameController] SSE parse error:', err); } catch {}
-      }
-    };
-
-    const handleError = () => {
-      try { console.warn('[useGameController] SSE stream error, closing'); } catch {}
-      source.close();
-      if (sessionStreamRef.current === source) {
-        sessionStreamRef.current = null;
-      }
-    };
-
-    source.addEventListener('session', handleSessionEvent as EventListener);
-    source.addEventListener('error', handleError as EventListener);
-
-    return () => {
-      source.removeEventListener('session', handleSessionEvent as EventListener);
-      source.removeEventListener('error', handleError as EventListener);
-      source.close();
-      if (sessionStreamRef.current === source) {
-        sessionStreamRef.current = null;
-      }
-    };
-  }, [sessionMeta?.id]);
+  // NOTE: SSE connection is now managed by SessionMonitor component
+  // This legacy SSE code has been removed to prevent duplicate subscriptions
+  // See: ai-risk-ttx-113 (Remove legacy SSE stream from useGameController)
 
   const handleOpenActionTree = useCallback(() => {
     setIsActionTreeOpen(true);
