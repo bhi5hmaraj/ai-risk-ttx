@@ -39,9 +39,8 @@ export class SessionService {
     return sessionClient.advance(sessionId, expectedRevision, hostToken, body);
   }
 
-  static createEventSource(sessionId: string): EventSource {
-    return new EventSource(`/api/session/${sessionId}/stream`);
-  }
+  // createEventSource() removed - SSE now managed by SessionMonitor component
+  // See: ai-risk-ttx-113 (Remove legacy SSE stream from useGameController)
 
   static async healthCheck() {
     return sessionClient.healthCheck();
