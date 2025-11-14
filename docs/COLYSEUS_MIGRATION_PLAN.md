@@ -2018,7 +2018,7 @@ function RoomCard({ room }: { room: RoomInfo }) {
 
 ---
 
-## Remote Config & Feature Flags (ConfigCat/Flagsmith)
+## Remote Config with Firebase
 
 ### Overview
 
@@ -2028,192 +2028,171 @@ function RoomCard({ room }: { room: RoomInfo }) {
 - Deploying code
 - Reinventing the wheel (version control, admin UI, SDKs)
 
-**Solution:** Use existing remote config + feature flag service
+**Solution:** Firebase Remote Config
 
-### Service Comparison
+### Why Firebase Remote Config?
 
-| Feature | ConfigCat | Flagsmith |
-|---------|-----------|-----------|
-| **Deployment** | Hosted SaaS | Hosted OR Self-hosted |
-| **Pricing** | Free tier (7-day audit) | Free (unlimited self-hosted) |
-| **Audit Retention** | 7d → 35d → 2yr | Unlimited (self-hosted) |
-| **Versioning** | Via audit logs | Via audit logs + change requests |
-| **Admin UI** | ✅ Built-in | ✅ Built-in |
-| **TypeScript SDK** | ✅ Official | ✅ Official |
-| **Audit "Why" Field** | ✅ Mandatory (SOC2) | ⚠️ Via comments |
-| **JSON Values** | ✅ Feature flags + config | ✅ Feature flags + config |
-| **Webhooks** | ✅ | ✅ |
-| **Cloud Run Compatible** | N/A (hosted) | ✅ (self-host) |
+| Feature | Firebase | ConfigCat | Flagsmith |
+|---------|----------|-----------|-----------|
+| **Pricing** | **FREE** (unlimited) | Free → $49/mo | Free (self-host) |
+| **Version History** | **300 versions** (1-click rollback) | Audit log only | Audit log only |
+| **Audit Trail** | Who/what/when/how | Who/what/when | Who/what/when |
+| **Ecosystem** | **Google Cloud** (same as Cloud Run) | Standalone | Standalone |
+| **Server SDK** | ✅ Python (firebase-admin) | ✅ Node.js | ✅ Node.js/Python |
+| **Admin UI** | ✅ Firebase Console | ✅ ConfigCat dashboard | ✅ Flagsmith dashboard |
+| **A/B Testing** | ✅ 24 concurrent experiments | ✅ (paid) | ✅ |
+| **Parameter Limit** | **3,000 per template** | 10 → 100 → ∞ (paid) | Unlimited |
 
-**Recommendation:**
-- **ConfigCat** if you want zero ops (hosted, simple, SOC2)
-- **Flagsmith** if you want control (self-host on Cloud Run, audit webhooks to your DB)
+**Why Firebase Wins:**
+- ✅ **Completely free** (no paid tier needed)
+- ✅ **Already in Google Cloud** (same ecosystem as Cloud Run)
+- ✅ **300 version history** with one-click rollback
+- ✅ **Python Admin SDK** (perfect for Matrix server)
+- ✅ **Separate server templates** (not exposed to clients)
 
 ### What You'll Configure
 
 Instead of just prompts, manage **all runtime config**:
 
-```typescript
-// Configuration structure
+```json
 {
-  // Prompts (JSON strings)
   "prompt_system": "You are a Game Master...",
   "prompt_consequence": "Generate consequences...",
   "prompt_action_options": "Generate 5 actions...",
   "prompt_counterfactual": "What if no one acted?",
+  "prompt_agent_dialogue": "You are an AI agent...",
 
-  // Game parameters (numbers)
   "game_timer_seconds": 300,
   "game_max_rounds": 5,
   "game_action_points": 3,
 
-  // Feature flags (booleans)
-  "feature_multiplayer_enabled": false,    // 0% → 50% → 100% rollout
+  "feature_multiplayer_enabled": false,
   "feature_debug_mode": false,
-  "feature_tutorial_flow_v2": false,
 
-  // AI config (strings/JSON)
-  "ai_model": "gemini-2.5-flash",
+  "ai_model": "gpt-4o-mini",
   "ai_temperature": 0.7,
-  "ai_fallback_model": "gpt-4o-mini",
+  "ai_max_tokens": 2000,
 
-  // A/B tests (JSON arrays)
-  "prompt_variants": [
-    { name: "optimistic", tone: 0.7 },
-    { name: "neutral", tone: 0.5 },
-    { name: "pessimistic", tone: 0.3 }
-  ]
+  "netlogo_model_path": "/models/election_crisis.nlogo",
+  "mesa_agent_count": 50
 }
 ```
 
-### Setup: ConfigCat
+### Firebase Setup
 
-**1. Install SDK:**
-
-```bash
-npm install configcat-node
-```
-
-**2. Create ConfigService:**
-
-```typescript
-// services/configService.ts
-import * as configcat from 'configcat-node';
-
-class ConfigService {
-  private client: configcat.IConfigCatClient;
-
-  constructor() {
-    this.client = configcat.getClient(
-      process.env.CONFIGCAT_SDK_KEY!,
-      configcat.PollingMode.AutoPoll,
-      {
-        pollIntervalSeconds: 60, // Check for updates every minute
-        logger: configcat.createConsoleLogger(configcat.LogLevel.Info),
-      }
-    );
-  }
-
-  async getPrompt(type: string): Promise<string> {
-    return await this.client.getValueAsync(`prompt_${type}`, '');
-  }
-
-  async getGameParam(key: string, defaultValue: number): Promise<number> {
-    return await this.client.getValueAsync(`game_${key}`, defaultValue);
-  }
-
-  async isFeatureEnabled(feature: string): Promise<boolean> {
-    return await this.client.getValueAsync(`feature_${feature}`, false);
-  }
-
-  async getJSON<T>(key: string, defaultValue: T): Promise<T> {
-    const json = await this.client.getValueAsync(key, JSON.stringify(defaultValue));
-    return JSON.parse(json);
-  }
-
-  // Get snapshot of ALL config (for audit trail)
-  async getAllValues(): Promise<Record<string, any>> {
-    const snapshot = await this.client.getAllValuesAsync();
-    return snapshot.reduce((acc, item) => {
-      acc[item.settingKey] = item.settingValue;
-      return acc;
-    }, {} as Record<string, any>);
-  }
-
-  dispose() {
-    this.client.dispose();
-  }
-}
-
-export const configService = new ConfigService();
-```
-
-**3. Environment Variable:**
+**1. Create Firebase Project:**
 
 ```bash
-# .env
-CONFIGCAT_SDK_KEY=your-sdk-key-from-dashboard
+# Firebase Console: https://console.firebase.google.com
+# 1. Create new project (or use existing)
+# 2. Go to Remote Config
+# 3. Create server template (separate from client template)
 ```
 
-### Setup: Flagsmith (Alternative)
+**2. Add Parameters in Firebase Console:**
 
-**1. Install SDK:**
+For each parameter above, create in Firebase Console:
+- Key: `prompt_system`
+- Type: String
+- Default value: "You are a Game Master..."
+
+**3. Download Service Account Key:**
 
 ```bash
-npm install flagsmith-nodejs
+# Firebase Console → Project Settings → Service Accounts
+# Generate new private key → Download JSON
+# Save as: matrix-server/firebase-service-account.json
 ```
 
-**2. Create ConfigService:**
+---
 
-```typescript
-// services/configService.ts
-import Flagsmith from 'flagsmith-nodejs';
+## Matrix Server Architecture (Python)
 
-class ConfigService {
-  private client: Flagsmith;
+### Overview
 
-  constructor() {
-    this.client = new Flagsmith({
-      environmentKey: process.env.FLAGSMITH_ENV_KEY!,
-      // Optional: self-hosted API
-      apiUrl: process.env.FLAGSMITH_API_URL || 'https://edge.api.flagsmith.com/api/v1/',
-    });
-  }
+**Matrix is the AI orchestration layer** - it sits between Colyseus (game state) and simulation services (AI, NetLogo, Mesa).
 
-  async init() {
-    await this.client.getEnvironmentFlags();
-  }
+**Key Design Decision:** Matrix is **Python-based** for:
+- Native simulation libraries (Mesa, pyNetLogo)
+- Scientific stack (NumPy, SciPy, Pandas)
+- Excellent LLM SDKs (OpenAI, Anthropic)
+- Firebase Admin SDK
 
-  async getPrompt(type: string): Promise<string> {
-    const flags = await this.client.getEnvironmentFlags();
-    return flags.getFeatureValue(`prompt_${type}`) || '';
-  }
+### Architecture Diagram
 
-  async getGameParam(key: string, defaultValue: number): Promise<number> {
-    const flags = await this.client.getEnvironmentFlags();
-    return Number(flags.getFeatureValue(`game_${key}`)) || defaultValue;
-  }
-
-  async isFeatureEnabled(feature: string): Promise<boolean> {
-    const flags = await this.client.getEnvironmentFlags();
-    return flags.isFeatureEnabled(`feature_${feature}`);
-  }
-
-  async getAllValues(): Promise<Record<string, any>> {
-    const flags = await this.client.getEnvironmentFlags();
-    return flags.allFlags().reduce((acc, flag) => {
-      acc[flag.feature.name] = flag.enabled ? flag.feature_state_value : false;
-      return acc;
-    }, {} as Record<string, any>);
-  }
-}
-
-export const configService = new ConfigService();
+```
+┌──────────────────────────────────────────────────┐
+│ Colyseus GameRoom (TypeScript/Node.js)           │
+│                                                  │
+│ Players (visible in state):                      │
+│   - Alice (human, WebSocket connected)           │
+│   - Bob (AI agent, no direct WS)                │
+│   - Eve (AI agent, no direct WS)                │
+│                                                  │
+│ Hidden connection:                               │
+│   - AI Proxy (invisible orchestrator)            │
+└────────┬─────────────────┬───────────────────────┘
+         │                 │
+         │ WebSocket       │ HTTP
+         │ (quick AI)      │ (long ops)
+         │                 │
+┌────────┴─────────────────┴───────────────────────┐
+│ Matrix Server (Python/FastAPI)                   │
+│                                                  │
+│ [WebSocket Handler] colyseus-python              │
+│  - Joins room as AI proxy player                 │
+│  - Quick AI interactions (< 2s)                  │
+│  - Agent ↔ Human messaging                       │
+│  - Real-time state sync                          │
+│                                                  │
+│ [HTTP Endpoints] FastAPI                         │
+│  POST /simulate/netlogo   (30-120s)              │
+│  POST /simulate/mesa      (10-60s)               │
+│  POST /generate/consequences (5-15s)             │
+│  GET /jobs/{id}/status    (polling)              │
+│                                                  │
+│ [Firebase Admin SDK]                             │
+│  - Fetch config on session create                │
+│  - Snapshot stored per game                      │
+└──────────────────────────┬───────────────────────┘
+                           │
+                           ├─→ OpenAI/Anthropic
+                           ├─→ Mesa (agent-based)
+                           ├─→ pyNetLogo
+                           └─→ MCMC simulations
 ```
 
-### Database Schema (Snapshots Only)
+### Hybrid Communication Pattern
 
-**Updated GameSnapshot** to store config keys instead of custom tables:
+**WebSocket (AI Proxy Player) - For:**
+- Quick AI dialogue (< 2s)
+- Agent → Human messages
+- Action selection
+- State synchronization
+- Presence indicators
+
+**HTTP Endpoints - For:**
+- NetLogo simulation (30-120s)
+- Mesa agent-based model (10-60s)
+- Heavy consequence generation (5-15s)
+- Background analytics
+- Progress tracking
+
+### AI Proxy Player Pattern
+
+**Concept:** Matrix joins Colyseus room as an **invisible orchestrator**
+
+- **Visible players:** Alice (human), Bob (AI), Eve (AI)
+- **Hidden connection:** AI Proxy (Matrix)
+- **One proxy → Many agents:** Proxy sends messages on behalf of all AI agents
+
+**Why this works:**
+1. Matrix gets real-time state updates (Colyseus state sync)
+2. Bidirectional messaging for free (agent → human via WebSocket)
+3. Same protocol as human players (unified interface)
+4. Clean separation (quick = WS, heavy = HTTP)
+
+### Database Schema
 
 ```prisma
 // prisma/schema.prisma
@@ -2225,14 +2204,14 @@ model GameSnapshot {
   timestamp     DateTime @default(now())
 
   // Full state at this moment
-  gameState     Json     // Complete game state (players, scores, phase)
-  events        Json     // What just happened (actions, consequences)
+  gameState     Json
+  events        Json
 
-  // Config snapshot (what was active at this moment)
-  configSnapshot Json    // { prompt_system: "v7", prompt_consequence: "v3", game_timer_seconds: 300 }
+  // Config snapshot from Firebase
+  configSnapshot Json  // Which Firebase config was active
 
   // Performance metrics
-  aiLatency     Int?     // Milliseconds for AI call
+  aiLatency     Int?
   errorCount    Int      @default(0)
 
   game          Game     @relation(fields: [gameId], references: [id])
@@ -2242,153 +2221,334 @@ model GameSnapshot {
 }
 ```
 
-**No PromptVersion table needed** - ConfigCat/Flagsmith handles versioning for you!
+### Matrix Server Implementation
 
-### Usage in GameRoom
+**File: `matrix-server/main.py`**
+
+```python
+from fastapi import FastAPI, BackgroundTasks
+import asyncio
+from colyseus import Client
+from firebase_admin import initialize_app, remote_config
+import uuid
+
+app = FastAPI()
+
+# Initialize Firebase
+initialize_app()
+
+# In-memory stores
+game_sessions = {}  # gameId -> {room, config, agents}
+game_configs = {}   # gameId -> config snapshot
+jobs = {}           # jobId -> {status, progress, result}
+
+# ============================================
+# HTTP ENDPOINTS (Long-running operations)
+# ============================================
+
+@app.post("/simulate/netlogo")
+async def simulate_netlogo(request: dict, background_tasks: BackgroundTasks):
+    """Run NetLogo simulation (30-120 seconds)"""
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {'status': 'started', 'progress': 0}
+
+    background_tasks.add_task(
+        run_netlogo_simulation,
+        job_id,
+        request['gameId'],
+        game_configs.get(request['gameId']),
+        request['parameters']
+    )
+
+    return {'jobId': job_id, 'status': 'started'}
+
+@app.post("/simulate/mesa")
+async def simulate_mesa(request: dict, background_tasks: BackgroundTasks):
+    """Run Mesa agent-based model (10-60 seconds)"""
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {'status': 'started', 'progress': 0}
+
+    background_tasks.add_task(
+        run_mesa_simulation,
+        job_id,
+        request['gameId'],
+        game_configs.get(request['gameId']),
+        request['agentCount'],
+        request['iterations']
+    )
+
+    return {'jobId': job_id, 'status': 'started'}
+
+@app.get("/jobs/{job_id}/status")
+async def get_job_status(job_id: str):
+    """Poll for job status"""
+    job = jobs.get(job_id)
+    if not job:
+        return {'error': 'Job not found'}, 404
+
+    return {
+        'status': job['status'],
+        'progress': job['progress'],
+        'result': job.get('result')
+    }
+
+@app.post("/sessions/create")
+async def create_session(request: dict):
+    """Called by Colyseus when room is created"""
+    await ai_proxy.join_as_proxy(
+        request['gameId'],
+        request['scenario'],
+        request['wsUrl']
+    )
+
+    return {'success': True}
+
+# ============================================
+# AI PROXY ORCHESTRATOR (WebSocket)
+# ============================================
+
+class AIProxyOrchestrator:
+    def __init__(self):
+        self.game_sessions = {}
+
+    async def join_as_proxy(self, game_id: str, scenario: str, ws_url: str):
+        """Join Colyseus as invisible AI proxy"""
+
+        # 1. Fetch Firebase Remote Config
+        template = remote_config.get_template()
+        config = self._extract_config(template, scenario)
+        game_configs[game_id] = config
+
+        # 2. Connect to Colyseus as AI proxy
+        client = Client(ws_url)
+        room = await client.join_by_id(game_id, {
+            'playerType': 'AI_PROXY'
+        })
+
+        # 3. Get AI agents from room state
+        agents = [p.id for p in room.state.players if p.type == 'ai_agent']
+
+        # 4. Store session
+        self.game_sessions[game_id] = {
+            'room': room,
+            'config': config,
+            'agents': agents
+        }
+
+        # 5. Listen for quick AI requests
+        room.on_message('request_agent_action',
+                        lambda data: self._handle_quick_ai(game_id, data))
+
+        print(f"AI Proxy joined: {game_id}, agents: {agents}")
+
+    def _extract_config(self, template, scenario: str) -> dict:
+        """Extract values from Firebase template"""
+        params = template.parameters
+        return {
+            'prompt_consequence': params.get('prompt_consequence', {}).get('defaultValue', {}).get('value', ''),
+            'ai_model': params.get('ai_model', {}).get('defaultValue', {}).get('value', 'gpt-4o-mini'),
+            'ai_temperature': float(params.get('ai_temperature', {}).get('defaultValue', {}).get('value', '0.7')),
+        }
+
+    async def _handle_quick_ai(self, game_id: str, data: dict):
+        """Quick AI action via WebSocket (< 2s)"""
+        session = self.game_sessions[game_id]
+
+        from openai import AsyncOpenAI
+        client = AsyncOpenAI()
+
+        response = await client.chat.completions.create(
+            model=session['config']['ai_model'],
+            temperature=session['config']['ai_temperature'],
+            messages=[
+                {'role': 'system', 'content': session['config']['prompt_agent_dialogue']},
+                {'role': 'user', 'content': data['context']}
+            ]
+        )
+
+        # Send back via WebSocket on behalf of agent
+        session['room'].send('agent_action', {
+            'agentId': data['agentId'],
+            'action': 'send_message',
+            'target': data['targetPlayerId'],
+            'content': response.choices[0].message.content
+        })
+
+ai_proxy = AIProxyOrchestrator()
+
+# ============================================
+# BACKGROUND TASKS
+# ============================================
+
+async def run_netlogo_simulation(job_id, game_id, config, params):
+    """NetLogo background task"""
+    import pyNetLogo
+
+    jobs[job_id]['status'] = 'running'
+
+    try:
+        netlogo = pyNetLogo.NetLogoLink(gui=False)
+        netlogo.load_model(config['netlogo_model_path'])
+
+        # Run simulation...
+        results = []
+        for i in range(params.get('iterations', 100)):
+            netlogo.command('go')
+            results.append(netlogo.report('count turtles'))
+            jobs[job_id]['progress'] = int((i / 100) * 100)
+
+        jobs[job_id]['status'] = 'completed'
+        jobs[job_id]['result'] = {'timeline': results}
+
+        # Send to Colyseus
+        await send_result_to_colyseus(game_id, jobs[job_id]['result'])
+
+        netlogo.kill_workspace()
+    except Exception as e:
+        jobs[job_id]['status'] = 'failed'
+        jobs[job_id]['error'] = str(e)
+
+async def run_mesa_simulation(job_id, game_id, config, agent_count, iterations):
+    """Mesa background task"""
+    from mesa import Model, Agent
+    from mesa.time import RandomActivation
+
+    jobs[job_id]['status'] = 'running'
+
+    # Define and run Mesa model...
+    # (implementation details)
+
+    jobs[job_id]['status'] = 'completed'
+
+async def send_result_to_colyseus(game_id: str, result: dict):
+    """Send simulation result back via WebSocket"""
+    session = ai_proxy.game_sessions.get(game_id)
+    if session:
+        session['room'].send('simulation_complete', result)
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=3001)
+```
+
+**File: `matrix-server/requirements.txt`**
+
+```txt
+fastapi==0.109.0
+uvicorn==0.27.0
+colyseus-python==0.1.5
+firebase-admin==6.4.0
+openai==1.10.0
+anthropic==0.18.0
+pyNetLogo==0.4.1
+mesa==2.2.0
+numpy==1.26.3
+pandas==2.2.0
+```
+
+### Colyseus Integration
+
+**File: `game-server/rooms/GameRoom.ts`**
 
 ```typescript
-// game-server/rooms/GameRoom.ts
-import { configService } from '../services/configService';
-
 export class GameRoom extends Room<GameState> {
-  private configSnapshot: Record<string, any> = {};
+  private aiProxySessionId: string;
 
-  async onCreate(options: any) {
-    // Snapshot ALL config at room creation (consistency)
-    this.configSnapshot = await configService.getAllValues();
-
-    logger.info('Room created with config snapshot', {
-      roomId: this.roomId,
-      config: this.configSnapshot,
-    });
-  }
-
-  async generateConsequences() {
-    // Use snapshot (doesn't change mid-game)
-    const promptTemplate = this.configSnapshot['prompt_consequence'];
-    const temperature = this.configSnapshot['ai_temperature'];
-
-    const response = await geminiService.generate(promptTemplate, {
-      temperature,
-      model: this.configSnapshot['ai_model'],
+  async onCreate(options: { scenario: string; humanPlayers: Player[] }) {
+    // Add human players
+    options.humanPlayers.forEach(p => {
+      this.state.players.push(new Player(p.id, p.name, 'human'));
     });
 
-    // Save snapshot for replay
-    await db.gameSnapshot.create({
-      data: {
+    // Add AI agent players (visible, no WS)
+    const aiAgents = ['Bob', 'Eve', 'Charlie'];
+    aiAgents.forEach(name => {
+      this.state.players.push(new Player(
+        `ai_${name.toLowerCase()}`,
+        name,
+        'ai_agent'
+      ));
+    });
+
+    // Request Matrix to join as invisible proxy
+    await fetch('http://matrix:3001/sessions/create', {
+      method: 'POST',
+      body: JSON.stringify({
         gameId: this.roomId,
-        round: this.state.round,
-        gameState: this.state.toJSON(),
-        events: { consequences: response },
-        configSnapshot: this.configSnapshot, // Which config was used
-        aiLatency: response.latency,
-      },
+        scenario: options.scenario,
+        wsUrl: process.env.COLYSEUS_WS_URL
+      })
     });
-
-    return response;
   }
 
-  async checkFeatureFlag(feature: string): Promise<boolean> {
-    // Feature flags can check live (for debugging mid-game)
-    return await configService.isFeatureEnabled(feature);
+  onJoin(client: Client, options: any) {
+    if (options.playerType === 'AI_PROXY') {
+      this.aiProxySessionId = client.sessionId;
+      // Don't add to players array - invisible!
+      logger.info('AI Proxy orchestrator connected');
+      return;
+    }
+
+    // Regular human player
+    const player = this.state.players.find(p => p.id === options.playerId);
+    if (player) {
+      player.sessionId = client.sessionId;
+      player.connected = true;
+    }
+  }
+
+  onMessage(client: Client, type: string, data: any) {
+    if (type === 'agent_action' && client.sessionId === this.aiProxySessionId) {
+      // Route message from AI agent to human
+      const targetClient = this.clients.find(c =>
+        this.state.players.find(p => p.id === data.target)?.sessionId === c.sessionId
+      );
+
+      targetClient?.send('agent_message', {
+        from: data.agentId,
+        content: data.content
+      });
+    }
+  }
+
+  async runHeavySimulation() {
+    // Use HTTP for long operations
+    const response = await fetch('http://matrix:3001/simulate/netlogo', {
+      method: 'POST',
+      body: JSON.stringify({
+        gameId: this.roomId,
+        parameters: {...}
+      })
+    });
+
+    const { jobId } = await response.json();
+    // Poll for completion
   }
 }
 ```
 
-### Admin UI (Provided by Service)
-
-**ConfigCat Dashboard:**
-- URL: `https://app.configcat.com`
-- Create/edit settings (flags, strings, JSON)
-- See audit log (who changed what, when, why)
-- Compare versions
-- **Mandatory "Reason" field** for every change (SOC2 compliance)
-
-**Flagsmith Dashboard:**
-- URL: `https://flagsmith.com` (hosted) or `https://your-flagsmith.example.com` (self-hosted)
-- Create/edit features and remote config
-- Audit log with webhooks
-- Change requests (approval workflow)
-- Environments (dev, staging, prod)
-
-**No custom UI needed** - they provide professional dashboards!
-
-### Event Day Workflow
+### Event Day Workflow (Firebase)
 
 **Scenario: AI is too pessimistic in Round 3**
 
-#### ConfigCat:
-1. **Open** ConfigCat dashboard (`app.configcat.com`)
-2. **Navigate** to `prompt_consequence` setting
-3. **Click** "Edit"
+1. **Open** Firebase Console (`console.firebase.google.com`)
+2. **Navigate** to Remote Config → Server template
+3. **Edit** `prompt_consequence` parameter
 4. **Change value:**
    ```
    Old: "Describe realistic consequences..."
    New: "Describe consequences with cautious optimism..."
    ```
-5. **Enter reason:** "Fixed pessimism bias - IRL event Round 3 feedback"
-6. **Save** (SOC2-required reason field enforced)
-7. **New games** pick up change within 60 seconds (AutoPoll)
-8. **Active games** continue with their snapshot (consistency)
-
-#### Flagsmith:
-1. **Open** Flagsmith dashboard
-2. **Edit** `prompt_consequence` remote config value
-3. **Add comment:** "Fixed pessimism - Round 3 feedback"
-4. **Save** (webhooks notify your logging system)
-5. **Check webhook** in admin dashboard for confirmation
+5. **Publish changes** (creates new version)
+6. **New games** pick up change immediately
+7. **Active games** continue with their snapshot
 
 **Benefits:**
 - ✅ Takes 30 seconds
 - ✅ No code deploy
-- ✅ Full audit trail (built-in)
-- ✅ Can rollback via dashboard
-- ✅ No database migrations
-- ✅ Professional UI with RBAC
-- ✅ Webhooks for Slack/Discord notifications
-
-### Integration with Session Replay
-
-When viewing replays, you'll see **which config was active**:
-
-```typescript
-// pages/admin/replay/[gameId].tsx
-function ReplayViewer({ game }: { game: Game }) {
-  const [snapshots, setSnapshots] = useState<GameSnapshot[]>([]);
-
-  return (
-    <div>
-      <h2>Config Used in This Game</h2>
-      <pre>{JSON.stringify(snapshots[0].configSnapshot, null, 2)}</pre>
-
-      {/* Example output:
-      {
-        "prompt_system": "You are a Game Master (v7)",
-        "prompt_consequence": "Generate consequences (v3 - pessimism fix)",
-        "game_timer_seconds": 300,
-        "feature_debug_mode": false
-      }
-      */}
-    </div>
-  );
-}
-```
-
-### Cost Estimate
-
-**ConfigCat:**
-- Free: 1 environment, 7-day audit, 10 team members
-- Pro ($49/mo): 35-day audit, unlimited team
-- Enterprise: 2-year audit, SSO, SLA
-
-**Flagsmith:**
-- Self-hosted: **FREE** (run on Cloud Run, ~$5/mo compute)
-- Cloud Starter: Free for 50k requests/mo
-- Cloud Pro ($29/mo): 1M requests, audit logs, webhooks
-
-**Recommendation for IRL Event:**
-- Start with **Flagsmith self-hosted** (free, audit control)
-- Or **ConfigCat Free** if you want zero ops
+- ✅ 300 version history
+- ✅ One-click rollback
+- ✅ Completely free
 
 ---
 
