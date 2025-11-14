@@ -294,6 +294,9 @@ function streamSession(sessionId: string, req: NextRequest) {
       // SSE reconnection hint: guide client to retry every 15s if connection drops
       controller.enqueue(textEncoder.encode(`retry: 15000\n`));
 
+      // Force flush to prevent proxy buffering (Vercel/CloudFlare/Nginx)
+      controller.enqueue(textEncoder.encode(`: flush\n\n`));
+
       const send = (event: string, payload: unknown, revision?: number) => {
         // Include revision as event ID for resumption support
         if (revision !== undefined) {
@@ -365,10 +368,13 @@ function streamSession(sessionId: string, req: NextRequest) {
   const res = new Response(stream, {
     status: 200,
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, no-transform',
+      'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
+      // Anti-buffering headers for Vercel/CloudFlare/Nginx
+      'X-Accel-Buffering': 'no',  // Nginx
+      'Content-Encoding': 'none',  // Prevent compression
     },
   });
   try { (res as any).headers?.set?.('x-req-id', rid); } catch {}
