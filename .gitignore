@@ -71,3 +71,4 @@ graph-*.svg
 .beads/*.db
 .beads/*.db-shm
 .beads/*.db-wal
+.beads/daemon.lock
