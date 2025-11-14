@@ -183,7 +183,7 @@ export function useGameActions() {
           console.log('[useGameActions] Session ID:', created.id);
           console.log('[useGameActions] Scenario:', (canonicalSetup.scenarioTitle as string)?.substring(0, 50));
           const pollStartTime = Date.now();
-          const maxWaitTime = 5000; // 5 seconds max wait
+          const maxWaitTime = 15000; // 15 seconds max wait (allow for Redis latency in dev)
           const pollInterval = 100; // Check every 100ms
           let waited = 0;
 
