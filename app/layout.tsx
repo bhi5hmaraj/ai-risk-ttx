@@ -16,7 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInUrl="/login"
+      signUpUrl="/login"
+      signInFallbackRedirectUrl="/admin/dashboard"
+      signUpFallbackRedirectUrl="/admin/dashboard"
+      telemetry={false}
+    >
       <html lang="en">
         <body className="antialiased">
           {/* Client-side orchestrator for route decisions */}

@@ -10,10 +10,8 @@ export default function AdminLoginPage() {
             card: 'bg-gray-900 border border-gray-800',
           },
         }}
-        routing="path"
-        path="/admin/login"
-        signUpUrl="/admin/login"
-        afterSignInUrl="/admin/dashboard"
+        routing="hash"
+        fallbackRedirectUrl="/admin/dashboard"
       />
     </div>
   );

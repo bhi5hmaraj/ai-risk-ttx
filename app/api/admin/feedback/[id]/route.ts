@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/lib/prisma';
+import { isAdminUser } from '@/server/lib/adminAccess';
 import * as feedbackRepo from '@/server/data/feedbackRepo';
 
 export const runtime = 'nodejs';
@@ -12,6 +13,9 @@ function json(status: number, body: unknown) {
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return json(401, { success: false, error: 'Unauthorized' });
+
+  const isAdmin = await isAdminUser(userId);
+  if (!isAdmin) return json(403, { success: false, error: 'Forbidden - Admin access required' });
   const { id } = await ctx.params;
   const { reviewed } = await req.json().catch(() => ({ reviewed: undefined }));
   if (!id || typeof reviewed !== 'boolean') return json(400, { success: false, error: 'Missing id or reviewed flag' });
@@ -26,6 +30,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return json(401, { success: false, error: 'Unauthorized' });
+
+  const isAdmin = await isAdminUser(userId);
+  if (!isAdmin) return json(403, { success: false, error: 'Forbidden - Admin access required' });
   const { id } = await ctx.params;
   if (!id) return json(400, { success: false, error: 'Missing id' });
 
