@@ -15,7 +15,9 @@
     "postinstall": "prisma generate",
     "db:setup": "chmod +x scripts/setup-local-db.sh && scripts/setup-local-db.sh",
     "db:studio": "npx prisma studio",
+    "db:studio:dev": "node scripts/prisma-studio-dev.mjs",
     "db:migrate": "npx prisma migrate dev",
+    "db:migrate:dev": "node scripts/prisma-migrate-dev.mjs",
     "db:reset": "npx prisma migrate reset",
     "analyze": "tsx scripts/analyze-feedback.ts",
     "scenarios": "tsx scripts/manage-scenarios.ts",
@@ -37,12 +39,14 @@
     "cytoscape": "3.29.2",
     "hono": "^4.10.3",
     "next": "^15.5.6",
+    "next-auth": "^4.24.13",
     "openai": "^4.76.0",
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.65.0",
     "reactflow": "^11.11.4",
+    "recharts": "^2.12.7",
     "zod": "^3.25.6",
     "zustand": "^4.5.2"
   },
@@ -65,7 +69,8 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.20.6",
     "typescript": "~5.7.2",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.3",
+    "dotenv-cli": "^7.3.0"
   },
   "engines": {
     "node": ">=20"
