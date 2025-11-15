@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [],
   },
+  webpack: (config) => {
+    // Reduce noisy dev warnings about large string serialization in cache
+    // without affecting runtime logging.
+    (config as any).infrastructureLogging = { level: 'error' };
+    return config;
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);
