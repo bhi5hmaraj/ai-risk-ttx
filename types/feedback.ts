@@ -21,6 +21,8 @@ export const ratingsSchema = z.object({
 export const gameMetadataSchema = z.object({
   model: z.string(),
   scenarioType: z.enum(['classic', 'ai_safety', 'custom']),
+  // Title of the scenario used in the game (from gameSetup)
+  scenarioTitle: z.string().optional(),
   rolePlayed: z.string(),
   roundsCompleted: z.number().int().min(0),
   finalPublicScore: z.number().nullable(),
@@ -73,6 +75,7 @@ export interface Ratings {
 export interface GameMetadata {
   model: string;
   scenarioType: 'classic' | 'ai_safety' | 'custom';
+  scenarioTitle?: string;
   rolePlayed: string;
   roundsCompleted: number;
   finalPublicScore: number | null;
