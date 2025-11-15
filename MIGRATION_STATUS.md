@@ -158,6 +158,59 @@ app/
 
 ### New Work Completed (this iteration)
 - Added modular hooks and services (foundation):
+
+---
+
+## 🧭 Phase 3: Admin Portal — PLANNED
+
+This phase introduces a lightweight, password‑based Admin portal to replace CLI workflows and provide observability. It purposely ships without realtime dependencies (no SSE/Pusher required).
+
+### Goals
+- Secure admin access with simple password auth and signed httpOnly cookie sessions
+- Admin shell + navigation
+- Metrics, Scenario CRUD, Feedback management UIs backed by JSON APIs
+- Optional Health view (store/LLM checks)
+
+### Non‑Goals
+- Full user management or OAuth (can be added later)
+- Complex RBAC; single admin role only
+- Streaming/realtime dashboards (first pass uses on‑demand fetch)
+
+### Beads Tasks (Execution Order)
+
+Priority 1 (Foundation)
+- ai-risk-ttx-121: Authentication system
+  - Password-based auth (env: `ADMIN_PASSWORD_1`, `ADMIN_PASSWORD_2`, `SESSION_SECRET`)
+  - Cookie session (`admin_session`) with TTL and httpOnly/sameSite/secure flags
+  - Login page at `/admin/login`
+  - Middleware guard for `/admin/:path*`
+- ai-risk-ttx-122: Layout and navigation
+  - Admin layout with sidebar
+  - Routes: `/admin/dashboard`, `/admin/scenarios`, `/admin/feedback`, `/admin/health`
+  - Logout action (clears cookie and server session)
+
+Priority 2 (Core Features)
+- ai-risk-ttx-127: Metrics API (GET `/api/admin/metrics`)
+  - Totals by game type, timeline counts, avg rounds, completion rate
+- ai-risk-ttx-128: Scenario CRUD APIs
+  - List, approve/reject, feature, delete; search/filter
+- ai-risk-ttx-129: Feedback APIs + CSV export
+  - List, filter, mark reviewed; `GET /api/admin/feedback.csv`
+
+UI Pages
+- ai-risk-ttx-123: Metrics Dashboard (consumes 127)
+- ai-risk-ttx-124: Scenario Management (consumes 128)
+- ai-risk-ttx-125: Feedback Management (consumes 129)
+
+Priority 3 (Nice to Have)
+- ai-risk-ttx-126: System Health (consumes existing `/api/session/health`)
+  - DB/Redis/LLM connection status, quick stats
+
+### Notes
+- Start with password-only auth stored in env; later swap to proper user store if needed.
+- Sessions may persist in Redis when available (`SESSION_STORE_TYPE=redis`), falling back to memory in local dev.
+- See `docs/admin/ADMIN_DESIGN.md` for detailed architecture and API contracts.
+
   - hooks: `hooks/useGame.ts`, `hooks/useSession.ts`, `hooks/useUI.ts`, `hooks/useActions.ts`, `hooks/useLobby.ts`
   - services: `services/SessionService.ts`, `services/GameService.ts`
 - Updated `useGameController` to delegate backend calls to `SessionService` (first step)
@@ -602,4 +655,3 @@ Introduce parametric deep links for sessions (SSR bootstrap + SSE) so refresh/re
   - Per-actor progress updates appear during advance; no full-screen overlay while options are
   loading.
   - E2E passes for two rounds; Debrief renders user actions.
-

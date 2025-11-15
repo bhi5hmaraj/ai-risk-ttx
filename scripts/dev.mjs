@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import { config as loadEnv } from 'dotenv';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const args = process.argv.slice(2);
 const isMock = args.includes('--mock-llm') || args.includes('--mock') || args.includes('--llm-mode=mock');
@@ -15,6 +18,15 @@ const forward = args.filter((a, i) => {
   if (i === backendIdx) return false;
   return true;
 });
+
+// Ensure Next.js process sees env from .env.local at boot
+try {
+  const envLocal = join(process.cwd(), '.env.local');
+  if (existsSync(envLocal)) {
+    loadEnv({ path: envLocal, override: true });
+    console.log('[dev] Loaded .env.local');
+  }
+} catch {}
 
 const env = { ...process.env };
 if (isMock) {
