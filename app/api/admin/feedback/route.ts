@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
+import * as feedbackRepo from '@/server/data/feedbackRepo';
 
 export const runtime = 'nodejs';
 
@@ -30,24 +31,7 @@ export async function GET(req: NextRequest) {
   const filter = (searchParams.get('reviewed') || 'pending').toLowerCase(); // pending|reviewed|all
   const limit = Math.max(1, Math.min(200, Number(searchParams.get('limit') || '50')));
 
-  const where =
-    filter === 'all' ? {} : filter === 'reviewed' ? { reviewed: true } : { reviewed: false };
-
-  const rows = await prisma.feedback.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-    select: {
-      id: true,
-      createdAt: true,
-      model: true,
-      scenarioType: true,
-      gameCompleted: true,
-      avgRating: true,
-      reviewed: true,
-    },
-  });
+  const rows = await feedbackRepo.list({ filter: filter as any, limit });
 
   return json(200, { success: true, data: rows });
 }
-

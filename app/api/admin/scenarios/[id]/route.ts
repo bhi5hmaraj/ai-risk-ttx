@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
+import * as scenarioRepo from '@/server/data/publicScenarioRepo';
 
 export const runtime = 'nodejs';
 
@@ -36,19 +37,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (!exists) return json(404, { success: false, error: 'Not Found' });
 
   if (action === 'approve') {
-    const updated = await prisma.publicScenario.update({
-      where: { id },
-      data: { status: 'approved', reviewedAt: new Date(), reviewedBy: 'admin', rejectionReason: null },
-    });
+    const updated = await scenarioRepo.approve(id);
     return json(200, { success: true, data: { id: updated.id, status: updated.status } });
   }
 
   // reject
   if (!reason || typeof reason !== 'string') return json(400, { success: false, error: 'Rejection reason required' });
-  const updated = await prisma.publicScenario.update({
-    where: { id },
-    data: { status: 'rejected', reviewedAt: new Date(), reviewedBy: 'admin', rejectionReason: reason },
-  });
+  const updated = await scenarioRepo.reject(id, reason);
   return json(200, { success: true, data: { id: updated.id, status: updated.status } });
 }
-
