@@ -43,10 +43,10 @@ async function getNextAuth() {
       },
     },
     events: {
-      async signIn(message) { try { console.log('[auth] event signIn', { user: (message as any)?.user?.id }); } catch {} },
-      async signOut(message) { try { console.log('[auth] event signOut'); } catch {} },
-      async session(message) { try { console.log('[auth] event session'); } catch {} },
-      async error(message) { try { console.error('[auth] event error', (message as any)?.error); } catch {} },
+      async signIn(msg: any) { try { console.log('[auth] event signIn', { user: msg?.user?.id }); } catch {} },
+      async signOut(_msg: any) { try { console.log('[auth] event signOut'); } catch {} },
+      async session(_msg: any) { try { console.log('[auth] event session'); } catch {} },
+      // Note: next-auth v4 types may not expose an `error` event; relying on default logger instead.
     },
     // Optionally set pages if you want custom sign-in UI
     // pages: { signIn: '/admin/login' },
