@@ -111,11 +111,29 @@ model SessionMetrics {
   /// Total rounds played so far (updated on initialize/advance)
   rounds Int @default(0)
 
+  /// Planned maximum rounds for this session (from setup.maxRounds)
+  maxRounds Int?
+
   /// Completion marker and timestamp
   completed   Boolean   @default(false)
   completedAt DateTime?
 
+  /// Game actually started (initialize) timestamp
+  startedAt   DateTime?
+  /// Start timestamp of the current round (used to compute durations on advance)
+  currentRoundStartedAt DateTime?
+
+  /// Duration (in seconds) for each completed round, in order
+  roundDurations Int[] @default([])
+
+  /// Scenario title captured at session create (for breakdowns)
+  scenarioTitle String?
+
   @@index([createdAt])
   @@index([mode])
   @@index([completed])
+  @@index([startedAt])
+  @@index([maxRounds])
+  @@index([scenarioTitle])
+  @@index([rounds])
 }
