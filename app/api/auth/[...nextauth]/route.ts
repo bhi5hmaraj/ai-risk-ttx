@@ -10,10 +10,6 @@ async function getNextAuth() {
   ]);
 
   const auth = NextAuth({
-    // Allow deriving the base URL from the incoming request host on Vercel
-    // so you don't have to hardcode NEXTAUTH_URL for preview/prod.
-    // (Safe for Next.js App Router; see Auth.js docs.)
-    trustHost: true,
     session: { strategy: 'jwt' } as any,
     providers: [
       Credentials({
@@ -32,7 +28,7 @@ async function getNextAuth() {
     ],
     callbacks: {
       async jwt({ token, user }) {
-        if (user?.role) token.role = (user as any).role;
+        if ((user as any)?.role) token.role = (user as any).role;
         return token;
       },
       async session({ session, token }) {
