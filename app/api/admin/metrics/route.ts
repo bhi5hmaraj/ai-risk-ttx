@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { getAdminMetrics } from '@/server/data/metricsRepo';
 import type { MetricsOptions } from '@/types/admin';
 
@@ -11,6 +12,8 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
 }
 
 export async function GET(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return json(401, { success: false, error: 'Unauthorized' });
   try {
     const sp = req.nextUrl.searchParams;
     const daysParam = sp.get('days');

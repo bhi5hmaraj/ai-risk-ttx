@@ -1,20 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 
 export function LogoutButton() {
   const router = useRouter();
+  const { signOut } = useClerk();
+
   const handleLogout = async () => {
-    try {
-      try {
-        const mod: any = await import('next-auth/react');
-        await mod.signOut({ redirect: false });
-      } catch {
-        await fetch('/api/admin/logout', { method: 'POST' });
-      }
-    } finally {
-      router.push('/admin/login');
-    }
+    await signOut();
+    router.push('/admin/login');
   };
 
   return (

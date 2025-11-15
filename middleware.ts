@@ -1,42 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken } from '@/server/lib/adminAuth';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Guard admin pages (App Router). We leave API auth to the API handlers.
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  // Allow login page unconditionally
-  if (pathname === '/admin/login') return NextResponse.next();
-  if (pathname.startsWith('/admin')) {
-    // Try NextAuth middleware first
-    try {
-      const { withAuth } = await import('next-auth/middleware');
-      const mw = (withAuth as any)({
-        callbacks: {
-          authorized: ({ token }: any) => {
-            console.log('[middleware] NextAuth token check:', { hasToken: !!token, role: (token as any)?.role });
-            return !!token && (token as any).role === 'admin';
-          },
-        },
-      });
-      return mw(request);
-    } catch (err) {
-      console.log('[middleware] NextAuth fallback, error:', err);
-      // Fallback to custom cookie if next-auth is not installed yet
-      const cookie = request.cookies.get('admin_session')?.value;
-      if (!cookie) {
-        const url = new URL('/admin/login', request.url);
-        return NextResponse.redirect(url);
-      }
-      const ok = await verifySessionToken(cookie);
-      if (!ok.valid) {
-        const url = new URL('/admin/login', request.url);
-        return NextResponse.redirect(url);
-      }
-    }
+// Define which routes require authentication (exclude login page)
+const isProtectedRoute = createRouteMatcher(['/admin/((?!login).*)']);
+const isPublicRoute = createRouteMatcher(['/admin/login']);
+
+export default clerkMiddleware(async (auth, req) => {
+  // Allow public access to login page
+  if (isPublicRoute(req)) {
+    return;
   }
-  return NextResponse.next();
-}
+
+  // Protect all other admin routes
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 };
