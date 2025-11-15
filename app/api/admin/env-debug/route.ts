@@ -9,11 +9,8 @@ function safeUrlHost(v?: string | null) {
 
 export async function GET() {
   const body = {
-    adminPassword1Set: Boolean(process.env.ADMIN_PASSWORD_1),
-    adminPassword2Set: Boolean(process.env.ADMIN_PASSWORD_2),
-    nextauthUrl: process.env.NEXTAUTH_URL || null,
-    nextauthSecretLen: process.env.NEXTAUTH_SECRET ? String(process.env.NEXTAUTH_SECRET).length : null,
-    authSecretLen: process.env.AUTH_SECRET ? String(process.env.AUTH_SECRET).length : null,
+    clerkPublishableKeySet: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
+    clerkSecretKeySet: Boolean(process.env.CLERK_SECRET_KEY),
     vercelEnv: process.env.VERCEL_ENV || process.env.NODE_ENV || null,
     directDbUrlHost: safeUrlHost(process.env.DIRECT_DATABASE_URL),
     databaseUrlHost: safeUrlHost(process.env.DATABASE_URL),

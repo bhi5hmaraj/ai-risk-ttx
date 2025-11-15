@@ -33,13 +33,13 @@
     "metrics": "npm run test:coverage && npm run type-check && npm run coverage:readme"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.35.1",
     "@prisma/client": "^6.17.1",
     "@upstash/redis": "^1.35.6",
     "autoprefixer": "^10.4.21",
     "cytoscape": "3.29.2",
     "hono": "^4.10.3",
     "next": "^15.5.6",
-    "next-auth": "^4.24.13",
     "openai": "^4.76.0",
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
@@ -61,6 +61,7 @@
     "@vitest/ui": "^4.0.3",
     "cytoscape-dagre": "^2.5.0",
     "dotenv": "^17.2.3",
+    "dotenv-cli": "^7.3.0",
     "eslint": "^8",
     "eslint-config-next": "15.1.6",
     "jsdom": "^24.1.0",
@@ -69,8 +70,7 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.20.6",
     "typescript": "~5.7.2",
-    "vitest": "^4.0.3",
-    "dotenv-cli": "^7.3.0"
+    "vitest": "^4.0.3"
   },
   "engines": {
     "node": ">=20"

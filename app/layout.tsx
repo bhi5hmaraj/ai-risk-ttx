@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ClerkProvider } from '@clerk/nextjs';
 import { RouteOrchestrator } from '@/components/RouteOrchestrator';
 import { FocusBoundary } from '@/components/FocusBoundary';
 import { StartProgress } from '@/components/StartProgress';
@@ -15,15 +16,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {/* Client-side orchestrator for route decisions */}
-        <RouteOrchestrator />
-        <FocusBoundary>
-          <StartProgress />
-          {children}
-        </FocusBoundary>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className="antialiased">
+          {/* Client-side orchestrator for route decisions */}
+          <RouteOrchestrator />
+          <FocusBoundary>
+            <StartProgress />
+            {children}
+          </FocusBoundary>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

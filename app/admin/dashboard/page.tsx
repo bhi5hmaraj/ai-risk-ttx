@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import type { AdminMetrics } from '@/types/admin';
 import { fetchAdminMetrics } from '@/services/adminClient';
 import { AdminMetricCards } from '@/components/admin/AdminMetricCards';
@@ -14,22 +15,15 @@ type Metrics = { success: boolean; data?: AdminMetrics };
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [range, setRange] = useState<'today' | '7d' | '30d'>('7d');
 
   const handleLogout = async () => {
-    try {
-      try {
-        const mod: any = await import('next-auth/react');
-        await mod.signOut({ redirect: false });
-      } catch {
-        await fetch('/api/admin/logout', { method: 'POST' });
-      }
-    } finally {
-      router.push('/admin/login');
-    }
+    await signOut();
+    router.push('/admin/login');
   };
 
   const load = async () => {
