@@ -14,6 +14,9 @@ import type { SessionStore } from '@/server/stores/sessionStore';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
 import { createValidGameState } from '@/tests/fixtures/session-data';
 import { GAME_CONFIG } from '../../gameConfig';
+import { prisma } from '@/server/lib/prisma';
+import { GamePhase } from '@/server/types/core';
+import * as sessionMetricsRepo from '@/server/data/sessionMetricsRepo';
 import type { Player, RoleDataCore, PlayerRoundActions, GameState, ActionOption, AIConsequenceResponse, AITurnResponse, AICounterfactualResponse } from '@/server/types/core';
 
 export interface LLMFacade {
@@ -129,6 +132,12 @@ export async function handleSessionRequest(
       }) as any;
 
       const created = await deps.store.create({ state, setup });
+      // Low-fidelity metrics: record a SessionMetrics row
+      try {
+        await sessionMetricsRepo.upsertOnCreate({ id: created.id, mode, maxRounds: setup.maxRounds ?? null, scenarioTitle: setup.scenarioTitle });
+      } catch (e) {
+        console.warn('[metrics] failed to upsert GameSession on create:', (e as any)?.message || e);
+      }
       console.log(`[session-router] create: OK with ${stakeholderCount} stakeholders in ${Date.now() - s0}ms`);
       return json(
         201,
@@ -233,6 +242,15 @@ export async function handleSessionRequest(
       if (!host || host !== snap.hostToken) return json(403, { success: false, error: 'Forbidden' });
       const s0 = Date.now();
       const adv = await deps.store.advance(sessionId, expected, parsed as any);
+      // Update metrics: rounds, per-round duration, and completion
+      try {
+        const phase = (adv.state as any)?.phase as GamePhase;
+        const completed = phase === GamePhase.END;
+        await sessionMetricsRepo.recordAdvance({ id: sessionId, round: (adv.state as any)?.round, phase });
+        try { console.log('[metrics] session updated', { id: sessionId, round: (adv.state as any)?.round, phase, completed }); } catch {}
+      } catch (e) {
+        console.warn('[metrics] failed to update GameSession on advance:', (e as any)?.message || e);
+      }
       console.log(`[session-router] advance:${sessionId} OK in ${Date.now() - s0}ms`);
       return json(200, { success: true, data: { id: adv.id, state: adv.state, revision: adv.revision, players: adv.players, setup: adv.setup, submitted: adv.submitted } }, { ETag: etagFromRev(adv.revision), 'x-revision': String(adv.revision) });
     }
@@ -253,6 +271,12 @@ export async function handleSessionRequest(
           detail: snap.setup?.scenarioDescription || 'A situation requires immediate attention.',
         },
       } as any));
+      // Metrics: mark first round started
+      try {
+        await sessionMetricsRepo.markInitialized(sessionId);
+      } catch (e) {
+        console.warn('[metrics] failed to update GameSession on initialize:', (e as any)?.message || e);
+      }
 
       console.log(`[session-router] initialize:${sessionId} OK in ${Date.now() - s0}ms`);
       return json(200, {
