@@ -7,13 +7,13 @@ type Row = {
   createdAt: string;
   model: string | null;
   scenarioType: string | null;
+  scenarioTitle?: string | null;
   gameCompleted: boolean;
   avgRating: number | null;
   reviewed: boolean;
 };
 
 export default function AdminFeedbackPage() {
-  const [filter, setFilter] = useState<'pending'|'reviewed'|'all'>('pending');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -25,7 +25,8 @@ export default function AdminFeedbackPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/feedback?reviewed=${filter}`);
+      // Always fetch all feedback; no filtering UI
+      const res = await fetch(`/api/admin/feedback?reviewed=all`);
       const body = await res.json();
       if (!res.ok || !body?.success) {
         setError(body?.error || 'Failed to fetch feedback');
@@ -39,15 +40,6 @@ export default function AdminFeedbackPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleReviewed = async (id: string, reviewed: boolean) => {
-    await fetch(`/api/admin/feedback/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reviewed }),
-    });
-    load();
   };
 
   const viewDetails = async (id: string) => {
@@ -66,20 +58,13 @@ export default function AdminFeedbackPage() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); }, []);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Feedback</h1>
-        <div className="flex items-center gap-2">
-          <select className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm" value={filter} onChange={(e) => setFilter(e.target.value as any)}>
-            <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="all">All</option>
-          </select>
-          <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-3 py-1.5 text-sm">Refresh</button>
-        </div>
+        <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-3 py-1.5 text-sm">Refresh</button>
       </div>
 
       {error && <div className="text-sm text-red-400">{error}</div>}
@@ -94,7 +79,6 @@ export default function AdminFeedbackPage() {
               <th className="text-left px-3 py-2">Scenario</th>
               <th className="text-left px-3 py-2">Completed</th>
               <th className="text-left px-3 py-2">Avg Rating</th>
-              <th className="text-left px-3 py-2">Reviewed</th>
               <th className="text-left px-3 py-2">More</th>
             </tr>
           </thead>
@@ -109,15 +93,9 @@ export default function AdminFeedbackPage() {
                   <td className="px-3 py-2 text-gray-400">{r.id.slice(0, 8)}…</td>
                   <td className="px-3 py-2">{new Date(r.createdAt).toLocaleString()}</td>
                   <td className="px-3 py-2">{r.model || '—'}</td>
-                  <td className="px-3 py-2">{r.scenarioType || '—'}</td>
+                  <td className="px-3 py-2">{r.scenarioTitle || r.scenarioType || '—'}</td>
                   <td className="px-3 py-2">{r.gameCompleted ? 'Yes' : 'No'}</td>
                   <td className="px-3 py-2">{r.avgRating ?? '—'}</td>
-                  <td className="px-3 py-2">
-                    <label className="inline-flex items-center gap-2">
-                      <input type="checkbox" checked={r.reviewed} onChange={(e) => toggleReviewed(r.id, e.target.checked)} />
-                      <span className="text-gray-400">Mark reviewed</span>
-                    </label>
-                  </td>
                   <td className="px-3 py-2">
                     <button onClick={() => viewDetails(r.id)} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-2 py-1 text-xs">View</button>
                   </td>
@@ -145,7 +123,7 @@ export default function AdminFeedbackPage() {
                   <div><span className="text-gray-400">ID:</span> {detail.id}</div>
                   <div><span className="text-gray-400">Created:</span> {new Date(detail.createdAt).toLocaleString()}</div>
                   <div><span className="text-gray-400">Model:</span> {detail.model || '—'}</div>
-                  <div><span className="text-gray-400">Scenario:</span> {detail.scenarioType || '—'}</div>
+                  <div><span className="text-gray-400">Scenario:</span> {detail.scenarioType || '—'}{detail?.data?.gameMetadata?.scenarioTitle ? ` — ${detail.data.gameMetadata.scenarioTitle}` : ''}</div>
                   <div><span className="text-gray-400">Role:</span> {detail.rolePlayed || '—'}</div>
                   <div><span className="text-gray-400">Completed:</span> {detail.gameCompleted ? 'Yes' : 'No'}</div>
                   <div><span className="text-gray-400">Avg rating:</span> {detail.avgRating ?? '—'}</div>
