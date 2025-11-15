@@ -72,13 +72,14 @@ export default function GamePage() {
       model: process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'unknown',
       scenarioType:
         gamePath === 'ai_safety' ? 'ai_safety' : gamePath === 'custom' ? 'custom' : 'classic',
+      scenarioTitle: gameSetup?.scenarioTitle || 'Unknown',
       rolePlayed: humanPlayer?.role.name || 'Unknown',
       roundsCompleted: gameState.round,
       finalPublicScore: gameState.phase === GamePhase.END ? gameState.coreMetric.value : null,
       customPromptUsed: gamePath === 'custom' && !!customScenario,
       customPrompt: gamePath === 'custom' ? customScenario ?? '' : undefined,
     }),
-    [gamePath, customScenario, humanPlayer?.role.name, gameState.round, gameState.phase, gameState.coreMetric.value]
+    [gamePath, customScenario, humanPlayer?.role.name, gameState.round, gameState.phase, gameState.coreMetric.value, gameSetup?.scenarioTitle]
   );
 
   const actionTree = (

@@ -55,6 +55,7 @@ export default function EndPage() {
         gameMetadata={{
           model: process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'unknown',
           scenarioType: gamePath === 'ai_safety' ? 'ai_safety' : gamePath === 'custom' ? 'custom' : 'classic',
+          scenarioTitle: gameSetup?.scenarioTitle || 'Unknown',
           rolePlayed: players.find((p) => p.isHuman)?.role.name || 'Unknown',
           roundsCompleted: gameState.round,
           finalPublicScore: gameState.coreMetric.value,
