@@ -1,39 +1,41 @@
 import { prisma } from '@/server/lib/prisma';
+import type { AdminMetrics, MetricsOptions } from '@/types/admin';
 
-export interface AdminMetrics {
-  timestamp: number;
-  store: 'memory' | 'redis' | 'unknown';
-  totals: { games: number | null; byType: Record<string, number> };
-  averages: { rounds: number | null; completionRate: number | null };
-  timeline: Array<{ date: string; count: number; completed: number }>;
-  scenarios: { public: number | null; pending: number | null; featured: number | null };
-  feedback: { total: number | null; avgRating: number | null };
-  funnel: { started: number; completed: number; rate: number | null };
-  scenariosByTitle: Array<{ title: string; started: number; completed: number; rate: number | null }>;
-  roundFunnel: Array<{ level: number; count: number; conversionFromPrev: number | null }>;
-  avgRoundDurations: Array<{ round: number; avgSeconds: number | null }>;
+function startOfDay(d: Date) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function endOfDay(d: Date) { const x = new Date(d); x.setHours(23,59,59,999); return x; }
+
+function resolveRange(opts?: MetricsOptions): { from: Date; to: Date } {
+  const now = new Date();
+  if (opts?.from && opts?.to) {
+    return { from: startOfDay(new Date(opts.from)), to: endOfDay(new Date(opts.to)) };
+  }
+  const p = opts?.preset || '7d';
+  if (p === 'today') return { from: startOfDay(now), to: endOfDay(now) };
+  const days = p === '30d' ? 30 : 7;
+  const to = endOfDay(now);
+  const from = startOfDay(new Date(to));
+  from.setDate(from.getDate() - (days - 1));
+  return { from, to };
 }
 
-export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics> {
+export async function getAdminMetrics(opts?: MetricsOptions): Promise<AdminMetrics> {
   const storeEnv = (process.env.SESSION_STORE_TYPE || '').toLowerCase();
   const store: AdminMetrics['store'] = storeEnv === 'redis' ? 'redis' : storeEnv === 'memory' || !storeEnv ? 'memory' : 'unknown';
 
-  const days = Math.max(1, Math.min(60, Number(daysInput ?? (process.env.ADMIN_METRICS_DAYS || '14'))));
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const { from, to } = resolveRange(opts);
+  // Range-resolved metrics for timeline and averages
 
-  const [feedbackTotal, feedbackAvg, scenariosApproved, scenariosPending, totalSessions, completedSessions, startedSessions, sessionsByMode, avgRoundsAgg] = await Promise.all([
-    prisma.feedback.count(),
-    prisma.feedback.aggregate({ _avg: { avgRating: true } }),
+  const [feedbackTotal, feedbackAvg, scenariosApproved, scenariosPending, totalSessions, completedSessions, startedSessions, sessionsByMode, avgAgg] = await Promise.all([
+    prisma.feedback.count({ where: { createdAt: { gte: from, lte: to } } }),
+    prisma.feedback.aggregate({ where: { createdAt: { gte: from, lte: to } }, _avg: { avgRating: true } }),
     prisma.publicScenario.count({ where: { status: 'approved' } }),
     prisma.publicScenario.count({ where: { status: 'pending' } }),
-    prisma.sessionMetrics.count(),
-    prisma.sessionMetrics.count({ where: { completed: true } }),
-    prisma.sessionMetrics.count({ where: { startedAt: { not: null } } }),
-    prisma.sessionMetrics.groupBy({ by: ['mode'], _count: { _all: true } }).catch(() => [] as any[]),
-    prisma.sessionMetrics.aggregate({ where: { completed: true }, _avg: { rounds: true } }),
+    prisma.sessionMetrics.count({ where: { startedAt: { gte: from, lte: to } } }),
+    prisma.sessionMetrics.count({ where: { completed: true, completedAt: { gte: from, lte: to } } }),
+    prisma.sessionMetrics.count({ where: { startedAt: { gte: from, lte: to } } }),
+    prisma.sessionMetrics.groupBy({ where: { startedAt: { gte: from, lte: to } }, by: ['mode'], _count: { _all: true } }).catch(() => [] as any[]),
+    // Average rounds and planned rounds across started sessions in range
+    prisma.sessionMetrics.aggregate({ where: { startedAt: { gte: from, lte: to } }, _avg: { rounds: true, maxRounds: true } }),
   ]);
 
   const byType: Record<string, number> = {};
@@ -45,6 +47,7 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
   // Average completion fraction across sessions: rounds / maxRounds (clamped to 1).
   // If maxRounds is missing, fall back to 1 for completed sessions and otherwise skip.
   const sessionsForCompletion = await prisma.sessionMetrics.findMany({
+    where: { startedAt: { gte: from, lte: to } },
     select: { rounds: true, maxRounds: true, completed: true },
   });
   let compSum = 0;
@@ -64,9 +67,9 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
 
   // Timeline
   const [createdRows, completedRows, startedRows] = await Promise.all([
-    prisma.sessionMetrics.findMany({ where: { createdAt: { gte: start } }, select: { createdAt: true } }),
-    prisma.sessionMetrics.findMany({ where: { completed: true, completedAt: { gte: start } }, select: { completedAt: true } }),
-    prisma.sessionMetrics.findMany({ where: { startedAt: { gte: start } }, select: { startedAt: true } }),
+    prisma.sessionMetrics.findMany({ where: { createdAt: { gte: from, lte: to } }, select: { createdAt: true } }),
+    prisma.sessionMetrics.findMany({ where: { completed: true, completedAt: { gte: from, lte: to } }, select: { completedAt: true } }),
+    prisma.sessionMetrics.findMany({ where: { startedAt: { gte: from, lte: to } }, select: { startedAt: true } }),
   ]);
 
   const keyFor = (d: Date) => {
@@ -89,14 +92,16 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
     startedMap.set(k, (startedMap.get(k) || 0) + 1);
   }
   const timeline: AdminMetrics['timeline'] = [];
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
+  const totalDays = Math.max(1, Math.ceil((endOfDay(to).getTime() - startOfDay(from).getTime()) / (24*60*60*1000)));
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(from); d.setDate(from.getDate() + i);
     const k = keyFor(d);
     timeline.push({ date: k, count: startedMap.get(k) || 0, completed: completedMap.get(k) || 0 });
   }
 
   // Scenarios by title (rate = average completion fraction per scenario)
   const sessionsForScenarios = await prisma.sessionMetrics.findMany({
+    where: { startedAt: { gte: from, lte: to } },
     select: { scenarioTitle: true, startedAt: true, completed: true, rounds: true, maxRounds: true },
   });
   const titleKey = (t: string | null) => (t && String(t).trim()) || 'Unknown';
@@ -141,7 +146,7 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
   });
 
   // Average round durations over window
-  const durRows = await prisma.sessionMetrics.findMany({ where: { startedAt: { gte: start } }, select: { roundDurations: true } });
+  const durRows = await prisma.sessionMetrics.findMany({ where: { startedAt: { gte: from, lte: to } }, select: { roundDurations: true } });
   const sums: number[] = [];
   const counts: number[] = [];
   for (const r of durRows) {
@@ -155,11 +160,61 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
   }
   const avgRoundDurations = sums.map((sum, i) => ({ round: i + 1, avgSeconds: counts[i] ? Math.round((sum / counts[i]) * 10) / 10 : null }));
 
+  const avgRoundsAll = (avgAgg as any)?._avg?.rounds ?? null;
+  const avgMaxRoundsAll = (avgAgg as any)?._avg?.maxRounds ?? null;
+  const ratioAvgRoundsToAvgMaxRounds = (typeof avgRoundsAll === 'number' && typeof avgMaxRoundsAll === 'number' && avgMaxRoundsAll > 0)
+    ? Math.round(((avgRoundsAll / avgMaxRoundsAll) * 100)) / 100
+    : null;
+
+  // WoW deltas (compare to previous equal-length window)
+  const prevTo = new Date(from); prevTo.setDate(prevTo.getDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setDate(prevTo.getDate() - (totalDays - 1));
+  const [startedCur, startedPrev] = await Promise.all([
+    prisma.sessionMetrics.count({ where: { startedAt: { gte: from, lte: to } } }),
+    prisma.sessionMetrics.count({ where: { startedAt: { gte: prevFrom, lte: prevTo } } }),
+  ]);
+  function delta(cur: number | null, prev: number | null): number | null { if (prev == null || prev === 0 || cur == null) return null; return (cur - prev) / prev; }
+  // Completion WoW
+  const [compCurRows, compPrevRows] = await Promise.all([
+    prisma.sessionMetrics.findMany({ where: { startedAt: { gte: from, lte: to } }, select: { rounds: true, maxRounds: true, completed: true } }),
+    prisma.sessionMetrics.findMany({ where: { startedAt: { gte: prevFrom, lte: prevTo } }, select: { rounds: true, maxRounds: true, completed: true } }),
+  ]);
+  function avgCompletion(rows: Array<{ rounds: number; maxRounds: number | null; completed: boolean }>): number | null {
+    let sum = 0, cnt = 0;
+    for (const s of rows) {
+      const mr = s.maxRounds ?? null;
+      if (mr && mr > 0) { sum += Math.min(1, Math.max(0, s.rounds / mr)); cnt++; }
+      else if (s.completed) { sum += 1; cnt++; }
+    }
+    return cnt > 0 ? sum / cnt : null;
+  }
+  const compCur = avgCompletion(compCurRows);
+  const compPrev = avgCompletion(compPrevRows);
+  const compWow = (compCur != null && compPrev != null && compPrev !== 0) ? (compCur - compPrev) / compPrev : null;
+
+  // Avg rounds WoW
+  const [avgRoundsCurAgg, avgRoundsPrevAgg] = await Promise.all([
+    prisma.sessionMetrics.aggregate({ where: { startedAt: { gte: from, lte: to } }, _avg: { rounds: true } }),
+    prisma.sessionMetrics.aggregate({ where: { startedAt: { gte: prevFrom, lte: prevTo } }, _avg: { rounds: true } }),
+  ]);
+  const roundsCur = (avgRoundsCurAgg as any)?._avg?.rounds ?? null;
+  const roundsPrev = (avgRoundsPrevAgg as any)?._avg?.rounds ?? null;
+  const roundsWow = (roundsCur != null && roundsPrev != null && roundsPrev !== 0) ? (roundsCur - roundsPrev) / roundsPrev : null;
+
+  // Avg feedback WoW
+  const [fbCur, fbPrev] = await Promise.all([
+    prisma.feedback.aggregate({ where: { createdAt: { gte: from, lte: to } }, _avg: { avgRating: true } }),
+    prisma.feedback.aggregate({ where: { createdAt: { gte: prevFrom, lte: prevTo } }, _avg: { avgRating: true } }),
+  ]);
+  const fbCurAvg = (fbCur as any)?._avg?.avgRating ?? null;
+  const fbPrevAvg = (fbPrev as any)?._avg?.avgRating ?? null;
+  const fbWow = (fbCurAvg != null && fbPrevAvg != null && fbPrevAvg !== 0) ? (fbCurAvg - fbPrevAvg) / fbPrevAvg : null;
+
   return {
     timestamp: Date.now(),
     store,
     totals: { games: totalSessions, byType },
-    averages: { rounds: (avgRoundsAgg as any)._avg.rounds ?? null, completionRate },
+    averages: { rounds: avgRoundsAll, completionRate, maxRounds: avgMaxRoundsAll, ratioAvgRoundsToAvgMaxRounds },
     timeline,
     scenarios: { public: scenariosApproved, pending: scenariosPending, featured: null },
     feedback: { total: feedbackTotal, avgRating: (feedbackAvg as any)._avg.avgRating ?? null },
@@ -167,5 +222,11 @@ export async function getAdminMetrics(daysInput?: number): Promise<AdminMetrics>
     scenariosByTitle,
     roundFunnel,
     avgRoundDurations,
+    wow: {
+      startedCount: delta(startedCur, startedPrev),
+      completionRate: compWow,
+      rounds: roundsWow,
+      feedbackAvg: fbWow,
+    },
   };
 }
