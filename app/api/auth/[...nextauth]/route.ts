@@ -11,17 +11,23 @@ async function getNextAuth() {
 
   const auth = NextAuth({
     session: { strategy: 'jwt' } as any,
+    debug: (process.env.NEXTAUTH_DEBUG === '1' || process.env.VERCEL_ENV === 'preview') as any,
     providers: [
       Credentials({
         name: 'Admin Password',
         credentials: { password: { label: 'Password', type: 'password' } },
         async authorize(credentials) {
+          try { console.log('[auth] credentials.authorize called'); } catch {}
           const input = (credentials as any)?.password || '';
           const p1 = process.env.ADMIN_PASSWORD_1 || '';
           const p2 = process.env.ADMIN_PASSWORD_2 || '';
+          try { console.log('[auth] ADMIN_PASSWORD_1 set:', !!p1, 'ADMIN_PASSWORD_2 set:', !!p2); } catch {}
           if (!p1 && !p2) return null;
           const ok = (!!p1 && input === p1) || (!!p2 && input === p2);
-          if (!ok) return null;
+          if (!ok) {
+            try { console.warn('[auth] credentials.authorize failed: password mismatch'); } catch {}
+            return null;
+          }
           return { id: 'admin', role: 'admin' } as any;
         },
       }),
@@ -35,6 +41,12 @@ async function getNextAuth() {
         (session as any).role = (token as any).role || null;
         return session;
       },
+    },
+    events: {
+      async signIn(message) { try { console.log('[auth] event signIn', { user: (message as any)?.user?.id }); } catch {} },
+      async signOut(message) { try { console.log('[auth] event signOut'); } catch {} },
+      async session(message) { try { console.log('[auth] event session'); } catch {} },
+      async error(message) { try { console.error('[auth] event error', (message as any)?.error); } catch {} },
     },
     // Optionally set pages if you want custom sign-in UI
     // pages: { signIn: '/admin/login' },
