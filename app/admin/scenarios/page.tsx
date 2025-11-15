@@ -16,7 +16,7 @@ type Scenario = {
 };
 
 export default function AdminScenariosPage() {
-  const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [status, setStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<Scenario[]>([]);
@@ -73,6 +73,7 @@ export default function AdminScenariosPage() {
             value={status}
             onChange={(e) => setStatus(e.target.value as any)}
           >
+            <option value="all">All</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
@@ -92,7 +93,7 @@ export default function AdminScenariosPage() {
               <th className="text-left px-3 py-2">Submitter</th>
               <th className="text-left px-3 py-2">Submitted</th>
               <th className="text-left px-3 py-2">Votes</th>
-              <th className="text-left px-3 py-2">Actions</th>
+              <th className="text-left px-3 py-2">Decision</th>
             </tr>
           </thead>
           <tbody>
@@ -111,13 +112,19 @@ export default function AdminScenariosPage() {
                     <td className="px-3 py-2">{new Date(s.submittedAt).toLocaleString()}</td>
                     <td className="px-3 py-2">{s.voteCount}</td>
                     <td className="px-3 py-2">
-                      {status === 'pending' ? (
+                      {s.status === 'pending' ? (
                         <div className="flex items-center gap-2">
                           <button onClick={() => approve(s.id)} className="bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-white">Approve</button>
                           <button onClick={() => reject(s.id)} className="bg-red-700 hover:bg-red-600 px-2 py-1 rounded text-white">Reject</button>
                         </div>
+                      ) : s.status === 'approved' ? (
+                        <div className="text-green-400 text-sm">
+                          Approved{ s.reviewedBy ? ` by ${s.reviewedBy}` : '' }{ s.reviewedAt ? ` on ${new Date(s.reviewedAt).toLocaleDateString()}` : '' }
+                        </div>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <div className="text-red-400 text-sm" title={s.rejectionReason || ''}>
+                          Rejected{ s.reviewedBy ? ` by ${s.reviewedBy}` : '' }{ s.reviewedAt ? ` on ${new Date(s.reviewedAt).toLocaleDateString()}` : '' }
+                        </div>
                       )}
                     </td>
                   </tr>
