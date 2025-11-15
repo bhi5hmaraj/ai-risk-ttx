@@ -152,7 +152,7 @@ export async function handleSessionRequest(
       console.log(`[session-router] get:${sessionId} OK in ${Date.now() - s0}ms`);
       return json(
         200,
-        { success: true, data: { id: snap.id, state: snap.state, revision: snap.revision, deadlineAt: snap.deadlineAt, submitted: snap.submitted } },
+        { success: true, data: { id: snap.id, state: snap.state, revision: snap.revision, deadlineAt: snap.deadlineAt, submitted: snap.submitted, players: snap.players, setup: snap.setup } },
         { ETag: etagFromRev(snap.revision), 'x-revision': String(snap.revision) }
       );
     }
@@ -234,7 +234,7 @@ export async function handleSessionRequest(
       const s0 = Date.now();
       const adv = await deps.store.advance(sessionId, expected, parsed as any);
       console.log(`[session-router] advance:${sessionId} OK in ${Date.now() - s0}ms`);
-      return json(200, { success: true, data: { id: adv.id, state: adv.state, revision: adv.revision } }, { ETag: etagFromRev(adv.revision), 'x-revision': String(adv.revision) });
+      return json(200, { success: true, data: { id: adv.id, state: adv.state, revision: adv.revision, players: adv.players, setup: adv.setup, submitted: adv.submitted } }, { ETag: etagFromRev(adv.revision), 'x-revision': String(adv.revision) });
     }
 
     if (method === 'POST' && action === 'initialize') {

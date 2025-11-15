@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { ActionOption, Player } from '../../types';
 import { GAME_CONFIG } from '../../constants';
 import { LoadingSpinner, CheckCircleIcon, PauseIcon } from '../Icons';
+import { useRotatingJoke } from '@/lib/loadingJokes';
 
 interface ActionSelectionProps {
   options: ActionOption[];
@@ -31,6 +32,15 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
   const human = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
   const confirmDisabled = isLoading || isPaused;
+  const joke = useRotatingJoke(4000); // Rotate jokes every 4 seconds
+
+  console.log('[ActionSelection] Render:', {
+    hasSubmitted,
+    allAIsDone,
+    jokeLength: joke?.length,
+    aiPlayers: aiPlayers.length,
+    aiCompletionStatus
+  });
 
   const toggleAction = (option: ActionOption) => {
     if (hasSubmitted || isPaused) return;
@@ -63,24 +73,36 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         )}
         <h3 className="text-xl font-bold mb-4">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
         {!allAIsDone && (
-          <div className="space-y-3 text-left">
-            {aiPlayers.map((player) => {
-              const isComplete = aiCompletionStatus[player.role.name];
-              return (
-                <div
-                  key={player.id}
-                  className={`flex items-center p-3 rounded-lg transition-all duration-300 ${
-                    isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
-                  }`}
-                >
-                  {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
-                  <span className={isComplete ? 'text-gray-300' : 'text-gray-400'}>{player.role.name}</span>
-                </div>
-              );
-            })}
+          <>
+            <div className="space-y-3 text-left">
+              {aiPlayers.map((player) => {
+                const isComplete = aiCompletionStatus[player.role.name];
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center p-3 rounded-lg transition-all duration-300 ${
+                      isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
+                    }`}
+                  >
+                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
+                    <span className={isComplete ? 'text-gray-300' : 'text-gray-400'}>{player.role.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-4 text-sm text-gray-400 italic text-center">
+              "{joke}"
+            </p>
+          </>
+        )}
+        {allAIsDone && (
+          <div className="flex flex-col items-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-sm text-gray-400 italic text-center">
+              "{joke}"
+            </p>
           </div>
         )}
-        {allAIsDone && <LoadingSpinner />}
       </div>
     );
   }
@@ -119,8 +141,11 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         </div>
       </div>
       {isLoading && !options.length ? (
-        <div className="flex justify-center items-center h-48">
+        <div className="flex flex-col justify-center items-center h-48 px-4">
           <LoadingSpinner />
+          <p className="mt-4 text-sm text-gray-400 italic text-center">
+            "{joke}"
+          </p>
         </div>
       ) : (
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">

@@ -37,6 +37,8 @@ interface LobbyScreenProps {
   setMaxAIPlayers?: (n: number) => void;
   maxRounds?: number;
   setMaxRounds?: (n: number) => void;
+  isFromPublicCatalog: boolean;
+  setIsFromPublicCatalog: (value: boolean) => void;
   isLoading: boolean;
   handleCustomGameStart: () => void;
   handleStartGame: () => void;
@@ -290,6 +292,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   setMaxAIPlayers,
   maxRounds,
   setMaxRounds,
+  isFromPublicCatalog,
+  setIsFromPublicCatalog,
   isLoading,
   handleCustomGameStart,
   handleStartGame,
@@ -363,6 +367,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     // Set the gameSetup and gamePath so the game controller can use it
     setGameSetup(scenario.gameSetup);
     setGamePath('custom'); // Mark as custom to use preset scenario initialization
+    setIsFromPublicCatalog(true); // Mark this scenario as from the public catalog
   };
 
   const handleVote = async (scenarioId: string) => {
@@ -454,7 +459,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             <LobbyExperienceCard
               title="Create Your Own"
               description="Describe any crisis and let the AI Game Master craft a bespoke simulation with tailored roles."
-              onSelect={() => setGamePath('custom')}
+              onSelect={() => {
+                setGamePath('custom');
+                setIsFromPublicCatalog(false);
+              }}
               cta="Generate Scenario"
               accent="purple"
             />
@@ -471,7 +479,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           onSelect={setSelectedRoleName}
           onStart={handleStartGame}
           cta="Start Custom Simulation"
-          onMakePublic={() => setIsMakePublicModalOpen(true)}
+          onMakePublic={!isFromPublicCatalog ? () => setIsMakePublicModalOpen(true) : undefined}
           maxAIPlayers={maxAIPlayers}
           setMaxAIPlayers={setMaxAIPlayers}
           maxRounds={maxRounds}

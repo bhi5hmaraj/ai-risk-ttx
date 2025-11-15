@@ -21,7 +21,7 @@ export default function GamePage() {
   const { gameState, players } = useGame();
   const { isLoading, loadingMessage, error, setHistoryOpen } = useUI();
   const { actionOptions, aiCompletionStatus } = useActions();
-  const { gameSetup, customScenario, gamePath } = useLobby();
+  const { gameSetup, customScenario, gamePath, isFromPublicCatalog } = useLobby();
   const { handleConfirmActions } = useGameActions();
   const { loadHumanOptions } = useRoundOptions();
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
@@ -65,7 +65,7 @@ export default function GamePage() {
     gameState.phase === GamePhase.ACTION &&
     gamePath === 'custom' &&
     !!customScenario &&
-    !scenarioSubmitted;
+    !isFromPublicCatalog; // Hide Make Public for scenarios from the catalog
 
   const gameMetadata: GameMetadata = useMemo(
     () => ({
@@ -187,6 +187,7 @@ export default function GamePage() {
             onMakePublic={() => setShowMakePublicModal(true)}
             onOpenFeedback={() => setShowFeedbackModal(true)}
             maxRounds={gameSetup?.maxRounds ?? undefined}
+            scenarioAlreadyPublic={scenarioSubmitted || isFromPublicCatalog}
           />
         </>
       )}
