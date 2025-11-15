@@ -25,6 +25,7 @@ interface GameScreenProps {
   onMakePublic?: () => void;
   onOpenFeedback?: () => void;
   maxRounds?: number;
+  scenarioAlreadyPublic?: boolean;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = ({
@@ -50,6 +51,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onMakePublic,
   onOpenFeedback,
   maxRounds,
+  scenarioAlreadyPublic,
 }) => (
   <div className="min-h-screen bg-gray-900 px-4 pb-4 md:px-6 md:pb-6 lg:px-8 lg:pb-8 pt-28">
     <div className="max-w-8xl mx-auto">
@@ -66,6 +68,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         onMakePublic={onMakePublic}
         onOpenFeedback={onOpenFeedback}
         maxRounds={maxRounds}
+        scenarioAlreadyPublic={scenarioAlreadyPublic}
       />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-9 space-y-6">

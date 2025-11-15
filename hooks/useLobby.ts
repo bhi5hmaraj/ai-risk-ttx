@@ -9,12 +9,14 @@ export function useLobby() {
   const customScenario = useLobbyStore((s) => s.customScenario);
   const maxAIPlayers = useLobbyStore((s) => s.maxAIPlayers);
   const maxRounds = useLobbyStore((s) => s.maxRounds);
+  const isFromPublicCatalog = useLobbyStore((s) => s.isFromPublicCatalog);
   const setSelectedRoleName = useLobbyStore((s) => s.setSelectedRoleName);
   const setGamePath = useLobbyStore((s) => s.setGamePath);
   const setGameSetup = useLobbyStore((s) => s.setGameSetup);
   const setCustomScenario = useLobbyStore((s) => s.setCustomScenario);
   const setMaxAIPlayers = useLobbyStore((s) => s.setMaxAIPlayers);
   const setMaxRounds = useLobbyStore((s) => s.setMaxRounds);
+  const setIsFromPublicCatalog = useLobbyStore((s) => s.setIsFromPublicCatalog);
   const reset = useLobbyStore((s) => s.reset);
 
   return {
@@ -24,12 +26,14 @@ export function useLobby() {
     customScenario,
     maxAIPlayers,
     maxRounds,
+    isFromPublicCatalog,
     setSelectedRoleName,
     setGamePath,
     setGameSetup,
     setCustomScenario,
     setMaxAIPlayers,
     setMaxRounds,
+    setIsFromPublicCatalog,
     reset,
   } as const;
 }

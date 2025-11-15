@@ -7,7 +7,7 @@ import type { GameSetup, ActionOption } from '../types/core';
 
 const BASE = '/api/session';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds for normal operations
-const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds for health checks
+const HEALTH_CHECK_TIMEOUT = 10000; // 10 seconds for health checks (Redis cold start can take 6s)
 
 async function fetchJson(url: string, init?: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT) {
   const controller = new AbortController();
@@ -104,13 +104,14 @@ export async function advance(
   hostToken: string,
   bodyPayload?: { humanRoleName?: string; humanPlayerId?: string; humanActions?: ActionOption[]; humanAvailableOptions?: ActionOption[] }
 ) {
+  // Use 5-minute timeout for advance (LLM calls can take 60s+)
   const { res, body } = await fetchJson(`${BASE}/${id}/advance`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'If-Match': String(expectedRevision), 'x-host-token': hostToken },
     body: JSON.stringify(bodyPayload ?? {}),
-  });
+  }, 300000); // 5 minutes
   if (!body?.success) throw new Error(body?.error || `HTTP ${res.status}`);
-  return body.data as { id: string; state: any; revision: number };
+  return body.data as { id: string; state: any; revision: number; players?: any[]; setup?: any; submitted?: Record<string, boolean> };
 }
 
 export async function initializeSession(id: string) {

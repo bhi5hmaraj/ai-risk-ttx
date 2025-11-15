@@ -17,7 +17,7 @@ import { generateCustomScenario } from '@/services/llmApiClient';
 
 export default function LobbyPage() {
   const router = useRouter();
-  const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, reset: resetLobby } = useLobby();
+  const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, isFromPublicCatalog, setIsFromPublicCatalog, reset: resetLobby } = useLobby();
   const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
   const { handleStartGame } = useGameActions();
@@ -119,6 +119,8 @@ export default function LobbyPage() {
           setMaxAIPlayers={setMaxAIPlayers}
           maxRounds={maxRounds}
           setMaxRounds={setMaxRounds}
+          isFromPublicCatalog={isFromPublicCatalog}
+          setIsFromPublicCatalog={setIsFromPublicCatalog}
           isLoading={isLoading}
           handleCustomGameStart={handleCustomGameStart}
           handleStartGame={handleStartGame}

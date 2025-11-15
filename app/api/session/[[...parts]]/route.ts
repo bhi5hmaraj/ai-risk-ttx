@@ -9,10 +9,9 @@ import { GamePhase, type Player, type PlayerRoundActions, type ActionOption } fr
 import { createReqId, getReqIdFromHeaders, slog, serr } from '@/server/lib/logger';
 import { GAME_CONFIG } from '@/gameConfig';
 
-// Use Edge runtime for compatibility with Upstash Redis
-export const runtime = 'edge';
-
-const textEncoder = new TextEncoder();
+// Use Node runtime for Fluid Compute (300s timeout) and better library compatibility
+export const runtime = 'nodejs';
+export const maxDuration = 300; // Fluid Compute: 5 minutes
 
 const llm: LLMFacade = {
   async generateActionOptions({ player, gameState, previousRoundActions }) {
@@ -226,9 +225,6 @@ async function toHeaders(req: NextRequest) {
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ parts?: string[] }> }) {
   const { parts = [] } = await ctx.params;
-  if (parts.length === 2 && parts[1] === 'stream') {
-    return streamSession(parts[0]!, req);
-  }
   const headers = await toHeaders(req);
   const rid = getReqIdFromHeaders(req.headers) || createReqId('sess');
   const t0 = Date.now();
@@ -259,124 +255,5 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ parts?: s
   const res = await handleSessionRequest('PATCH', parts, headers, body, { store, llm });
   try { (res as any).headers?.set?.('x-req-id', rid); } catch {}
   slog(rid, `PATCH /api/session/${parts.join('/')} done`, { status: (res as any).status, dt: Date.now() - t0 });
-  return res;
-}
-
-function streamSession(sessionId: string, req: NextRequest) {
-  if (!sessionId) {
-    return new Response(JSON.stringify({ success: false, error: 'Not Found' }), { status: 404 });
-  }
-
-  const heartbeatInterval = 15_000;
-  const rid = getReqIdFromHeaders(req.headers) || createReqId('sse');
-  const connectionStartTime = Date.now();
-
-  // SSE Metrics tracking
-  let eventsSent = 0;
-  let heartbeatsSent = 0;
-
-  slog(rid, `SSE open /api/session/${sessionId}/stream`, {
-    ua: req.headers.get('user-agent') || '',
-    lastEventId: req.headers.get('Last-Event-ID') || 'none',
-  });
-
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const snapshot = await store.get(sessionId);
-      if (!snapshot) {
-        controller.enqueue(
-          textEncoder.encode(`event: error\ndata: ${JSON.stringify({ success: false, error: 'Not Found' })}\n\n`)
-        );
-        controller.close();
-        return;
-      }
-
-      // SSE reconnection hint: guide client to retry every 15s if connection drops
-      controller.enqueue(textEncoder.encode(`retry: 15000\n`));
-
-      // Force flush to prevent proxy buffering (Vercel/CloudFlare/Nginx)
-      controller.enqueue(textEncoder.encode(`: flush\n\n`));
-
-      const send = (event: string, payload: unknown, revision?: number) => {
-        // Include revision as event ID for resumption support
-        if (revision !== undefined) {
-          controller.enqueue(textEncoder.encode(`id: ${revision}\n`));
-        }
-        controller.enqueue(textEncoder.encode(`event: ${event}\n`));
-        controller.enqueue(textEncoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
-
-        // Track metrics
-        if (event === 'ping') {
-          heartbeatsSent++;
-        } else {
-          eventsSent++;
-        }
-      };
-
-      // Check if client is resuming from a previous connection
-      const lastEventId = req.headers.get('Last-Event-ID');
-      const lastRevision = lastEventId ? parseInt(lastEventId, 10) : undefined;
-
-      // If client is resuming and snapshot is already at that revision, skip initial snapshot
-      // Otherwise send current snapshot to seed the client state
-      if (!lastRevision || snapshot.revision > lastRevision) {
-        send('session', { type: 'snapshot', snapshot }, snapshot.revision);
-      } else {
-        slog(rid, `SSE resume from revision ${lastRevision}, current ${snapshot.revision} (skipping snapshot)`);
-      }
-
-      const listener = (evt: SessionEvent) => {
-        send('session', { type: evt.type, snapshot: evt.snapshot, payload: evt.payload }, evt.snapshot.revision);
-      };
-
-      const unsubscribe = store.subscribe(sessionId, listener);
-
-      const interval = setInterval(() => {
-        send('ping', { ts: Date.now() });
-      }, heartbeatInterval);
-
-      const abort = req.signal;
-      const cleanup = () => {
-        const connectionDuration = Date.now() - connectionStartTime;
-        const durationSec = Math.floor(connectionDuration / 1000);
-
-        clearInterval(interval);
-        unsubscribe();
-        try {
-          controller.close();
-        } catch {}
-
-        // Log comprehensive connection metrics
-        slog(rid, `SSE close /api/session/${sessionId}/stream`, {
-          durationSec,
-          eventsSent,
-          heartbeatsSent,
-          reason: abort.aborted ? 'client-abort' : 'server-close',
-          hit60sLimit: durationSec >= 55 && durationSec <= 65, // Flag if likely Vercel timeout
-        });
-      };
-
-      if (abort.aborted) {
-        cleanup();
-        return;
-      }
-
-      abort.addEventListener('abort', cleanup, { once: true });
-    },
-  });
-
-  const res = new Response(stream, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-store, must-revalidate, no-transform',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      // Anti-buffering headers for Vercel/CloudFlare/Nginx
-      'X-Accel-Buffering': 'no',  // Nginx
-      'Content-Encoding': 'none',  // Prevent compression
-    },
-  });
-  try { (res as any).headers?.set?.('x-req-id', rid); } catch {}
   return res;
 }

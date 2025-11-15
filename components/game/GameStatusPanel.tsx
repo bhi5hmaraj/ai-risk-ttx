@@ -14,9 +14,10 @@ interface GameStatusPanelProps {
   onMakePublic?: () => void;
   onOpenFeedback?: () => void;
   maxRounds?: number; // display denominator; defaults to GAME_CONFIG.MAX_ROUNDS
+  scenarioAlreadyPublic?: boolean;
 }
 
-export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback, maxRounds }) => {
+export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback, maxRounds, scenarioAlreadyPublic }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
   const [showHiddenObjective, setShowHiddenObjective] = useState(false);
@@ -27,7 +28,10 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-gray-700 p-3 rounded-lg">
-            {player.role.icon({ className: 'h-9 w-9 text-blue-300' })}
+            {typeof player.role.icon === 'function'
+              ? player.role.icon({ className: 'h-9 w-9 text-blue-300' })
+              : <span className="text-4xl">{player.role.icon}</span>
+            }
           </div>
           <div className="flex-1">
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold">Your Role</p>
@@ -37,10 +41,15 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
                 {isCustomScenario && onMakePublic && (
                   <button
                     onClick={onMakePublic}
-                    className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
-                    title="Share this scenario with the community"
+                    disabled={scenarioAlreadyPublic}
+                    className={`px-3 py-1 rounded-md text-white text-xs font-medium transition-colors ${
+                      scenarioAlreadyPublic
+                        ? 'bg-gray-600 cursor-not-allowed opacity-60'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                    title={scenarioAlreadyPublic ? "Already shared with the community" : "Share this scenario with the community"}
                   >
-                    📢 Make Public
+                    {scenarioAlreadyPublic ? '✓ Already Public' : '📢 Make Public'}
                   </button>
                 )}
                 {onOpenFeedback && (

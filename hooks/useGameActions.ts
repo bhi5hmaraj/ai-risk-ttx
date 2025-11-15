@@ -15,7 +15,7 @@ import { AI_SAFETY_SCENARIO, ELECTION_PRESET_ABOUT } from '@/presets';
 export function useGameActions() {
   const { gameState, players, setGameState, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
-  const { actionOptions, setActionOptions } = useActions();
+  const { actionOptions, setActionOptions, setAICompletionStatus } = useActions();
   const { selectedRoleName, gamePath, gameSetup, setGameSetup, maxAIPlayers, maxRounds } = useLobby();
   const { sessionMeta, setSessionMeta } = useSession();
   const setStartStep = useUIStore((s) => s.setStartStep);
@@ -40,13 +40,25 @@ export function useGameActions() {
             setPlayers((prev) => prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p)));
             const s1 = await SessionService.submitActions(meta!.id, human.id || 'human', actions, meta!.revision);
             setSessionMeta({ id: meta!.id, revision: s1.revision, hostToken: meta!.hostToken } as any);
-            SessionService.advance(meta!.id, s1.revision, meta!.hostToken, {
+
+            // Show spinner while waiting for AI players and consequences (can take 10-60s)
+            setLoading(true, 'Generating next round... AI players are making decisions.');
+
+            // Await the advance response (has 5-minute timeout)
+            const s2 = await SessionService.advance(meta!.id, s1.revision, meta!.hostToken, {
               humanRoleName: human.role.name,
               humanPlayerId: human.id || 'human',
               humanActions: actions,
               humanAvailableOptions: actionOptions,
-            }).catch((err) => setError(err?.message || 'Failed to advance round'));
+            });
+
+            // Update UI with the advance response
+            setGameState(s2.state);
+            if (s2.players) setPlayers(s2.players);
+            if (s2.setup) setGameSetup(s2.setup);
+            setSessionMeta({ id: meta!.id, revision: s2.revision, hostToken: meta!.hostToken } as any);
             setActionOptions([]);
+            setAICompletionStatus({});
           } catch (e: any) {
             setError(e?.message || 'Failed to submit actions to server');
             setPlayers((prev) => prev.map((p) => (p.isHuman ? { ...p, hasSubmittedActions: false } : p)));
@@ -176,66 +188,23 @@ export function useGameActions() {
           const setup = gameSetup || createCanonicalSetup(gameState, initialPlayers, undefined, undefined, { maxRounds: maxRounds ?? null, maxAIPlayers: maxAIPlayers ?? null });
           setGameSetup(setup);
 
-          // CRITICAL: Wait for SSE connection to be ACTUALLY established before initializing
-          // Production environments have higher latency than localhost, so a fixed delay doesn't work
-          // Instead, we poll for sseStatus.state === 'connected' which is set when first SSE event arrives
-          console.log('[useGameActions] 🔍 Waiting for SSE connection to establish...');
-          console.log('[useGameActions] Session ID:', created.id);
-          console.log('[useGameActions] Scenario:', (canonicalSetup.scenarioTitle as string)?.substring(0, 50));
-          const pollStartTime = Date.now();
-          const maxWaitTime = 15000; // 15 seconds max wait (allow for Redis latency in dev)
-          const pollInterval = 100; // Check every 100ms
-          let waited = 0;
+          // Initialize session with scenario so backend has game state for action-options
+          console.log('[useGameActions] Initializing session scenario...');
+          const initSnap = await SessionService.initialize(created.id);
 
-          while (waited < maxWaitTime) {
-            // Import sseStatus from sessionStore
-            const { sseStatus } = await import('@/stores/sessionStore').then(m => m.useSessionStore.getState());
+          // Update sessionMeta with latest revision from initialize
+          setSessionMeta({ id: created.id, revision: initSnap.revision, hostToken: created.hostToken } as any);
 
-            if (waited % 500 === 0 || sseStatus.state !== 'connecting') {
-              // Log every 500ms or on state change
-              console.log('[useGameActions] SSE poll check:', {
-                waited,
-                state: sseStatus.state,
-                lastEventType: sseStatus.lastEventType,
-                lastEventTime: sseStatus.lastEventTime,
-                error: sseStatus.error
-              });
-            }
+          // Update UI state with initialized game state
+          if (initSnap.state) setGameState(initSnap.state);
+          if ((initSnap as any).players) setPlayers((initSnap as any).players);
+          if ((initSnap as any).setup) setGameSetup((initSnap as any).setup);
 
-            if (sseStatus.state === 'connected') {
-              console.log('[useGameActions] ✅ SSE connected after', waited, 'ms');
-              console.log('[useGameActions] Last event:', sseStatus.lastEventType, 'at', sseStatus.lastEventTime);
-              break;
-            }
-            if (sseStatus.state === 'error') {
-              console.error('[useGameActions] ❌ SSE connection failed:', sseStatus.error);
-              setError('Failed to establish connection to game server. Please try again.');
-              setLoading(false);
-              return;
-            }
-            await new Promise(resolve => setTimeout(resolve, pollInterval));
-            waited += pollInterval;
-          }
-
-          if (waited >= maxWaitTime) {
-            const { sseStatus: finalStatus } = await import('@/stores/sessionStore').then(m => m.useSessionStore.getState());
-            console.warn('[useGameActions] ⚠️ SSE connection timeout after', waited, 'ms');
-            console.warn('[useGameActions] Final SSE state:', finalStatus.state);
-            console.warn('[useGameActions] Proceeding anyway - scenario:', (canonicalSetup.scenarioTitle as string)?.substring(0, 50));
-          }
-
-          // CRITICAL: Clear loading BEFORE initializing to avoid race condition
-          // When initialize() triggers SSE update with ACTION phase, isLoading must already be false
-          // so that the action options useEffect can trigger
+          // Mark initialization complete
           setLoading(false);
           setStartStep('generatingScenario', 'done');
           setStartStep('ready', 'done');
 
-          // Initialize session with scenario so backend has game state for action-options
-          console.log('[useGameActions] Initializing session scenario...');
-          const initSnap = await SessionService.initialize(created.id);
-          // Update sessionMeta with latest revision from initialize
-          setSessionMeta({ id: created.id, revision: initSnap.revision, hostToken: created.hostToken } as any);
           console.log('[useGameActions] Session initialized successfully at rev', initSnap.revision);
           console.log('[useGameActions] Game start complete - ready for action phase');
         } catch (e) {
