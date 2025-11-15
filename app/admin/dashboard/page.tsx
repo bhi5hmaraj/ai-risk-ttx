@@ -17,6 +17,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [range, setRange] = useState<'today' | '7d' | '30d'>('7d');
 
   const handleLogout = async () => {
     try {
@@ -35,7 +36,7 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchAdminMetrics();
+      const data = await fetchAdminMetrics({ preset: range });
       const body: Metrics = { success: true, data };
       if (!body?.success) {
         setError('Failed to load metrics');
@@ -53,7 +54,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [range]);
 
   const ts = metrics?.data?.timestamp ? new Date(metrics.data.timestamp).toLocaleString() : '—';
   const games = metrics?.data?.totals.games ?? null;
@@ -75,6 +76,16 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
           <div className="flex items-center gap-2">
+            <select
+              value={range}
+              onChange={(e) => setRange(e.target.value as any)}
+              className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+              title="Date range"
+            >
+              <option value="today">Today</option>
+              <option value="7d">Last 7d</option>
+              <option value="30d">Last 30d</option>
+            </select>
             <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded px-3 py-1.5 text-sm">
               Refresh
             </button>
