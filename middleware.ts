@@ -12,11 +12,15 @@ export async function middleware(request: NextRequest) {
       const { withAuth } = await import('next-auth/middleware');
       const mw = (withAuth as any)({
         callbacks: {
-          authorized: ({ token }: any) => !!token && (token as any).role === 'admin',
+          authorized: ({ token }: any) => {
+            console.log('[middleware] NextAuth token check:', { hasToken: !!token, role: (token as any)?.role });
+            return !!token && (token as any).role === 'admin';
+          },
         },
       });
       return mw(request);
-    } catch {
+    } catch (err) {
+      console.log('[middleware] NextAuth fallback, error:', err);
       // Fallback to custom cookie if next-auth is not installed yet
       const cookie = request.cookies.get('admin_session')?.value;
       if (!cookie) {
