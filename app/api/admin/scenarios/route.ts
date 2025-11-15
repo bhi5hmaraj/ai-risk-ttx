@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
+import * as scenarioRepo from '@/server/data/publicScenarioRepo';
 
 export const runtime = 'nodejs';
 
@@ -29,27 +30,11 @@ function json(status: number, body: unknown) {
 export async function GET(req: NextRequest) {
   if (!(await isAdmin(req))) return json(401, { success: false, error: 'Unauthorized' });
   const { searchParams } = new URL(req.url);
-  const status = (searchParams.get('status') || 'pending') as 'pending' | 'approved' | 'rejected';
+  const rawStatus = (searchParams.get('status') || 'pending').toLowerCase();
+  const status = (rawStatus === 'all' ? 'all' : rawStatus) as 'pending' | 'approved' | 'rejected' | 'all';
   const limit = Math.max(1, Math.min(200, Number(searchParams.get('limit') || '50')));
 
-  const items = await prisma.publicScenario.findMany({
-    where: { status },
-    orderBy: { submittedAt: 'desc' },
-    take: limit,
-    select: {
-      id: true,
-      submitterName: true,
-      submittedAt: true,
-      reviewedAt: true,
-      reviewedBy: true,
-      rejectionReason: true,
-      voteCount: true,
-      gameSetup: true,
-      customPrompt: true,
-      status: true,
-    },
-  });
+  const items = await scenarioRepo.list({ status, limit });
 
   return json(200, { success: true, data: items });
 }
-

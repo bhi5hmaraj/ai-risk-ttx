@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/lib/prisma';
+import * as feedbackRepo from '@/server/data/feedbackRepo';
 
 export const runtime = 'nodejs';
 
@@ -33,7 +34,17 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const exists = await prisma.feedback.findUnique({ where: { id }, select: { id: true } });
   if (!exists) return json(404, { success: false, error: 'Not Found' });
 
-  const updated = await prisma.feedback.update({ where: { id }, data: { reviewed } });
+  const updated = await feedbackRepo.setReviewed(id, reviewed);
   return json(200, { success: true, data: { id: updated.id, reviewed: updated.reviewed } });
 }
 
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  if (!(await isAdmin(req))) return json(401, { success: false, error: 'Unauthorized' });
+  const { id } = await ctx.params;
+  if (!id) return json(400, { success: false, error: 'Missing id' });
+
+  const row = await feedbackRepo.get(id);
+
+  if (!row) return json(404, { success: false, error: 'Not Found' });
+  return json(200, { success: true, data: row });
+}
