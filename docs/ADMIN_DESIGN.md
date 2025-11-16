@@ -23,8 +23,8 @@ Purpose: Replace CLI ops with a secure, lightweight web admin for metrics, scena
 
 Layers:
 - UI (App Router): `app/admin/*` pages rendered via server components; client components where interactivity is needed.
-- APIs (App Router): `app/api/admin/*/route.ts` for JSON endpoints; fetch from UI.
-- Auth: Cookie session with middleware guard on `/admin/:path*`.
+- APIs (App Router): `app/api/admin/[[...parts]]/route.ts` catch‑all for JSON endpoints; fetch from UI.
+- Auth: Clerk user auth + email allowlist via `isAdminUser` with middleware guard on `/admin/:path*`.
 - Storage: Reuse existing store(s) where possible. For scenarios/feedback, start with current sources; evolve to Prisma tables if needed.
 
 Runtimes:
