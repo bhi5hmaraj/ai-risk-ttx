@@ -1,0 +1,153 @@
+.setup-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+}
+
+.setup-modal {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 3rem;
+  max-width: 600px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.setup-modal h1 {
+  color: #e94560;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+
+.intro {
+  color: #a8b2d1;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.setup-form {
+  margin: 2rem 0;
+}
+
+.form-group {
+  margin-bottom: 2rem;
+}
+
+.form-group label {
+  display: block;
+  color: #e0e0e0;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.help-text {
+  display: block;
+  font-size: 0.85rem;
+  color: #8892b0;
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  background: #0f3460;
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #e94560;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #e94560;
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
+
+.value-display {
+  display: block;
+  color: #64ffda;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.time-scale-preview {
+  background: #0f3460;
+  padding: 1rem;
+  border-radius: 6px;
+  color: #a8b2d1;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.time-scale-preview strong {
+  color: #64ffda;
+}
+
+.start-button {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-button:hover {
+  background: #ff6b81;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+}
+
+.about {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #0f3460;
+}
+
+.about h3 {
+  color: #64ffda;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.about p {
+  color: #8892b0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
+}
+
+.citation {
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+.citation a {
+  color: #64ffda;
+  text-decoration: none;
+}
+
+.citation a:hover {
+  text-decoration: underline;
+}

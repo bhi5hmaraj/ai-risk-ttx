@@ -1,0 +1,123 @@
+.global-state-display {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.global-state-display h3 {
+  color: #64ffda;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.subtitle {
+  color: #8892b0;
+  font-size: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.state-section {
+  margin-bottom: 1.5rem;
+}
+
+.state-section:last-child {
+  margin-bottom: 0;
+}
+
+.state-section h4 {
+  color: #a8b2d1;
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.state-variable {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #0f3460;
+}
+
+.state-variable:last-child {
+  border-bottom: none;
+}
+
+.variable-label {
+  color: #a8b2d1;
+  font-size: 0.85rem;
+}
+
+.variable-value {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.text-value {
+  font-size: 0.8rem;
+  max-width: 180px;
+  text-align: right;
+  display: inline-block;
+}
+
+.state-bar {
+  margin-bottom: 1rem;
+}
+
+.state-bar:last-child {
+  margin-bottom: 0;
+}
+
+.bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.bar-label {
+  color: #a8b2d1;
+  font-size: 0.85rem;
+}
+
+.bar-value {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.bar-container {
+  width: 100%;
+  height: 8px;
+  background: #0f3460;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.3rem;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.bar-fill.critical {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #8892b0;
+  font-size: 0.7rem;
+}

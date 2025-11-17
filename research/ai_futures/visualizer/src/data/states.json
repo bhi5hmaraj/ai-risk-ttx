@@ -1,0 +1,67 @@
+{
+  "current_2024": {
+    "id": "current_2024",
+    "name": "Current State",
+    "description": "Late 2024 - GPT-4 level models, ~1e25 FLOP training runs",
+    "time": "Q4 2024",
+    "probability": 1.0,
+    "isStartState": true,
+    "isEndState": false
+  },
+  "gpt5_level": {
+    "id": "gpt5_level",
+    "name": "GPT-5 Level (~College Graduate)",
+    "description": "Models can do most knowledge work at graduate level",
+    "time": "2025-2026",
+    "probability": 0.7,
+    "isStartState": false,
+    "isEndState": false
+  },
+  "race_dynamics": {
+    "id": "race_dynamics",
+    "name": "US-China AI Race",
+    "description": "Competitive dynamics, reduced safety margins, espionage",
+    "time": "2025-2026",
+    "probability": 0.6,
+    "isStartState": false,
+    "isEndState": false
+  },
+  "agi_2027": {
+    "id": "agi_2027",
+    "name": "AGI / Superhuman AI Researcher",
+    "description": "AI systems can automate AI research itself",
+    "time": "Early-Mid 2027",
+    "probability": 0.5,
+    "isStartState": false,
+    "isEndState": false
+  },
+  "superintelligence": {
+    "id": "superintelligence",
+    "name": "Superintelligence (ASI)",
+    "description": "Recursive self-improvement, far beyond human capabilities",
+    "time": "Late 2027",
+    "probability": 0.3,
+    "isStartState": false,
+    "isEndState": false
+  },
+  "extinction": {
+    "id": "extinction",
+    "name": "Extinction (Race Ending)",
+    "description": "Misaligned ASI releases bioweapon, human extinction",
+    "time": "Late 2027",
+    "probability": 0.0,
+    "isStartState": false,
+    "isEndState": true,
+    "outcomeType": "catastrophic"
+  },
+  "aligned_committee": {
+    "id": "aligned_committee",
+    "name": "Committee Control (Slowdown Ending)",
+    "description": "ASI aligned to oversight committee, power concentrated",
+    "time": "Late 2027",
+    "probability": 0.0,
+    "isStartState": false,
+    "isEndState": true,
+    "outcomeType": "success"
+  }
+}

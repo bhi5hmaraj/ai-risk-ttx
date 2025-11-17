@@ -38,6 +38,10 @@ research/ai_futures/
 │   ├── ai-2027.com_research_timelines-forecast.md
 │   ├── ai-2027.com_research_takeoff-forecast.md
 │   └── ai-2027.com_research_security-forecast.md
+├── visualizer/                   # Interactive React state machine visualizer
+│   ├── src/                      # React components and model
+│   ├── package.json
+│   └── README.md                 # Visualizer documentation
 ├── ai-2027.com_*.md              # Original source documents (10 files)
 └── README.md                     # This file
 ```
@@ -163,6 +167,32 @@ python3 scripts/visualize_dag.py
 - What if algorithmic progress plateaus? (Link confidence 0.4 → 0.0)
 - What if agent transition fails? (Link confidence 0.15 → 0.0)
 - How do probabilities change?
+
+### Interactive Visualizer
+
+**Location:** `visualizer/` directory
+
+A React-based interactive state machine visualizer that faithfully represents AI2027's forecast. Try it out:
+
+```bash
+cd visualizer
+npm install
+npm run dev
+# Open http://localhost:3001
+```
+
+**Features:**
+- **Visual state machine**: React Flow graph of all states and transitions
+- **Time simulation**: Configurable time scaling (e.g., 3 sim years in 10 real minutes)
+- **Interactive transitions**:
+  - Automatic (time-based): Compute scaling, race triggers
+  - Probabilistic (roll-based): Espionage incidents, algorithmic breakthroughs
+  - Choice-based (user decisions): Agent transition bet, FOOM attempt, slowdown vs race
+- **Global state tracking**: Live display of all key variables (compute, race pressure, safety margin)
+- **Epistemic confidence**: Color-coded by strength (green >60%, orange 30-60%, red <30%, dark red contested)
+- **Two endings**: Extinction (race path) or Committee Control (slowdown path)
+
+All mechanics grounded in AI2027 research with inline citations. See `visualizer/README.md` for details.
 
 ### For Game Design (Simulacra Integration)
 

@@ -1,0 +1,12 @@
+{
+  "compute_flop": 1e25,
+  "algorithmic_efficiency": 1.0,
+  "capability_level": "GPT-4 level (~smart high schooler)",
+  "us_china_relations": 0.5,
+  "race_pressure": 0.0,
+  "espionage_risk": 0.5,
+  "alignment_investment": 0.5,
+  "safety_margin": 0.7,
+  "simDays": 0,
+  "simDate": "2024-10-01"
+}

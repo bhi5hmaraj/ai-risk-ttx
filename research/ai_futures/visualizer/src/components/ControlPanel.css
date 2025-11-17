@@ -1,0 +1,299 @@
+.control-panel {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.time-controls {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.time-controls h3 {
+  color: #64ffda;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.date {
+  font-size: 1.2rem;
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.days {
+  color: #8892b0;
+  font-size: 0.9rem;
+}
+
+.play-button {
+  width: 100%;
+  padding: 0.8rem;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.play-button:hover:not(:disabled) {
+  background: #ff6b81;
+  transform: translateY(-1px);
+}
+
+.play-button:disabled {
+  background: #4a5568;
+  cursor: not-allowed;
+}
+
+.play-button.playing {
+  background: #48bb78;
+}
+
+.play-button.playing:hover {
+  background: #68d391;
+}
+
+.time-scale-info {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: #8892b0;
+  font-size: 0.85rem;
+}
+
+.current-state-info {
+  margin-bottom: 1.5rem;
+}
+
+.current-state-info h3 {
+  color: #64ffda;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.state-card {
+  background: #16213e;
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.state-card h4 {
+  color: #e0e0e0;
+  margin-bottom: 0.5rem;
+}
+
+.state-card p {
+  color: #a8b2d1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.state-card .probability {
+  color: #64ffda;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.available-transitions h3 {
+  color: #64ffda;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.transition-card {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.transition-card.automatic {
+  border-left: 4px solid #48bb78;
+}
+
+.transition-card.probabilistic {
+  border-left: 4px solid #ed8936;
+}
+
+.transition-card.choice {
+  border-left: 4px solid #9f7aea;
+}
+
+.transition-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.transition-type {
+  font-size: 0.8rem;
+  color: #8892b0;
+  font-weight: 600;
+}
+
+.confidence {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.confidence-strong {
+  background: #48bb78;
+  color: white;
+}
+
+.confidence-moderate {
+  background: #ed8936;
+  color: white;
+}
+
+.confidence-weak {
+  background: #fc8181;
+  color: white;
+}
+
+.confidence-contested {
+  background: #e53e3e;
+  color: white;
+}
+
+.transition-card h4 {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.mechanism {
+  color: #a8b2d1;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.8rem;
+}
+
+.time-required,
+.probability-info {
+  color: #8892b0;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+}
+
+.trigger-button,
+.roll-button,
+.make-choice-button {
+  width: 100%;
+  padding: 0.6rem;
+  background: #0f3460;
+  color: #64ffda;
+  border: 1px solid #64ffda;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.trigger-button:hover,
+.roll-button:hover,
+.make-choice-button:hover {
+  background: #64ffda;
+  color: #0a0a0a;
+}
+
+.citation {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #0f3460;
+  color: #8892b0;
+  font-size: 0.75rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.choices {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.choice-option {
+  background: #0f3460;
+  border-radius: 6px;
+  padding: 0.8rem;
+}
+
+.choice-option h5 {
+  color: #64ffda;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.choice-option p {
+  color: #a8b2d1;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.choice-probability {
+  color: #ed8936;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0.3rem 0;
+}
+
+.choice-button {
+  width: 100%;
+  padding: 0.5rem;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.choice-button:hover {
+  background: #ff6b81;
+}
+
+.no-transitions {
+  color: #8892b0;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.game-over-message {
+  background: #16213e;
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.game-over-message p {
+  color: #e0e0e0;
+  margin-bottom: 0.5rem;
+}
