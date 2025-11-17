@@ -171,19 +171,51 @@ vercel
 
 **Option 4: Deploy to Netlify**
 
-1. Create `netlify.toml` in visualizer directory:
-```toml
-[build]
-  command = "npm run build"
-  publish = "dist"
+This repo includes `netlify.toml` configuration for easy deployment.
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+**Method 1: Netlify CLI (Recommended)**
+
+1. Install Netlify CLI:
+```bash
+npm i -g netlify-cli
 ```
 
-2. Deploy via Netlify CLI or connect GitHub repo in Netlify dashboard
+2. Build and deploy:
+```bash
+cd research/ai_futures/visualizer
+npm run build
+netlify deploy --prod
+```
+
+3. Follow prompts:
+   - Authorize with Netlify
+   - Create new site or select existing
+   - Publish directory: `dist`
+
+**Method 2: Netlify Dashboard (Drag & Drop)**
+
+1. Build locally:
+```bash
+cd research/ai_futures/visualizer
+npm run build
+```
+
+2. Go to [Netlify Dashboard](https://app.netlify.com/)
+3. Drag the `dist` folder to the deploy zone
+
+**Method 3: GitHub Integration**
+
+1. Push this repo to GitHub
+2. In Netlify dashboard: New site → Import from Git
+3. Settings auto-detected from `netlify.toml`:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Base directory: `research/ai_futures/visualizer`
+
+**Troubleshooting**:
+- If you see "Failed to load module script" error, ensure `netlify.toml` and `public/_redirects` exist
+- The `netlify.toml` sets correct MIME types for JavaScript modules
+- The `_redirects` file handles SPA routing
 
 ## Usage
 
