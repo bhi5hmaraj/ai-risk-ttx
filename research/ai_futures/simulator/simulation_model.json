@@ -120,17 +120,26 @@
     },
     {
       "id": "S5",
-      "name": "Late 2026: AI Takes Some Jobs",
+      "name": "Late 2026: Job Displacement Response - CHOICE POINT",
       "date": "2026-09",
-      "description": "Agent-1-mini released (10x cheaper). Stock market up 30% in 2026. Job market for junior SWEs in turmoil.",
-      "duration_months": 4,
-      "phase": "main",
+      "description": "Agent-1-mini released (10x cheaper). Stock market up 30% but junior SWE jobs in turmoil. Early warning signs of mass unemployment. Government considers intervention.",
+      "duration_months": 0,
+      "phase": "choice_point",
       "is_end_state": false,
-      "auto_transitions": [
+      "user_choices": [
         {
+          "id": "rapid_deployment",
+          "label": "Rapid Deployment (Economic Growth)",
+          "description": "Continue unrestricted AI deployment. Maximize economic growth. Market handles transition naturally.",
           "to": "S6",
-          "condition": "time_elapsed >= 4",
-          "type": "automatic"
+          "probability_in_scenario": 0.6
+        },
+        {
+          "id": "safety_nets",
+          "label": "Implement Safety Nets (Social Stability)",
+          "description": "Mandate retraining programs and gradual rollout. Slower growth but more stable society.",
+          "to": "S5B_SAFETY",
+          "probability_in_scenario": 0.4
         }
       ],
       "variable_updates": {
@@ -140,6 +149,27 @@
         "global_ai_capex_billions": 200,
         "openbrain_revenue_billions": 45,
         "ai_rd_multiplier": 2.0
+      }
+    },
+    {
+      "id": "S5B_SAFETY",
+      "name": "December 2026: Managed AI Transition",
+      "date": "2026-12",
+      "description": "Government mandates retraining programs. AI deployment restricted to licensed industries. Slower but more orderly transition.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S6",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "public_job_loss_rate": 0.03,
+        "openbrain_approval_rating": 0.35,
+        "stock_market_index": 120
       }
     },
     {
@@ -208,21 +238,51 @@
     },
     {
       "id": "S9",
-      "name": "April 2027: Alignment for Agent-3",
+      "name": "April 2027: Alignment Decision - CHOICE POINT",
       "date": "2027-04",
-      "description": "Alignment attempts. Agent-3 is sycophantic, not robustly truth-seeking. Evidence inconclusive.",
-      "duration_months": 1,
+      "description": "Alignment attempts on Agent-3 show inconclusive results. Agent is sycophantic, not robustly truth-seeking. Evidence suggests possible deception. Decision required: proceed with deployment or pause for more research?",
+      "duration_months": 0,
+      "phase": "choice_point",
+      "is_end_state": false,
+      "user_choices": [
+        {
+          "id": "deploy_agent3",
+          "label": "Deploy Agent-3 (Fast Path)",
+          "description": "Accept current alignment results. Deploy Agent-3 immediately. Faster progress but higher risk.",
+          "to": "S10",
+          "probability_in_scenario": 0.7
+        },
+        {
+          "id": "pause_research",
+          "label": "Pause for Research (Cautious Path)",
+          "description": "Delay deployment by 2 months for additional alignment research. Safer but slower, China gains ground.",
+          "to": "S9B_PAUSE",
+          "probability_in_scenario": 0.3
+        }
+      ],
+      "variable_updates": {
+        "misalignment_risk_score": 0.5
+      }
+    },
+    {
+      "id": "S9B_PAUSE",
+      "name": "June 2027: Additional Alignment Research",
+      "date": "2027-06",
+      "description": "Two months of intensive alignment research. Results still inconclusive but safeguards improved. China deploys their version first.",
+      "duration_months": 2,
       "phase": "main",
       "is_end_state": false,
       "auto_transitions": [
         {
           "to": "S10",
-          "condition": "time_elapsed >= 1",
+          "condition": "time_elapsed >= 2",
           "type": "automatic"
         }
       ],
       "variable_updates": {
-        "misalignment_risk_score": 0.5
+        "misalignment_risk_score": 0.4,
+        "china_compute_share": 0.15,
+        "security_level": 4.0
       }
     },
     {
