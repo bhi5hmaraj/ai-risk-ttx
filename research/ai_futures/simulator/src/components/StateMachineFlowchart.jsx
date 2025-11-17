@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -198,15 +198,15 @@ function StateMachineFlowchart() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   // Update nodes when simState changes
-  useMemo(() => {
+  useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
+  }, [initialNodes, initialEdges]);
 
   if (!simState) return null;
 
   return (
-    <div style={{ height: '400px', background: '#0f1629', borderRadius: '8px' }}>
+    <div style={{ height: '100%', minHeight: '500px', background: '#0f1629', borderRadius: '8px' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

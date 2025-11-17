@@ -2,13 +2,15 @@ import useSimulationStore from '../store/useSimulationStore';
 
 function ProgressBar() {
   const simState = useSimulationStore((state) => state.simState);
+  const simDurationMonths = useSimulationStore((state) => state.simDurationMonths);
 
   if (!simState) return null;
 
-  const progress = simState.progress || 0;
+  // Cap progress at 100%
+  const progress = Math.min(simState.progress || 0, 1);
   const percentage = Math.round(progress * 100);
-  const currentMonth = Math.round(simState.simTimeMonths);
-  const totalMonths = 36; // 2025-2030 is ~5 years = 60 months, but scenario is 36 months
+  const currentMonth = Math.min(Math.round(simState.simTimeMonths), simDurationMonths);
+  const totalMonths = simDurationMonths; // User-configured duration
 
   return (
     <div className="progress-bar-container">

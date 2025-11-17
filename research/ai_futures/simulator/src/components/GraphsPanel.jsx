@@ -89,122 +89,118 @@ function GraphsPanel() {
   // Create all traces
   const traces = varConfigs.map(config => createTrace(config));
 
-  // Create event shapes and annotations for each subplot
-  const createEventShapes = (row) => {
-    return events.map(event => ({
-      type: 'line',
-      x0: event.time,
-      x1: event.time,
-      y0: 0,
-      y1: 1,
-      yref: `y${row > 1 ? row : ''} domain`,
-      line: {
-        color: '#4ecdc4',
-        width: 2,
-        dash: 'dot',
-      },
-    }));
-  };
+  // Create event shapes that cut through ALL graphs vertically
+  const allShapes = events.map(event => ({
+    type: 'line',
+    x0: event.time,
+    x1: event.time,
+    y0: 0,
+    y1: 1,
+    yref: 'paper', // Use 'paper' to span the entire plot height
+    line: {
+      color: '#4ecdc4',
+      width: 2,
+      dash: 'dot',
+    },
+  }));
 
-  const createEventAnnotations = (row) => {
-    return events.map((event, i) => ({
-      x: event.time,
-      y: 1,
-      yref: `y${row > 1 ? row : ''} domain`,
-      text: event.label.replace(/\d{4}:\s*/, ''), // Remove year prefix
-      showarrow: false,
-      textangle: -45,
-      xanchor: 'left',
-      yanchor: 'bottom',
-      font: {
-        size: 9,
-        color: '#4ecdc4',
-      },
-    }));
-  };
-
-  // Combine all shapes and annotations
-  const allShapes = [
-    ...createEventShapes(1),
-    ...createEventShapes(2),
-    ...createEventShapes(3),
-    ...createEventShapes(4),
-  ];
-
-  const allAnnotations = [
-    ...createEventAnnotations(1),
-    ...createEventAnnotations(2),
-    ...createEventAnnotations(3),
-    ...createEventAnnotations(4),
-  ];
+  // Create annotations at the top of the plot (visible across all graphs)
+  const allAnnotations = events.map((event, i) => ({
+    x: event.time,
+    y: 1,
+    yref: 'paper', // Position relative to entire plot area
+    text: event.label.replace(/\d{4}:\s*/, ''), // Remove year prefix
+    showarrow: false,
+    textangle: -45,
+    xanchor: 'left',
+    yanchor: 'top',
+    font: {
+      size: 12,
+      color: '#4ecdc4',
+      weight: 'bold',
+    },
+  }));
 
   const layout = {
     autosize: true,
-    margin: { l: 60, r: 40, t: 10, b: 40 },
+    margin: { l: 80, r: 40, t: 20, b: 60 },
     paper_bgcolor: '#1a1f3a',
     plot_bgcolor: '#0f1629',
     font: {
       color: '#e0e0e0',
-      size: 11,
+      size: 13,
     },
     showlegend: false,
     grid: {
-      rows: 2,
-      columns: 2,
+      rows: 4,
+      columns: 1,
       pattern: 'independent',
       roworder: 'top to bottom',
+      subplots: [['xy'], ['xy2'], ['xy3'], ['xy4']],
     },
+    // Graph 1: AI R&D Multiplier (top)
     xaxis: {
       title: '',
       gridcolor: '#2c3e50',
       showgrid: true,
-      domain: [0, 0.48],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
     yaxis: {
-      title: varConfigs[0].label,
+      title: { text: varConfigs[0].label, font: { size: 14, color: varConfigs[0].color } },
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[0].yaxis,
-      domain: [0.52, 1],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
+    // Graph 2: GDP Growth Rate
     xaxis2: {
       title: '',
       gridcolor: '#2c3e50',
       showgrid: true,
-      domain: [0.52, 1],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
     yaxis2: {
-      title: varConfigs[1].label,
+      title: { text: varConfigs[1].label, font: { size: 14, color: varConfigs[1].color } },
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[1].yaxis,
-      domain: [0.52, 1],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
+    // Graph 3: Job Loss Rate
     xaxis3: {
-      title: 'Simulation Time (months)',
+      title: '',
       gridcolor: '#2c3e50',
       showgrid: true,
-      domain: [0, 0.48],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
     yaxis3: {
-      title: varConfigs[2].label,
+      title: { text: varConfigs[2].label, font: { size: 14, color: varConfigs[2].color } },
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[2].yaxis,
-      domain: [0, 0.48],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
+    // Graph 4: Misalignment Risk (bottom)
     xaxis4: {
-      title: 'Simulation Time (months)',
+      title: { text: 'Simulation Time (months)', font: { size: 14 } },
       gridcolor: '#2c3e50',
       showgrid: true,
-      domain: [0.52, 1],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
     yaxis4: {
-      title: varConfigs[3].label,
+      title: { text: varConfigs[3].label, font: { size: 14, color: varConfigs[3].color } },
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[3].yaxis,
-      domain: [0, 0.48],
+      titlefont: { size: 14 },
+      tickfont: { size: 13 },
     },
     shapes: allShapes,
     annotations: allAnnotations,
@@ -243,8 +239,8 @@ function GraphsPanel() {
 
       {/* Legend */}
       <div style={{
-        marginTop: '4px',
-        fontSize: '10px',
+        marginTop: '8px',
+        fontSize: '12px',
         color: '#8e8e8e',
         textAlign: 'center',
       }}>

@@ -13,7 +13,12 @@ import simulationModel from '../../simulation_model.json';
 export class SimulationEngine {
   constructor() {
     this.model = simulationModel;
+    this.maxSimMonths = 36; // Default duration, can be set dynamically
     this.reset();
+  }
+
+  setMaxSimMonths(months) {
+    this.maxSimMonths = months;
   }
 
   reset() {
@@ -278,7 +283,7 @@ export class SimulationEngine {
       availableChoices: this.getAvailableChoices(),
       isAtBranchPoint: this.isAtBranchPoint(),
       isEnded: this.isEnded(),
-      progress: this.simTimeMonths / 36, // Total simulation is 36 months
+      progress: Math.min(this.simTimeMonths / this.maxSimMonths, 1), // Cap at 100%
     };
   }
 }

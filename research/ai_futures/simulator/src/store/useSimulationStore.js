@@ -49,6 +49,8 @@ const useSimulationStore = create((set, get) => ({
 
   // Set simulation settings (called from IntroModal)
   setSimulationSettings: ({ simDurationMonths, targetDurationMinutes, speed }) => {
+    const { engine } = get();
+    engine.setMaxSimMonths(simDurationMonths);
     set({
       simDurationMonths,
       targetDurationMinutes,
