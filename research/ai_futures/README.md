@@ -24,6 +24,7 @@ research/ai_futures/
 │   └── visualize_dag.py          # Generates reports and diagrams
 ├── analysis/
 │   ├── ai2027_causal_dag.json              # Full DAG in JSON format
+│   ├── dag_table_view.md                   # Comprehensive table view (states, transitions, assumptions)
 │   ├── dag_diagram.md                      # Mermaid visualization
 │   ├── epistemic_confidence.md             # Confidence analysis
 │   ├── assumptions_report.md               # All assumptions ranked by strength
@@ -56,6 +57,33 @@ The forecast relies on a **mix of well-grounded and highly speculative assumptio
 - Algorithmic progress continuation
 - AGI emergence from scaffolding
 - Fast takeoff (FOOM)
+
+### Complete DAG Table View
+
+See `analysis/dag_table_view.md` for the full table, or quick view below:
+
+**States Overview:**
+
+| State | Time | Probability | Key Variables |
+|-------|------|-------------|---------------|
+| Current State (Late 2024) | Q4 2024 | 1.0 | compute, algorithmic_efficiency |
+| GPT-5 Level (~College Graduate) | 2025-2026 | 0.7 | compute, algorithmic_efficiency |
+| US-China AI Race | 2025-2026 | 0.6 | compute, algorithmic_efficiency |
+| AGI / Superhuman AI Researcher | Early-Mid 2027 | 0.5 | compute, algorithmic_efficiency |
+| Superintelligence (ASI) | Late 2027 | 0.3 | compute, algorithmic_efficiency |
+
+**Transitions (by confidence):**
+
+| Transition | Confidence | Status |
+|------------|-----------|--------|
+| GPT-5 Level → US-China AI Race | 0.70 | 🟢 Strong |
+| Current State → US-China AI Race (espionage) | 0.65 | 🟢 Strong |
+| Current State → GPT-5 Level (compute scaling) | 0.60 | 🟡 Moderate |
+| US-China AI Race → AGI | 0.60 | 🟡 Moderate |
+| Current State → US-China AI Race (espionage revealed) | 0.50 | 🟡 Moderate |
+| Current State → GPT-5 Level (algorithmic progress) | 0.40 | 🟡 Moderate ⚠️ |
+| GPT-5 Level → AGI (agent transition) | 0.15 | 🟠 Weak ⚠️ |
+| AGI → Superintelligence (FOOM) | -0.10 | 🔴 Contested ⚠️ |
 
 ### Weakest Assumptions (Highest Uncertainty)
 

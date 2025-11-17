@@ -157,6 +157,128 @@ def generate_state_machine_summary(dag: Dict) -> str:
     return "\n".join(lines)
 
 
+def generate_dag_table_view(dag: Dict) -> str:
+    """Generate comprehensive table view of the entire DAG"""
+
+    lines = ["# AI2027 DAG: Complete Table View\n"]
+
+    # States table
+    lines.append("## States\n")
+    lines.append("| State | Time | Probability | Description | Key Variables |")
+    lines.append("|-------|------|-------------|-------------|---------------|")
+
+    # Sort by time
+    states_by_time = []
+    for node_id, node in dag['nodes'].items():
+        states_by_time.append((node.get('estimated_time', 'unknown'), node_id, node))
+    states_by_time.sort()
+
+    for time, node_id, node in states_by_time:
+        name = node['name']
+        prob = f"{node.get('probability', 0.0):.1f}"
+        desc = node['description'][:60] + "..." if len(node['description']) > 60 else node['description']
+
+        # Get top 2 key variables
+        vars_list = []
+        for var_name, var in list(node.get('variables', {}).items())[:2]:
+            if hasattr(var, 'get'):
+                vars_list.append(f"{var.get('name', var_name)}")
+        key_vars = ", ".join(vars_list) if vars_list else "—"
+
+        lines.append(f"| {name} | {time} | {prob} | {desc} | {key_vars} |")
+
+    lines.append("")
+
+    # Transitions table
+    lines.append("## Transitions (Causal Links)\n")
+    lines.append("| From → To | Trigger Event | Mechanism | Confidence | Status |")
+    lines.append("|-----------|---------------|-----------|------------|--------|")
+
+    # Sort by confidence (strongest first)
+    sorted_links = sorted(dag['links'].items(),
+                         key=lambda x: x[1]['epistemic_confidence'],
+                         reverse=True)
+
+    for link_id, link in sorted_links:
+        from_name = dag['nodes'][link['from_state']]['name']
+        to_name = dag['nodes'][link['to_state']]['name']
+        transition = f"{from_name[:20]}... → {to_name[:20]}..."
+
+        trigger = link['trigger_event'][:35] + "..." if len(link['trigger_event']) > 35 else link['trigger_event']
+        mechanism = link['mechanism'][:35] + "..." if len(link['mechanism']) > 35 else link['mechanism']
+        conf = link['epistemic_confidence']
+
+        # Color coding
+        if conf > 0.6:
+            status = "🟢 Strong"
+        elif conf > 0.3:
+            status = "🟡 Moderate"
+        elif conf > 0:
+            status = "🟠 Weak"
+        else:
+            status = "🔴 Contested"
+
+        if link.get('contested'):
+            status += " ⚠️"
+
+        lines.append(f"| {transition} | {trigger} | {mechanism} | {conf:.2f} | {status} |")
+
+    lines.append("")
+
+    # Key assumptions table
+    lines.append("## Key Assumptions (Sorted by Epistemic Score)\n")
+    lines.append("| Assumption | Score | Link | Evidence Type |")
+    lines.append("|------------|-------|------|---------------|")
+
+    # Collect all assumptions
+    all_assumptions = []
+    for link_id, link in dag['links'].items():
+        for assumption in link.get('assumptions', []):
+            all_assumptions.append({
+                'link_id': link_id,
+                'link_name': f"{dag['nodes'][link['from_state']]['name'][:15]} → {dag['nodes'][link['to_state']]['name'][:15]}",
+                'assumption': assumption
+            })
+
+    # Sort by score (weakest first for table)
+    all_assumptions.sort(key=lambda x: x['assumption']['epistemic_score'])
+
+    for item in all_assumptions[:12]:  # Show all 12
+        assump = item['assumption']
+        desc = assump['description'][:50] + "..." if len(assump['description']) > 50 else assump['description']
+        score = assump['epistemic_score']
+        link = item['link_name']
+
+        # Determine evidence type from citations
+        evidence_type = "Theoretical"
+        if assump.get('citations'):
+            first_citation = assump['citations'][0]['source']
+            if 'Epoch' in first_citation or 'Scaling' in first_citation:
+                evidence_type = "Empirical"
+            elif 'AI2027' in first_citation or 'Situational' in first_citation:
+                evidence_type = "Forecast"
+
+        lines.append(f"| {desc} | {score:.2f} | {link} | {evidence_type} |")
+
+    lines.append("")
+
+    # Summary stats
+    lines.append("## Summary Statistics\n")
+    confidences = [link['epistemic_confidence'] for link in dag['links'].values()]
+    avg_conf = sum(confidences) / len(confidences)
+    contested_count = sum(1 for l in dag['links'].values() if l.get('contested'))
+
+    lines.append(f"- **Total States:** {len(dag['nodes'])}")
+    lines.append(f"- **Total Transitions:** {len(dag['links'])}")
+    lines.append(f"- **Average Epistemic Confidence:** {avg_conf:.2f}")
+    lines.append(f"- **Contested Links:** {contested_count}/{len(dag['links'])} ({100*contested_count/len(dag['links']):.0f}%)")
+    lines.append(f"- **Strong Links (>0.6):** {sum(1 for c in confidences if c > 0.6)}")
+    lines.append(f"- **Moderate Links (0.3-0.6):** {sum(1 for c in confidences if 0.3 <= c <= 0.6)}")
+    lines.append(f"- **Weak Links (<0.3):** {sum(1 for c in confidences if c < 0.3)}")
+
+    return "\n".join(lines)
+
+
 def generate_epistemic_confidence_report(dag: Dict) -> str:
     """Report on overall epistemic confidence"""
 
@@ -243,6 +365,13 @@ def main():
     with open("research/ai_futures/analysis/epistemic_confidence.md", "w") as f:
         f.write(epistemic)
     print("   ✅ Saved to epistemic_confidence.md")
+
+    # Generate table view
+    print("\n6. Generating comprehensive table view...")
+    table_view = generate_dag_table_view(dag)
+    with open("research/ai_futures/analysis/dag_table_view.md", "w") as f:
+        f.write(table_view)
+    print("   ✅ Saved to dag_table_view.md")
 
     print("\n✅ All visualizations generated!")
     print("\nKey findings:")
