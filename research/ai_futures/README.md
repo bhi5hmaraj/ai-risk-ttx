@@ -21,7 +21,8 @@ This directory contains a structured analysis of the AI2027 forecast and related
 research/ai_futures/
 ├── scripts/
 │   ├── extract_causal_dag.py    # Builds the DAG from research
-│   └── visualize_dag.py          # Generates reports and diagrams
+│   ├── visualize_dag.py          # Generates reports and diagrams
+│   └── annotate_sources.py       # Adds inline DAG citations to source docs
 ├── analysis/
 │   ├── ai2027_causal_dag.json              # Full DAG in JSON format
 │   ├── dag_table_view.md                   # Comprehensive table view (states, transitions, assumptions)
@@ -31,6 +32,13 @@ research/ai_futures/
 │   ├── links_summary.md                    # Table of all causal links
 │   ├── state_machine_summary.md            # State-by-state walkthrough
 │   └── simulacra_integration_proposal.md   # DAG → Game mechanics mapping
+├── annotated/                    # Source documents with inline DAG citations
+│   ├── ai-2027.com_summary.md
+│   ├── ai-2027.com_research_compute-forecast.md
+│   ├── ai-2027.com_research_timelines-forecast.md
+│   ├── ai-2027.com_research_takeoff-forecast.md
+│   └── ai-2027.com_research_security-forecast.md
+├── ai-2027.com_*.md              # Original source documents (10 files)
 └── README.md                     # This file
 ```
 
@@ -187,6 +195,43 @@ python3 scripts/visualize_dag.py
 
 **Player Agency (-0.10):** "Recursive self-improvement / FOOM"
 → Game choice: High-risk endgame option (could win or lose immediately)
+
+### Annotated Source Documents
+
+**Location:** `annotated/` directory
+
+The original AI2027 source documents have been annotated with inline citations showing which claims feed into the causal DAG. Annotations use markdown blockquotes (>) with the format:
+
+```markdown
+> **[DAG Citation: Topic]** _Key claim or data point with emphasis on **important numbers**._
+```
+
+**Example annotation:**
+```markdown
+> **[DAG Citation: Compute Scaling]** _Training compute grows from GPT-4 (2e25 FLOP)
+> to 1000x GPT-4 (2e28 FLOP) by Dec 2027. This represents exponential scaling
+> of **3.4x/year** for leading labs._
+```
+
+**All citations include:**
+- **Topic tag** - Which DAG component the claim supports (e.g., "Compute Scaling", "Agent Automation", "FOOM")
+- **Direct quote or paraphrase** - The specific claim being referenced
+- **Emphasis** - Key numbers or claims highlighted in bold
+- **Source context** - Embedded in original document for full context
+
+**Annotated files:**
+- `annotated/ai-2027.com_summary.md` - Main scenario with 6 citations
+- `annotated/ai-2027.com_research_compute-forecast.md` - Compute scaling evidence (2 citations)
+- `annotated/ai-2027.com_research_timelines-forecast.md` - Algorithmic progress claims (1 citation)
+- `annotated/ai-2027.com_research_takeoff-forecast.md` - Agent transition & FOOM analysis (4 citations)
+- `annotated/ai-2027.com_research_security-forecast.md` - Espionage and security levels (2 citations)
+
+**To regenerate annotations:**
+```bash
+python3 scripts/annotate_sources.py
+```
+
+This creates/updates files in `annotated/` with 15 inline citations mapping to DAG nodes, links, and assumptions.
 
 ### Modifying the DAG
 
