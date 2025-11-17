@@ -15,7 +15,8 @@
     "reactflow": "^11.11.0",
     "plotly.js": "^2.35.2",
     "react-plotly.js": "^2.6.0",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.2",
+    "@squiggle-lang/squiggle-lang": "^0.9.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

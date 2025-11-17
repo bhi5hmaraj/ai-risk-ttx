@@ -9,18 +9,22 @@ This simulator faithfully represents the AI-2027 research in an interactive form
 - **Branch Point**: October 2027 critical decision (Race vs. Slowdown)
 - **Two Endings**: Race (AI takeover) vs. Slowdown (committee control)
 - **Quantitative Variables**: 10+ metrics that evolve dynamically based on AI-2027 research
+- **Probabilistic Forecasting**: Uses Squiggle language for uncertainty modeling
 
 ## Architecture
 
 **Data Layer (Parsimonious to AI-2027)**:
 - `simulation_model.json`: Complete state machine and variables
 - `engine/SimulationEngine.js`: Time-based simulation logic with dynamic rates
+- `engine/SquiggleIntegration.js`: Probabilistic forecasting with Squiggle
+- `models/squiggleModels.js`: Uncertainty models for transitions and variables
 
 **Presentation Layer**:
 - React 18 with hooks
 - Zustand for state management
 - React Flow for state machine visualization
 - Plotly for real-time graphs
+- Squiggle for probabilistic modeling
 
 ## Features
 
