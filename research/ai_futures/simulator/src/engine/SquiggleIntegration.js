@@ -5,7 +5,7 @@
  * instead of using deterministic point estimates.
  */
 
-import { run as runSquiggle } from '@squiggle-lang/squiggle-lang';
+import { run as runSquiggle } from '@quri/squiggle-lang';
 import { squiggleModels } from '../models/squiggleModels';
 
 class SquiggleIntegration {
