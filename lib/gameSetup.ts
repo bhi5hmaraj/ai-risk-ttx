@@ -72,7 +72,9 @@ export function selectInitialPlayers(
   const aiPool = roles.filter((r) => r.name !== selectedRoleName);
   const requested = opts?.aiCount != null ? opts.aiCount : GAME_CONFIG.MAX_AI_PLAYERS;
   const minForMode = (path === 'classic' || path === 'ai_safety') ? 3 : 0;
-  const limit = Math.max(minForMode, Math.min(requested, 5, aiPool.length));
+  // Allow up to configured max AI players for custom/public scenarios, keep classic/ai_safety at default
+  const hardCap = path === 'custom' ? GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM : GAME_CONFIG.MAX_AI_PLAYERS;
+  const limit = Math.max(minForMode, Math.min(requested, hardCap, aiPool.length));
   const limitedAI = aiPool.slice(0, limit);
   const ordered = [humanRole, ...limitedAI];
   const players = ordered.map((role, idx) => ({

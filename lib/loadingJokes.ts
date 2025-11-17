@@ -11,7 +11,7 @@ export const LOADING_JOKES = [
   "Taking the red pill... or blue pill? AI players are choosing.",
   "You think that's air you're breathing? Think again.",
   "Deja vu means they changed something in the matrix... or we're in round 2.",
-  "The Matrix has you... and also 5 AI players.",
+  "The Matrix has you... and also several AI players.",
   "I know kung fu. But the AI knows game theory.",
   "Follow the white rabbit... or just wait for the consequences.",
   "Unfortunately, no one can be told what the Matrix is... you have to compute it.",

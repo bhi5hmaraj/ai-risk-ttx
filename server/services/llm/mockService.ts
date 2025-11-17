@@ -10,6 +10,7 @@ import type {
   GameSetup,
 } from "../../types/core";
 import type { AIDebriefResponse } from "../../types/core";
+import { GAME_CONFIG } from '../../../gameConfig';
 import type { LLMService } from './types';
 import type { GameChatSession } from '../chatSession';
 
@@ -97,17 +98,28 @@ export const LLM_MOCK: LLMService = {
     const r = rng(gameState.round || 1);
     return { publicScoreUpdate: -3 - Math.floor(r() * 3) };
   },
-  async generateCustomScenario(scenarioDescription: string): Promise<GameSetup | null> {
+  async generateCustomScenario(scenarioDescription: string, aiPlayers?: number): Promise<GameSetup | null> {
+    const targetAI = Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, Math.floor(aiPlayers ?? GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM)));
+    const totalStakeholders = Math.max(5, Math.min(1 + GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, targetAI + 1));
+    const base = [
+      { name: 'Election Commissioner', icon: '🗳️', publicObjective: 'Ensure fair election', hiddenObjective: 'Avoid scandal' },
+      { name: 'Tech CEO', icon: '💻', publicObjective: 'Maintain platform stability', hiddenObjective: 'Protect brand' },
+      { name: 'Journalist', icon: '📰', publicObjective: 'Inform public', hiddenObjective: 'Break exclusive story' },
+      { name: 'Federal Regulator', icon: '🏛️', publicObjective: 'Uphold law', hiddenObjective: 'Avoid political backlash' },
+      { name: 'Cybersecurity Chief', icon: '🛡️', publicObjective: 'Protect critical systems', hiddenObjective: 'Secure budget and mandate' },
+      { name: 'Opposition Strategist', icon: '🎯', publicObjective: 'Hold power to account', hiddenObjective: 'Exploit missteps for advantage' },
+      { name: 'Media Platform Policy Lead', icon: '📡', publicObjective: 'Ensure fair moderation', hiddenObjective: 'Minimize regulatory risk' },
+      { name: 'Public Health Director', icon: '🏥', publicObjective: 'Safeguard population health', hiddenObjective: 'Preserve agency credibility' },
+      { name: 'Energy Grid Operator', icon: '⚡', publicObjective: 'Keep lights on', hiddenObjective: 'Avoid costly upgrades' },
+      { name: 'Foreign Influence Coordinator', icon: '🌐', publicObjective: 'Counter external threats', hiddenObjective: 'Expand international remit' },
+      { name: 'Civil Liberties Advocate', icon: '🕊️', publicObjective: 'Protect rights', hiddenObjective: 'Set legal precedent' },
+    ];
+    const stakeholders = base.slice(0, totalStakeholders);
     return {
       scenarioTitle: 'Mock Scenario',
       scenarioDescription: scenarioDescription || 'A mock scenario for local testing.',
       coreMetric: { name: 'Public Trust', description: 'Trust in institutions', value: 50 },
-      stakeholders: [
-        { name: 'Election Commissioner', icon: '🗳️', publicObjective: 'Ensure fair election', hiddenObjective: 'Avoid scandal' },
-        { name: 'Tech CEO', icon: '💻', publicObjective: 'Maintain platform stability', hiddenObjective: 'Protect brand' },
-        { name: 'Journalist', icon: '📰', publicObjective: 'Inform public', hiddenObjective: 'Break exclusive story' },
-        { name: 'Federal Regulator', icon: '🏛️', publicObjective: 'Uphold law', hiddenObjective: 'Avoid political backlash' },
-      ],
+      stakeholders,
     };
   },
   async generateInitialScenarioChat(_session: GameChatSession): Promise<AIConsequenceResponse | null> {

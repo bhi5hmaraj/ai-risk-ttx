@@ -14,6 +14,7 @@ import { useGameActions } from '@/hooks/useGameActions';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useActionStore } from '@/stores/actionStore';
 import { generateCustomScenario } from '@/services/llmApiClient';
+import { GAME_CONFIG } from '@/gameConfig';
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function LobbyPage() {
       setLoading(true, 'Generating custom scenario...');
 
       console.log('[LobbyPage] Calling generateCustomScenario API...');
-      const result = await generateCustomScenario(customScenario);
+      const result = await generateCustomScenario(customScenario, GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM);
       console.log('[LobbyPage] API result:', result);
 
       if (result) {

@@ -9,4 +9,13 @@ there is a diff between proxy and direct, sometimes there are db not found error
 
 # Auth stuff 
 
-NEXTAUTH_URL should be set 
+clerk was the best decision!! 
+
+we are currently on ai-risk-ttx , once simulacra is up we can modify 
+
+
+
+# TODO 
+
+- clean the env vars mess in simulacra 
+

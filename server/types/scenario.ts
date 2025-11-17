@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GAME_CONFIG } from '../../gameConfig';
 
 /**
  * Canonical Scenario Schema (Phase 1)
@@ -75,7 +76,7 @@ export const CanonicalGameSetupSchema = z.object({
   // Optional game configuration overrides
   // Use .nullable() to allow explicit null or omission
   maxRounds: z.number().int().min(1).max(50).nullable(),
-  maxAIPlayers: z.number().int().min(0).max(10).nullable(),
+  maxAIPlayers: z.number().int().min(0).max(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM).nullable(),
 });
 
 // Type exports for TypeScript consumers (using plain interfaces for compatibility)

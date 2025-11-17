@@ -162,7 +162,7 @@ const AITurnSchema = {
   required: ['options', 'chosenActions', 'reasoning']
 } as const;
 
-const GameSetupSchema = {
+const buildGameSetupSchema = (maxAIPlayers: number) => ({
     type: "object",
     properties: {
         scenarioTitle: { type: "string", description: "A short, catchy title for the scenario." },
@@ -178,9 +178,9 @@ const GameSetupSchema = {
         },
         stakeholders: {
             type: "array",
-            description: "A list of 4 to 6 relevant and distinct stakeholder roles for this scenario. Include a balanced cast with both protagonists and antagonists, and mix individuals and institutions.",
-            minItems: 4,
-            maxItems: 6,
+            description: `A list of 5 to ${1 + maxAIPlayers} relevant and distinct stakeholder roles for this scenario. Include a balanced cast with both protagonists and antagonists, and mix individuals and institutions.`,
+            minItems: 5,
+            maxItems: 1 + maxAIPlayers,
             items: {
                 type: "object",
                 properties: {
@@ -194,7 +194,7 @@ const GameSetupSchema = {
         }
     },
     required: ['scenarioTitle', 'scenarioDescription', 'coreMetric', 'stakeholders']
-} as const;
+} as const);
 
 
 /**
@@ -572,7 +572,9 @@ export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
     return { prompt, schema: AICounterfactualResponseSchema };
 };
 
-export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) => {
+export const getCustomScenarioPromptAndSchema = (scenarioDescription: string, aiPlayers?: number) => {
+    const desiredAI = Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, Math.floor(aiPlayers ?? GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM)));
+    const stakeholdersMax = 1 + desiredAI;
     const prompt = `
       You are a world-class Game Designer and Storyteller. Your task is to take a user's idea for a crisis and transform it into a complete, playable setup for a strategic simulation game.
 
@@ -586,8 +588,8 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
       2.  **Core Metric:**
           -   Invent a central game score that is thematic to the scenario. Instead of "Democratic Legitimacy," it could be "Global Economic Stability," "Public Health Confidence," or "Inter-species Trust."
           -   The 'initialValue' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
-      3.  **Stakeholders (4-6 Roles):**
-          -   Create a cast of 4 to 6 distinct, believable stakeholder roles. These should be the key players in the crisis.
+      3.  **Stakeholders (target ${stakeholdersMax} roles):**
+          -   Create a cast of between 5 and ${stakeholdersMax} distinct, believable stakeholder roles (prefer exactly ${stakeholdersMax} when plausible). These should be the key players in the crisis.
           -   Include a balanced mix:
               • 2–3 protagonists (public‑minded)
               • 1–2 antagonists/adversaries (e.g., rival state operator, troll‑farm lead, rogue executive)
@@ -600,7 +602,7 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
 
       Be creative, insightful, and strategic in your design. The quality of the game depends on the rich conflict you build into this setup.
     `;
-    return { prompt, schema: GameSetupSchema };
+    return { prompt, schema: buildGameSetupSchema(desiredAI) };
 };
 
 /**

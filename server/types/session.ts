@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GAME_CONFIG } from '../../gameConfig';
 import {
   CoreMetricSchema,
   CanonicalGameSetupSchema,
@@ -114,7 +115,7 @@ export const CreateSessionRequestSchema = z.object({
   // Phase 1: Uses canonical schema from scenario.ts
   setup: GameSetupSchema,
   maxRounds: z.number().int().min(1).max(50).optional(),
-  aiPlayers: z.number().int().min(1).max(10).optional(),
+  aiPlayers: z.number().int().min(1).max(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM).optional(),
 });
 
 export const SessionSnapshotSchema = z.object({
@@ -129,7 +130,7 @@ export const SessionSnapshotSchema = z.object({
 export const PatchSessionRequestSchema = z.object({
   patch: z.object({
     maxRounds: z.number().int().min(1).max(50).optional(),
-    aiPlayers: z.number().int().min(0).max(10).optional(),
+    aiPlayers: z.number().int().min(0).max(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM).optional(),
   }),
 });
 

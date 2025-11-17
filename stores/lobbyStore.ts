@@ -6,7 +6,7 @@ interface LobbyStore {
   gamePath: 'classic' | 'custom' | 'ai_safety' | null;
   gameSetup: GameSetup | null;
   customScenario: string;
-  maxAIPlayers: number; // 0..5
+  maxAIPlayers: number; // 0..MAX (custom scenarios allow more AI)
   maxRounds: number;    // 1..10
   isFromPublicCatalog: boolean; // True if scenario was loaded from public catalog
   setSelectedRoleName: (name: string | null) => void;
@@ -31,8 +31,10 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   setGamePath: (path) => set({ gamePath: path }),
   setGameSetup: (setup) => set({ gameSetup: setup }),
   setCustomScenario: (scenario) => set({ customScenario: scenario }),
-  setMaxAIPlayers: (n) => set({ maxAIPlayers: Math.max(0, Math.min(5, Math.floor(n))) }),
+  // Clamp UI input; classic/ai_safety still hard-cap to GAME_CONFIG.MAX_AI_PLAYERS elsewhere
+  setMaxAIPlayers: (n) => set({ maxAIPlayers: Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, Math.floor(n))) }),
   setMaxRounds: (n) => set({ maxRounds: Math.max(1, Math.min(10, Math.floor(n))) }),
   setIsFromPublicCatalog: (value) => set({ isFromPublicCatalog: value }),
   reset: () => set({ selectedRoleName: null, gamePath: null, gameSetup: null, customScenario: '', maxAIPlayers: 5, maxRounds: 5, isFromPublicCatalog: false }),
 }));
+import { GAME_CONFIG } from '@/gameConfig';
