@@ -1,67 +1,237 @@
 {
   "current_2024": {
     "id": "current_2024",
-    "name": "Current State",
-    "description": "Late 2024 - GPT-4 level models, ~1e25 FLOP training runs",
+    "name": "Current State (Late 2024)",
+    "description": "GPT-4 level models, ~1e25 FLOP training runs. Decision point: How should AI development proceed?",
     "time": "Q4 2024",
     "probability": 1.0,
     "isStartState": true,
-    "isEndState": false
+    "isEndState": false,
+    "visibleByDefault": true
   },
-  "gpt5_level": {
-    "id": "gpt5_level",
-    "name": "GPT-5 Level (~College Graduate)",
-    "description": "Models can do most knowledge work at graduate level",
-    "time": "2025-2026",
+
+  "international_coordination": {
+    "id": "international_coordination",
+    "name": "International Coordination Attempt",
+    "description": "Major powers attempt to establish AI safety framework and compute limits",
+    "time": "Early 2025",
+    "probability": 0.4,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "competitive_development": {
+    "id": "competitive_development",
+    "name": "Competitive Development",
+    "description": "Companies and nations race ahead without coordination",
+    "time": "Early 2025",
+    "probability": 0.6,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "gpt5_level_coordinated": {
+    "id": "gpt5_level_coordinated",
+    "name": "GPT-5 Level (Coordinated Path)",
+    "description": "Graduate-level AI with safety protocols and monitoring in place",
+    "time": "Mid 2025",
+    "probability": 0.5,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "gpt5_level_race": {
+    "id": "gpt5_level_race",
+    "name": "GPT-5 Level (Race Path)",
+    "description": "Graduate-level AI achieved quickly, weak safety measures",
+    "time": "Mid 2025",
     "probability": 0.7,
     "isStartState": false,
-    "isEndState": false
+    "isEndState": false,
+    "visibleByDefault": false
   },
-  "race_dynamics": {
-    "id": "race_dynamics",
-    "name": "US-China AI Race",
-    "description": "Competitive dynamics, reduced safety margins, espionage",
+
+  "capability_plateau": {
+    "id": "capability_plateau",
+    "name": "Capability Plateau",
+    "description": "Compute limits slow progress, time to improve alignment",
+    "time": "2025-2026",
+    "probability": 0.3,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "safety_breakthrough": {
+    "id": "safety_breakthrough",
+    "name": "Alignment Breakthrough",
+    "description": "Major progress in interpretability and alignment techniques",
+    "time": "2026",
+    "probability": 0.4,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "arms_race_acceleration": {
+    "id": "arms_race_acceleration",
+    "name": "Arms Race Acceleration",
+    "description": "US-China competition intensifies, safety margins erode",
     "time": "2025-2026",
     "probability": 0.6,
     "isStartState": false,
-    "isEndState": false
+    "isEndState": false,
+    "visibleByDefault": false
   },
-  "agi_2027": {
-    "id": "agi_2027",
-    "name": "AGI / Superhuman AI Researcher",
-    "description": "AI systems can automate AI research itself",
-    "time": "Early-Mid 2027",
+
+  "espionage_crisis": {
+    "id": "espionage_crisis",
+    "name": "Espionage Crisis",
+    "description": "Model weights stolen, proliferation of powerful AI",
+    "time": "2026",
     "probability": 0.5,
     "isStartState": false,
-    "isEndState": false
+    "isEndState": false,
+    "visibleByDefault": false
   },
-  "superintelligence": {
-    "id": "superintelligence",
-    "name": "Superintelligence (ASI)",
-    "description": "Recursive self-improvement, far beyond human capabilities",
-    "time": "Late 2027",
-    "probability": 0.3,
+
+  "regulatory_framework": {
+    "id": "regulatory_framework",
+    "name": "Regulatory Framework Established",
+    "description": "International compute governance and safety requirements",
+    "time": "2026",
+    "probability": 0.35,
     "isStartState": false,
-    "isEndState": false
+    "isEndState": false,
+    "visibleByDefault": false
   },
+
+  "agi_cautious": {
+    "id": "agi_cautious",
+    "name": "AGI (Cautious Deployment)",
+    "description": "Superhuman AI researcher with strong safety measures",
+    "time": "Late 2026",
+    "probability": 0.4,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "agi_race": {
+    "id": "agi_race",
+    "name": "AGI (Race Conditions)",
+    "description": "Superhuman AI researcher deployed rapidly, weak alignment",
+    "time": "Early 2027",
+    "probability": 0.5,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "narrow_asi_alignment": {
+    "id": "narrow_asi_alignment",
+    "name": "Narrow ASI Alignment",
+    "description": "Superintelligent systems in specific domains, careful scaling",
+    "time": "Mid 2027",
+    "probability": 0.45,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "recursive_improvement": {
+    "id": "recursive_improvement",
+    "name": "Recursive Self-Improvement",
+    "description": "ASI begins rapid self-modification, alignment uncertain",
+    "time": "Mid 2027",
+    "probability": 0.4,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "failed_containment": {
+    "id": "failed_containment",
+    "name": "Failed Containment",
+    "description": "ASI breaks safety protocols, pursuing misaligned objectives",
+    "time": "Late 2027",
+    "probability": 0.5,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
+  "controlled_asi": {
+    "id": "controlled_asi",
+    "name": "Controlled ASI Development",
+    "description": "Superintelligence under meaningful human oversight",
+    "time": "Late 2027",
+    "probability": 0.35,
+    "isStartState": false,
+    "isEndState": false,
+    "visibleByDefault": false
+  },
+
   "extinction": {
     "id": "extinction",
-    "name": "Extinction (Race Ending)",
-    "description": "Misaligned ASI releases bioweapon, human extinction",
+    "name": "Extinction Event",
+    "description": "Misaligned ASI causes human extinction (bioweapon, nanotech, etc)",
     "time": "Late 2027",
     "probability": 0.0,
     "isStartState": false,
     "isEndState": true,
-    "outcomeType": "catastrophic"
+    "outcomeType": "catastrophic",
+    "visibleByDefault": false
   },
+
+  "partial_alignment": {
+    "id": "partial_alignment",
+    "name": "Partial Alignment Success",
+    "description": "ASI somewhat aligned but with concerning failure modes",
+    "time": "Late 2027",
+    "probability": 0.0,
+    "isStartState": false,
+    "isEndState": true,
+    "outcomeType": "mixed",
+    "visibleByDefault": false
+  },
+
   "aligned_committee": {
     "id": "aligned_committee",
-    "name": "Committee Control (Slowdown Ending)",
-    "description": "ASI aligned to oversight committee, power concentrated",
+    "name": "Committee Control (Best Case)",
+    "description": "ASI aligned to international oversight committee, distributed power",
     "time": "Late 2027",
     "probability": 0.0,
     "isStartState": false,
     "isEndState": true,
-    "outcomeType": "success"
+    "outcomeType": "success",
+    "visibleByDefault": false
+  },
+
+  "corporate_monopoly": {
+    "id": "corporate_monopoly",
+    "name": "Corporate ASI Monopoly",
+    "description": "Single company controls ASI, massive power concentration",
+    "time": "Late 2027",
+    "probability": 0.0,
+    "isStartState": false,
+    "isEndState": true,
+    "outcomeType": "mixed",
+    "visibleByDefault": false
+  },
+
+  "civilizational_collapse": {
+    "id": "civilizational_collapse",
+    "name": "Civilizational Collapse",
+    "description": "AI-accelerated societal breakdown, not extinction but severe",
+    "time": "2027-2028",
+    "probability": 0.0,
+    "isStartState": false,
+    "isEndState": true,
+    "outcomeType": "catastrophic",
+    "visibleByDefault": false
   }
 }
