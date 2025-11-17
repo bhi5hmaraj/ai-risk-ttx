@@ -1,0 +1,826 @@
+{
+  "nodes": {
+    "current_2024": {
+      "id": "current_2024",
+      "name": "Current State (Late 2024)",
+      "description": "GPT-4 level models, ~1e25 FLOP training runs",
+      "variables": {
+        "compute": {
+          "name": "compute",
+          "description": "Leading AI lab's effective compute (FLOP)",
+          "type": "continuous",
+          "unit": "FLOP",
+          "current_value": 1e+25,
+          "uncertainty": "\u00b150%"
+        },
+        "algorithmic_efficiency": {
+          "name": "algorithmic_efficiency",
+          "description": "Algorithmic efficiency relative to 2024 baseline",
+          "type": "continuous",
+          "unit": "relative",
+          "current_value": 1.0,
+          "uncertainty": "\u00b130%"
+        },
+        "capability_level": {
+          "name": "capability_level",
+          "description": "AI capability benchmark (human-equivalent)",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "GPT-4 level (~smart high schooler)",
+          "uncertainty": "subjective mapping"
+        },
+        "espionage_risk": {
+          "name": "espionage_risk",
+          "description": "Probability of model weights being stolen",
+          "type": "continuous",
+          "unit": "probability",
+          "current_value": 0.5,
+          "uncertainty": "high uncertainty"
+        },
+        "regulatory_stringency": {
+          "name": "regulatory_stringency",
+          "description": "Degree of AI regulation (0=none, 1=full pause)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.2,
+          "uncertainty": "varies by jurisdiction"
+        },
+        "open_source_proliferation": {
+          "name": "open_source_proliferation",
+          "description": "Availability of capable open models",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "mid-level diffusion",
+          "uncertainty": "depends on policy"
+        },
+        "us_china_relations": {
+          "name": "us_china_relations",
+          "description": "Trust/cooperation level (0=adversarial, 1=allied)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.3,
+          "uncertainty": "geopolitical volatility"
+        }
+      },
+      "incoming_links": [],
+      "outgoing_links": [
+        "compute_scaling",
+        "algo_progress",
+        "espionage_begins"
+      ],
+      "estimated_time": "Q4 2024",
+      "probability": 1.0
+    },
+    "gpt5_level": {
+      "id": "gpt5_level",
+      "name": "GPT-5 Level (~College Graduate)",
+      "description": "Models can do most knowledge work at graduate level",
+      "variables": {
+        "compute": {
+          "name": "compute",
+          "description": "~1e26 FLOP",
+          "type": "continuous",
+          "unit": "FLOP",
+          "current_value": 1e+26,
+          "uncertainty": null
+        },
+        "algorithmic_efficiency": {
+          "name": "algorithmic_efficiency",
+          "description": "Algorithmic efficiency relative to 2024 baseline",
+          "type": "continuous",
+          "unit": "relative",
+          "current_value": 1.0,
+          "uncertainty": "\u00b130%"
+        },
+        "capability_level": {
+          "name": "capability_level",
+          "description": "College graduate level",
+          "type": "categorical",
+          "unit": null,
+          "current_value": null,
+          "uncertainty": null
+        },
+        "espionage_risk": {
+          "name": "espionage_risk",
+          "description": "Probability of model weights being stolen",
+          "type": "continuous",
+          "unit": "probability",
+          "current_value": 0.5,
+          "uncertainty": "high uncertainty"
+        },
+        "regulatory_stringency": {
+          "name": "regulatory_stringency",
+          "description": "Degree of AI regulation (0=none, 1=full pause)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.2,
+          "uncertainty": "varies by jurisdiction"
+        },
+        "open_source_proliferation": {
+          "name": "open_source_proliferation",
+          "description": "Availability of capable open models",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "mid-level diffusion",
+          "uncertainty": "depends on policy"
+        },
+        "us_china_relations": {
+          "name": "us_china_relations",
+          "description": "Trust/cooperation level (0=adversarial, 1=allied)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.3,
+          "uncertainty": "geopolitical volatility"
+        }
+      },
+      "incoming_links": [
+        "compute_scaling",
+        "algo_progress"
+      ],
+      "outgoing_links": [
+        "to_agi",
+        "to_race_dynamics"
+      ],
+      "estimated_time": "2025-2026",
+      "probability": 0.7
+    },
+    "agi_2027": {
+      "id": "agi_2027",
+      "name": "AGI / Superhuman AI Researcher",
+      "description": "AI systems can automate AI research itself",
+      "variables": {
+        "compute": {
+          "name": "compute",
+          "description": "~1e27 FLOP",
+          "type": "continuous",
+          "unit": "FLOP",
+          "current_value": 1e+27,
+          "uncertainty": null
+        },
+        "algorithmic_efficiency": {
+          "name": "algorithmic_efficiency",
+          "description": "Algorithmic efficiency relative to 2024 baseline",
+          "type": "continuous",
+          "unit": "relative",
+          "current_value": 1.0,
+          "uncertainty": "\u00b130%"
+        },
+        "capability_level": {
+          "name": "capability_level",
+          "description": "Superhuman researcher",
+          "type": "categorical",
+          "unit": null,
+          "current_value": null,
+          "uncertainty": null
+        },
+        "espionage_risk": {
+          "name": "espionage_risk",
+          "description": "Probability of model weights being stolen",
+          "type": "continuous",
+          "unit": "probability",
+          "current_value": 0.5,
+          "uncertainty": "high uncertainty"
+        },
+        "regulatory_stringency": {
+          "name": "regulatory_stringency",
+          "description": "Degree of AI regulation (0=none, 1=full pause)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.2,
+          "uncertainty": "varies by jurisdiction"
+        },
+        "open_source_proliferation": {
+          "name": "open_source_proliferation",
+          "description": "Availability of capable open models",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "mid-level diffusion",
+          "uncertainty": "depends on policy"
+        },
+        "us_china_relations": {
+          "name": "us_china_relations",
+          "description": "Trust/cooperation level (0=adversarial, 1=allied)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.3,
+          "uncertainty": "geopolitical volatility"
+        }
+      },
+      "incoming_links": [
+        "to_agi"
+      ],
+      "outgoing_links": [
+        "to_foom",
+        "to_misalignment"
+      ],
+      "estimated_time": "Early-Mid 2027",
+      "probability": 0.5
+    },
+    "superintelligence": {
+      "id": "superintelligence",
+      "name": "Superintelligence (ASI)",
+      "description": "Recursive self-improvement, far beyond human",
+      "variables": {
+        "compute": {
+          "name": "compute",
+          "description": "Leading AI lab's effective compute (FLOP)",
+          "type": "continuous",
+          "unit": "FLOP",
+          "current_value": 1e+25,
+          "uncertainty": "\u00b150%"
+        },
+        "algorithmic_efficiency": {
+          "name": "algorithmic_efficiency",
+          "description": "Algorithmic efficiency relative to 2024 baseline",
+          "type": "continuous",
+          "unit": "relative",
+          "current_value": 1.0,
+          "uncertainty": "\u00b130%"
+        },
+        "capability_level": {
+          "name": "capability_level",
+          "description": "Vastly superhuman",
+          "type": "categorical",
+          "unit": null,
+          "current_value": null,
+          "uncertainty": null
+        },
+        "espionage_risk": {
+          "name": "espionage_risk",
+          "description": "Probability of model weights being stolen",
+          "type": "continuous",
+          "unit": "probability",
+          "current_value": 0.5,
+          "uncertainty": "high uncertainty"
+        },
+        "regulatory_stringency": {
+          "name": "regulatory_stringency",
+          "description": "Degree of AI regulation (0=none, 1=full pause)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.2,
+          "uncertainty": "varies by jurisdiction"
+        },
+        "open_source_proliferation": {
+          "name": "open_source_proliferation",
+          "description": "Availability of capable open models",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "mid-level diffusion",
+          "uncertainty": "depends on policy"
+        },
+        "us_china_relations": {
+          "name": "us_china_relations",
+          "description": "Trust/cooperation level (0=adversarial, 1=allied)",
+          "type": "continuous",
+          "unit": "normalized",
+          "current_value": 0.3,
+          "uncertainty": "geopolitical volatility"
+        }
+      },
+      "incoming_links": [
+        "to_foom"
+      ],
+      "outgoing_links": [],
+      "estimated_time": "Late 2027",
+      "probability": 0.3
+    },
+    "race_dynamics": {
+      "id": "race_dynamics",
+      "name": "US-China AI Race",
+      "description": "Competitive dynamics, reduced safety margins",
+      "variables": {
+        "compute": {
+          "name": "compute",
+          "description": "Leading AI lab's effective compute (FLOP)",
+          "type": "continuous",
+          "unit": "FLOP",
+          "current_value": 1e+25,
+          "uncertainty": "\u00b150%"
+        },
+        "algorithmic_efficiency": {
+          "name": "algorithmic_efficiency",
+          "description": "Algorithmic efficiency relative to 2024 baseline",
+          "type": "continuous",
+          "unit": "relative",
+          "current_value": 1.0,
+          "uncertainty": "\u00b130%"
+        },
+        "capability_level": {
+          "name": "capability_level",
+          "description": "AI capability benchmark (human-equivalent)",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "GPT-4 level (~smart high schooler)",
+          "uncertainty": "subjective mapping"
+        },
+        "espionage_risk": {
+          "name": "espionage_risk",
+          "description": "Probability of model weights being stolen",
+          "type": "continuous",
+          "unit": "probability",
+          "current_value": 0.5,
+          "uncertainty": "high uncertainty"
+        },
+        "regulatory_stringency": {
+          "name": "regulatory_stringency",
+          "description": "0.1 (minimal)",
+          "type": "continuous",
+          "unit": null,
+          "current_value": null,
+          "uncertainty": null
+        },
+        "open_source_proliferation": {
+          "name": "open_source_proliferation",
+          "description": "Availability of capable open models",
+          "type": "categorical",
+          "unit": null,
+          "current_value": "mid-level diffusion",
+          "uncertainty": "depends on policy"
+        },
+        "us_china_relations": {
+          "name": "us_china_relations",
+          "description": "0.1 (hostile)",
+          "type": "continuous",
+          "unit": null,
+          "current_value": null,
+          "uncertainty": null
+        }
+      },
+      "incoming_links": [
+        "to_race_dynamics",
+        "espionage_revealed"
+      ],
+      "outgoing_links": [
+        "race_to_agi"
+      ],
+      "estimated_time": "2025-2026",
+      "probability": 0.6
+    }
+  },
+  "links": {
+    "compute_scaling": {
+      "id": "compute_scaling",
+      "from_state": "current_2024",
+      "to_state": "gpt5_level",
+      "trigger_event": "Continued investment in larger training runs",
+      "mechanism": "Exponential scaling: compute doubles every ~6 months",
+      "time_scale": "6-12 months",
+      "assumptions": [
+        {
+          "id": "assume_compute_1",
+          "description": "Compute will continue to scale exponentially (Moore's law + investment)",
+          "epistemic_score": 0.7,
+          "rationale": "Historical trend 2012-2024, TSMC roadmaps, VC funding levels support this",
+          "citations": [
+            {
+              "source": "AI2027 Compute Forecast",
+              "url": "https://ai-2027.com/research/compute-forecast",
+              "snippet": "By end of 2027, expect 1000x GPT-4 compute levels",
+              "page": null
+            },
+            {
+              "source": "Situational Awareness",
+              "url": "https://situational-awareness.ai",
+              "snippet": "Compute scaling 0.5 OOMs/year from 2012-2024",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Data center power constraints",
+            "GPU manufacturing bottlenecks"
+          ]
+        },
+        {
+          "id": "assume_compute_2",
+          "description": "Scaling laws continue to hold (no diminishing returns)",
+          "epistemic_score": 0.3,
+          "rationale": "Empirically held so far, but theoretical basis weak. Chinchilla scaling suggests continued gains.",
+          "citations": [
+            {
+              "source": "Scaling Laws Paper",
+              "url": null,
+              "snippet": "Performance scales as power law of compute, data, parameters",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Data wall concerns",
+            "Sample efficiency limits"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "type": "empirical",
+          "description": "Historical compute growth 2012-2024",
+          "strength": 0.9,
+          "citations": [
+            {
+              "source": "AI and Compute (OpenAI)",
+              "url": null,
+              "snippet": "Training compute doubled ~every 6 months",
+              "page": null
+            }
+          ]
+        },
+        {
+          "type": "precedent",
+          "description": "TSMC 2nm node on track for 2025",
+          "strength": 0.7,
+          "citations": [
+            {
+              "source": "TSMC Roadmap",
+              "url": null,
+              "snippet": "2nm fabrication scheduled 2025",
+              "page": null
+            }
+          ]
+        }
+      ],
+      "epistemic_confidence": 0.6,
+      "nli_consistency": 0.8,
+      "claimed_by": [
+        "AI2027",
+        "Situational Awareness",
+        "Epoch AI"
+      ],
+      "contested": false,
+      "alternative_paths": null
+    },
+    "algo_progress": {
+      "id": "algo_progress",
+      "from_state": "current_2024",
+      "to_state": "gpt5_level",
+      "trigger_event": "Continued ML research yields efficiency gains",
+      "mechanism": "Algorithmic improvements: ~0.5 OOMs/year effective compute gain",
+      "time_scale": "12-24 months",
+      "assumptions": [
+        {
+          "id": "assume_algo_1",
+          "description": "Algorithmic progress continues at historical rates (~0.5 OOMs/year)",
+          "epistemic_score": 0.4,
+          "rationale": "Empirical trend 2012-2024, but uncertain if sustainable. Low-hanging fruit may be exhausted.",
+          "citations": [
+            {
+              "source": "AI2027 Algorithmic Progress",
+              "url": null,
+              "snippet": "Assume algorithmic progress 50% of total progress in 2024",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Diminishing returns arguments",
+            "Transformer architecture plateau concerns"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "type": "empirical",
+          "description": "Historical algorithmic gains (GPT-2 \u2192 GPT-3 \u2192 GPT-4)",
+          "strength": 0.6,
+          "citations": [
+            {
+              "source": "Epoch AI",
+              "url": null,
+              "snippet": "Consistent algorithmic progress observed",
+              "page": null
+            }
+          ]
+        }
+      ],
+      "epistemic_confidence": 0.4,
+      "nli_consistency": 0.6,
+      "claimed_by": [
+        "AI2027",
+        "Epoch AI"
+      ],
+      "contested": true,
+      "alternative_paths": null
+    },
+    "to_agi": {
+      "id": "to_agi",
+      "from_state": "gpt5_level",
+      "to_state": "agi_2027",
+      "trigger_event": "Scaffolding + unhobbling + agentic capabilities emerge",
+      "mechanism": "Models become agents (long-horizon planning, tool use, self-correction)",
+      "time_scale": "12-18 months",
+      "assumptions": [
+        {
+          "id": "assume_agi_1",
+          "description": "Chatbot \u2192 Agent transition happens smoothly via scaffolding",
+          "epistemic_score": 0.2,
+          "rationale": "Speculative. Some evidence from AutoGPT, but reliable agency unproven.",
+          "citations": [
+            {
+              "source": "Situational Awareness",
+              "url": null,
+              "snippet": "By 2027, models will be agents like coworkers, not chatbots",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Reliability concerns",
+            "Long-horizon planning difficulties"
+          ]
+        },
+        {
+          "id": "assume_agi_2",
+          "description": "AGI can automate AI research (ML engineering, theory, debugging)",
+          "epistemic_score": 0.1,
+          "rationale": "Highly speculative. Depends on breadth of capabilities.",
+          "citations": [
+            {
+              "source": "AI2027",
+              "url": null,
+              "snippet": "Hundreds of millions of AGIs automate AI research",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Creative research requirements",
+            "Reliability at scale"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "type": "theoretical",
+          "description": "If models can do ML tasks at human level, can likely automate research",
+          "strength": 0.3,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": 0.15,
+      "nli_consistency": 0.4,
+      "claimed_by": [
+        "AI2027",
+        "Situational Awareness"
+      ],
+      "contested": true,
+      "alternative_paths": null
+    },
+    "to_foom": {
+      "id": "to_foom",
+      "from_state": "agi_2027",
+      "to_state": "superintelligence",
+      "trigger_event": "AGI systems recursively self-improve",
+      "mechanism": "Automated AI research compresses decades into months/weeks",
+      "time_scale": "weeks to months",
+      "assumptions": [
+        {
+          "id": "assume_foom_1",
+          "description": "Recursive self-improvement is possible and fast",
+          "epistemic_score": -0.3,
+          "rationale": "Highly speculative. No empirical evidence. Depends on 'low-hanging fruit' in AI research.",
+          "citations": [
+            {
+              "source": "AI2027",
+              "url": null,
+              "snippet": "Compress decade of algorithmic progress into \u22641 year",
+              "page": null
+            }
+          ],
+          "contested_by": [
+            "Most AI researchers",
+            "Diminishing returns arguments"
+          ]
+        },
+        {
+          "id": "assume_foom_2",
+          "description": "Hardware can support massive parallelization",
+          "epistemic_score": 0.5,
+          "rationale": "Plausible if compute is available. Depends on parallelization efficiency.",
+          "citations": [
+            {
+              "source": "AI2027",
+              "url": null,
+              "snippet": "Deploy 1M copies at 50x human speed using 6% of compute",
+              "page": null
+            }
+          ],
+          "contested_by": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "theoretical",
+          "description": "If research can be automated, parallelization enables speedup",
+          "strength": 0.4,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": -0.1,
+      "nli_consistency": 0.2,
+      "claimed_by": [
+        "AI2027"
+      ],
+      "contested": true,
+      "alternative_paths": null
+    },
+    "espionage_begins": {
+      "id": "espionage_begins",
+      "from_state": "current_2024",
+      "to_state": "race_dynamics",
+      "trigger_event": "China recognizes strategic importance of AGI",
+      "mechanism": "Full espionage apparatus targets US AI labs",
+      "time_scale": "ongoing, intensifies by 2025",
+      "assumptions": [
+        {
+          "id": "assume_espionage_1",
+          "description": "China will pursue espionage aggressively once AGI importance is clear",
+          "epistemic_score": 0.6,
+          "rationale": "Historical precedent (nuclear weapons, other strategic tech). CCP strategic culture.",
+          "citations": [
+            {
+              "source": "Situational Awareness",
+              "url": null,
+              "snippet": "Billions invested, extreme measures to infiltrate AGI efforts",
+              "page": null
+            },
+            {
+              "source": "Historical precedent",
+              "url": null,
+              "snippet": "Soviet nuclear espionage, Huawei industrial espionage",
+              "page": null
+            }
+          ],
+          "contested_by": null
+        },
+        {
+          "id": "assume_espionage_2",
+          "description": "AI labs have weak security (insufficient to resist nation-state espionage)",
+          "epistemic_score": 0.7,
+          "rationale": "Labs are private companies, not military installations. Limited security budgets/culture.",
+          "citations": [
+            {
+              "source": "Situational Awareness",
+              "url": null,
+              "snippet": "Private AI efforts delivering superintelligence to CCP",
+              "page": null
+            }
+          ],
+          "contested_by": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "precedent",
+          "description": "Historical espionage for strategic technologies",
+          "strength": 0.8,
+          "citations": [
+            {
+              "source": "Manhattan Project espionage",
+              "url": null,
+              "snippet": "Soviet agents stole nuclear secrets",
+              "page": null
+            }
+          ]
+        },
+        {
+          "type": "expert_opinion",
+          "description": "Security researchers warn of AI lab vulnerabilities",
+          "strength": 0.6,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": 0.65,
+      "nli_consistency": 0.9,
+      "claimed_by": [
+        "Situational Awareness"
+      ],
+      "contested": false,
+      "alternative_paths": null
+    },
+    "espionage_revealed": {
+      "id": "espionage_revealed",
+      "from_state": "current_2024",
+      "to_state": "race_dynamics",
+      "trigger_event": "Major espionage incident becomes public",
+      "mechanism": "US perception of China threat \u2192 adversarial dynamics",
+      "time_scale": "possible any time 2024-2026",
+      "assumptions": [
+        {
+          "id": "assume_espionage_reveal_1",
+          "description": "Espionage incidents will be detected and become public",
+          "epistemic_score": 0.5,
+          "rationale": "Historical precedent suggests eventual detection. Media/political incentives for exposure.",
+          "citations": [],
+          "contested_by": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "precedent",
+          "description": "Snowden, WikiLeaks precedents of security breaches becoming public",
+          "strength": 0.7,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": 0.5,
+      "nli_consistency": 0.8,
+      "claimed_by": [
+        "Situational Awareness"
+      ],
+      "contested": false,
+      "alternative_paths": null
+    },
+    "race_to_agi": {
+      "id": "race_to_agi",
+      "from_state": "race_dynamics",
+      "to_state": "agi_2027",
+      "trigger_event": "Competitive pressure overrides safety concerns",
+      "mechanism": "Both sides cut corners, reduce safety margins, accelerate timelines",
+      "time_scale": "12-24 months",
+      "assumptions": [
+        {
+          "id": "assume_race_1",
+          "description": "Race dynamics reduce safety investment (safety tax unaffordable)",
+          "epistemic_score": 0.6,
+          "rationale": "Economic theory + precedent (nuclear arms race). First-mover advantage dominates.",
+          "citations": [
+            {
+              "source": "Game theory",
+              "url": null,
+              "snippet": "Prisoner's dilemma: defect (race) dominates cooperate (pause)",
+              "page": null
+            }
+          ],
+          "contested_by": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "theoretical",
+          "description": "Game theory predicts defection in security dilemmas",
+          "strength": 0.7,
+          "citations": []
+        },
+        {
+          "type": "precedent",
+          "description": "Nuclear arms race, space race precedents",
+          "strength": 0.6,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": 0.6,
+      "nli_consistency": 0.9,
+      "claimed_by": [
+        "Situational Awareness",
+        "Security researchers"
+      ],
+      "contested": false,
+      "alternative_paths": null
+    },
+    "to_race_dynamics": {
+      "id": "to_race_dynamics",
+      "from_state": "gpt5_level",
+      "to_state": "race_dynamics",
+      "trigger_event": "Capability demonstrations make strategic importance obvious",
+      "mechanism": "Both US and China recognize AGI as decisive strategic advantage",
+      "time_scale": "immediate once GPT-5 level reached",
+      "assumptions": [
+        {
+          "id": "assume_race_trigger_1",
+          "description": "Advanced capabilities will be obvious and recognized by governments",
+          "epistemic_score": 0.7,
+          "rationale": "Hard to hide transformative AI once deployed. Economic/military implications clear.",
+          "citations": [],
+          "contested_by": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "theoretical",
+          "description": "Transformative technology triggers great power competition",
+          "strength": 0.7,
+          "citations": []
+        }
+      ],
+      "epistemic_confidence": 0.7,
+      "nli_consistency": 0.9,
+      "claimed_by": [
+        "Situational Awareness"
+      ],
+      "contested": false,
+      "alternative_paths": null
+    }
+  },
+  "source_documents": [
+    {
+      "source": "AI 2027",
+      "url": "https://ai-2027.com",
+      "snippet": "Forecast by Kokotajlo et al predicting AGI early 2027, ASI late 2027",
+      "page": null
+    },
+    {
+      "source": "Situational Awareness: The Decade Ahead",
+      "url": "https://situational-awareness.ai",
+      "snippet": "Leopold Aschenbrenner's analysis of AGI timelines and national security",
+      "page": null
+    }
+  ],
+  "created_at": "2024-11-14",
+  "version": "0.1.0"
+}
