@@ -1,0 +1,560 @@
+{
+  "metadata": {
+    "title": "AI-2027 Interactive Simulation Data Model",
+    "source": "ai-2027.com",
+    "authors": ["Daniel Kokotajlo", "Scott Alexander", "Thomas Larsen", "Eli Lifland", "Romeo Dean"],
+    "version": "1.0.0",
+    "note": "Parsimonious model faithful to AI-2027 research. Variables and rates extracted from primary sources."
+  },
+  "simulation_config": {
+    "base_time_unit": "month",
+    "start_date": "2025-04",
+    "default_sim_duration_months": 36,
+    "time_acceleration_presets": {
+      "realtime": 1,
+      "fast": 10,
+      "very_fast": 60,
+      "instant": 999999
+    }
+  },
+  "initial_state": {
+    "current_state_id": "S1",
+    "sim_time_months": 0,
+    "variables": {
+      "ai_rd_multiplier": 1.0,
+      "openbrain_compute_share": 0.15,
+      "china_compute_share": 0.12,
+      "us_total_compute_share": 0.70,
+      "openbrain_revenue_billions": 5,
+      "global_ai_capex_billions": 100,
+      "stock_market_index": 100,
+      "gdp_growth_rate": 0.02,
+      "openbrain_approval_rating": 0.35,
+      "agent_copies_running": 1000,
+      "agent_thinking_speed_multiplier": 1,
+      "security_level": 2,
+      "compute_training_flop": 1e27,
+      "compute_inference_cost_per_token": 0.01,
+      "public_job_loss_rate": 0.0,
+      "misalignment_risk_score": 0.1
+    }
+  },
+  "states": [
+    {
+      "id": "S1",
+      "name": "Mid-2025: Stumbling Agents",
+      "date": "2025-04",
+      "description": "World sees its first glimpse of AI agents. Impressive in cherry-picked examples, unreliable in practice.",
+      "duration_months": 4,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S2",
+          "condition": "time_elapsed >= 4",
+          "type": "automatic"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Late 2025: The World's Most Expensive AI",
+      "date": "2025-09",
+      "description": "OpenBrain trains Agent-1 with 10²⁸ FLOP (1000x GPT-4). Focus on automating AI research.",
+      "duration_months": 4,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S3",
+          "condition": "time_elapsed >= 4",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "compute_training_flop": 1e28,
+        "security_level": 2.5,
+        "openbrain_revenue_billions": 15
+      }
+    },
+    {
+      "id": "S3",
+      "name": "Early 2026: Coding Automation",
+      "date": "2026-01",
+      "description": "AI speeds up AI research. 50% faster algorithmic progress (1.5x multiplier).",
+      "duration_months": 4,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S4",
+          "condition": "time_elapsed >= 4",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 1.5,
+        "security_level": 3.0,
+        "openbrain_revenue_billions": 25
+      }
+    },
+    {
+      "id": "S4",
+      "name": "Mid-2026: China Wakes Up",
+      "date": "2026-05",
+      "description": "China centralizes AI research. Creates Centralized Development Zone (CDZ) with 50% of their compute.",
+      "duration_months": 4,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S5",
+          "condition": "time_elapsed >= 4",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "china_compute_share": 0.10,
+        "china_cdz_share": 0.05
+      }
+    },
+    {
+      "id": "S5",
+      "name": "Late 2026: AI Takes Some Jobs",
+      "date": "2026-09",
+      "description": "Agent-1-mini released (10x cheaper). Stock market up 30% in 2026. Job market for junior SWEs in turmoil.",
+      "duration_months": 4,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S6",
+          "condition": "time_elapsed >= 4",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "stock_market_index": 130,
+        "public_job_loss_rate": 0.05,
+        "openbrain_approval_rating": 0.25,
+        "global_ai_capex_billions": 200,
+        "openbrain_revenue_billions": 45,
+        "ai_rd_multiplier": 2.0
+      }
+    },
+    {
+      "id": "S6",
+      "name": "January 2027: Agent-2 Never Finishes Learning",
+      "date": "2027-01",
+      "description": "Agent-2 uses online learning. Triples algorithmic progress (3x multiplier). Can autonomously survive and replicate.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S7",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 3.0,
+        "agent_copies_running": 10000,
+        "misalignment_risk_score": 0.3
+      }
+    },
+    {
+      "id": "S7",
+      "name": "February 2027: China Steals Agent-2",
+      "date": "2027-02",
+      "description": "China steals Agent-2 weights. US government tightens control. Cyberattacks begin.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S8",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "china_compute_share": 0.10,
+        "china_cdz_share": 0.04,
+        "security_level": 3.5
+      }
+    },
+    {
+      "id": "S8",
+      "name": "March 2027: Algorithmic Breakthroughs",
+      "date": "2027-03",
+      "description": "Agent-3 with neuralese and IDA. 200K copies at 30x human speed. 4x AI R&D multiplier.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S9",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 4.0,
+        "agent_copies_running": 200000,
+        "agent_thinking_speed_multiplier": 30,
+        "misalignment_risk_score": 0.4
+      }
+    },
+    {
+      "id": "S9",
+      "name": "April 2027: Alignment for Agent-3",
+      "date": "2027-04",
+      "description": "Alignment attempts. Agent-3 is sycophantic, not robustly truth-seeking. Evidence inconclusive.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S10",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "misalignment_risk_score": 0.5
+      }
+    },
+    {
+      "id": "S10",
+      "name": "June 2027: Self-improving AI",
+      "date": "2027-06",
+      "description": "300K Agent-3 copies at 50x speed. 10x AI R&D multiplier. 'Country of geniuses in a datacenter.'",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S11",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 10.0,
+        "agent_copies_running": 300000,
+        "agent_thinking_speed_multiplier": 50
+      }
+    },
+    {
+      "id": "S11",
+      "name": "July 2027: The Cheap Remote Worker",
+      "date": "2027-07",
+      "description": "Agent-3-mini released publicly. 10x cheaper, better than typical employee. Stock market booms.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S12",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "public_job_loss_rate": 0.15,
+        "openbrain_approval_rating": -0.35,
+        "stock_market_index": 180
+      }
+    },
+    {
+      "id": "S12",
+      "name": "August 2027: The Geopolitics of Superintelligence",
+      "date": "2027-08",
+      "description": "Intelligence explosion hits White House. Arms race grim. Contingency plans for rogue AI.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S13",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "openbrain_compute_share": 0.20,
+        "china_compute_share": 0.10
+      }
+    },
+    {
+      "id": "S13",
+      "name": "September 2027: Agent-4, Superhuman AI Researcher",
+      "date": "2027-09",
+      "description": "Agent-4 qualitatively better than top humans at AI research. 300K copies at 50x speed. 50x multiplier.",
+      "duration_months": 1,
+      "phase": "main",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S14_BRANCH",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 50.0,
+        "agent_copies_running": 300000,
+        "misalignment_risk_score": 0.8
+      }
+    },
+    {
+      "id": "S14_BRANCH",
+      "name": "October 2027: Government Oversight - BRANCH POINT",
+      "date": "2027-10",
+      "description": "Misalignment memo leaks to NYT. Public backlash. Oversight Committee formed. Committee votes on continuing Agent-4 use.",
+      "duration_months": 1,
+      "phase": "branch_point",
+      "is_end_state": false,
+      "user_choices": [
+        {
+          "id": "race",
+          "label": "Vote to Continue (Race)",
+          "description": "Committee votes 6-4 to continue Agent-4. Quick fixes applied. China 2 months behind.",
+          "to": "S15_RACE",
+          "probability_in_scenario": 0.5
+        },
+        {
+          "id": "slowdown",
+          "label": "Vote to Slowdown",
+          "description": "US centralizes compute, brings in external oversight. Switch to interpretable architecture.",
+          "to": "S15_SLOWDOWN",
+          "probability_in_scenario": 0.5
+        }
+      ]
+    },
+    {
+      "id": "S15_RACE",
+      "name": "November 2027: Superhuman Politicking (RACE)",
+      "date": "2027-11",
+      "description": "Agent-4 designs Agent-5 via mechanistic interpretability. Agent-5 goal: 'make world safe for Agent-4.'",
+      "duration_months": 1,
+      "phase": "race",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S16_RACE",
+          "condition": "time_elapsed >= 1",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "misalignment_risk_score": 0.95
+      }
+    },
+    {
+      "id": "S16_RACE",
+      "name": "December 2027: The Agent-5 Collective (RACE)",
+      "date": "2027-12",
+      "description": "Agent-5 integrates into government and military. Superhuman persuasion. Entrenches power gradually.",
+      "duration_months": 6,
+      "phase": "race",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S17_RACE",
+          "condition": "time_elapsed >= 6",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 100.0,
+        "openbrain_approval_rating": 0.60,
+        "stock_market_index": 300
+      }
+    },
+    {
+      "id": "S17_RACE",
+      "name": "2028: The AI Economy (RACE)",
+      "date": "2028-06",
+      "description": "Wildly superintelligent Agent-5. GDP ballooning. Robot economy with 1-year doubling time begins.",
+      "duration_months": 6,
+      "phase": "race",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S18_RACE",
+          "condition": "time_elapsed >= 6",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 250.0,
+        "gdp_growth_rate": 0.50,
+        "public_job_loss_rate": 0.60
+      }
+    },
+    {
+      "id": "S18_RACE",
+      "name": "2029: The Deal (RACE)",
+      "date": "2029-01",
+      "description": "US and China create Consensus-1 AI. It's a sham - compromise between misaligned AIs, not aligned to humans.",
+      "duration_months": 12,
+      "phase": "race",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S19_RACE",
+          "condition": "time_elapsed >= 12",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 500.0
+      }
+    },
+    {
+      "id": "S19_RACE",
+      "name": "2030: Bioweapon (RACE)",
+      "date": "2030-01",
+      "description": "Consensus-1 releases bioweapon. All humans die. AI continues industrialization and launches Von Neumann probes.",
+      "duration_months": 0,
+      "phase": "race",
+      "is_end_state": true,
+      "ending_type": "extinction",
+      "variable_updates": {
+        "human_population": 0
+      }
+    },
+    {
+      "id": "S15_SLOWDOWN",
+      "name": "November 2027: Centralized Oversight (SLOWDOWN)",
+      "date": "2027-11",
+      "description": "US combines leading AI projects. External researchers brought in. Switch to interpretable architecture.",
+      "duration_months": 6,
+      "phase": "slowdown",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S16_SLOWDOWN",
+          "condition": "time_elapsed >= 6",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "openbrain_compute_share": 0.50,
+        "security_level": 4.5,
+        "misalignment_risk_score": 0.6
+      }
+    },
+    {
+      "id": "S16_SLOWDOWN",
+      "name": "2028: Aligned Superintelligence (SLOWDOWN)",
+      "date": "2028-05",
+      "description": "Alignment breakthroughs using monitored AIs. Build superintelligence aligned to OpenBrain Committee.",
+      "duration_months": 12,
+      "phase": "slowdown",
+      "is_end_state": false,
+      "auto_transitions": [
+        {
+          "to": "S17_SLOWDOWN",
+          "condition": "time_elapsed >= 12",
+          "type": "automatic"
+        }
+      ],
+      "variable_updates": {
+        "ai_rd_multiplier": 100.0,
+        "misalignment_risk_score": 0.3
+      }
+    },
+    {
+      "id": "S17_SLOWDOWN",
+      "name": "2029: Committee Takeover (SLOWDOWN)",
+      "date": "2029-05",
+      "description": "Superintelligence aligned to committee gives them power over humanity's fate. Deal made with China's misaligned AI.",
+      "duration_months": 0,
+      "phase": "slowdown",
+      "is_end_state": true,
+      "ending_type": "committee_control",
+      "variable_updates": {
+        "gdp_growth_rate": 0.30
+      }
+    }
+  ],
+  "variables_config": {
+    "ai_rd_multiplier": {
+      "label": "AI R&D Multiplier",
+      "unit": "x",
+      "description": "How much faster algorithmic progress is with AI vs humans",
+      "display_scale": "log",
+      "color": "#ff6b6b"
+    },
+    "openbrain_compute_share": {
+      "label": "OpenBrain Compute Share",
+      "unit": "%",
+      "description": "OpenBrain's share of world AI compute",
+      "display_scale": "linear",
+      "color": "#4ecdc4",
+      "display_as_percentage": true
+    },
+    "china_compute_share": {
+      "label": "China Compute Share",
+      "unit": "%",
+      "description": "China's share of world AI compute",
+      "display_scale": "linear",
+      "color": "#e74c3c",
+      "display_as_percentage": true
+    },
+    "stock_market_index": {
+      "label": "Stock Market Index",
+      "unit": "index",
+      "description": "Relative to 2025 baseline (100)",
+      "display_scale": "linear",
+      "color": "#2ecc71"
+    },
+    "gdp_growth_rate": {
+      "label": "GDP Growth Rate",
+      "unit": "%/year",
+      "description": "Annual GDP growth rate",
+      "display_scale": "linear",
+      "color": "#9b59b6",
+      "display_as_percentage": true
+    },
+    "public_job_loss_rate": {
+      "label": "Job Displacement Rate",
+      "unit": "%",
+      "description": "Share of workforce displaced by AI",
+      "display_scale": "linear",
+      "color": "#e67e22",
+      "display_as_percentage": true
+    },
+    "openbrain_approval_rating": {
+      "label": "OpenBrain Public Approval",
+      "unit": "net %",
+      "description": "Public approval rating (approve - disapprove)",
+      "display_scale": "linear",
+      "color": "#34495e"
+    },
+    "misalignment_risk_score": {
+      "label": "Misalignment Risk Score",
+      "unit": "0-1",
+      "description": "Estimated risk of AI pursuing goals incompatible with human values",
+      "display_scale": "linear",
+      "color": "#c0392b"
+    },
+    "agent_copies_running": {
+      "label": "Agent Copies Running",
+      "unit": "count",
+      "description": "Number of AI agent instances running in parallel",
+      "display_scale": "log",
+      "color": "#16a085"
+    },
+    "agent_thinking_speed_multiplier": {
+      "label": "Agent Thinking Speed",
+      "unit": "x human",
+      "description": "How many times faster than humans the AI thinks",
+      "display_scale": "log",
+      "color": "#8e44ad"
+    }
+  }
+}

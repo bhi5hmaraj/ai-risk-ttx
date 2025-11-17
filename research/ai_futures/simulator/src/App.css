@@ -1,0 +1,152 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1a1f3a 0%, #0f1629 100%);
+  padding: 20px 30px;
+  border-bottom: 2px solid #4ecdc4;
+}
+
+.app-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4ecdc4;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #8e8e8e;
+  font-style: italic;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  width: 400px;
+  background: #0f1629;
+  border-right: 2px solid #2c3e50;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-footer {
+  background: #0f1629;
+  padding: 15px 30px;
+  border-top: 2px solid #2c3e50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.config-button {
+  background: transparent;
+  border: 1px solid #4ecdc4;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.credit {
+  font-size: 13px;
+  color: #8e8e8e;
+}
+
+.credit a {
+  color: #4ecdc4;
+  text-decoration: none;
+}
+
+.credit a:hover {
+  text-decoration: underline;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 24px;
+  color: #4ecdc4;
+}
+
+/* Config Modal */
+.config-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.config-modal {
+  background: #1a1f3a;
+  border-radius: 12px;
+  padding: 30px;
+  width: 500px;
+  max-width: 90vw;
+  border: 2px solid #4ecdc4;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.config-modal h2 {
+  color: #4ecdc4;
+  margin-bottom: 20px;
+}
+
+.config-field {
+  margin-bottom: 20px;
+}
+
+.config-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.config-field input {
+  width: 100%;
+}
+
+.config-field .help-text {
+  font-size: 12px;
+  color: #8e8e8e;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.config-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+}
