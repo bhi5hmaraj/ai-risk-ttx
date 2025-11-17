@@ -127,15 +127,15 @@ function GraphsPanel() {
 
   const layout = {
     autosize: true,
-    margin: { l: 100, r: 40, t: 20, b: 80 },
+    margin: { l: 100, r: 40, t: 15, b: 70 },
     paper_bgcolor: '#1a1f3a',
     plot_bgcolor: '#0f1629',
     font: {
       color: '#e0e0e0',
-      size: 18, // Much bigger base font
+      size: 18,
     },
     showlegend: false,
-    // Graph 1: AI R&D Multiplier (top, 76.25% to 100% of height)
+    // Graph 1: AI R&D Multiplier (top)
     xaxis: {
       title: '',
       gridcolor: '#2c3e50',
@@ -148,13 +148,12 @@ function GraphsPanel() {
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[0].yaxis,
-      domain: [0.7625, 1],
+      domain: [0.78, 1], // 22% height, clear gap
       titlefont: { size: 20 },
       tickfont: { size: 18 },
-      // Add 20% headroom for log scale
       ...(traces[0].maxY && { range: [Math.log10(traces[0].minY || 1) - 0.2, Math.log10(traces[0].maxY) + 0.3] }),
     },
-    // Graph 2: GDP Growth Rate (51.25% to 73.75%)
+    // Graph 2: GDP Growth Rate
     xaxis2: {
       title: '',
       gridcolor: '#2c3e50',
@@ -167,13 +166,12 @@ function GraphsPanel() {
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[1].yaxis,
-      domain: [0.5125, 0.7375],
+      domain: [0.53, 0.73], // 20% height, clear gap
       titlefont: { size: 20 },
       tickfont: { size: 18 },
-      // Add 20% headroom
       range: [Math.min(0, traces[1].minY - (traces[1].maxY - traces[1].minY) * 0.1), traces[1].maxY * 1.2],
     },
-    // Graph 3: Job Loss Rate (26.25% to 48.75%)
+    // Graph 3: Job Loss Rate
     xaxis3: {
       title: '',
       gridcolor: '#2c3e50',
@@ -186,13 +184,12 @@ function GraphsPanel() {
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[2].yaxis,
-      domain: [0.2625, 0.4875],
+      domain: [0.28, 0.48], // 20% height, clear gap
       titlefont: { size: 20 },
       tickfont: { size: 18 },
-      // Add 20% headroom
       range: [Math.min(0, traces[2].minY - (traces[2].maxY - traces[2].minY) * 0.1), traces[2].maxY * 1.2],
     },
-    // Graph 4: Misalignment Risk (bottom, 0% to 23.75%)
+    // Graph 4: Misalignment Risk (bottom)
     xaxis4: {
       title: { text: 'Simulation Time (months)', font: { size: 20 } },
       gridcolor: '#2c3e50',
@@ -205,10 +202,9 @@ function GraphsPanel() {
       gridcolor: '#2c3e50',
       showgrid: true,
       type: varConfigs[3].yaxis,
-      domain: [0, 0.2375],
+      domain: [0, 0.23], // 23% height, fits at bottom
       titlefont: { size: 20 },
       tickfont: { size: 18 },
-      // Add 20% headroom
       range: [Math.min(0, traces[3].minY - (traces[3].maxY - traces[3].minY) * 0.1), traces[3].maxY * 1.2],
     },
     shapes: allShapes,
@@ -235,10 +231,11 @@ function GraphsPanel() {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      padding: '8px',
+      padding: '12px',
+      overflow: 'hidden',
     }}>
       {/* Graph Grid */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <Plot
           data={allTraces}
           layout={layout}
@@ -250,10 +247,11 @@ function GraphsPanel() {
 
       {/* Legend */}
       <div style={{
-        marginTop: '10px',
+        marginTop: '12px',
         fontSize: '16px',
         color: '#8e8e8e',
         textAlign: 'center',
+        flexShrink: 0,
       }}>
         Dotted lines = state transitions. Hover over markers for details.
       </div>
