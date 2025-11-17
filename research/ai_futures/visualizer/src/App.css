@@ -1,92 +1,152 @@
+/* Light Theme Single-Pane Layout */
 .app {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #0a0a0a;
+  background: #f5f7fa;
+  color: #2c3e50;
 }
 
+/* Header with Progress Indicator */
 .app-header {
-  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
-  border-bottom: 2px solid #e94560;
-  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #e8edf2 100%);
+  border-bottom: 3px solid #3498db;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header-content {
+.header-row-1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.header-row-2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .app-header h1 {
-  color: #e94560;
+  color: #2c3e50;
   font-size: 1.8rem;
-  margin-bottom: 0.3rem;
-}
-
-.subtitle {
-  color: #a8b2d1;
-  font-size: 0.9rem;
   margin: 0;
+  font-weight: 700;
 }
 
-.sim-time-display {
-  text-align: right;
-}
-
-.sim-days-counter {
+.completion-indicator {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  min-width: 300px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #dce3e9;
+  border-radius: 4px;
+  overflow: hidden;
   margin-bottom: 0.3rem;
+  border: 1px solid #b8c5d0;
 }
 
-.sim-days-counter .label {
-  color: #8892b0;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+  transition: width 0.3s ease;
 }
 
-.sim-days-counter .value {
-  color: #64ffda;
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1;
-  font-family: 'Courier New', monospace;
+.progress-text {
+  font-size: 0.85rem;
+  color: #34495e;
+  font-weight: 600;
 }
 
-.sim-date-display {
-  color: #a8b2d1;
+.sim-date {
+  color: #555;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.current-state-badge {
+  background: #3498db;
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
   font-size: 0.9rem;
+  font-weight: 600;
+  border: 2px solid #2980b9;
 }
 
-.app-content {
+/* Single-Pane Layout */
+.app-content-single-pane {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 500px 1fr;
+  gap: 0;
   overflow: hidden;
+  background: #f5f7fa;
 }
 
-.visualizer-container {
-  height: 100%;
-  overflow: hidden;
-}
-
-.side-panel {
-  background: #0f0f0f;
-  border-left: 1px solid #0f3460;
+/* Left Column: State Machine + Controls */
+.left-column {
+  background: white;
+  border-right: 3px solid #dce3e9;
   overflow-y: auto;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+.state-machine-section {
+  padding: 1.5rem;
+  border-bottom: 2px solid #e8edf2;
+}
+
+.state-machine-section h2 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.controls-section {
+  padding: 1.5rem;
+  border-bottom: 2px solid #e8edf2;
+  background: #fafbfc;
+}
+
+.state-display-section {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+/* Right Column: Graphs */
+.right-column {
+  background: white;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.right-column h2 {
+  margin: 0 0 1.5rem 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+/* Game Over Modal */
 .game-over-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,22 +154,23 @@
 }
 
 .game-over-modal {
-  background: #16213e;
-  border: 2px solid #e94560;
+  background: white;
+  border: 4px solid #3498db;
   border-radius: 12px;
   padding: 3rem;
   max-width: 500px;
   text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .game-over-modal h2 {
-  color: #e94560;
+  color: #2c3e50;
   font-size: 2rem;
   margin-bottom: 1rem;
 }
 
 .game-over-modal p {
-  color: #a8b2d1;
+  color: #555;
   font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 1rem;
@@ -119,11 +180,12 @@
   font-size: 1.3rem;
   font-weight: 700;
   margin: 1.5rem 0;
+  color: #2c3e50;
 }
 
 .game-over-modal button {
   padding: 1rem 2rem;
-  background: #e94560;
+  background: #3498db;
   color: white;
   border: none;
   border-radius: 6px;
@@ -134,39 +196,53 @@
 }
 
 .game-over-modal button:hover {
-  background: #ff6b81;
+  background: #2980b9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
 /* Responsive */
+@media (max-width: 1400px) {
+  .app-content-single-pane {
+    grid-template-columns: 450px 1fr;
+  }
+}
+
 @media (max-width: 1200px) {
-  .app-content {
-    grid-template-columns: 1fr 350px;
+  .app-content-single-pane {
+    grid-template-columns: 400px 1fr;
+  }
+
+  .completion-indicator {
+    min-width: 250px;
   }
 }
 
 @media (max-width: 900px) {
-  .app-content {
+  .app-content-single-pane {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 400px;
+    grid-template-rows: auto 1fr;
   }
 
-  .side-panel {
-    border-left: none;
-    border-top: 1px solid #0f3460;
+  .left-column {
+    border-right: none;
+    border-bottom: 3px solid #dce3e9;
+    max-height: 50vh;
   }
 
-  .header-content {
+  .header-row-1,
+  .header-row-2 {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 0.5rem;
   }
 
-  .sim-time-display {
-    text-align: left;
-  }
-
-  .sim-days-counter {
+  .completion-indicator {
     align-items: flex-start;
+    min-width: 100%;
+  }
+
+  .current-state-badge {
+    align-self: flex-start;
   }
 }

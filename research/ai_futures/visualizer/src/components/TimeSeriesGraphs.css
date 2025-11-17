@@ -1,21 +1,13 @@
 .time-series-graphs {
-  background: #16213e;
-  border: 1px solid #0f3460;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.time-series-graphs h3 {
-  color: #64ffda;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
+  background: white;
+  border-radius: 0;
+  padding: 0;
 }
 
 .graph {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #0f3460;
+  border-bottom: 2px solid #ecf0f1;
 }
 
 .graph:last-child {
@@ -28,17 +20,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .graph-header h4 {
-  color: #a8b2d1;
-  font-size: 0.9rem;
+  color: #2c3e50;
+  font-size: 1rem;
   margin: 0;
+  font-weight: 600;
 }
 
 .current-value {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
@@ -52,9 +45,10 @@
 }
 
 .graph-citation {
-  color: #8892b0;
-  font-size: 0.75rem;
+  color: #7f8c8d;
+  font-size: 0.8rem;
   font-style: italic;
   margin-top: 0.5rem;
+  margin-bottom: 0;
   line-height: 1.4;
 }

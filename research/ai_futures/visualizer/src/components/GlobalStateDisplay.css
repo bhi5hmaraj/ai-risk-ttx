@@ -1,20 +1,21 @@
 .global-state-display {
-  background: #16213e;
-  border: 1px solid #0f3460;
+  background: white;
+  border: 2px solid #dce3e9;
   border-radius: 8px;
   padding: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 0;
 }
 
 .global-state-display h3 {
-  color: #64ffda;
-  font-size: 1rem;
+  color: #2c3e50;
+  font-size: 1.1rem;
   margin-bottom: 0.3rem;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #8892b0;
-  font-size: 0.8rem;
+  color: #7f8c8d;
+  font-size: 0.85rem;
   margin-bottom: 1.5rem;
 }
 
@@ -27,11 +28,12 @@
 }
 
 .state-section h4 {
-  color: #a8b2d1;
+  color: #34495e;
   font-size: 0.9rem;
   margin-bottom: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 .state-variable {
@@ -39,7 +41,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #0f3460;
+  border-bottom: 1px solid #ecf0f1;
 }
 
 .state-variable:last-child {
@@ -47,13 +49,14 @@
 }
 
 .variable-label {
-  color: #a8b2d1;
+  color: #555;
   font-size: 0.85rem;
 }
 
 .variable-value {
   font-weight: 600;
   font-size: 0.9rem;
+  color: #2c3e50;
 }
 
 .text-value {
@@ -61,6 +64,7 @@
   max-width: 180px;
   text-align: right;
   display: inline-block;
+  color: #2c3e50;
 }
 
 .state-bar {
@@ -79,22 +83,24 @@
 }
 
 .bar-label {
-  color: #a8b2d1;
+  color: #555;
   font-size: 0.85rem;
 }
 
 .bar-value {
   font-weight: 700;
   font-size: 0.85rem;
+  color: #2c3e50;
 }
 
 .bar-container {
   width: 100%;
-  height: 8px;
-  background: #0f3460;
-  border-radius: 4px;
+  height: 10px;
+  background: #ecf0f1;
+  border-radius: 5px;
   overflow: hidden;
   margin-bottom: 0.3rem;
+  border: 1px solid #d5dce0;
 }
 
 .bar-fill {
@@ -118,6 +124,6 @@
 .bar-labels {
   display: flex;
   justify-content: space-between;
-  color: #8892b0;
+  color: #7f8c8d;
   font-size: 0.7rem;
 }

@@ -4,15 +4,15 @@
 }
 
 .time-controls {
-  background: #16213e;
-  border: 1px solid #0f3460;
+  background: white;
+  border: 1px solid #dce3e9;
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .time-controls h3 {
-  color: #64ffda;
+  color: #3498db;
   font-size: 1rem;
   margin-bottom: 0.8rem;
 }
@@ -20,7 +20,7 @@
 .play-button {
   width: 100%;
   padding: 0.8rem;
-  background: #e94560;
+  background: #3498db;
   color: white;
   border: none;
   border-radius: 6px;
@@ -31,7 +31,7 @@
 }
 
 .play-button:hover:not(:disabled) {
-  background: #ff6b81;
+  background: #2980b9;
   transform: translateY(-1px);
 }
 
@@ -51,7 +51,7 @@
 .time-scale-info {
   margin-top: 0.5rem;
   text-align: center;
-  color: #8892b0;
+  color: #555;
   font-size: 0.85rem;
 }
 
@@ -60,14 +60,14 @@
 }
 
 .current-state-info h3 {
-  color: #64ffda;
+  color: #3498db;
   font-size: 1rem;
   margin-bottom: 0.8rem;
 }
 
 .state-card {
-  background: #16213e;
-  border: 2px solid #e94560;
+  background: white;
+  border: 2px solid #3498db;
   border-radius: 8px;
   padding: 1rem;
 }
@@ -78,27 +78,27 @@
 }
 
 .state-card p {
-  color: #a8b2d1;
+  color: #2c3e50;
   font-size: 0.9rem;
   line-height: 1.5;
   margin-bottom: 0.5rem;
 }
 
 .state-card .probability {
-  color: #64ffda;
+  color: #3498db;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .available-transitions h3 {
-  color: #64ffda;
+  color: #3498db;
   font-size: 1rem;
   margin-bottom: 0.8rem;
 }
 
 .transition-card {
-  background: #16213e;
-  border: 1px solid #0f3460;
+  background: white;
+  border: 1px solid #dce3e9;
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -125,7 +125,7 @@
 
 .transition-type {
   font-size: 0.8rem;
-  color: #8892b0;
+  color: #555;
   font-weight: 600;
 }
 
@@ -163,7 +163,7 @@
 }
 
 .mechanism {
-  color: #a8b2d1;
+  color: #2c3e50;
   font-size: 0.85rem;
   line-height: 1.4;
   margin-bottom: 0.8rem;
@@ -171,7 +171,7 @@
 
 .time-required,
 .probability-info {
-  color: #8892b0;
+  color: #555;
   font-size: 0.8rem;
   margin: 0.5rem 0;
 }
@@ -181,9 +181,9 @@
 .make-choice-button {
   width: 100%;
   padding: 0.6rem;
-  background: #0f3460;
-  color: #64ffda;
-  border: 1px solid #64ffda;
+  background: #dce3e9;
+  color: #3498db;
+  border: 1px solid #3498db;
   border-radius: 4px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -195,15 +195,15 @@
 .trigger-button:hover,
 .roll-button:hover,
 .make-choice-button:hover {
-  background: #64ffda;
+  background: #3498db;
   color: #0a0a0a;
 }
 
 .citation {
   margin-top: 0.8rem;
   padding-top: 0.8rem;
-  border-top: 1px solid #0f3460;
-  color: #8892b0;
+  border-top: 1px solid #dce3e9;
+  color: #555;
   font-size: 0.75rem;
   font-style: italic;
   line-height: 1.4;
@@ -217,19 +217,19 @@
 }
 
 .choice-option {
-  background: #0f3460;
+  background: #dce3e9;
   border-radius: 6px;
   padding: 0.8rem;
 }
 
 .choice-option h5 {
-  color: #64ffda;
+  color: #3498db;
   font-size: 0.9rem;
   margin-bottom: 0.4rem;
 }
 
 .choice-option p {
-  color: #a8b2d1;
+  color: #2c3e50;
   font-size: 0.85rem;
   line-height: 1.4;
   margin-bottom: 0.5rem;
@@ -245,7 +245,7 @@
 .choice-button {
   width: 100%;
   padding: 0.5rem;
-  background: #e94560;
+  background: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
@@ -257,19 +257,19 @@
 }
 
 .choice-button:hover {
-  background: #ff6b81;
+  background: #2980b9;
 }
 
 .no-transitions {
-  color: #8892b0;
+  color: #555;
   font-style: italic;
   text-align: center;
   padding: 2rem 1rem;
 }
 
 .game-over-message {
-  background: #16213e;
-  border: 2px solid #e94560;
+  background: white;
+  border: 2px solid #3498db;
   border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
