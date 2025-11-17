@@ -39,7 +39,7 @@ export default function TimeSeriesGraphs({ history, globalState, events = [] }) 
 
   return (
     <div className="time-series-graphs">
-      {/* Compute FLOP */}
+      {/* Top 3 - Most Important */}
       <Graph
         title="Compute (FLOP)"
         data={series}
@@ -49,10 +49,8 @@ export default function TimeSeriesGraphs({ history, globalState, events = [] }) 
         color="#3498db"
         isLog={true}
         events={events}
-        citation="AI2027 Compute Forecast: 3.4x/year growth"
       />
 
-      {/* Safety Margin */}
       <Graph
         title="Safety Margin"
         data={series}
@@ -62,10 +60,8 @@ export default function TimeSeriesGraphs({ history, globalState, events = [] }) 
         color="#27ae60"
         thresholds={[{ value: 0.3, label: 'Critical', color: '#e74c3c' }]}
         events={events}
-        citation="Alignment buffer before misalignment risk"
       />
 
-      {/* Race Pressure */}
       <Graph
         title="Race Pressure"
         data={series}
@@ -74,49 +70,12 @@ export default function TimeSeriesGraphs({ history, globalState, events = [] }) 
         formatY={(v) => (v * 100).toFixed(0) + '%'}
         color="#e74c3c"
         events={events}
-        citation="AI2027 Scenario: US-China competitive dynamics"
-      />
-
-      {/* Algorithmic Efficiency */}
-      <Graph
-        title="Algorithmic Efficiency (relative to 2024)"
-        data={series}
-        yKey="algorithmic_efficiency"
-        maxX={maxSimDays}
-        formatY={(v) => v.toFixed(2) + 'x'}
-        color="#9b59b6"
-        events={events}
-        citation="AI2027 Timelines: ~0.5 OOMs/year"
-      />
-
-      {/* Espionage Risk */}
-      <Graph
-        title="Espionage Risk"
-        data={series}
-        yKey="espionage_risk"
-        maxX={maxSimDays}
-        formatY={(v) => (v * 100).toFixed(0) + '%'}
-        color="#e67e22"
-        events={events}
-        citation="AI2027 Security: Weights theft probability"
-      />
-
-      {/* Alignment Investment */}
-      <Graph
-        title="Alignment Investment"
-        data={series}
-        yKey="alignment_investment"
-        maxX={maxSimDays}
-        formatY={(v) => (v * 100).toFixed(0) + '%'}
-        color="#16a085"
-        events={events}
-        citation="Fraction of resources on safety"
       />
     </div>
   )
 }
 
-function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresholds = [], citation, events = [] }) {
+function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresholds = [], events = [] }) {
   // Current value
   const currentValue = data.length > 0 ? data[data.length - 1][yKey] : 0
 
@@ -124,102 +83,117 @@ function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresho
   const xData = data.map(d => d.simDays)
   const yData = data.map(d => d[yKey])
 
-  // Main trace
-  const traces = [{
+  // Determine y-axis range with 25% headroom
+  const thresholdValues = thresholds.length > 0 ? thresholds.map(t => t.value) : []
+  const dataMin = yData.length > 0 ? Math.min(...yData, ...thresholdValues) : 0
+  const dataMax = yData.length > 0 ? Math.max(...yData, ...thresholdValues) : 1
+
+  // Add 25% padding to y-axis for headroom
+  const yRange = dataMax - dataMin || 1
+  const yMin = isLog ? undefined : (dataMin - (yRange * 0.1))
+  const yMax = isLog ? undefined : (dataMax + (yRange * 0.25))
+
+  // Main data trace
+  const mainTrace = {
     x: xData,
     y: yData,
     type: 'scatter',
     mode: 'lines+markers',
-    line: { color: color, width: 3 },
-    marker: { color: color, size: 4 },
+    line: { color: color, width: 4 },
+    marker: { color: color, size: 6 },
     name: title,
-    hovertemplate: `Day %{x}<br>%{y}<extra></extra>`
-  }]
+    hovertemplate: `<b>Day %{x}</b><br>%{y}<extra></extra>`,
+    hoverlabel: {
+      bgcolor: color,
+      font: { size: 16, color: 'white', family: 'system-ui' }
+    }
+  }
 
-  // Determine y-axis range for event markers
-  const yMin = Math.min(...yData, ...(thresholds.map(t => t.value)))
-  const yMax = Math.max(...yData, ...(thresholds.map(t => t.value)))
+  // Add event markers as scatter points (visible, with hover)
+  const eventTraces = events
+    .filter(event => event.impacts && event.impacts[yKey] !== undefined)
+    .map(event => {
+      // Find closest y value at this event's day
+      const idx = xData.findIndex(x => x >= event.simDay)
+      const yValue = idx >= 0 ? yData[idx] : (yData.length > 0 ? yData[yData.length - 1] : 0)
 
-  // Add event markers as vertical lines (shapes)
-  const shapes = [
-    // Threshold lines
-    ...thresholds.map(t => ({
-      type: 'line',
-      x0: 0,
-      x1: maxX,
-      y0: t.value,
-      y1: t.value,
-      line: {
-        color: t.color,
-        width: 2,
-        dash: 'dash'
+      return {
+        x: [event.simDay],
+        y: [yValue],
+        type: 'scatter',
+        mode: 'markers',
+        marker: {
+          size: 15,
+          color: 'rgba(231, 76, 60, 0.9)',
+          symbol: 'circle',
+          line: { color: 'white', width: 3 }
+        },
+        name: event.name,
+        hovertemplate: `<b>${event.name}</b><br>Day ${event.simDay}<br>${event.description || ''}<extra></extra>`,
+        hoverlabel: {
+          bgcolor: '#e74c3c',
+          font: { size: 16, color: 'white', family: 'system-ui' }
+        },
+        showlegend: false
       }
-    })),
-    // Event markers
-    ...events.map(event => ({
-      type: 'line',
-      x0: event.simDay,
-      x1: event.simDay,
-      y0: yMin,
-      y1: yMax,
-      line: {
-        color: 'rgba(52, 73, 94, 0.3)',
-        width: 2,
-        dash: 'dot'
-      }
-    }))
-  ]
+    })
 
-  // Add annotations for thresholds and events
-  const annotations = [
-    // Threshold labels
-    ...thresholds.map(t => ({
-      x: maxX * 0.8,
-      y: t.value,
-      text: t.label,
-      showarrow: false,
-      font: {
-        color: t.color,
-        size: 10,
-        family: 'system-ui'
-      },
-      xanchor: 'left',
-      yanchor: 'bottom',
-      bgcolor: 'rgba(255, 255, 255, 0.8)',
-      borderpad: 2
-    })),
-    // Event markers (only show if there's a relevant impact)
-    ...events.filter(event => event.impacts && event.impacts[yKey] !== undefined).map(event => ({
-      x: event.simDay,
-      y: yMax * 0.9,
-      text: '📍',
-      showarrow: false,
-      font: {
-        size: 16
-      },
-      hovertext: `${event.name}<br>${event.description}`,
-      xanchor: 'center',
-      yanchor: 'middle'
-    }))
-  ]
+  const allTraces = [mainTrace, ...eventTraces]
+
+  // Add threshold lines as shapes
+  const shapes = thresholds.map(t => ({
+    type: 'line',
+    x0: 0,
+    x1: maxX,
+    y0: t.value,
+    y1: t.value,
+    line: {
+      color: t.color,
+      width: 3,
+      dash: 'dash'
+    }
+  }))
+
+  // Only threshold labels (no event text)
+  const annotations = thresholds.map(t => ({
+    x: maxX * 0.85,
+    y: t.value,
+    text: t.label,
+    showarrow: false,
+    font: {
+      color: t.color,
+      size: 15,
+      family: 'system-ui',
+      weight: 700
+    },
+    xanchor: 'left',
+    yanchor: 'bottom',
+    bgcolor: 'rgba(255, 255, 255, 0.95)',
+    borderpad: 5
+  }))
 
   const layout = {
-    height: 220,
-    margin: { l: 65, r: 20, t: 10, b: 45 },
+    height: 240,
+    margin: { l: 80, r: 30, t: 15, b: 55 },
     xaxis: {
-      title: 'Simulation Days',
-      color: '#34495e',
-      gridcolor: '#ecf0f1',
+      title: {
+        text: 'Simulation Days',
+        font: { size: 15 }
+      },
+      color: '#2c3e50',
+      gridcolor: '#d5dce0',
       showgrid: true,
       zeroline: false,
-      titlefont: { size: 11 }
+      tickfont: { size: 14 }
     },
     yaxis: {
       type: isLog ? 'log' : 'linear',
-      color: '#34495e',
-      gridcolor: '#ecf0f1',
+      color: '#2c3e50',
+      gridcolor: '#d5dce0',
       showgrid: true,
-      zeroline: false
+      zeroline: false,
+      range: isLog ? undefined : [yMin, yMax],
+      tickfont: { size: 14 }
     },
     shapes: shapes,
     annotations: annotations,
@@ -227,7 +201,8 @@ function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresho
     plot_bgcolor: 'rgba(255,255,255,0)',
     font: {
       color: '#2c3e50',
-      family: 'system-ui, -apple-system, sans-serif'
+      family: 'system-ui, -apple-system, sans-serif',
+      size: 14
     },
     showlegend: false,
     hovermode: 'closest'
@@ -246,14 +221,12 @@ function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresho
       </div>
 
       <Plot
-        data={traces}
+        data={allTraces}
         layout={layout}
         config={config}
         style={{ width: '100%' }}
         useResizeHandler={true}
       />
-
-      {citation && <p className="graph-citation">{citation}</p>}
     </div>
   )
 }

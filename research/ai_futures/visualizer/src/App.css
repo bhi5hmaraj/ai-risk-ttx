@@ -31,7 +31,7 @@
 
 .app-header h1 {
   color: #2c3e50;
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   margin: 0;
   font-weight: 700;
 }
@@ -60,23 +60,23 @@
 }
 
 .progress-text {
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   color: #34495e;
   font-weight: 600;
 }
 
 .sim-date {
   color: #555;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 500;
 }
 
 .current-state-badge {
   background: #3498db;
   color: white;
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1.2rem;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 600;
   border: 2px solid #2980b9;
 }
@@ -108,7 +108,7 @@
 .state-machine-section h2 {
   margin: 0 0 1rem 0;
   color: #2c3e50;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
@@ -131,9 +131,9 @@
 }
 
 .right-column h2 {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1rem 0;
   color: #2c3e50;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   border-bottom: 3px solid #3498db;
   padding-bottom: 0.5rem;
