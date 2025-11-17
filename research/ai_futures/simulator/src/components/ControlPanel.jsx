@@ -21,10 +21,10 @@ function ControlPanel() {
         <div className="timeline-bar">
           <div
             className="timeline-progress"
-            style={{ width: `${simState?.progress * 100}%` }}
+            style={{ width: `${(simState?.progress ?? 0) * 100}%` }}
           />
         </div>
-        <div className="timeline-label">{simState?.simTimeMonths.toFixed(1)} mo</div>
+        <div className="timeline-label">{simState?.simTimeMonths != null ? `${simState.simTimeMonths.toFixed(1)} mo` : '0.0 mo'}</div>
       </div>
 
       {/* Playback Controls */}

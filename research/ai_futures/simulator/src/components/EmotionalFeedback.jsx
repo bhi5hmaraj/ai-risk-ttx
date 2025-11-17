@@ -76,7 +76,7 @@ function calculateEmotionalState(vars, currentState) {
     graphsClass = 'danger';
   }
   // TENSION: Rapid AI progress (>10x) or moderate risks
-  else if (aiRD > 10 || misalignment_risk > 0.3 || jobLoss > 0.2) {
+  else if (aiRD > 10 || misalignmentRisk > 0.3 || jobLoss > 0.2) {
     primary = 'tense';
     headerClass = 'warning';
     graphsClass = 'warning';
