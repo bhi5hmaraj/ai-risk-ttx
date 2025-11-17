@@ -1,0 +1,97 @@
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tutorial-modal {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+}
+
+.tutorial-close:hover {
+  color: #333;
+}
+
+.tutorial-modal h2 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 1.8rem;
+}
+
+.tutorial-content section {
+  margin-bottom: 1.5rem;
+}
+
+.tutorial-content h3 {
+  color: #34495e;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.tutorial-content p {
+  color: #555;
+  line-height: 1.6;
+  margin: 0.5rem 0;
+}
+
+.tutorial-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tutorial-content li {
+  padding: 0.4rem 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+.tutorial-content strong {
+  color: #2c3e50;
+}
+
+.tutorial-start {
+  width: 100%;
+  padding: 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tutorial-start:hover {
+  background: #2980b9;
+}
