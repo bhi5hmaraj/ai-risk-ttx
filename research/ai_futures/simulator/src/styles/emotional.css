@@ -1,0 +1,129 @@
+/* Emotional States - MDA Framework Implementation */
+
+/* Body emotional states */
+body.emotion-neutral {
+  background: #0a0e1a;
+}
+
+body.emotion-hopeful {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1a1a 100%);
+}
+
+body.emotion-tense {
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a0e0e 100%);
+}
+
+body.emotion-dread {
+  background: linear-gradient(135deg, #1a0505 0%, #0a0000 100%);
+}
+
+body.emotion-crisis {
+  background: #1a0000;
+  animation: pulse-crisis 2s infinite;
+}
+
+@keyframes pulse-crisis {
+  0%, 100% { background: #1a0000; }
+  50% { background: #2a0000; }
+}
+
+/* Header states */
+.app-header.danger {
+  border-bottom-color: #e74c3c;
+  background: linear-gradient(135deg, #3a1a1a 0%, #290f0f 100%);
+}
+
+.app-header.warning {
+  border-bottom-color: #ffa94d;
+  background: linear-gradient(135deg, #3a2a1a 0%, #291f0f 100%);
+}
+
+.app-header.safe {
+  border-bottom-color: #51cf66;
+  background: linear-gradient(135deg, #1a3a1a 0%, #0f290f 100%);
+}
+
+/* Graphs section states */
+.graphs-section.danger {
+  border-color: #e74c3c;
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
+}
+
+.graphs-section.warning {
+  border-color: #ffa94d;
+  box-shadow: 0 0 20px rgba(255, 169, 77, 0.3);
+}
+
+.graphs-section.safe {
+  border-color: #51cf66;
+  box-shadow: 0 0 20px rgba(81, 207, 102, 0.3);
+}
+
+/* Choice highlight */
+.bottom-row.highlight {
+  border-color: #4ecdc4;
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
+  animation: pulse-highlight 2s infinite;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% { box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(78, 205, 196, 0.6); }
+}
+
+/* Panel states */
+.panel.alert {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.panel.positive {
+  border-color: #51cf66;
+  background: rgba(81, 207, 102, 0.1);
+}
+
+/* Progress bar emotional states */
+.progress-fill.danger {
+  background: linear-gradient(90deg, #e74c3c 0%, #ff6b6b 100%);
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+}
+
+.progress-fill.warning {
+  background: linear-gradient(90deg, #ffa94d 0%, #ffb366 100%);
+  box-shadow: 0 0 10px rgba(255, 169, 77, 0.5);
+}
+
+.progress-label.danger {
+  color: #e74c3c;
+}
+
+.progress-label.warning {
+  color: #ffa94d;
+}
+
+/* Variable display emotional states */
+.variable-display.critical {
+  color: #e74c3c !important;
+  font-weight: bold;
+  animation: pulse-glow 1.5s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 5px rgba(231, 76, 60, 0.5); }
+  50% { text-shadow: 0 0 15px rgba(231, 76, 60, 0.8); }
+}
+
+.variable-display.warning {
+  color: #ffa94d !important;
+}
+
+.variable-display.good {
+  color: #51cf66 !important;
+}

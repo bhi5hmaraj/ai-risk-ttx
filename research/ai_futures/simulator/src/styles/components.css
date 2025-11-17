@@ -1,0 +1,133 @@
+/* Panels */
+.panel {
+  background: #1a1f3a;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ecdc4;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: #1a1f3a;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #4ecdc4;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal h2 {
+  color: #4ecdc4;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.modal p {
+  line-height: 1.6;
+  margin-bottom: 15px;
+  color: #e0e0e0;
+}
+
+.modal ul {
+  margin-left: 20px;
+  margin-bottom: 15px;
+  line-height: 1.8;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+.progress-label {
+  color: #4ecdc4;
+  transition: color 0.3s ease;
+}
+
+.progress-time {
+  color: #8e8e8e;
+}
+
+.progress-date {
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.progress-track {
+  height: 8px;
+  background: #0a0e1a;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2c3e50;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ecdc4 0%, #6ee7df 100%);
+  transition: all 0.5s ease;
+  box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+}
+
+/* Variable displays */
+.variable-display {
+  transition: all 0.3s ease;
+}

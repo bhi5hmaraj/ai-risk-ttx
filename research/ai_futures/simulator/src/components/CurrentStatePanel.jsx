@@ -160,7 +160,8 @@ function CurrentStatePanel() {
             <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
               AI R&D Multiplier
             </div>
-            <div style={{ fontSize: '20px', color: '#ff6b6b', fontWeight: 'bold' }}>
+            <div className={`variable-display ${simState.variables.ai_rd_multiplier > 20 ? 'critical' : simState.variables.ai_rd_multiplier > 10 ? 'warning' : ''}`}
+                 style={{ fontSize: '20px', fontWeight: 'bold' }}>
               {simState.variables.ai_rd_multiplier.toFixed(2)}x
             </div>
           </div>
@@ -170,7 +171,8 @@ function CurrentStatePanel() {
             <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
               GDP Growth Rate
             </div>
-            <div style={{ fontSize: '20px', color: '#51cf66', fontWeight: 'bold' }}>
+            <div className={`variable-display ${simState.variables.gdp_growth_rate > 0.5 ? 'good' : simState.variables.gdp_growth_rate < -0.05 ? 'critical' : ''}`}
+                 style={{ fontSize: '20px', fontWeight: 'bold' }}>
               {(simState.variables.gdp_growth_rate * 100).toFixed(1)}%
             </div>
           </div>
@@ -180,7 +182,8 @@ function CurrentStatePanel() {
             <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
               Job Loss Rate
             </div>
-            <div style={{ fontSize: '20px', color: '#ffa94d', fontWeight: 'bold' }}>
+            <div className={`variable-display ${simState.variables.public_job_loss_rate > 0.5 ? 'critical' : simState.variables.public_job_loss_rate > 0.2 ? 'warning' : ''}`}
+                 style={{ fontSize: '20px', fontWeight: 'bold' }}>
               {(simState.variables.public_job_loss_rate * 100).toFixed(1)}%
             </div>
           </div>
@@ -190,7 +193,8 @@ function CurrentStatePanel() {
             <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
               Misalignment Risk Score
             </div>
-            <div style={{ fontSize: '20px', color: '#ff6b6b', fontWeight: 'bold' }}>
+            <div className={`variable-display ${simState.variables.misalignment_risk_score > 0.7 ? 'critical' : simState.variables.misalignment_risk_score > 0.4 ? 'warning' : ''}`}
+                 style={{ fontSize: '20px', fontWeight: 'bold' }}>
               {(simState.variables.misalignment_risk_score * 100).toFixed(0)}%
             </div>
           </div>

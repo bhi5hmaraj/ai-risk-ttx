@@ -54,7 +54,7 @@ function StateMachineFlowchart() {
                   {h.currentStateName}
                 </div>
                 <div style={{ fontSize: '10px', color: '#8e8e8e' }}>
-                  Month {h.simTimeMonths.toFixed(1)}
+                  {h.simTimeMonths != null ? `Month ${h.simTimeMonths.toFixed(1)}` : ''}
                 </div>
               </div>
             ),

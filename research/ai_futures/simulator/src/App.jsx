@@ -6,6 +6,7 @@ import CurrentStatePanel from './components/CurrentStatePanel';
 import GraphsPanel from './components/GraphsPanel';
 import ChoicesPanel from './components/ChoicesPanel';
 import ConfigPanel from './components/ConfigPanel';
+import EmotionalFeedback from './components/EmotionalFeedback';
 import './App.css';
 
 function App() {
@@ -26,6 +27,9 @@ function App() {
 
   return (
     <div className="app">
+      {/* Emotional Feedback System */}
+      <EmotionalFeedback />
+
       {/* Intro Modal */}
       {showIntro && <IntroModal onClose={() => setShowIntro(false)} />}
 

@@ -1,0 +1,186 @@
+/* RESPONSIVE DESIGN */
+
+/* Tablet (landscape) */
+@media (max-width: 1200px) {
+  .state-section {
+    width: 350px;
+  }
+
+  .header-center {
+    margin: 0 20px;
+  }
+}
+
+/* Tablet (portrait) */
+@media (max-width: 992px) {
+  .top-row {
+    flex-direction: column;
+  }
+
+  .state-section {
+    width: 100%;
+    max-height: 300px;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .state-section > .panel {
+    flex: 1 1 45%;
+  }
+
+  .bottom-row {
+    height: auto;
+    min-height: 150px;
+  }
+
+  .header-center {
+    margin: 0 10px;
+  }
+
+  .modal {
+    padding: 20px;
+    max-width: 90vw;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-header {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .header-left h1 {
+    font-size: 16px;
+  }
+
+  .header-center {
+    width: 100%;
+    order: 3;
+    margin: 10px 0 0 0;
+  }
+
+  .main-content {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .top-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .state-section {
+    flex-direction: column;
+    max-height: none;
+  }
+
+  .state-section > .panel {
+    flex: 1 1 100%;
+  }
+
+  .bottom-row {
+    min-height: 120px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .modal {
+    padding: 15px;
+    max-width: 95vw;
+  }
+
+  .modal h2 {
+    font-size: 20px;
+  }
+}
+
+/* Mobile (small) */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 8px;
+  }
+
+  .header-left h1 {
+    font-size: 14px;
+  }
+
+  .progress-info {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .main-content {
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .panel {
+    padding: 10px;
+  }
+
+  .panel-title {
+    font-size: 12px;
+  }
+
+  button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .bottom-row {
+    min-height: 100px;
+    font-size: 13px;
+  }
+
+  .app-footer {
+    padding: 8px;
+    height: auto;
+  }
+
+  .credit {
+    font-size: 10px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-header {
+    height: 50px;
+    padding: 8px 16px;
+  }
+
+  .header-left h1 {
+    font-size: 14px;
+  }
+
+  .header-center {
+    margin: 0 10px;
+  }
+
+  .main-content {
+    padding: 8px;
+  }
+
+  .bottom-row {
+    height: 120px;
+  }
+
+  .app-footer {
+    display: none;
+  }
+}
