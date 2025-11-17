@@ -4,8 +4,10 @@
   "private": true,
   "description": "Interactive visualizer for AI2027 causal DAG state machine",
   "dependencies": {
+    "plotly.js": "^3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-plotly.js": "^2.6.0",
     "reactflow": "^11.10.0",
     "zustand": "^4.4.0"
   },

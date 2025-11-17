@@ -42,20 +42,13 @@
   font-weight: 700;
 }
 
-.graph-svg {
-  display: block;
-  margin: 0 auto;
+/* Plotly container styling */
+.graph .js-plotly-plot {
+  width: 100% !important;
 }
 
-.axis-label {
-  fill: #8892b0;
-  font-size: 10px;
-  font-family: monospace;
-}
-
-.threshold-label {
-  font-size: 9px;
-  font-weight: 600;
+.graph .plotly {
+  width: 100%;
 }
 
 .graph-citation {

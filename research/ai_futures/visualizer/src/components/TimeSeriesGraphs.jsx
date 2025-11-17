@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import Plot from 'react-plotly.js'
 import './TimeSeriesGraphs.css'
 
 /**
@@ -112,42 +113,87 @@ export default function TimeSeriesGraphs({ history, globalState }) {
 }
 
 function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresholds = [], citation }) {
-  const graphWidth = 400
-  const graphHeight = 120
-  const padding = { top: 10, right: 10, bottom: 25, left: 50 }
-
-  // Calculate scales
-  const xScale = (simDays) => {
-    return padding.left + ((simDays / maxX) * (graphWidth - padding.left - padding.right))
-  }
-
-  const yValues = data.map(d => d[yKey])
-  const minY = Math.min(...yValues, 0)
-  const maxY = Math.max(...yValues, 1)
-
-  const yScale = (value) => {
-    if (isLog && value > 0) {
-      const logMin = Math.log10(minY || 1e24)
-      const logMax = Math.log10(maxY || 1e28)
-      const logValue = Math.log10(value)
-      const normalized = (logValue - logMin) / (logMax - logMin)
-      return graphHeight - padding.bottom - (normalized * (graphHeight - padding.top - padding.bottom))
-    } else {
-      const range = maxY - minY
-      const normalized = range > 0 ? (value - minY) / range : 0
-      return graphHeight - padding.bottom - (normalized * (graphHeight - padding.top - padding.bottom))
-    }
-  }
-
-  // Generate path
-  const pathData = data.map((d, i) => {
-    const x = xScale(d.simDays)
-    const y = yScale(d[yKey])
-    return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`
-  }).join(' ')
-
   // Current value
   const currentValue = data.length > 0 ? data[data.length - 1][yKey] : 0
+
+  // Prepare data for Plotly
+  const xData = data.map(d => d.simDays)
+  const yData = data.map(d => d[yKey])
+
+  // Main trace
+  const traces = [{
+    x: xData,
+    y: yData,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { color: color, width: 2 },
+    marker: { color: color, size: 6 },
+    name: title,
+    hovertemplate: `Day %{x}<br>%{y}<extra></extra>`
+  }]
+
+  // Add threshold lines as shapes
+  const shapes = thresholds.map(t => ({
+    type: 'line',
+    x0: 0,
+    x1: maxX,
+    y0: t.value,
+    y1: t.value,
+    line: {
+      color: t.color,
+      width: 2,
+      dash: 'dash'
+    }
+  }))
+
+  // Add threshold annotations
+  const annotations = thresholds.map(t => ({
+    x: maxX * 0.8,
+    y: t.value,
+    text: t.label,
+    showarrow: false,
+    font: {
+      color: t.color,
+      size: 10,
+      family: 'monospace'
+    },
+    xanchor: 'left',
+    yanchor: 'bottom'
+  }))
+
+  const layout = {
+    height: 180,
+    margin: { l: 60, r: 20, t: 10, b: 40 },
+    xaxis: {
+      title: 'Simulation Days',
+      color: '#8892b0',
+      gridcolor: '#0f3460',
+      showgrid: true,
+      zeroline: false
+    },
+    yaxis: {
+      type: isLog ? 'log' : 'linear',
+      color: '#8892b0',
+      gridcolor: '#0f3460',
+      showgrid: true,
+      zeroline: false
+    },
+    shapes: shapes,
+    annotations: annotations,
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: {
+      color: '#e0e0e0',
+      family: 'monospace'
+    },
+    showlegend: false,
+    hovermode: 'closest'
+  }
+
+  const config = {
+    displayModeBar: false,
+    responsive: true
+  }
 
   return (
     <div className="graph">
@@ -156,79 +202,13 @@ function Graph({ title, data, yKey, maxX, formatY, color, isLog = false, thresho
         <span className="current-value" style={{ color }}>{formatY(currentValue)}</span>
       </div>
 
-      <svg width={graphWidth} height={graphHeight} className="graph-svg">
-        {/* Grid lines */}
-        <line
-          x1={padding.left}
-          y1={padding.top}
-          x2={padding.left}
-          y2={graphHeight - padding.bottom}
-          stroke="#0f3460"
-          strokeWidth="1"
-        />
-        <line
-          x1={padding.left}
-          y1={graphHeight - padding.bottom}
-          x2={graphWidth - padding.right}
-          y2={graphHeight - padding.bottom}
-          stroke="#0f3460"
-          strokeWidth="1"
-        />
-
-        {/* Y-axis labels */}
-        <text x="5" y={padding.top + 5} className="axis-label">{formatY(maxY)}</text>
-        <text x="5" y={graphHeight - padding.bottom} className="axis-label">{formatY(minY)}</text>
-
-        {/* X-axis labels */}
-        <text x={padding.left} y={graphHeight - 5} className="axis-label">Day 0</text>
-        <text x={graphWidth - padding.right - 30} y={graphHeight - 5} className="axis-label">
-          Day {Math.floor(maxX)}
-        </text>
-
-        {/* Threshold lines */}
-        {thresholds.map((t, i) => (
-          <g key={i}>
-            <line
-              x1={padding.left}
-              y1={yScale(t.value)}
-              x2={graphWidth - padding.right}
-              y2={yScale(t.value)}
-              stroke={t.color}
-              strokeWidth="1"
-              strokeDasharray="4 2"
-            />
-            <text
-              x={graphWidth - padding.right - 50}
-              y={yScale(t.value) - 3}
-              className="threshold-label"
-              fill={t.color}
-            >
-              {t.label}
-            </text>
-          </g>
-        ))}
-
-        {/* Data line */}
-        <path
-          d={pathData}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Data points */}
-        {data.map((d, i) => (
-          <circle
-            key={i}
-            cx={xScale(d.simDays)}
-            cy={yScale(d[yKey])}
-            r="3"
-            fill={color}
-          />
-        ))}
-      </svg>
+      <Plot
+        data={traces}
+        layout={layout}
+        config={config}
+        style={{ width: '100%' }}
+        useResizeHandler={true}
+      />
 
       {citation && <p className="graph-citation">{citation}</p>}
     </div>

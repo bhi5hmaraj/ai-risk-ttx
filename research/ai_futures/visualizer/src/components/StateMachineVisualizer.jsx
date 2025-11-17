@@ -127,7 +127,7 @@ export default function StateMachineVisualizer({ currentStateId, history }) {
         <h4>Legend</h4>
         <div className="legend-item">
           <span className="color-box" style={{ background: '#48bb78' }}></span>
-          Strong (>60%)
+          Strong (&gt;60%)
         </div>
         <div className="legend-item">
           <span className="color-box" style={{ background: '#ed8936' }}></span>
@@ -135,7 +135,7 @@ export default function StateMachineVisualizer({ currentStateId, history }) {
         </div>
         <div className="legend-item">
           <span className="color-box" style={{ background: '#fc8181' }}></span>
-          Weak (<30%)
+          Weak (&lt;30%)
         </div>
         <div className="legend-item">
           <span className="color-box" style={{ background: '#e53e3e' }}></span>
