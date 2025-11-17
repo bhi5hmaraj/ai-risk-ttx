@@ -225,9 +225,11 @@ export class SimulationEngine {
    * Record current state in history
    */
   recordHistory() {
+    const state = this.getCurrentState();
     this.history.push({
-      time: this.simTimeMonths,
-      state: this.currentState,
+      simTimeMonths: this.simTimeMonths,
+      currentStateId: this.currentState,
+      currentStateName: state ? state.name : this.currentState,
       variables: { ...this.variables },
     });
   }
@@ -270,12 +272,13 @@ export class SimulationEngine {
       currentState: this.getCurrentState(),
       simTimeMonths: this.simTimeMonths,
       simDate: this.getSimDate(),
+      stateElapsedMonths: this.stateElapsedMonths,
       variables: { ...this.variables },
       history: this.history,
       availableChoices: this.getAvailableChoices(),
       isAtBranchPoint: this.isAtBranchPoint(),
       isEnded: this.isEnded(),
-      progress: this.getProgress(),
+      progress: this.simTimeMonths / 36, // Total simulation is 36 months
     };
   }
 }

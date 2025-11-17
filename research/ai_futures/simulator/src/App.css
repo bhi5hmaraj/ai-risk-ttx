@@ -1,3 +1,49 @@
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: #0a0e1a;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+button {
+  background: #2c3e50;
+  border: 1px solid #4ecdc4;
+  color: #e0e0e0;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #34495e;
+  border-color: #6ee7df;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: #4ecdc4;
+  color: #0a0e1a;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: #6ee7df;
+}
+
+/* App Container */
 .app {
   display: flex;
   flex-direction: column;
@@ -6,72 +52,100 @@
   overflow: hidden;
 }
 
+/* Header */
 .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: linear-gradient(135deg, #1a1f3a 0%, #0f1629 100%);
-  padding: 20px 30px;
+  padding: 12px 24px;
   border-bottom: 2px solid #4ecdc4;
+  height: 70px;
 }
 
-.app-header h1 {
-  font-size: 28px;
-  font-weight: 700;
+.header-left h1 {
+  font-size: 20px;
   color: #4ecdc4;
-  margin-bottom: 5px;
+  font-weight: 700;
 }
 
-.subtitle {
-  font-size: 14px;
-  color: #8e8e8e;
-  font-style: italic;
-}
-
-.main-layout {
-  display: flex;
+.header-center {
   flex: 1;
-  overflow: hidden;
+  max-width: 600px;
+  margin: 0 40px;
 }
 
-.left-panel {
-  width: 400px;
-  background: #0f1629;
-  border-right: 2px solid #2c3e50;
-  overflow-y: auto;
+.header-right {
   display: flex;
-  flex-direction: column;
   gap: 10px;
-  padding: 10px;
 }
 
-.right-panel {
+.icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Main Content - Single Pane of Glass */
+.main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 16px;
+  gap: 16px;
 }
 
-.tab-content {
+/* Top Row: State + Graphs */
+.top-row {
   flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0; /* Important for flexbox overflow */
+}
+
+.state-section {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.graphs-section {
+  flex: 1;
+  min-width: 0;
+  background: #1a1f3a;
+  border-radius: 8px;
+  border: 1px solid #2c3e50;
   overflow: hidden;
 }
 
+/* Bottom Row: Choices */
+.bottom-row {
+  height: 200px;
+  background: #1a1f3a;
+  border-radius: 8px;
+  border: 1px solid #2c3e50;
+  overflow-y: auto;
+}
+
+/* Footer */
 .app-footer {
   background: #0f1629;
-  padding: 15px 30px;
-  border-top: 2px solid #2c3e50;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.config-button {
-  background: transparent;
-  border: 1px solid #4ecdc4;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 10px 24px;
+  border-top: 1px solid #2c3e50;
+  text-align: center;
+  height: 40px;
 }
 
 .credit {
-  font-size: 13px;
+  font-size: 12px;
   color: #8e8e8e;
 }
 
@@ -84,6 +158,7 @@
   text-decoration: underline;
 }
 
+/* Loading State */
 .loading {
   display: flex;
   align-items: center;
@@ -93,60 +168,148 @@
   color: #4ecdc4;
 }
 
-/* Config Modal */
-.config-modal-overlay {
+/* Panels */
+.panel {
+  background: #1a1f3a;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #2c3e50;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ecdc4;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Modal Overlays */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s;
 }
 
-.config-modal {
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
   background: #1a1f3a;
   border-radius: 12px;
   padding: 30px;
-  width: 500px;
-  max-width: 90vw;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
   border: 2px solid #4ecdc4;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s;
 }
 
-.config-modal h2 {
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal h2 {
   color: #4ecdc4;
   margin-bottom: 20px;
+  font-size: 24px;
 }
 
-.config-field {
-  margin-bottom: 20px;
-}
-
-.config-field label {
-  display: block;
-  margin-bottom: 8px;
+.modal p {
+  line-height: 1.6;
+  margin-bottom: 15px;
   color: #e0e0e0;
-  font-weight: 500;
 }
 
-.config-field input {
-  width: 100%;
+.modal ul {
+  margin-left: 20px;
+  margin-bottom: 15px;
+  line-height: 1.8;
 }
 
-.config-field .help-text {
-  font-size: 12px;
-  color: #8e8e8e;
-  margin-top: 5px;
-  line-height: 1.4;
-}
-
-.config-actions {
+.modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
   margin-top: 25px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2c3e50;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #34495e;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+.progress-label {
+  color: #4ecdc4;
+}
+
+.progress-time {
+  color: #8e8e8e;
+}
+
+.progress-date {
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.progress-track {
+  height: 8px;
+  background: #0a0e1a;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2c3e50;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ecdc4 0%, #6ee7df 100%);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
 }
