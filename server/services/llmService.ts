@@ -60,8 +60,8 @@ export const generateCounterfactualConsequences = async (
   return getService().generateCounterfactualConsequences(gameState);
 };
 
-export const generateCustomScenario = async (scenarioDescription: string): Promise<GameSetup | null> => {
-  return getService().generateCustomScenario(scenarioDescription);
+export const generateCustomScenario = async (scenarioDescription: string, aiPlayers?: number): Promise<GameSetup | null> => {
+  return getService().generateCustomScenario(scenarioDescription, aiPlayers);
 };
 
 export const generateInitialScenarioChat = async (

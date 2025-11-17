@@ -156,7 +156,7 @@ const RoleSelection: React.FC<{
     <div className="text-center mb-10">
       <h2 className="text-3xl font-bold">Choose Your Role</h2>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {roles.map((role) => (
         <RoleCard
           key={role.name}
@@ -230,12 +230,12 @@ const PresetRoleSelection: React.FC<{
       )}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-          <label className="block text-sm text-gray-400 mb-1">Max AI Players ({minAiPlayers}–5)</label>
+          <label className="block text-sm text-gray-400 mb-1">Max AI Players ({minAiPlayers}–{GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM})</label>
           <div className="flex items-center gap-3">
             <input
               type="range"
               min={minAiPlayers}
-              max={5}
+              max={GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM}
               value={typeof maxAIPlayers === 'number' ? maxAIPlayers : 5}
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value, 10))}
               className="w-full"
@@ -243,7 +243,7 @@ const PresetRoleSelection: React.FC<{
             <input
               type="number"
               min={minAiPlayers}
-              max={5}
+              max={GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM}
               value={typeof maxAIPlayers === 'number' ? maxAIPlayers : 5}
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value || '0', 10))}
               className="w-16 bg-gray-800 border border-gray-700 rounded p-1 text-center"
@@ -526,3 +526,4 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     </div>
   );
 };
+import { GAME_CONFIG } from '@/gameConfig';

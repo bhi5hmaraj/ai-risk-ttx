@@ -25,6 +25,7 @@ import {
   getChatConsequencesPrompt,
   getDebriefPrompt,
 } from "../../../prompts";
+import { GAME_CONFIG } from '../../../gameConfig';
 import type { LLMService } from './types';
 import type { GameChatSession } from '../chatSession';
 
@@ -100,7 +101,7 @@ const GameSetupZ = z.object({
     name: z.string(), icon: z.string(), publicObjective: z.string(), hiddenObjective: z.string(),
     resources: z.array(z.string()).nullable(),
     constraints: z.array(z.string()).nullable(),
-  }).strict()).min(4).max(6),
+  }).strict()).min(5).max(1 + GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM),
 }).strict();
 
 // Per OpenAI Structured Outputs guidelines, all fields must be required; use nullables for optional semantics
@@ -153,8 +154,8 @@ export const LLM_OPENAI: LLMService = {
     const { prompt } = getCounterfactualPromptAndSchema(gameState);
     return await parseWithZod<AICounterfactualResponse>(CounterfactualZ, prompt, "counterfactual");
   },
-  async generateCustomScenario(scenarioDescription) {
-    const { prompt } = getCustomScenarioPromptAndSchema(scenarioDescription);
+  async generateCustomScenario(scenarioDescription, aiPlayers) {
+    const { prompt } = getCustomScenarioPromptAndSchema(scenarioDescription, aiPlayers);
     return await parseWithZod<GameSetup>(GameSetupZ, prompt, "custom_scenario_setup");
   },
   async generateInitialScenarioChat(session: GameChatSession) {

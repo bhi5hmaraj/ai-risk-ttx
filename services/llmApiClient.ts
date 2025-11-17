@@ -229,7 +229,8 @@ export const generateCounterfactualConsequences = async (
  * Generate custom scenario from user description
  */
 export const generateCustomScenario = async (
-  scenarioDescription: string
+  scenarioDescription: string,
+  aiPlayers?: number
 ): Promise<GameSetup | null> => {
   try {
     console.log('[LLM API Client] Calling generate/custom-scenario...');
@@ -241,6 +242,7 @@ export const generateCustomScenario = async (
       },
       body: JSON.stringify({
         scenarioDescription,
+        aiPlayers,
       }),
     });
 

@@ -32,7 +32,7 @@ export interface LLMService {
   generateCounterfactualConsequences(
     gameState: GameState
   ): Promise<AICounterfactualResponse | null>;
-  generateCustomScenario(scenarioDescription: string): Promise<GameSetup | null>;
+  generateCustomScenario(scenarioDescription: string, aiPlayers?: number): Promise<GameSetup | null>;
 
   // Chat-session variants
   generateInitialScenarioChat(session: GameChatSession): Promise<AIConsequenceResponse | null>;

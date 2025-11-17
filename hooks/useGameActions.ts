@@ -132,7 +132,9 @@ export function useGameActions() {
           // If a custom/public setup exists, normalize it to canonical and prune stakeholders to match slider.
           let canonicalSetup: any;
           if (gameSetup) {
-            const desiredAI = typeof maxAIPlayers === 'number' ? Math.max(0, Math.min(5, Math.floor(maxAIPlayers))) : 5;
+            // For custom/public scenarios (when gameSetup exists), allow up to configured max AI players
+            const cap = path === 'custom' ? GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM : GAME_CONFIG.MAX_AI_PLAYERS;
+            const desiredAI = typeof maxAIPlayers === 'number' ? Math.max(0, Math.min(cap, Math.floor(maxAIPlayers))) : cap;
             const cm = gameSetup.coreMetric || (coreMetric as any);
             const cmValue = Number.isFinite((cm as any)?.value) ? Math.max(0, Math.min(100, Math.round((cm as any).value))) : coreMetric.value;
             const normalizedCore = {
@@ -223,3 +225,4 @@ export function useGameActions() {
 
   return { handleStartGame, handleConfirmActions } as const;
 }
+import { GAME_CONFIG } from '@/gameConfig';

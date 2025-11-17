@@ -70,31 +70,23 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         maxRounds={maxRounds}
         scenarioAlreadyPublic={scenarioAlreadyPublic}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-9 space-y-6">
-          <RoundSnapshotCard
-            gameState={gameState}
-            latestLogEntry={latestLogEntry}
-            onToggleHistory={onToggleHistory}
-            isHistoryOpen={isHistoryOpen}
-            onViewActionTree={onOpenActionTree}
-            canViewActionTree={canViewActionTree}
-          />
-        </div>
-        <div className="lg:col-span-3" data-testid="action-selection">
-          <ActionSelection
-            key={gameState.round}
-            options={actionOptions}
-            onConfirm={onConfirmActions}
-            isLoading={isLoading && !humanPlayer.hasSubmittedActions}
-            hasSubmitted={humanPlayer.hasSubmittedActions}
-            isPaused={isPaused}
-            players={players}
-            aiCompletionStatus={aiCompletionStatus}
-            availablePoints={humanPlayer.actionPoints}
-          />
-        </div>
-      </div>
+      <RoundSnapshotCard
+        gameState={gameState}
+        latestLogEntry={latestLogEntry}
+        onToggleHistory={onToggleHistory}
+        isHistoryOpen={isHistoryOpen}
+        onViewActionTree={onOpenActionTree}
+        canViewActionTree={canViewActionTree}
+        players={players}
+        actionOptions={actionOptions}
+        onConfirmActions={onConfirmActions}
+        isLoading={isLoading && !humanPlayer.hasSubmittedActions}
+        hasSubmitted={humanPlayer.hasSubmittedActions}
+        isPaused={isPaused}
+        aiCompletionStatus={aiCompletionStatus}
+        availablePoints={humanPlayer.actionPoints}
+        humanPlayer={humanPlayer}
+      />
       {isHistoryOpen && (
         <div className="mt-6" data-testid="event-log">
           <EventLog

@@ -219,6 +219,7 @@ export async function handleGenerateAITurn(body: {
 // ============================================================================
 export async function handleGenerateCustomScenario(body: {
   scenarioDescription: string;
+  aiPlayers?: number;
 }) {
   const started = Date.now();
   const rid = createReqId('llm');
@@ -231,7 +232,7 @@ export async function handleGenerateCustomScenario(body: {
     );
   }
 
-  const result = await generateCustomScenario(body.scenarioDescription);
+  const result = await generateCustomScenario(body.scenarioDescription, body.aiPlayers);
 
   slog(rid, `[generate/custom-scenario] done`, { ok: !!result, dt: Date.now() - started });
 

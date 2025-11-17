@@ -148,7 +148,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="space-y-2">
           {options.map((opt) => {
             const isSelected = selected.some((s) => s.title === opt.title);
             const canSelect = pointsRemaining >= opt.cost || isSelected;
