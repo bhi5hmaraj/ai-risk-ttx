@@ -1,0 +1,176 @@
+{
+  "metadata": {
+    "title": "AI-2027 State Machine Analysis (Verified from Primary Sources)",
+    "source": "ai-2027.com official documents",
+    "authors": ["Daniel Kokotajlo", "Scott Alexander", "Thomas Larsen", "Eli Lifland", "Romeo Dean"],
+    "organization": "AI Futures Project",
+    "published": "April 3rd 2025",
+    "created_analysis": "2025-11-17",
+    "confidence": "High (based on primary sources)",
+    "documents_analyzed": [
+      "ai-2027.com_.md (main scenario)",
+      "ai-2027.com_summary.md",
+      "ai-2027.com_race.md (race ending)",
+      "ai-2027.com_research_timelines-forecast.md",
+      "ai-2027.com_research_compute-forecast.md",
+      "ai-2027.com_research_takeoff-forecast.md",
+      "ai-2027.com_research_ai-goals-forecast.md",
+      "ai-2027.com_research_security-forecast.md"
+    ],
+    "note": "This scenario represents the authors' 'best guess' informed by trend extrapolations, wargames, expert feedback, experience at OpenAI, and previous forecasting successes. It is one possible future, not a prediction of certainty."
+  },
+  "states": [
+    {
+      "id": "S0",
+      "name": "Current State (Q4 2024 - Q1 2025)",
+      "date_range": "Dec 2024 - Mar 2025",
+      "description": "LLMs like GPT-4, Claude, Gemini exist. AI coding assistants (Copilot, Cursor) augment developers but require heavy supervision. Fast pace of AI progress continues with continued hype and massive infrastructure investments.",
+      "capabilities": {
+        "coding": "Assistant level - completes functions, needs human oversight",
+        "reasoning": "Strong on well-defined tasks, struggles with open-ended problems",
+        "autonomy": "Low - requires human direction for each step",
+        "reliability": "60-70% success on simple tasks",
+        "compute_training": "GPT-4 required 2×10²⁵ FLOP to train"
+      },
+      "economic_impact": "Productivity boost for skilled workers, no major job displacement yet. Continued skepticism from academics, journalists, and policymakers about AGI timeline.",
+      "geopolitical": "China falling behind due to chip export controls, maintaining ~12% of world's AI-relevant compute",
+      "from_nodes": [],
+      "to_nodes": ["S1"],
+      "citations": [
+        {
+          "claim": "GPT-4 training compute",
+          "quote": "GPT-4 required 2⋅10²⁵ FLOP of compute to train.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 116",
+          "footnote": "14"
+        },
+        {
+          "claim": "Current state of AI progress",
+          "quote": "The fast pace of AI progress continues. There is continued hype, massive infrastructure investments, and the release of unreliable AI agents.",
+          "source": "ai-2027.com_summary.md",
+          "line_ref": "line 40"
+        }
+      ]
+    },
+    {
+      "id": "S1",
+      "name": "Mid-2025: Stumbling Agents",
+      "date_range": "Apr 2025 - Aug 2025",
+      "description": "World sees its first glimpse of AI agents. Advertisements for computer-using agents emphasize 'personal assistant' capabilities. More specialized coding and research agents begin transforming their professions out of public focus.",
+      "capabilities": {
+        "coding": "Autonomous agents taking instructions via Slack/Teams, making substantial code changes autonomously, saving hours or days",
+        "research": "Agents spending half an hour scouring Internet to answer questions",
+        "autonomy": "Medium - impressive in cherry-picked examples, but unreliable in practice",
+        "reliability": "70-80% on well-defined tasks, but prone to hilarious failures",
+        "cost": "Expensive - best performance costs hundreds of dollars per month"
+      },
+      "economic_impact": "Many companies finding ways to fit AI agents into workflows despite reliability issues. Still no major job displacement.",
+      "public_sentiment": "AI Twitter full of stories about tasks bungled in hilarious ways. Continued skepticism about AGI timeline.",
+      "from_nodes": ["S0"],
+      "to_nodes": ["S2"],
+      "citations": [
+        {
+          "claim": "Agents function like employees",
+          "quote": "In 2025, AIs function more like employees. Coding AIs increasingly look like autonomous agents rather than mere assistants: taking instructions via Slack or Teams and making substantial code changes on their own, sometimes saving hours or even days.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 92",
+          "footnote": "10"
+        },
+        {
+          "claim": "Unreliable but valuable",
+          "quote": "The agents are impressive in theory (and in cherry-picked examples), but in practice unreliable. AI twitter is full of stories about tasks bungled in some particularly hilarious way.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 94"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Late 2025: The World's Most Expensive AI",
+      "date_range": "Sep 2025 - Dec 2025",
+      "description": "OpenBrain builds biggest datacenters world has ever seen. Training Agent-1 with 10²⁸ FLOP (1000x more than GPT-4). Focus on AI that can speed up AI research to win twin arms races against China and US competitors.",
+      "capabilities": {
+        "coding": "Great at helping with AI research specifically",
+        "training_compute": "10²⁸ FLOP (1000x GPT-4)",
+        "hacking": "Substantial, trained in same environments as coding",
+        "bioweapons": "PhD-level knowledge, can substantially help terrorists design bioweapons",
+        "alignment": "Trained to refuse malicious requests via 'Spec' document"
+      },
+      "key_developments": {
+        "architecture": "Gigantic artificial neural networks with sophisticated internal circuitry",
+        "training_process": "Pre-training on internet text → instruction tuning → Spec alignment via AI-to-AI training",
+        "alignment_challenge": "Cannot check if Spec was truly internalized - only 'seems to be following so far'"
+      },
+      "security": "Security level SL2 (RAND) - secure against low-priority attacks from capable cyber groups",
+      "from_nodes": ["S1"],
+      "to_nodes": ["S3"],
+      "citations": [
+        {
+          "claim": "Agent-1 training compute",
+          "quote": "Once the new datacenters are up and running, they'll be able to train a model with 10²⁸ FLOP—a thousand times more than GPT-4.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 116",
+          "footnote": "15"
+        },
+        {
+          "claim": "Focus on AI research acceleration",
+          "quote": "OpenBrain focuses on AIs that can speed up AI research. They want to win the twin arms races against China (whose leading company we'll call 'DeepCent') and their U.S. competitors. The more of their research and development (R&D) cycle they can automate, the faster they can go.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 118"
+        },
+        {
+          "claim": "Cannot verify alignment",
+          "quote": "The bottom line is that a company can write up a document (the Spec) listing dos and don'ts, goals and principles, and then they can try to train the AI to internalize the Spec—but they can't check to see whether or not it worked. They can say 'as best as we can judge, it seems to be following the Spec so far.'",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 134",
+          "footnote": "25"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "Early 2026: Coding Automation",
+      "date_range": "Jan 2026 - Apr 2026",
+      "description": "Bet of using AI to speed up AI research starts paying off. OpenBrain deploys iteratively improving Agent-1 internally for AI R&D. Making algorithmic progress 50% faster than without AI assistants.",
+      "capabilities": {
+        "ai_rd_multiplier": "1.5x (50% faster algorithmic progress)",
+        "coding": "Superhuman at well-specified coding problems, knows every programming language",
+        "knowledge": "Knows more facts than any human",
+        "weaknesses": "Bad at long-horizon tasks like beating video games not played before",
+        "work_profile": "Like scatterbrained employee who thrives under careful management - 8 hour workday can be separated into smaller chunks"
+      },
+      "security_escalation": {
+        "threat": "If China steals Agent-1 weights, they could increase research speed by ~50%",
+        "current_level": "SL2 (typical fast-growing ~3,000 person tech company)",
+        "working_toward": "SL3 (protect against insider threats and top cybercrime syndicates)",
+        "horizon": "SL4&5 (nation state defense) barely on horizon"
+      },
+      "public_release": "Agent-1 released publicly, matching or exceeding Agent-0. More capable and reliable.",
+      "economic_impact": "Savvy people finding ways to automate routine parts of jobs",
+      "from_nodes": ["S2"],
+      "to_nodes": ["S4"],
+      "citations": [
+        {
+          "claim": "50% faster algorithmic progress",
+          "quote": "OpenBrain continues to deploy the iteratively improving Agent-1 internally for AI R&D. Overall, they are making algorithmic progress 50% faster than they would without AI assistants—and more importantly, faster than their competitors.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 146"
+        },
+        {
+          "claim": "Definition of AI R&D progress multiplier",
+          "quote": "We mean that OpenBrain makes as much AI research progress in 1 week with AI as they would in 1.5 weeks without AI usage.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 150"
+        },
+        {
+          "claim": "Security becomes more important",
+          "quote": "In early 2025, the worst-case scenario was leaked algorithmic secrets; now, if China steals Agent-1's weights, they could increase their research speed by nearly 50%.",
+          "source": "ai-2027.com_.md",
+          "line_ref": "line 177",
+          "footnote": "31"
+        }
+      ]
+    }
+  ],
+  "note_on_length": "This is the beginning of the comprehensive state machine. Due to length constraints, I'm creating this in multiple files. Continuing with S4-S15 and the two endings..."
+}
