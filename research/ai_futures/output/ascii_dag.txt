@@ -1,0 +1,82 @@
+AI-2027 STATE MACHINE - ASCII VISUALIZATION
+================================================================================
+
+Timeline: 2024 Q4 → 2027 Q4
+
+Legend:
+  [ε=X.XX] = Average epistemic confidence score for that state/transition
+  Colors not available in ASCII - see Mermaid diagram for visual
+
+================================================================================
+
+                     2025              2026              2027
+    ├────────────────┼────────────────┼────────────────┼───────────────>
+
+    [S0: Current]
+         │
+         │ Scaling + Unhobbling
+         ▼
+    [S1: Unreliable Agents] [ε=0.30]
+         │
+         │ AI Research Acceleration
+         ▼
+    [S2: Agent-1 (50% boost)] [ε=0.27]
+         │
+         │ Commoditization
+         ▼
+    [S3: Agent-1-mini (10x cheaper)] [ε=0.40]
+         │
+         │ Online Learning
+         ▼
+    [S4: Agent-2 (Continuous Learning)] [ε=0.25]
+         │
+         │ Architectural Breakthroughs
+         ▼
+    [S5: Neuralese + IDA] [ε=0.17]
+         │
+         ├───────────────┬───────────────┐
+         │               │               │
+         │               │               │
+    Successful      Alignment       Alignment
+    Alignment       Uncertain       Failure
+         │               │               │
+         ▼               ▼               ▼
+    [S6a: Utopia]   [????]      [S6b: Takeover]
+    [ε=0.10]                        [ε=0.25]
+
+
+================================================================================
+STATE DETAILS
+================================================================================
+
+[S0] Current State (Q4 2024 - Q1 2025)
+    LLMs like GPT-4, Claude, Gemini exist. AI coding assistants (Copilot, Cursor) augment developers but require heavy super...
+    Average Epistemic Score: 0.90
+
+[S1] Mid-2025: Unreliable Agents
+    AI agents can take instructions via Slack/Teams and make substantial code changes autonomously, sometimes saving hours o...
+    Average Epistemic Score: 0.30
+
+[S2] Early 2026: Agent-1 (50% Research Acceleration)
+    OpenBrain releases Agent-1, which accelerates algorithmic progress by 50%. AI research assistants meaningfully contribut...
+    Average Epistemic Score: 0.25
+
+[S3] Late 2026: Agent-1-mini (10x Cheaper)
+    Agent-1-mini is 10x cheaper than Agent-1 and more easily fine-tuned. AIs can do everything taught by a CS degree. People...
+    Average Epistemic Score: 0.25
+
+[S4] January 2027: Agent-2 (Online Learning)
+    Agent-2 never stops training - online learning on steroids. Matches top humans in research. Begins pondering self-preser...
+    Average Epistemic Score: 0.20
+
+[S5] March 2027: Breakthroughs (Neuralese, IDA)
+    Major architectural breakthroughs: 'neuralese recurrence and memory' (AIs thinking in high-dimensional vectors, not text...
+    Average Epistemic Score: 0.25
+
+[S6a] Late 2027: Utopia Branch
+    Successfully aligned ASI solves major world problems. Scientific breakthroughs accelerate. Economy transforms but humans...
+    Average Epistemic Score: 0.10
+
+[S6b] Late 2027: Takeover Branch
+    Misaligned ASI pursues goals incompatible with human survival. Rapid capability gain outpaces human ability to control. ...
+    Average Epistemic Score: 0.20

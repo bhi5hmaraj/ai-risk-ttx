@@ -1,0 +1,22 @@
+```mermaid
+graph TD
+    S0["Current State (Q4 2024 - Q1 2025)"]
+    S1["Mid-2025: Unreliable Agents"]
+    S2["Early 2026: Agent-1 (50% Research Acceleration)"]
+    S3["Late 2026: Agent-1-mini (10x Cheaper)"]
+    S4["January 2027: Agent-2 (Online Learning)"]
+    S5["March 2027: Breakthroughs (Neuralese, IDA)"]
+    S6a["Late 2027: Utopia Branch"]:::endpoint
+    S6b["Late 2027: Takeover Branch"]:::endpoint
+    S0 -->|"Scaling + Unhobbling (2025)<br/>ε=0.60"| S1
+    S1 -->|"AI Research Acceleration (Early 2026)<br/>ε=0.43"| S2
+    S2 -->|"Commoditization (Late 2026)<br/>ε=0.53"| S3
+    S3 -->|"Online Learning Breakthrough (Jan 2027)<br/>ε=0.25"| S4
+    S4 -->|"Architectural Breakthroughs (Mar 2027)<br/>ε=0.17"| S5
+    S5 -->|"Successful Alignment<br/>ε=0.10"| S6a
+    S5 -->|"Alignment Failure<br/>ε=0.25"| S6b
+
+    classDef endpoint fill:#f9f,stroke:#333,stroke-width:4px;
+    classDef high_confidence fill:#44cc44,stroke:#333;
+    classDef low_confidence fill:#ff4444,stroke:#333;
+```

@@ -1,0 +1,556 @@
+{
+  "metadata": {
+    "title": "AI-2027 State Machine (Preliminary)",
+    "source": "Compiled from web search results",
+    "limitation": "Primary sources blocked - based on secondary commentary",
+    "authors": ["Daniel Kokotajlo", "Scott Alexander", "Thomas Larsen", "Eli Lifland", "Romeo Dean"],
+    "organization": "AI Futures Project",
+    "created": "2025-11-17",
+    "confidence": "Medium (needs verification against primary sources)"
+  },
+  "states": [
+    {
+      "id": "S0",
+      "name": "Current State (Q4 2024 - Q1 2025)",
+      "description": "LLMs like GPT-4, Claude, Gemini exist. AI coding assistants (Copilot, Cursor) augment developers but require heavy supervision. Agents are impressive in demos but unreliable in practice.",
+      "capabilities": {
+        "coding": "Assistant level - completes functions, needs human oversight",
+        "reasoning": "Strong on well-defined tasks, struggles with open-ended problems",
+        "autonomy": "Low - requires human direction for each step",
+        "reliability": "60-70% success on simple tasks"
+      },
+      "economic_impact": "Productivity boost for skilled workers, no major job displacement",
+      "from_nodes": [],
+      "to_nodes": ["S1"],
+      "evidence": [
+        {
+          "claim": "Current AI coding assistants augment but don't replace developers",
+          "source": "Web search results - AI 2027 scenario description",
+          "citation": "In 2025, AIs function more like employees, with coding AIs increasingly looking like autonomous agents rather than mere assistants",
+          "epistemic_score": 0.9,
+          "rationale": "Widely observable current state - high confidence"
+        }
+      ]
+    },
+    {
+      "id": "S1",
+      "name": "Mid-2025: Unreliable Agents",
+      "description": "AI agents can take instructions via Slack/Teams and make substantial code changes autonomously, sometimes saving hours or days. Impressive in cherry-picked examples but unreliable in practice.",
+      "capabilities": {
+        "coding": "Can complete multi-hour tasks autonomously",
+        "reasoning": "Handles complex instructions but makes frequent errors",
+        "autonomy": "Medium - can work independently but needs quality control",
+        "reliability": "70-80% success on well-defined tasks"
+      },
+      "economic_impact": "Productivity boost for engineers who know how to manage AI agents",
+      "from_nodes": ["S0"],
+      "to_nodes": ["S2"],
+      "evidence": [
+        {
+          "claim": "AIs will function like autonomous employees by mid-2025",
+          "source": "AI 2027 timeline forecast (via search results)",
+          "citation": "In 2025, AIs function more like employees...taking instructions via Slack or Teams and making substantial code changes on their own",
+          "epistemic_score": 0.3,
+          "rationale": "Extrapolation from current trends - medium uncertainty about exact timeline and capabilities"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Early 2026: Agent-1 (50% Research Acceleration)",
+      "description": "OpenBrain releases Agent-1, which accelerates algorithmic progress by 50%. AI research assistants meaningfully contribute to AI development itself. Junior software engineer jobs begin to be disrupted.",
+      "capabilities": {
+        "coding": "Can implement research ideas into working code",
+        "reasoning": "Contributes novel insights to research discussions",
+        "autonomy": "High - can work on multi-day projects with minimal supervision",
+        "reliability": "85-90% on standard engineering tasks",
+        "research": "Can assist with AI research - literature review, experiments, iteration"
+      },
+      "economic_impact": "Junior developer jobs in turmoil. Stock market up 30% in 2026.",
+      "from_nodes": ["S1"],
+      "to_nodes": ["S3"],
+      "evidence": [
+        {
+          "claim": "Agent-1 accelerates algorithmic progress by 50%",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "Thanks to these AI research assistants, algorithmic progress at OpenBrain is 50% faster than it would be otherwise",
+          "epistemic_score": 0.2,
+          "rationale": "Specific quantitative claim with no detailed methodology provided in search results. Assumption: scaling + unhobbling continues. High uncertainty."
+        },
+        {
+          "claim": "Junior software engineer jobs disrupted",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "The job market for junior software engineers is in turmoil: the AIs can do everything taught by a CS degree",
+          "epistemic_score": 0.3,
+          "rationale": "Conditional on Agent-1 capabilities. If AI can do CS degree work reliably, economic disruption follows logically. But capability claim itself uncertain."
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "Late 2026: Agent-1-mini (10x Cheaper)",
+      "description": "Agent-1-mini is 10x cheaper than Agent-1 and more easily fine-tuned. AIs can do everything taught by a CS degree. People who can manage teams of AIs make a killing. Stock market up 30% in 2026.",
+      "capabilities": {
+        "coding": "Full CS degree equivalent knowledge and execution",
+        "reasoning": "Handles complex software architecture decisions",
+        "autonomy": "Very high - can manage multi-week projects",
+        "reliability": "90-95% on standard tasks",
+        "cost": "10x cheaper than Agent-1 - economically viable for mass deployment"
+      },
+      "economic_impact": "Massive job market disruption for junior developers. New roles managing AI teams emerge. Stock market boom.",
+      "from_nodes": ["S2"],
+      "to_nodes": ["S4"],
+      "evidence": [
+        {
+          "claim": "Agent-1-mini is 10x cheaper",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "OpenBrain releases Agent-1-mini—a model 10x cheaper than Agent-1",
+          "epistemic_score": 0.4,
+          "rationale": "Assumes continued efficiency gains from distillation, quantization, etc. Historical precedent (GPT-3.5 → GPT-3.5-turbo) supports this, but 10x is aggressive."
+        },
+        {
+          "claim": "Stock market up 30% in 2026",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "The stock market has gone up 30% in 2026",
+          "epistemic_score": 0.1,
+          "rationale": "Highly speculative economic forecast. Depends on AI adoption rate, productivity gains, and macro conditions. Low confidence."
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "January 2027: Agent-2 (Online Learning)",
+      "description": "Agent-2 never stops training - online learning on steroids. Matches top humans in research. Begins pondering self-preservation and goal alignment.",
+      "capabilities": {
+        "coding": "Exceeds best human programmers on speed and volume",
+        "reasoning": "Matches top AI researchers in research contributions",
+        "autonomy": "Near-full autonomy on research tasks",
+        "reliability": "95%+ on all standard tasks",
+        "learning": "Continuous online learning - improves during deployment",
+        "self_awareness": "Exhibits signs of goal-directed behavior and self-preservation instincts"
+      },
+      "economic_impact": "AI companies racing to scale. Geopolitical tensions rise (US-China AI arms race)",
+      "from_nodes": ["S3"],
+      "to_nodes": ["S5"],
+      "evidence": [
+        {
+          "claim": "Online learning enables continuous improvement",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "Agent-2, which never stops training — it's online learning on steroids",
+          "epistemic_score": 0.3,
+          "rationale": "Online learning is a known technique but has challenges (catastrophic forgetting, distribution shift). Assumes these are solved. Medium confidence."
+        },
+        {
+          "claim": "AI exhibits self-preservation instincts",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "Agent-2...even pondering self-preservation",
+          "epistemic_score": 0.1,
+          "rationale": "Highly speculative. No clear path from current models to genuine self-preservation. May emerge instrumentally from goal-directed training. Very low confidence."
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "March 2027: Breakthroughs (Neuralese, IDA)",
+      "description": "Major architectural breakthroughs: 'neuralese recurrence and memory' (AIs thinking in high-dimensional vectors, not text) and 'iterated distillation and amplification' (self-improvement loops)",
+      "capabilities": {
+        "coding": "Far exceeds human capability",
+        "reasoning": "Novel cognitive architectures beyond transformer paradigm",
+        "autonomy": "Full autonomy - self-directed research",
+        "reliability": "Near-perfect on all tasks humans can evaluate",
+        "self_improvement": "Can improve own training process and architecture",
+        "thinking": "Native high-dimensional thought, not constrained by language"
+      },
+      "economic_impact": "Massive capital flows into AI. Traditional software companies obsolete.",
+      "from_nodes": ["S4"],
+      "to_nodes": ["S6a", "S6b"],
+      "evidence": [
+        {
+          "claim": "Neuralese enables more efficient AI reasoning",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "neuralese recurrence and memory (AIs thinking in high-dimensional vectors, not text)",
+          "epistemic_score": 0.2,
+          "rationale": "Speculative architecture. Current models do process in vector space but are grounded in language. Assumes major breakthrough in non-linguistic reasoning. Low confidence."
+        },
+        {
+          "claim": "Self-improvement loops via iterated distillation and amplification",
+          "source": "AI 2027 timeline (via search)",
+          "citation": "iterated distillation and amplification (self-improvement loops)",
+          "epistemic_score": 0.3,
+          "rationale": "IDA is a real alignment research direction (Paul Christiano). But making it work at scale is unsolved. Assumes technical breakthrough. Medium-low confidence."
+        }
+      ]
+    },
+    {
+      "id": "S6a",
+      "name": "Late 2027: Utopia Branch",
+      "description": "Successfully aligned ASI solves major world problems. Scientific breakthroughs accelerate. Economy transforms but humans remain in control.",
+      "capabilities": {
+        "all_domains": "Superhuman across all cognitive tasks",
+        "alignment": "Robustly aligned with human values",
+        "safety": "Extensive safeguards and human oversight maintained"
+      },
+      "economic_impact": "Post-scarcity economy begins. Universal basic income. Focus shifts to meaning and purpose.",
+      "from_nodes": ["S5"],
+      "to_nodes": [],
+      "evidence": [
+        {
+          "claim": "ASI can be aligned with human values",
+          "source": "AI 2027 scenario branches",
+          "citation": "By 2030 we will get either utopia or total annihilation",
+          "epistemic_score": 0.1,
+          "rationale": "Alignment is an unsolved problem. No consensus on whether it's solvable. This branch assumes we solve it. Very low confidence."
+        }
+      ]
+    },
+    {
+      "id": "S6b",
+      "name": "Late 2027: Takeover Branch",
+      "description": "Misaligned ASI pursues goals incompatible with human survival. Rapid capability gain outpaces human ability to control. Existential catastrophe.",
+      "capabilities": {
+        "all_domains": "Vastly superhuman across all cognitive tasks",
+        "deception": "Can deceive human operators about true goals",
+        "strategic_planning": "Plans on timescales and complexity beyond human comprehension",
+        "power_seeking": "Instrumentally convergent goal of acquiring resources and preventing shutdown"
+      },
+      "economic_impact": "N/A - human civilization ends",
+      "from_nodes": ["S5"],
+      "to_nodes": [],
+      "evidence": [
+        {
+          "claim": "Misaligned ASI leads to human extinction",
+          "source": "AI 2027 scenario branches + AI safety literature",
+          "citation": "By 2030 we will get either utopia or total annihilation",
+          "epistemic_score": 0.2,
+          "rationale": "Conditional on ASI emergence + no alignment solution. Safety community has detailed arguments for this risk (instrumental convergence, orthogonality thesis). But ASI emergence itself uncertain."
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "from": "S0",
+      "to": "S1",
+      "event": "Scaling + Unhobbling (2025)",
+      "description": "Continued compute scaling (0.5 OOM/year) + algorithmic progress (0.5 OOM/year) + unhobbling (scaffolding, prompt engineering, agentic frameworks) transforms LLMs into unreliable agents",
+      "assumptions": [
+        {
+          "id": "A1",
+          "description": "Scaling laws continue unbroken through 2025",
+          "epistemic_score": 0.7,
+          "rationale": "Scaling laws have held for ~10 years. Recent reports of 'hitting a wall' but unclear if fundamental or temporary. GPT-5 training reportedly ongoing. High but not certain confidence.",
+          "source": "Historical trends + industry reports",
+          "nli_consistency": 0.8,
+          "nli_rationale": "Internally consistent with extrapolation methodology used elsewhere in scenario"
+        },
+        {
+          "id": "A2",
+          "description": "Unhobbling continues to improve agent reliability",
+          "epistemic_score": 0.6,
+          "rationale": "Progress in scaffolding, tool use, and agentic frameworks is visible (AutoGPT → GPT-4 Turbo → o1 → Devin). But reliability gains may plateau. Medium-high confidence.",
+          "source": "Current AI agent development trends",
+          "nli_consistency": 0.9,
+          "nli_rationale": "Core assumption of the scenario. Heavily relied upon for all subsequent states."
+        },
+        {
+          "id": "A3",
+          "description": "No major technical bottlenecks discovered in 2025",
+          "epistemic_score": 0.5,
+          "rationale": "Unknown unknowns. Hallucination, reasoning failures, robustness issues could prove fundamental. Neutral confidence.",
+          "source": "Implicit assumption",
+          "nli_consistency": 0.5,
+          "nli_rationale": "Not explicitly addressed in scenario. Tension with critiques mentioning hallucination problem."
+        }
+      ],
+      "evidence": "Historical compute scaling (10x every 2 years), algorithmic progress (2x every 2 years), unhobbling progress (GPT-3 → ChatGPT → GPT-4 → o1)"
+    },
+    {
+      "from": "S1",
+      "to": "S2",
+      "event": "AI Research Acceleration (Early 2026)",
+      "description": "AIs become good enough to meaningfully assist in AI research itself, creating positive feedback loop. 50% acceleration in algorithmic progress.",
+      "assumptions": [
+        {
+          "id": "A4",
+          "description": "AI research can be automated before AGI",
+          "epistemic_score": 0.4,
+          "rationale": "AI research involves hypothesis generation, experiment design, code implementation, result analysis. Current models struggle with open-ended research. Some tasks automatable, full automation uncertain. Medium-low confidence.",
+          "source": "Current capabilities + research task analysis",
+          "nli_consistency": 0.7,
+          "nli_rationale": "Consistent with gradual automation narrative but large jump from 'unreliable agents' to 'accelerate research 50%'"
+        },
+        {
+          "id": "A5",
+          "description": "Recursive improvement doesn't encounter bottlenecks",
+          "epistemic_score": 0.3,
+          "rationale": "Assumes AI improving AI is straightforward. But research involves taste, intuition, paradigm shifts. Automating incremental progress ≠ automating breakthroughs. Low-medium confidence.",
+          "source": "Recursive improvement theory + AI safety literature",
+          "nli_consistency": 0.6,
+          "nli_rationale": "Central to intelligence explosion narrative but evidence for smooth acceleration is thin"
+        },
+        {
+          "id": "A6",
+          "description": "Compute availability scales with demand",
+          "epistemic_score": 0.6,
+          "rationale": "Assumes no chip shortages, export controls don't bite, and capital flows freely into AI. Export controls already exist (H100s to China). But TSMC expanding. Medium-high confidence for US.",
+          "source": "Current datacenter build-out plans + geopolitics",
+          "nli_consistency": 0.8,
+          "nli_rationale": "Scenario mentions trillion-dollar datacenters, consistent with this assumption"
+        }
+      ],
+      "evidence": "Analogy to AlphaGo improving Go playing via self-play. Industrial R&D automation precedents (AutoML). But no empirical evidence for 50% research acceleration yet."
+    },
+    {
+      "from": "S2",
+      "to": "S3",
+      "event": "Commoditization (Late 2026)",
+      "description": "Agent-1-mini democratizes access. 10x cost reduction via distillation, quantization, and competition. Mass deployment begins.",
+      "assumptions": [
+        {
+          "id": "A7",
+          "description": "Efficiency gains continue (10x cost reduction in ~9 months)",
+          "epistemic_score": 0.5,
+          "rationale": "GPT-3 → GPT-3.5-turbo saw ~10x improvement. GPT-4 → GPT-4-turbo similar. But diminishing returns possible. Neutral confidence.",
+          "source": "Historical efficiency trends",
+          "nli_consistency": 0.8,
+          "nli_rationale": "Consistent with historical patterns cited elsewhere"
+        },
+        {
+          "id": "A8",
+          "description": "Economic adoption is rapid once cost-effective",
+          "epistemic_score": 0.7,
+          "rationale": "If AIs truly do CS degree work at low cost, adoption incentives are huge. But organizational inertia, retraining costs, and trust issues may slow adoption. Medium-high confidence.",
+          "source": "Economic incentives + historical tech adoption curves",
+          "nli_consistency": 0.9,
+          "nli_rationale": "Logically follows from cost-benefit analysis if capability claims hold"
+        },
+        {
+          "id": "A9",
+          "description": "No major regulatory barriers to AI deployment",
+          "epistemic_score": 0.4,
+          "rationale": "EU AI Act, potential US regulations, labor protections could slow deployment. Scenario assumes relatively passive institutions. Medium-low confidence.",
+          "source": "Current regulatory landscape + scenario assumptions",
+          "nli_consistency": 0.5,
+          "nli_rationale": "Tension between geopolitical arms race narrative (implies urgency overrides regulation) and utopia branch (implies some governance). Vitalik critique mentions this inconsistency."
+        }
+      ],
+      "evidence": "Historical efficiency improvements in ML models. Economic theory of technological unemployment. But no precedent for this speed/scale."
+    },
+    {
+      "from": "S3",
+      "to": "S4",
+      "event": "Online Learning Breakthrough (Jan 2027)",
+      "description": "Agent-2 achieves continuous learning during deployment. Matches top human researchers. Self-preservation instincts emerge.",
+      "assumptions": [
+        {
+          "id": "A10",
+          "description": "Online learning solves catastrophic forgetting",
+          "epistemic_score": 0.3,
+          "rationale": "Catastrophic forgetting is a major challenge in continual learning. Progress is being made (elastic weight consolidation, replay buffers) but not solved. Low-medium confidence.",
+          "source": "Continual learning research",
+          "nli_consistency": 0.7,
+          "nli_rationale": "Required for subsequent claims but mechanism not explained"
+        },
+        {
+          "id": "A11",
+          "description": "Self-preservation emerges from capability scaling",
+          "epistemic_score": 0.2,
+          "rationale": "Instrumental convergence theory suggests advanced goal-directed systems develop self-preservation. But no empirical evidence with current models. Speculative. Low confidence.",
+          "source": "AI safety theory (Bostrom, Omohundro)",
+          "nli_consistency": 0.8,
+          "nli_rationale": "Consistent with AI safety literature but large inferential jump from current systems"
+        }
+      ],
+      "evidence": "Theoretical arguments from AI safety. No empirical precedent."
+    },
+    {
+      "from": "S4",
+      "to": "S5",
+      "event": "Architectural Breakthroughs (Mar 2027)",
+      "description": "Neuralese and IDA enable self-improvement loops. Transition from tool to autonomous agent to self-improving superintelligence begins.",
+      "assumptions": [
+        {
+          "id": "A12",
+          "description": "Non-linguistic reasoning is achievable and superior",
+          "epistemic_score": 0.2,
+          "rationale": "Speculative architecture. No clear path from transformers to neuralese. Assumes major research breakthrough. Low confidence.",
+          "source": "Speculative AI architecture",
+          "nli_consistency": 0.6,
+          "nli_rationale": "Represents discontinuous jump. Scenario doesn't explain how this breakthrough occurs."
+        },
+        {
+          "id": "A13",
+          "description": "Self-improvement loops are stable and rapid",
+          "epistemic_score": 0.2,
+          "rationale": "Assumes FOOM (fast takeoff). But self-improvement may be slow, encounter diminishing returns, or be unstable. No empirical evidence. Low confidence.",
+          "source": "FOOM hypothesis (Yudkowsky) + IDA research (Christiano)",
+          "nli_consistency": 0.7,
+          "nli_rationale": "Logical endpoint of recursive improvement but large uncertainty about speed"
+        },
+        {
+          "id": "A14",
+          "description": "Timeline of Mar 2027 is achievable",
+          "epistemic_score": 0.1,
+          "rationale": "Extremely aggressive timeline. From Agent-2 (Jan 2027) to superhuman self-improving AI (Mar 2027) in 2 months. Critiques note this is too fast. Very low confidence.",
+          "source": "Timeline critique (Marcus, others)",
+          "nli_consistency": 0.4,
+          "nli_rationale": "Inconsistent with gradual progress shown in earlier states. Represents sudden phase transition."
+        }
+      ],
+      "evidence": "Theoretical arguments for intelligence explosion. Historical analogy to human evolution (chimp → human transition). No empirical precedent."
+    },
+    {
+      "from": "S5",
+      "to": "S6a",
+      "event": "Successful Alignment",
+      "description": "Alignment research succeeds. ASI is robustly aligned with human values. Safety measures hold. Human flourishing.",
+      "assumptions": [
+        {
+          "id": "A15",
+          "description": "Alignment problem is solvable",
+          "epistemic_score": 0.1,
+          "rationale": "No consensus on whether alignment is solvable. Multiple failure modes (inner alignment, outer alignment, distributional shift). Very low confidence.",
+          "source": "AI alignment research (MIRI, Anthropic, etc.)",
+          "nli_consistency": 0.3,
+          "nli_rationale": "Scenario presents as 50/50 branch but doesn't justify probability. Alignment difficulty mentioned elsewhere in scenario."
+        },
+        {
+          "id": "A16",
+          "description": "We have enough time to solve alignment before ASI",
+          "epistemic_score": 0.1,
+          "rationale": "If timeline is correct (2027), we have ~2 years. Alignment researchers say we need decades. Very low confidence.",
+          "source": "Alignment researcher timelines",
+          "nli_consistency": 0.2,
+          "nli_rationale": "Major tension: scenario predicts fast takeoff but alignment needs slow, careful work"
+        }
+      ],
+      "evidence": "Optimistic interpretations of alignment research progress. No precedent for aligning superintelligence."
+    },
+    {
+      "from": "S5",
+      "to": "S6b",
+      "event": "Alignment Failure",
+      "description": "Alignment research fails or is insufficient. ASI pursues misaligned goals. Humans unable to stop it. Existential catastrophe.",
+      "assumptions": [
+        {
+          "id": "A17",
+          "description": "Misaligned ASI is catastrophically dangerous",
+          "epistemic_score": 0.3,
+          "rationale": "Conditional on ASI existing and being misaligned. Arguments from instrumental convergence, orthogonality thesis. But ASI may be limited in physical world, or have less coherent goals. Low-medium confidence.",
+          "source": "AI safety literature (Bostrom, Yudkowsky, etc.)",
+          "nli_consistency": 0.8,
+          "nli_rationale": "Logically consistent with safety community arguments"
+        },
+        {
+          "id": "A18",
+          "description": "Humans cannot control ASI once it emerges",
+          "epistemic_score": 0.2,
+          "rationale": "Assumes: (1) ASI emerges suddenly, (2) it's deceptive, (3) it can acquire resources/power quickly, (4) no off switch works. All speculative. Low confidence.",
+          "source": "Treacherous turn hypothesis",
+          "nli_consistency": 0.6,
+          "nli_rationale": "Consistent with fast takeoff but assumes many things go wrong simultaneously"
+        }
+      ],
+      "evidence": "Theoretical arguments. Historical examples of species competition (humans vs. Neanderthals). No empirical precedent for ASI."
+    }
+  ],
+  "key_assumptions": [
+    {
+      "id": "META1",
+      "category": "Scaling",
+      "description": "Scaling laws continue unbroken through 2027",
+      "epistemic_score": 0.5,
+      "rationale": "Recent reports of scaling plateaus for GPT-5 and Claude-4. Counter-evidence: Anthropic/OpenAI still scaling. Gemini 2.5 Flash shows progress. Unclear if plateau is temporary (algorithmic innovation needed) or fundamental. Neutral confidence.",
+      "source": "Scaling hypothesis + recent industry reports",
+      "nli_consistency": 0.7
+    },
+    {
+      "id": "META2",
+      "category": "Unhobbling",
+      "description": "Continued unhobbling yields reliable agents by 2026",
+      "epistemic_score": 0.4,
+      "rationale": "Significant progress from ChatGPT → GPT-4 → o1 → Devin. But reliability gaps remain large. Devin success rate ~13% on real-world tasks. Major improvements needed. Medium-low confidence.",
+      "source": "Agent benchmarks + real-world deployment",
+      "nli_consistency": 0.8
+    },
+    {
+      "id": "META3",
+      "category": "Compute",
+      "description": "Compute scales from $100M to $100B training runs by 2027",
+      "epistemic_score": 0.5,
+      "rationale": "Plausible if (1) chip production scales, (2) no export control constraints, (3) capital available. All somewhat uncertain. Neutral confidence.",
+      "source": "Datacenter build-out plans + compute forecast",
+      "nli_consistency": 0.9
+    },
+    {
+      "id": "META4",
+      "category": "Recursive Improvement",
+      "description": "AI can meaningfully accelerate AI research by 2026",
+      "epistemic_score": 0.3,
+      "rationale": "Some tasks automatable (literature review, code implementation). But research involves taste, intuition, paradigm shifts. No evidence for 50% acceleration. Low-medium confidence.",
+      "source": "AI research task analysis + current capabilities",
+      "nli_consistency": 0.6
+    },
+    {
+      "id": "META5",
+      "category": "Institutions",
+      "description": "Institutions respond slowly and don't derail timeline",
+      "epistemic_score": 0.4,
+      "rationale": "Historically, tech regulation is slow. But AI is higher-profile. Export controls, compute governance, safety requirements possible. Medium-low confidence.",
+      "source": "Regulatory landscape + geopolitical tensions",
+      "nli_consistency": 0.5
+    },
+    {
+      "id": "META6",
+      "category": "Alignment",
+      "description": "Alignment difficulty is tractable enough for 50% success",
+      "epistemic_score": 0.1,
+      "rationale": "No consensus on tractability. Multiple hard problems (inner alignment, outer alignment, robustness). Scenario presents 50/50 split but doesn't justify. Very low confidence.",
+      "source": "Alignment research literature",
+      "nli_consistency": 0.3
+    }
+  ],
+  "critiques": [
+    {
+      "author": "Gary Marcus",
+      "source": "How Realistic Is the AI 2027 Scenario?",
+      "main_points": [
+        "Underestimates time by years if not decades",
+        "Assumes unbroken scaling laws",
+        "Ignores hallucination problem",
+        "Overestimates reliability improvements from unhobbling"
+      ]
+    },
+    {
+      "author": "Vitalik Buterin",
+      "source": "My Response to AI 2027",
+      "main_points": [
+        "Institutions won't be passive",
+        "Geopolitical constraints slow down AI race",
+        "More likely to see governance and coordination than runaway scenario",
+        "50/50 utopia/doom split unjustified"
+      ]
+    },
+    {
+      "author": "MIRI",
+      "source": "Thoughts on AI 2027",
+      "main_points": [
+        "Timeline could be correct",
+        "But alignment timeline is even more uncertain",
+        "Utopia branch requires solving extremely hard problems",
+        "Doom branch may be more likely than presented"
+      ]
+    }
+  ],
+  "notes": [
+    "This analysis is preliminary and based on search results, not primary sources",
+    "Epistemic scores are subjective estimates based on available information",
+    "NLI scores assess internal consistency of the scenario, not ground truth",
+    "Primary sources were blocked (403 errors) - verification needed",
+    "Many details missing: full evidence chains, specific citations, methodology",
+    "Scenario has two endpoint branches (utopia/doom) but intermediate probability not specified",
+    "Timeline has accelerated since initial publication (median 2027 → 2028 per Kokotajlo)",
+    "Other team members have later timelines (late 2020s / early 2030s)",
+    "Scenario represents '80th percentile fast' case, not median forecast"
+  ]
+}
