@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import useSimulationStore from '../store/useSimulationStore';
+import StateMachineFlowchart from './StateMachineFlowchart';
 
 function CurrentStatePanel() {
   const simState = useSimulationStore((state) => state.simState);
@@ -8,6 +10,7 @@ function CurrentStatePanel() {
   const reset = useSimulationStore((state) => state.reset);
   const setSpeedMultiplier = useSimulationStore((state) => state.setSpeedMultiplier);
   const speed = useSimulationStore((state) => state.speed);
+  const [showFlowchart, setShowFlowchart] = useState(true);
 
   if (!simState) return null;
 
@@ -93,41 +96,58 @@ function CurrentStatePanel() {
         )}
       </div>
 
-      {/* Current State Info */}
+      {/* Current State Info / Flowchart Toggle */}
       <div className="panel">
-        <div className="panel-title">Current State</div>
-
-        <h3 style={{
-          color: '#4ecdc4',
-          fontSize: '18px',
-          marginBottom: '12px',
-          lineHeight: 1.3,
-        }}>
-          {simState.currentState.name}
-        </h3>
-
-        <p style={{
-          color: '#e0e0e0',
-          lineHeight: 1.6,
-          fontSize: '14px',
-          marginBottom: '12px',
-        }}>
-          {simState.currentState.description}
-        </p>
-
-        <div style={{
-          fontSize: '12px',
-          color: '#8e8e8e',
-          paddingTop: '12px',
-          borderTop: '1px solid #2c3e50',
-        }}>
-          <div style={{ marginBottom: '6px' }}>
-            <strong>Phase:</strong> {simState.currentState.phase}
-          </div>
-          <div>
-            <strong>Time in state:</strong> {simState.stateElapsedMonths.toFixed(1)} months
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div className="panel-title">{showFlowchart ? 'State Flowchart' : 'Current State'}</div>
+          <button
+            onClick={() => setShowFlowchart(!showFlowchart)}
+            style={{
+              fontSize: '11px',
+              padding: '4px 8px',
+            }}
+          >
+            {showFlowchart ? 'Details' : 'Flowchart'}
+          </button>
         </div>
+
+        {showFlowchart ? (
+          <StateMachineFlowchart />
+        ) : (
+          <>
+            <h3 style={{
+              color: '#4ecdc4',
+              fontSize: '18px',
+              marginBottom: '12px',
+              lineHeight: 1.3,
+            }}>
+              {simState.currentState.name}
+            </h3>
+
+            <p style={{
+              color: '#e0e0e0',
+              lineHeight: 1.6,
+              fontSize: '14px',
+              marginBottom: '12px',
+            }}>
+              {simState.currentState.description}
+            </p>
+
+            <div style={{
+              fontSize: '12px',
+              color: '#8e8e8e',
+              paddingTop: '12px',
+              borderTop: '1px solid #2c3e50',
+            }}>
+              <div style={{ marginBottom: '6px' }}>
+                <strong>Phase:</strong> {simState.currentState.phase}
+              </div>
+              <div>
+                <strong>Time in state:</strong> {simState.stateElapsedMonths.toFixed(1)} months
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Key Variables */}

@@ -47,6 +47,15 @@ const useSimulationStore = create((set, get) => ({
     get().calculateSpeed();
   },
 
+  // Set simulation settings (called from IntroModal)
+  setSimulationSettings: ({ simDurationMonths, targetDurationMinutes, speed }) => {
+    set({
+      simDurationMonths,
+      targetDurationMinutes,
+      speed,
+    });
+  },
+
   // Start simulation playback
   play: () => {
     const { isPlaying, playbackIntervalId } = get();

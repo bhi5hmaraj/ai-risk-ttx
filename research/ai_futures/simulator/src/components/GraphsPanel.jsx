@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import useSimulationStore from '../store/useSimulationStore';
 
 function GraphsPanel() {
   const simState = useSimulationStore((state) => state.simState);
-  const [selectedVar, setSelectedVar] = useState('ai_rd_multiplier');
 
   if (!simState || !simState.history || simState.history.length === 0) {
     return (
@@ -18,38 +17,37 @@ function GraphsPanel() {
   // Extract time series data
   const timeData = simState.history.map(h => h.simTimeMonths);
 
-  // Variable configurations with colors
-  const varConfigs = {
-    ai_rd_multiplier: {
+  // Variable configurations
+  const varConfigs = [
+    {
+      key: 'ai_rd_multiplier',
       label: 'AI R&D Multiplier',
       color: '#ff6b6b',
-      yaxis: 'linear',
+      yaxis: 'log',
+      scale: 1,
     },
-    gdp_growth_rate: {
+    {
+      key: 'gdp_growth_rate',
       label: 'GDP Growth Rate (%)',
       color: '#51cf66',
       yaxis: 'linear',
-      scale: 100, // Convert to percentage
+      scale: 100,
     },
-    public_job_loss_rate: {
+    {
+      key: 'public_job_loss_rate',
       label: 'Job Loss Rate (%)',
       color: '#ffa94d',
       yaxis: 'linear',
       scale: 100,
     },
-    misalignment_risk_score: {
+    {
+      key: 'misalignment_risk_score',
       label: 'Misalignment Risk (%)',
-      color: '#ff6b6b',
+      color: '#e74c3c',
       yaxis: 'linear',
       scale: 100,
     },
-  };
-
-  const config = varConfigs[selectedVar];
-  const scale = config.scale || 1;
-
-  // Get data for selected variable
-  const yData = simState.history.map(h => h.variables[selectedVar] * scale);
+  ];
 
   // Extract events (state transitions)
   const events = [];
@@ -60,84 +58,165 @@ function GraphsPanel() {
       events.push({
         time: curr.simTimeMonths,
         label: curr.currentStateName,
-        type: 'state_transition',
+        stateId: curr.currentStateId,
       });
     }
   }
 
-  // Create trace for the variable
-  const trace = {
-    x: timeData,
-    y: yData,
-    type: 'scatter',
-    mode: 'lines',
-    name: config.label,
-    line: {
-      color: config.color,
-      width: 2,
-    },
-    fill: 'tozeroy',
-    fillcolor: config.color + '30', // Add transparency
-    hovertemplate: `<b>${config.label}</b><br>` +
-                    `Month: %{x:.1f}<br>` +
-                    `Value: %{y:.2f}<br>` +
-                    `<extra></extra>`,
+  // Create a subplot for each variable
+  const createTrace = (config) => {
+    const yData = simState.history.map(h => h.variables[config.key] * config.scale);
+
+    return {
+      x: timeData,
+      y: yData,
+      type: 'scatter',
+      mode: 'lines',
+      name: config.label,
+      line: {
+        color: config.color,
+        width: 2,
+      },
+      fill: 'tozeroy',
+      fillcolor: config.color + '30',
+      hovertemplate: `<b>${config.label}</b><br>` +
+                      `Month: %{x:.1f}<br>` +
+                      `Value: %{y:.2f}<br>` +
+                      `<extra></extra>`,
+    };
   };
 
-  // Create event markers
-  const eventShapes = events.map(event => ({
-    type: 'line',
-    x0: event.time,
-    x1: event.time,
-    y0: 0,
-    y1: 1,
-    yref: 'paper',
-    line: {
-      color: '#4ecdc4',
-      width: 2,
-      dash: 'dot',
-    },
-  }));
+  // Create all traces
+  const traces = varConfigs.map(config => createTrace(config));
 
-  const eventAnnotations = events.map((event, i) => ({
-    x: event.time,
-    y: 1,
-    yref: 'paper',
-    text: event.label,
-    showarrow: false,
-    textangle: -45,
-    xanchor: 'left',
-    yanchor: 'bottom',
-    font: {
-      size: 10,
-      color: '#4ecdc4',
-    },
-  }));
+  // Create event shapes and annotations for each subplot
+  const createEventShapes = (row) => {
+    return events.map(event => ({
+      type: 'line',
+      x0: event.time,
+      x1: event.time,
+      y0: 0,
+      y1: 1,
+      yref: `y${row > 1 ? row : ''} domain`,
+      line: {
+        color: '#4ecdc4',
+        width: 2,
+        dash: 'dot',
+      },
+    }));
+  };
+
+  const createEventAnnotations = (row) => {
+    return events.map((event, i) => ({
+      x: event.time,
+      y: 1,
+      yref: `y${row > 1 ? row : ''} domain`,
+      text: event.label.replace(/\d{4}:\s*/, ''), // Remove year prefix
+      showarrow: false,
+      textangle: -45,
+      xanchor: 'left',
+      yanchor: 'bottom',
+      font: {
+        size: 9,
+        color: '#4ecdc4',
+      },
+    }));
+  };
+
+  // Combine all shapes and annotations
+  const allShapes = [
+    ...createEventShapes(1),
+    ...createEventShapes(2),
+    ...createEventShapes(3),
+    ...createEventShapes(4),
+  ];
+
+  const allAnnotations = [
+    ...createEventAnnotations(1),
+    ...createEventAnnotations(2),
+    ...createEventAnnotations(3),
+    ...createEventAnnotations(4),
+  ];
 
   const layout = {
     autosize: true,
-    margin: { l: 60, r: 40, t: 40, b: 60 },
+    margin: { l: 60, r: 40, t: 10, b: 40 },
     paper_bgcolor: '#1a1f3a',
     plot_bgcolor: '#0f1629',
     font: {
       color: '#e0e0e0',
-      size: 12,
+      size: 11,
+    },
+    showlegend: false,
+    grid: {
+      rows: 2,
+      columns: 2,
+      pattern: 'independent',
+      roworder: 'top to bottom',
     },
     xaxis: {
+      title: '',
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      domain: [0, 0.48],
+    },
+    yaxis: {
+      title: varConfigs[0].label,
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      type: varConfigs[0].yaxis,
+      domain: [0.52, 1],
+    },
+    xaxis2: {
+      title: '',
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      domain: [0.52, 1],
+    },
+    yaxis2: {
+      title: varConfigs[1].label,
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      type: varConfigs[1].yaxis,
+      domain: [0.52, 1],
+    },
+    xaxis3: {
       title: 'Simulation Time (months)',
       gridcolor: '#2c3e50',
       showgrid: true,
+      domain: [0, 0.48],
     },
-    yaxis: {
-      title: config.label,
+    yaxis3: {
+      title: varConfigs[2].label,
       gridcolor: '#2c3e50',
       showgrid: true,
-      type: config.yaxis,
+      type: varConfigs[2].yaxis,
+      domain: [0, 0.48],
     },
-    shapes: eventShapes,
-    annotations: eventAnnotations,
+    xaxis4: {
+      title: 'Simulation Time (months)',
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      domain: [0.52, 1],
+    },
+    yaxis4: {
+      title: varConfigs[3].label,
+      gridcolor: '#2c3e50',
+      showgrid: true,
+      type: varConfigs[3].yaxis,
+      domain: [0, 0.48],
+    },
+    shapes: allShapes,
+    annotations: allAnnotations,
     hovermode: 'closest',
   };
+
+  // Assign each trace to its subplot
+  const tracesWithSubplots = traces.map((trace, i) => ({
+    ...trace,
+    xaxis: `x${i + 1}`,
+    yaxis: `y${i + 1}`,
+  }));
 
   const plotConfig = {
     displayModeBar: false,
@@ -149,35 +228,12 @@ function GraphsPanel() {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      padding: '12px',
+      padding: '8px',
     }}>
-      {/* Variable Selector */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '12px',
-        flexWrap: 'wrap',
-      }}>
-        {Object.keys(varConfigs).map(key => (
-          <button
-            key={key}
-            onClick={() => setSelectedVar(key)}
-            style={{
-              fontSize: '12px',
-              padding: '6px 12px',
-              background: selectedVar === key ? '#4ecdc4' : undefined,
-              color: selectedVar === key ? '#0a0e1a' : undefined,
-            }}
-          >
-            {varConfigs[key].label}
-          </button>
-        ))}
-      </div>
-
-      {/* Graph */}
+      {/* Graph Grid */}
       <div style={{ flex: 1, minHeight: 0 }}>
         <Plot
-          data={[trace]}
+          data={tracesWithSubplots}
           layout={layout}
           config={plotConfig}
           style={{ width: '100%', height: '100%' }}
@@ -187,12 +243,12 @@ function GraphsPanel() {
 
       {/* Legend */}
       <div style={{
-        marginTop: '8px',
-        fontSize: '11px',
+        marginTop: '4px',
+        fontSize: '10px',
         color: '#8e8e8e',
         textAlign: 'center',
       }}>
-        Dotted lines indicate state transitions. Hover over the graph for details.
+        Dotted lines indicate state transitions. Hover for details.
       </div>
     </div>
   );
