@@ -12,6 +12,12 @@
   padding: 1.5rem 2rem;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .app-header h1 {
   color: #e94560;
   font-size: 1.8rem;
@@ -22,6 +28,37 @@
   color: #a8b2d1;
   font-size: 0.9rem;
   margin: 0;
+}
+
+.sim-time-display {
+  text-align: right;
+}
+
+.sim-days-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-bottom: 0.3rem;
+}
+
+.sim-days-counter .label {
+  color: #8892b0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sim-days-counter .value {
+  color: #64ffda;
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Courier New', monospace;
+}
+
+.sim-date-display {
+  color: #a8b2d1;
+  font-size: 0.9rem;
 }
 
 .app-content {
@@ -117,5 +154,19 @@
   .side-panel {
     border-left: none;
     border-top: 1px solid #0f3460;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .sim-time-display {
+    text-align: left;
+  }
+
+  .sim-days-counter {
+    align-items: flex-start;
   }
 }

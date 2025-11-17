@@ -5,22 +5,21 @@ import './SetupScreen.css'
  * Initial setup screen - configure simulation parameters
  */
 export default function SetupScreen({ onComplete }) {
-  const [simYears, setSimYears] = useState(3) // Default: 3 years (2024-2027)
+  const [simDays, setSimDays] = useState(1095) // Default: 1095 days (3 years, 2024-2027)
   const [wallMinutes, setWallMinutes] = useState(10) // Default: 10 minute playthrough
 
   const handleStart = () => {
-    const totalSimDays = simYears * 365
     const totalWallSeconds = wallMinutes * 60
 
     onComplete({
-      totalSimDays,
+      totalSimDays: simDays,
       totalWallSeconds,
-      simYears,
       wallMinutes
     })
   }
 
-  const daysPerSecond = (simYears * 365) / (wallMinutes * 60)
+  const daysPerSecond = simDays / (wallMinutes * 60)
+  const simYears = (simDays / 365).toFixed(1)
 
   return (
     <div className="setup-screen">
@@ -34,20 +33,20 @@ export default function SetupScreen({ onComplete }) {
 
         <div className="setup-form">
           <div className="form-group">
-            <label htmlFor="simYears">
-              Simulation Duration (years)
-              <span className="help-text">How many years of AI progress to simulate</span>
+            <label htmlFor="simDays">
+              Simulation Duration (days)
+              <span className="help-text">How many simulation days to run ({simYears} years)</span>
             </label>
             <input
-              id="simYears"
+              id="simDays"
               type="range"
-              min="1"
-              max="5"
-              step="0.5"
-              value={simYears}
-              onChange={(e) => setSimYears(parseFloat(e.target.value))}
+              min="365"
+              max="1825"
+              step="30"
+              value={simDays}
+              onChange={(e) => setSimDays(parseInt(e.target.value))}
             />
-            <span className="value-display">{simYears} years (Late 2024 - {2024 + simYears})</span>
+            <span className="value-display">{simDays} days (~{simYears} years, Late 2024 - {2024 + parseFloat(simYears)})</span>
           </div>
 
           <div className="form-group">

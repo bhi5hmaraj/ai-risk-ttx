@@ -34,11 +34,156 @@ npm install
 
 ## Running
 
+### Development
+
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser.
+
+### Production Build
+
+```bash
+npm run build
+```
+
+This creates optimized files in the `dist/` directory.
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## Deployment
+
+### GitHub Pages
+
+**Option 1: Using GitHub Actions (Recommended)**
+
+1. Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: research/ai_futures/visualizer/package-lock.json
+
+      - name: Install dependencies
+        working-directory: research/ai_futures/visualizer
+        run: npm ci
+
+      - name: Build
+        working-directory: research/ai_futures/visualizer
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'research/ai_futures/visualizer/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+2. In your GitHub repository:
+   - Go to **Settings** > **Pages**
+   - Source: **GitHub Actions**
+   - Push to main branch to trigger deployment
+
+**Option 2: Manual Deployment with gh-pages**
+
+1. Install gh-pages:
+```bash
+npm install --save-dev gh-pages
+```
+
+2. Add to `package.json`:
+```json
+{
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "homepage": "https://USERNAME.github.io/REPO-NAME/research/ai_futures/visualizer"
+}
+```
+
+3. Update `vite.config.js` to set base path:
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  base: '/REPO-NAME/research/ai_futures/visualizer/',
+  server: {
+    port: 3001
+  }
+})
+```
+
+4. Deploy:
+```bash
+npm run deploy
+```
+
+**Option 3: Deploy to Vercel**
+
+1. Install Vercel CLI:
+```bash
+npm i -g vercel
+```
+
+2. Deploy:
+```bash
+cd research/ai_futures/visualizer
+vercel
+```
+
+3. Follow prompts, Vercel will auto-detect Vite and configure build settings
+
+**Option 4: Deploy to Netlify**
+
+1. Create `netlify.toml` in visualizer directory:
+```toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+2. Deploy via Netlify CLI or connect GitHub repo in Netlify dashboard
 
 ## Usage
 

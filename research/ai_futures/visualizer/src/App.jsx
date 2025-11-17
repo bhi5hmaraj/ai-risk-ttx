@@ -5,6 +5,7 @@ import SetupScreen from './components/SetupScreen'
 import StateMachineVisualizer from './components/StateMachineVisualizer'
 import ControlPanel from './components/ControlPanel'
 import GlobalStateDisplay from './components/GlobalStateDisplay'
+import TimeSeriesGraphs from './components/TimeSeriesGraphs'
 import { STATES, INITIAL_GLOBAL_STATE, createTimeScale } from './model'
 import './App.css'
 
@@ -130,10 +131,27 @@ function App() {
     <ReactFlowProvider>
       <div className="app">
         <header className="app-header">
-          <h1>AI2027 State Machine Visualizer</h1>
-          <p className="subtitle">
-            Interactive representation of Kokotajlo & Alexander's AGI timeline forecast
-          </p>
+          <div className="header-content">
+            <div>
+              <h1>AI2027 State Machine Visualizer</h1>
+              <p className="subtitle">
+                Interactive representation of Kokotajlo & Alexander's AGI timeline forecast
+              </p>
+            </div>
+            <div className="sim-time-display">
+              <div className="sim-days-counter">
+                <span className="label">Simulation Day</span>
+                <span className="value">{Math.floor(globalState.simDays)}</span>
+              </div>
+              <div className="sim-date-display">
+                {globalState.simDate.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </div>
+            </div>
+          </div>
         </header>
 
         <div className="app-content">
@@ -161,6 +179,8 @@ function App() {
             />
 
             <GlobalStateDisplay globalState={globalState} />
+
+            <TimeSeriesGraphs history={history} globalState={globalState} />
           </div>
         </div>
 
