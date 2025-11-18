@@ -97,6 +97,8 @@ Extended comparison of **macro-level modeling approaches**:
 
 **Recommended**: Discrete-time hybrid system (modes + difference equations + agents) with Δt = 1 month for AI-2027
 
+**See also**: [../../hybrid_automata/discrete_time_ha.md](../../hybrid_automata/discrete_time_ha.md) for formal specification of discrete-time hybrid automata (MLD, PWA systems)
+
 ---
 
 ### 5. Use Case Portability ([use_case_portability.md](use_case_portability.md))
@@ -254,20 +256,27 @@ Based on our evaluation, we propose a **three-tier architecture**:
 
 ## Related Documentation
 
-### Framework Documentation
-- [Hybrid Automata Framework](../hybrid_automata/framework.md) - HA definitions and semantics
-- [Integration Patterns](../hybrid_automata/integration.md) - SD+ABM+HA coupling
-- [Tools & Verification](../hybrid_automata/tools_and_verification.md) - Practical workflows
+### Formal Foundations
+- **[../../hybrid_automata/discrete_time_ha.md](../../hybrid_automata/discrete_time_ha.md)** - Discrete-time hybrid automata (formal spec, MLD/PWA systems)
+- **[../../hybrid_automata/framework.md](../../hybrid_automata/framework.md)** - Continuous-time HA definitions and semantics
+- **[../../hybrid_automata/integration.md](../../hybrid_automata/integration.md)** - SD+ABM+HA coupling patterns
+- **[../../hybrid_automata/tools_and_verification.md](../../hybrid_automata/tools_and_verification.md)** - Verification workflows
 
-### Design Documentation
-- [Model Design](../mvp_docs/model_design.md) - Progressive HA implementation
-- [Tech Design](../mvp_docs/tech_design.md) - Canonical contract, APIs
-- [Implementation Plan](../mvp_docs/impl_plan.md) - Week-by-week roadmap
+### Monte Carlo & Uncertainty
+- **[../../monte_carlo/README.md](../../monte_carlo/README.md)** - Monte Carlo simulation overview
+- **[../../monte_carlo/integration.md](../../monte_carlo/integration.md)** - MC with different formalisms (SD, HA, ABM)
+- **[../../monte_carlo/examples.md](../../monte_carlo/examples.md)** - Full AI-2027 example with Python code
+- **[monte_carlo_for_ttx.md](../monte_carlo_for_ttx.md)** - Integration with Simulacra game
+
+### Matrix Test Bed
+- **[../../matrix/README.md](../../matrix/README.md)** - Matrix architecture (test bed for all approaches)
+- **[../../matrix/adapters/README.md](../../matrix/adapters/README.md)** - Pluggable simulation adapters
+- **[../../matrix/views/README.md](../../matrix/views/README.md)** - Audience-specific views (Simulacra, Policy, Research)
 
 ### Examples
-- [Fisheries HA](../hybrid_automata/examples/01_ses_fisheries.md) - Social-ecological systems
-- [Epidemic HA](../hybrid_automata/examples/02_epidemic_control.md) - Multi-phase response
-- [AI-2027 HA](../hybrid_automata/examples/04_ai_governance.md) - Full governance spec
+- **[../../hybrid_automata/examples/01_ses_fisheries.md](../../hybrid_automata/examples/01_ses_fisheries.md)** - Social-ecological systems
+- **[../../hybrid_automata/examples/02_epidemic_control.md](../../hybrid_automata/examples/02_epidemic_control.md)** - Multi-phase response
+- **[../../hybrid_automata/examples/04_ai_governance.md](../../hybrid_automata/examples/04_ai_governance.md)** - Full governance spec
 
 ---
 
@@ -280,6 +289,9 @@ Based on our evaluation, we propose a **three-tier architecture**:
 | **[macro_alternatives.md](macro_alternatives.md)** | Macro-scale comparison | What works for national-scale models? |
 | **[discrete_time_modeling.md](discrete_time_modeling.md)** | Discrete-time focus | Why discrete time? What's the right Δt? Skip verification? |
 | **[use_case_portability.md](use_case_portability.md)** | Domain generalization | Can this extend to climate/pandemic domains? |
+| **[../../hybrid_automata/discrete_time_ha.md](../../hybrid_automata/discrete_time_ha.md)** | Formal DTHA spec | What are MLD/PWA systems? How to implement discrete-time HA? |
+| **[../../monte_carlo/README.md](../../monte_carlo/README.md)** | Uncertainty quantification | How to propagate uncertainty? Run risk analysis? |
+| **[../monte_carlo_for_ttx.md](../monte_carlo_for_ttx.md)** | Simulacra integration | How does MC fit into Simulacra gameplay? |
 
 ---
 
