@@ -49,6 +49,15 @@ Comprehensive survey of JS/Python libraries for FSM, temporal logic, and model c
 
 Mermaid diagrams of LTS, Time-Indexed models, and MDP with visual comparisons.
 
+### I want simple, non-technical explanations
+
+**See**: [eli/ (Explain Like I'm...)](eli/)
+
+Three levels of explanation:
+- [5 years old](eli/5_years_old.md) - Traffic lights, adventure games, dice rolls
+- [15 years old](eli/15_years_old.md) - Video games, speedruns, loot boxes
+- [Engineering graduate](eli/engineering_graduate.md) - Process control, reliability, HAZOP
+
 ---
 
 ## 📁 Directory Structure
@@ -60,6 +69,13 @@ research/ai_futures/
 │   ├── impl_plan.md                    # Week-by-week implementation roadmap
 │   ├── tech_design.md                  # Architecture: Next.js + React Flow + Matrix
 │   └── model_design.md                 # Which formal models for MVP
+│
+├── eli/                                # 🎓 Explain Like I'm...
+│   ├── README.md                       # Choose your level guide
+│   ├── 5_years_old.md                  # Traffic lights, adventure games
+│   ├── 15_years_old.md                 # Video games, speedruns, strategy
+│   ├── engineering_graduate.md         # Process control, reliability, HAZOP
+│   └── diagrams/                       # Mermaid diagrams (inline in docs)
 │
 ├── examples/                           # Executable examples with visualizations
 │   ├── README.md                       # How to run examples
@@ -114,9 +130,10 @@ research/ai_futures/
 4. See [mvp_docs/model_design.md](mvp_docs/model_design.md) for MVP scope
 
 **I want to understand the concepts**:
-1. Start with [examples/DIAGRAMS.md](examples/DIAGRAMS.md) - visual diagrams
-2. Run Python examples in [examples/](examples/)
-3. Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
+1. Start with [eli/](eli/) - choose your level (5yo, 15yo, or engineering grad)
+2. See [examples/DIAGRAMS.md](examples/DIAGRAMS.md) - visual diagrams
+3. Run Python examples in [examples/](examples/)
+4. Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
 
 **I'm integrating with Simulacra TTX**:
 1. Read [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
@@ -393,10 +410,11 @@ The formal modeling framework can integrate with the Simulacra TTX game to:
 
 ### For Beginners
 
-1. **Visual intuition**: Read [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
-2. **Run examples**: Execute [examples/01_simple_lts.py](examples/01_simple_lts.py)
-3. **High-level overview**: Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
-4. **Model selection**: See [examples/DIAGRAMS.md#5-model-selection-guide](examples/DIAGRAMS.md#5-model-selection-guide)
+1. **Choose your level**: Read [eli/README.md](eli/README.md) and pick 5yo, 15yo, or engineering grad
+2. **Simple explanations**: Start with [eli/5_years_old.md](eli/5_years_old.md) or [eli/15_years_old.md](eli/15_years_old.md)
+3. **Visual intuition**: See [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
+4. **Run examples**: Execute [examples/01_simple_lts.py](examples/01_simple_lts.py)
+5. **High-level overview**: Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
 
 ### For Developers
 
