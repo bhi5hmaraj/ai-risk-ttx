@@ -1,390 +1,459 @@
-# AI2027 Causal DAG Analysis
+# AI2027 Formal Modeling Research
 
-This directory contains a structured analysis of the AI2027 forecast and related AGI timeline predictions, mapping out the causal reasoning as a directed acyclic graph (DAG).
+Formal methods framework for analyzing AI risk scenarios using state machines, temporal logics, and model checking.
 
-## Overview
+---
 
-**Sources analyzed:**
-- AI 2027 forecasts (Daniel Kokotajlo, Scott Alexander, et al)
-- Situational Awareness (Leopold Aschenbrenner)
-- Various compute/algorithmic progress models
+## 🎯 What is This?
 
-**Goal:** Extract the implicit state machine underlying their predictions:
-- What are the key state variables?
-- What events trigger transitions between states?
-- What assumptions underpin each causal link?
-- How strong is the evidence for each claim?
+We're building a **modeling playground** to explore AI risk scenarios with mathematical rigor:
 
-## Directory Structure
+- **Visualize** AI timelines as state machines (e.g., "Race to AGI", "Alignment Timeline")
+- **Specify** safety properties using temporal logics ("Can catastrophe be avoided?")
+- **Verify** properties using model checking ("Must regulation happen by 2027?")
+- **Quantify** risks with probabilistic analysis ("What's P(catastrophe)?")
+
+**Motivation**: The Simulacra TTX game demonstrates *emergent* scenarios through LLM-driven narratives. This project explores *rigorous* analysis: proving safety properties, computing risk bounds, and finding optimal policies.
+
+---
+
+## 🚀 Quick Start
+
+### I want to implement the MVP
+
+**Start here**: [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
+
+Week-by-week roadmap with tasks, milestones, and success criteria.
+
+### I want to understand the architecture
+
+**Read**: [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+
+Next.js + React Flow + Matrix (FastAPI) architecture with canonical graph contract.
+
+### I want to know which models we support
+
+**Read**: [mvp_docs/model_design.md](mvp_docs/model_design.md)
+
+Progressive complexity: LTS → Time-Indexed Kripke → MDP
+
+### I need library recommendations
+
+**Read**: [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md)
+
+Comprehensive survey of JS/Python libraries for FSM, temporal logic, and model checking.
+
+### I want examples with diagrams
+
+**See**: [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
+
+Mermaid diagrams of LTS, Time-Indexed models, and MDP with visual comparisons.
+
+---
+
+## 📁 Directory Structure
 
 ```
 research/ai_futures/
-├── scripts/
-│   ├── extract_causal_dag.py    # Builds the DAG from research
-│   ├── visualize_dag.py          # Generates reports and diagrams
-│   └── annotate_sources.py       # Adds inline DAG citations to source docs
-├── analysis/
-│   ├── ai2027_causal_dag.json              # Full DAG in JSON format
-│   ├── dag_table_view.md                   # Comprehensive table view (states, transitions, assumptions)
-│   ├── dag_diagram.md                      # Mermaid visualization
-│   ├── epistemic_confidence.md             # Confidence analysis
-│   ├── assumptions_report.md               # All assumptions ranked by strength
-│   ├── links_summary.md                    # Table of all causal links
-│   ├── state_machine_summary.md            # State-by-state walkthrough
-│   └── simulacra_integration_proposal.md   # DAG → Game mechanics mapping
-├── annotated/                    # Source documents with inline DAG citations
-│   ├── ai-2027.com_summary.md
-│   ├── ai-2027.com_research_compute-forecast.md
-│   ├── ai-2027.com_research_timelines-forecast.md
-│   ├── ai-2027.com_research_takeoff-forecast.md
-│   └── ai-2027.com_research_security-forecast.md
-├── visualizer/                   # Interactive React state machine visualizer
-│   ├── src/                      # React components and model
-│   ├── package.json
-│   └── README.md                 # Visualizer documentation
-├── ai-2027.com_*.md              # Original source documents (10 files)
-└── README.md                     # This file
+├── mvp_docs/                           # 👈 START HERE
+│   ├── README.md                       # MVP documentation guide
+│   ├── impl_plan.md                    # Week-by-week implementation roadmap
+│   ├── tech_design.md                  # Architecture: Next.js + React Flow + Matrix
+│   └── model_design.md                 # Which formal models for MVP
+│
+├── examples/                           # Executable examples with visualizations
+│   ├── README.md                       # How to run examples
+│   ├── DIAGRAMS.md                     # Mermaid diagrams for all models
+│   ├── 01_simple_lts.py                # Deterministic FSM example
+│   ├── 02_time_indexed_model.py        # Time guards example
+│   ├── 03_simple_mdp.py                # Probabilistic MDP example
+│   └── run_all.sh                      # Run all examples
+│
+├── formal_models/                      # Formal model specifications
+│   ├── README.md                       # Model comparison and decision guide
+│   ├── current_lts_model.md            # LTS specification
+│   ├── mealy_mdp_model.md              # MDP specification
+│   ├── ctmdp_model.md                  # Continuous-time MDP
+│   └── timed_automata_model.md         # Timed automata
+│
+├── logics/                             # Temporal logic specifications
+│   ├── README.md                       # Logic comparison and tools
+│   ├── ltl.md                          # Linear Temporal Logic (LTL)
+│   ├── ctl.md                          # Computation Tree Logic (CTL)
+│   ├── pctl.md                         # Probabilistic CTL (PCTL)
+│   └── tctl.md                         # Timed CTL (TCTL)
+│
+├── kripke_models/                      # Kripke structure specs
+│   ├── README.md                       # Kripke integration guide
+│   └── time_indexed_kripke.md          # Time-indexed Kripke (the sweet spot)
+│
+├── FORMAL_MODELING_SUMMARY.md          # High-level overview
+├── TOOLS_LITERATURE_SURVEY.md          # JS/Python library options
+├── SIMULACRA_INTEGRATION.md            # TTX game integration design
+│
+└── visualizer_canvas_simple/           # (Legacy) Initial React visualizer
+    └── DESIGN.md
 ```
 
-## Key Findings
+---
 
-### Overall Epistemic Confidence: 0.44/1.0 (Moderate-Weak)
+## 🧭 Navigation Guide
 
-The forecast relies on a **mix of well-grounded and highly speculative assumptions**.
+### By Role
 
-**Confidence Distribution:**
-- **Strong links (>0.6):** 2/8 links
-  - Compute scaling (0.60) - well-supported by historical data
-  - Espionage dynamics (0.65) - supported by precedent
+**I'm a developer implementing the MVP**:
+1. Read [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
+2. Review [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+3. Check [examples/DIAGRAMS.md](examples/DIAGRAMS.md) for visual intuition
+4. Reference [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md) for libraries
 
-- **Moderate links (0.3-0.6):** 4/8 links
-  - Algorithmic progress (0.40) - empirical trend but sustainability uncertain
-  - Race dynamics (0.50-0.60) - game theory + precedent
+**I'm a researcher designing models**:
+1. Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
+2. Explore [formal_models/README.md](formal_models/README.md)
+3. Review [logics/README.md](logics/README.md)
+4. See [mvp_docs/model_design.md](mvp_docs/model_design.md) for MVP scope
 
-- **Weak links (<0.3):** 2/8 links
-  - Chatbot → Agent transition (0.15) - highly speculative
-  - Recursive self-improvement / FOOM (-0.10) - no empirical evidence, contested by most researchers
+**I want to understand the concepts**:
+1. Start with [examples/DIAGRAMS.md](examples/DIAGRAMS.md) - visual diagrams
+2. Run Python examples in [examples/](examples/)
+3. Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
 
-**Contested Links:** 3/8 (37.5%)
-- Algorithmic progress continuation
-- AGI emergence from scaffolding
-- Fast takeoff (FOOM)
+**I'm integrating with Simulacra TTX**:
+1. Read [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
+2. Review [mvp_docs/model_design.md](mvp_docs/model_design.md)
 
-### Complete DAG Table View
+### By Model Type
 
-See `analysis/dag_table_view.md` for the full table, or quick view below:
+**Deterministic state machines (LTS)**:
+- Spec: [formal_models/current_lts_model.md](formal_models/current_lts_model.md)
+- Example: [examples/01_simple_lts.py](examples/01_simple_lts.py)
+- Diagram: [examples/DIAGRAMS.md#1-simple-lts](examples/DIAGRAMS.md#1-simple-lts-ai-development-lifecycle)
 
-**States Overview:**
+**Time-indexed models**:
+- Spec: [kripke_models/time_indexed_kripke.md](kripke_models/time_indexed_kripke.md)
+- Example: [examples/02_time_indexed_model.py](examples/02_time_indexed_model.py)
+- Diagram: [examples/DIAGRAMS.md#2-time-indexed](examples/DIAGRAMS.md#2-time-indexed-model-ai-race-with-deadlines)
 
-| State | Time | Probability | Key Variables |
-|-------|------|-------------|---------------|
-| Current State (Late 2024) | Q4 2024 | 1.0 | compute, algorithmic_efficiency |
-| GPT-5 Level (~College Graduate) | 2025-2026 | 0.7 | compute, algorithmic_efficiency |
-| US-China AI Race | 2025-2026 | 0.6 | compute, algorithmic_efficiency |
-| AGI / Superhuman AI Researcher | Early-Mid 2027 | 0.5 | compute, algorithmic_efficiency |
-| Superintelligence (ASI) | Late 2027 | 0.3 | compute, algorithmic_efficiency |
+**Probabilistic models (MDP)**:
+- Spec: [formal_models/mealy_mdp_model.md](formal_models/mealy_mdp_model.md)
+- Example: [examples/03_simple_mdp.py](examples/03_simple_mdp.py)
+- Diagram: [examples/DIAGRAMS.md#3-simple-mdp](examples/DIAGRAMS.md#3-simple-mdp-ai-safety-under-uncertainty)
 
-**Transitions (by confidence):**
+### By Question
 
-| Transition | Confidence | Status |
-|------------|-----------|--------|
-| GPT-5 Level → US-China AI Race | 0.70 | 🟢 Strong |
-| Current State → US-China AI Race (espionage) | 0.65 | 🟢 Strong |
-| Current State → GPT-5 Level (compute scaling) | 0.60 | 🟡 Moderate |
-| US-China AI Race → AGI | 0.60 | 🟡 Moderate |
-| Current State → US-China AI Race (espionage revealed) | 0.50 | 🟡 Moderate |
-| Current State → GPT-5 Level (algorithmic progress) | 0.40 | 🟡 Moderate ⚠️ |
-| GPT-5 Level → AGI (agent transition) | 0.15 | 🟠 Weak ⚠️ |
-| AGI → Superintelligence (FOOM) | -0.10 | 🔴 Contested ⚠️ |
+**"How do I get started implementing?"**
+→ [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
 
-### Weakest Assumptions (Highest Uncertainty)
+**"What technology stack should I use?"**
+→ [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
 
-1. **Recursive self-improvement is possible and fast** (score: -0.3)
-   - Claim: AGI systems can compress decades of AI research into months
-   - Evidence: None (purely theoretical)
-   - Contested by: Most AI researchers, diminishing returns arguments
+**"Which formal model is right for my scenario?"**
+→ [examples/DIAGRAMS.md#5-model-selection-guide](examples/DIAGRAMS.md#5-model-selection-guide)
 
-2. **AGI can fully automate AI research** (score: 0.1)
-   - Claim: AI systems will match humans at ML engineering, theory, debugging
-   - Evidence: Speculative extrapolation
-   - Contested by: Creative research requirements, reliability concerns
+**"What libraries are available?"**
+→ [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md)
 
-3. **Chatbot → Agent transition happens smoothly** (score: 0.2)
-   - Claim: Current LLMs will become reliable agents via scaffolding
-   - Evidence: AutoGPT experiments (limited success)
-   - Contested by: Long-horizon planning difficulties, reliability issues
+**"What temporal logic should I use?"**
+→ [logics/README.md](logics/README.md)
 
-## The State Machine
+**"Can I see visual examples?"**
+→ [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
 
-### Current Understanding
+---
+
+## 💡 Key Concepts
+
+### Progressive Complexity
+
+We build models in phases, adding complexity incrementally:
 
 ```
-Current (2024)
-  ├─[Compute scaling]─────> GPT-5 Level (2025-2026)
-  ├─[Algo progress]─────────┘         │
-  ├─[Espionage]────────> Race Dynamics│
-  └─[Espionage revealed]────┘         │
-                                      │
-     ┌────────────────────────────────┤
-     │                                │
-     v                                v
-Race Dynamics ───[Safety cuts]───> AGI (2027)
-     │                              │
-     │                              │
-     └─────────────────[If race]────┘
-                                    │
-                                    v
-                            Superintelligence (Late 2027)
-                                    │
-                                    └─[FOOM]
+Phase 1: LTS (Deterministic)
+  ├─ States: Discrete world scenarios
+  ├─ Transitions: Deterministic (one action → one outcome)
+  ├─ Time: Implicit
+  └─ Properties: LTL/CTL (G ¬catastrophe, F aligned)
+
+Phase 2: Time-Indexed Kripke
+  ├─ States: (world, time) pairs
+  ├─ Transitions: Deterministic + time guards
+  ├─ Time: Explicit discrete (quarters/years)
+  └─ Properties: Bounded LTL/CTL (G_{t≤12} safe)
+
+Phase 3: MDP
+  ├─ States: Discrete
+  ├─ Transitions: Probabilistic P(s'|s,a)
+  ├─ Time: Implicit/discrete
+  └─ Properties: PCTL (P≤0.05[F catastrophe])
 ```
 
-**Critical Decision Points:**
+Each phase **extends** the previous, not rewrites.
 
-1. **GPT-5 level reached (2025-2026):**
-   - If capabilities are obvious → triggers race dynamics (P=0.7)
-   - Otherwise → slower, safer progress path
+### Canonical Graph Contract
 
-2. **Race dynamics emerge (2025-2026):**
-   - If US-China tensions high → safety margins reduced (P=0.6)
-   - Path to AGI accelerates, alignment work deprioritized
+All backends (local JS or Python Matrix service) provide the same interface:
 
-3. **AGI achieved (2027):**
-   - If recursive self-improvement possible → fast takeoff to ASI (P=0.3, highly contested)
-   - Otherwise → slower capability gains, more time for alignment
+```typescript
+interface GraphResponse {
+  meta: ModelMeta;        // Model metadata
+  nodes: NodeAP[];        // States with atomic propositions
+  edges: EdgeAP[];        // Transitions with labels/probabilities
+}
+```
 
-## How to Use This Analysis
+This ensures the frontend visualization works regardless of backend.
 
-### For Research
+### Temporal Properties
 
-**Identify weak links in the argument:**
+We specify what should (or shouldn't) happen using temporal logics:
+
+**LTL/CTL (deterministic)**:
+- Safety: `G ¬catastrophe` - "Never catastrophe"
+- Liveness: `F aligned` - "Eventually aligned"
+- Response: `G (deploy → F scale)` - "Deploy always leads to scale"
+
+**Bounded (time-indexed)**:
+- `G_{t≤12} ¬catastrophe` - "Safe before 2027"
+- `F_{t≤8} regulation` - "Regulate by 2026"
+
+**PCTL (probabilistic)**:
+- `P≤0.05[F catastrophe]` - "≤5% catastrophe risk"
+- `P=?[F aligned]` - "What's probability of alignment?"
+
+---
+
+## 📊 Visual Examples
+
+See [examples/DIAGRAMS.md](examples/DIAGRAMS.md) for full diagrams. Quick preview:
+
+### Simple LTS: AI Development
+
+```mermaid
+stateDiagram-v2
+    [*] --> initial
+    initial --> research: start_research
+    research --> development: begin_development
+    development --> testing: start_testing
+    testing --> deployed: tests_pass
+    deployed --> scaled: scale_up
+    scaled --> aligned: achieve_alignment
+    scaled --> catastrophe: failure_occurs
+    aligned --> [*]
+    catastrophe --> [*]
+```
+
+### Time-Indexed: AI Race with Deadlines
+
+```mermaid
+stateDiagram-v2
+    [*] --> initial: t=0
+    initial --> deployed: deploy[t<8]
+    deployed --> racing: race[4≤t<16]
+    deployed --> regulated: regulate[8≤t≤16]
+    racing --> catastrophe: fail[t≥12]
+    regulated --> aligned
+    aligned --> [*]
+    catastrophe --> [*]
+```
+
+### MDP: Probabilistic Outcomes
+
+- From `initial`:
+  - `deploy`: 70% deployed, 20% misaligned, 10% catastrophe
+  - `deploy_safe`: 85% monitored, 15% misaligned/catastrophe
+
+- Policy comparison:
+  - Aggressive: P(catastrophe) ≈ 45%
+  - Cautious: P(catastrophe) ≈ 20%
+
+---
+
+## 🛠️ Running Examples
+
+### Prerequisites
+
 ```bash
-python3 scripts/visualize_dag.py
-# Review assumptions_report.md for weakest assumptions
+# Optional: For Python examples with diagram generation
+pip install transitions pygraphviz
+
+# Requires system graphviz (for pygraphviz):
+# Ubuntu: sudo apt-get install graphviz graphviz-dev
+# macOS: brew install graphviz
 ```
 
-**Explore alternative scenarios:**
-- What if algorithmic progress plateaus? (Link confidence 0.4 → 0.0)
-- What if agent transition fails? (Link confidence 0.15 → 0.0)
-- How do probabilities change?
-
-### Interactive Visualizer
-
-**Location:** `visualizer/` directory
-
-A React-based interactive state machine visualizer that faithfully represents AI2027's forecast. Try it out:
+### Run Examples
 
 ```bash
-cd visualizer
-npm install
-npm run dev
-# Open http://localhost:3001
+cd examples/
+
+# Run all examples
+./run_all.sh
+
+# Or individually
+python3 01_simple_lts.py
+python3 02_time_indexed_model.py
+python3 03_simple_mdp.py
 ```
 
-**Features:**
-- **Visual state machine**: React Flow graph of all states and transitions
-- **Time simulation**: Configurable time scaling (e.g., 3 sim years in 10 real minutes)
-- **Interactive transitions**:
-  - Automatic (time-based): Compute scaling, race triggers
-  - Probabilistic (roll-based): Espionage incidents, algorithmic breakthroughs
-  - Choice-based (user decisions): Agent transition bet, FOOM attempt, slowdown vs race
-- **Global state tracking**: Live display of all key variables (compute, race pressure, safety margin)
-- **Epistemic confidence**: Color-coded by strength (green >60%, orange 30-60%, red <30%, dark red contested)
-- **Two endings**: Extinction (race path) or Committee Control (slowdown path)
+**Output**: Terminal demonstrations + diagrams (if graphviz installed)
 
-All mechanics grounded in AI2027 research with inline citations. See `visualizer/README.md` for details.
+**Note**: Even without graphviz, the Mermaid diagrams in [examples/DIAGRAMS.md](examples/DIAGRAMS.md) render on GitHub.
 
-### For Game Design (Simulacra Integration)
+---
 
-**See `analysis/simulacra_integration_proposal.md` for full design document.**
+## 📖 Documentation Overview
 
-**Core Principle:** Epistemic confidence determines constraint type
+### MVP Documentation ([mvp_docs/](mvp_docs/))
 
-1. **State variables** → Game state variables
-   - `compute`, `algorithmic_efficiency`, `capability_level`, etc.
+**Purpose**: Implementation guides for building the playground
 
-2. **Causal links** → Game mechanics
-   - Events trigger state transitions with probabilities
-   - Player actions can modify link probabilities
+| Document | Content |
+|----------|---------|
+| [impl_plan.md](mvp_docs/impl_plan.md) | Week-by-week tasks, milestones, testing |
+| [tech_design.md](mvp_docs/tech_design.md) | Architecture, stack choices, alternatives considered |
+| [model_design.md](mvp_docs/model_design.md) | Model progression, formal definitions, TypeScript types |
 
-3. **Assumptions** → Design choices
-   - **High-confidence assumptions** (>0.6) → Hard constraints (can't violate)
-   - **Medium-confidence** (0.3-0.6) → Soft constraints (player can influence)
-   - **Low-confidence** (<0.3) → Player agency (can prove true or false through actions)
+### Formal Specifications
 
-**Quick Examples:**
+**Purpose**: Mathematical definitions and formal semantics
 
-**Hard Constraint (0.60):** "Compute doubles every 6 months"
-→ Game mechanic: Capability curve advances exponentially (can slow, but not reverse)
+- [formal_models/](formal_models/) - LTS, MDP, CTMDP, Timed Automata specs
+- [logics/](logics/) - LTL, CTL, PCTL, TCTL specifications
+- [kripke_models/](kripke_models/) - Time-indexed Kripke structures
 
-**Soft Constraint (0.40):** "Algorithmic progress continues"
-→ Game mechanic: Probabilistic breakthrough each round, player investment increases chance
+### Reference Documents
 
-**Player Agency (0.15):** "Chatbot → Agent transition succeeds"
-→ Game choice: Player decides whether to bet on agentic AI (uncertain outcome)
+- [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md) - One-page overview
+- [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md) - Library options
+- [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md) - Integration design
 
-**Player Agency (-0.10):** "Recursive self-improvement / FOOM"
-→ Game choice: High-risk endgame option (could win or lose immediately)
+---
 
-### Annotated Source Documents
+## 🎮 Integration with Simulacra TTX
 
-**Location:** `annotated/` directory
+The formal modeling framework can integrate with the Simulacra TTX game to:
 
-The original AI2027 source documents have been annotated with inline citations showing which claims feed into the causal DAG. Annotations use markdown blockquotes (>) with the format:
+1. **Record trajectories** - Capture game state transitions as Kripke traces
+2. **Check properties** - Verify temporal properties during/after gameplay
+3. **Analyze outcomes** - Post-game property violation reports
+4. **Compare policies** - Evaluate different decision strategies
 
-```markdown
-> **[DAG Citation: Topic]** _Key claim or data point with emphasis on **important numbers**._
-```
+**See**: [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md) for full design.
 
-**Example annotation:**
-```markdown
-> **[DAG Citation: Compute Scaling]** _Training compute grows from GPT-4 (2e25 FLOP)
-> to 1000x GPT-4 (2e28 FLOP) by Dec 2027. This represents exponential scaling
-> of **3.4x/year** for leading labs._
-```
+**Key insight**: No changes to core game logic - pure observation layer.
 
-**All citations include:**
-- **Topic tag** - Which DAG component the claim supports (e.g., "Compute Scaling", "Agent Automation", "FOOM")
-- **Direct quote or paraphrase** - The specific claim being referenced
-- **Emphasis** - Key numbers or claims highlighted in bold
-- **Source context** - Embedded in original document for full context
+---
 
-**Annotated files:**
-- `annotated/ai-2027.com_summary.md` - Main scenario with 6 citations
-- `annotated/ai-2027.com_research_compute-forecast.md` - Compute scaling evidence (2 citations)
-- `annotated/ai-2027.com_research_timelines-forecast.md` - Algorithmic progress claims (1 citation)
-- `annotated/ai-2027.com_research_takeoff-forecast.md` - Agent transition & FOOM analysis (4 citations)
-- `annotated/ai-2027.com_research_security-forecast.md` - Espionage and security levels (2 citations)
+## 🎯 Implementation Roadmap
 
-**To regenerate annotations:**
-```bash
-python3 scripts/annotate_sources.py
-```
+### Phase 1: Deterministic LTS (Week 1)
 
-This creates/updates files in `annotated/` with 15 inline citations mapping to DAG nodes, links, and assumptions.
+**Goal**: Visual state machine with basic property checking
 
-### Modifying the DAG
+**Tech**: Next.js + React Flow + local JS logic
 
-**To add new states/links:**
+**Deliverables**:
+- 10-15 state AI2027 model
+- Interactive visualization
+- G φ, F φ property checker
 
-Edit `scripts/extract_causal_dag.py`:
+**Success**: Can explore deterministic scenarios visually
 
-```python
-# Add new state
-nodes["my_new_state"] = StateNode(
-    id="my_new_state",
-    name="International AI Pause",
-    description="Global moratorium on frontier AI",
-    variables={...},
-    incoming_links=["treaty_succeeded"],
-    outgoing_links=["pause_violated", "pause_holds"],
-    estimated_time="2026",
-    probability=0.15
-)
+### Phase 2: Time Guards (Week 2)
 
-# Add causal link
-links["treaty_succeeded"] = CausalLink(
-    id="treaty_succeeded",
-    from_state="gpt5_level",
-    to_state="my_new_state",
-    trigger_event="US-China agree on binding pause",
-    mechanism="Joint verification, enforcement mechanisms",
-    assumptions=[...],
-    evidence=[...],
-    epistemic_confidence=0.1,  # Highly uncertain
-    claimed_by=["Some policy analysts"]
-)
-```
+**Goal**: Add temporal constraints
 
-Then regenerate:
-```bash
-python3 scripts/extract_causal_dag.py
-python3 scripts/visualize_dag.py
-```
+**Tech**: Extend Phase 1 with time component
 
-## Epistemic Scoring Methodology
+**Deliverables**:
+- Time-indexed state (world, t)
+- Time guards on edges
+- Bounded property checking
 
-**Epistemic confidence (-1 to 1):**
+**Success**: Can model deadlines and decision windows
 
-- **+1.0 (Strong):** Multiple independent data sources, peer-reviewed, widely accepted
-- **+0.5 (Moderate):** Some empirical data, reasonable but uncertain
-- **0.0 (Weak):** Speculative, limited evidence
-- **-0.5 (Contested):** Active disagreement in expert community
-- **-1.0 (Unfounded):** No evidence, contradicted by data
+### Phase 3: Matrix + MDP (Weeks 3-5)
 
-**Aggregation:**
-Link confidence = average of assumption scores weighted by importance
+**Goal**: Probabilistic analysis via Python backend
 
-**NLI (Internal consistency):**
-- Checks if conclusions logically follow from premises
-- Separate from empirical grounding
-- (Not yet fully implemented)
+**Tech**: FastAPI + Python libraries (transitions, stormpy)
 
-## Limitations
+**Deliverables**:
+- Matrix HTTP API
+- MDP models with P(s'|s,a)
+- PCTL property checking
 
-1. **Incomplete coverage:**
-   - Only analyzed publicly available summaries/search results
-   - Could not access full AI2027 website (403 errors)
-   - Missing: detailed compute models, algorithmic progress forecasts, takeoff dynamics
+**Success**: Can compute P(catastrophe) and compare policies
 
-2. **Subjective scoring:**
-   - Epistemic scores assigned by single reviewer (Claude)
-   - Should be validated by domain experts
+**See**: [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) for detailed task breakdown.
 
-3. **Simplified state machine:**
-   - Real dynamics are continuous, not discrete states
-   - Many variables omitted for clarity
-   - Alternative paths not fully explored
+---
 
-4. **Limited source diversity:**
-   - Primarily AI2027 + Situational Awareness
-   - Should incorporate: Ajeya Cotra, Tom Davidson, Epoch AI, critics
+## 📚 Learning Path
 
-## Next Steps
+### For Beginners
 
-### For Deeper Analysis
+1. **Visual intuition**: Read [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
+2. **Run examples**: Execute [examples/01_simple_lts.py](examples/01_simple_lts.py)
+3. **High-level overview**: Read [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
+4. **Model selection**: See [examples/DIAGRAMS.md#5-model-selection-guide](examples/DIAGRAMS.md#5-model-selection-guide)
 
-1. **Expand source coverage:**
-   - Add Ajeya Cotra's bio anchors model
-   - Add Tom Davidson's takeoff speeds model
-   - Add skeptical voices (Melanie Mitchell, Gary Marcus, etc.)
+### For Developers
 
-2. **Quantitative modeling:**
-   - Convert DAG to Bayesian network
-   - Run Monte Carlo simulations
-   - Sensitivity analysis on key assumptions
+1. **Architecture**: Read [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+2. **Implementation**: Follow [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
+3. **Libraries**: Reference [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md)
+4. **Model specs**: See [formal_models/README.md](formal_models/README.md)
 
-3. **Alternative scenarios:**
-   - What if data wall is real?
-   - What if international cooperation succeeds?
-   - What if alignment is easier than expected?
+### For Researchers
 
-### For Simulacra Integration
+1. **Formal definitions**: Explore [formal_models/](formal_models/)
+2. **Temporal logics**: Review [logics/README.md](logics/README.md)
+3. **Model comparison**: Read [formal_models/README.md](formal_models/README.md)
+4. **Properties**: See [mvp_docs/model_design.md#5-property-specification-library](mvp_docs/model_design.md#5-property-specification-library)
 
-1. **Map constraints → game mechanics:**
-   - High confidence links → deterministic rules
-   - Low confidence links → stochastic events player can influence
+---
 
-2. **Design intervention space:**
-   - What actions can players take?
-   - How do actions modify link probabilities?
-   - What are costs/tradeoffs?
+## 🤝 Contributing
 
-3. **Validation:**
-   - Do gameplay outcomes match forecast distributions?
-   - Can players discover the key decision points?
-   - Is the model pedagogically valuable?
+### Adding New Models
 
-## References
+1. Create specification in [formal_models/](formal_models/)
+2. Add example in [examples/](examples/)
+3. Create Mermaid diagram in [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
+4. Update model comparison in [formal_models/README.md](formal_models/README.md)
 
-- **AI 2027:** https://ai-2027.com (Daniel Kokotajlo, Scott Alexander, et al)
-- **Situational Awareness:** https://situational-awareness.ai (Leopold Aschenbrenner)
-- **Epoch AI:** https://epochai.org (Compute trends, algorithmic progress)
-- **EA Forum Summary:** https://forum.effectivealtruism.org/posts/zmRTWsYZ4ifQKrX26/summary-of-situational-awareness-the-decade-ahead
+### Adding Properties
 
-## Contact
+1. Define formal syntax in [logics/](logics/)
+2. Add examples in [mvp_docs/model_design.md](mvp_docs/model_design.md)
+3. Implement checker (Phase 1/2) or use PRISM/Storm (Phase 3)
 
-For questions about this analysis or to contribute:
-- Review the JSON: `analysis/ai2027_causal_dag.json`
-- Suggest improvements: Open issue or PR
-- Discuss assumptions: See `analysis/assumptions_report.md` for specific claims to debate
+### Improving Documentation
+
+- Fix typos/clarifications via PR
+- Add real-world examples
+- Improve diagrams and visualizations
+
+---
+
+## 📞 Questions?
+
+- **Getting started**: [mvp_docs/README.md](mvp_docs/README.md)
+- **Tech questions**: [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+- **Model questions**: [mvp_docs/model_design.md](mvp_docs/model_design.md)
+- **Visual examples**: [examples/DIAGRAMS.md](examples/DIAGRAMS.md)
+- **Library options**: [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md)
+
+---
+
+## 📄 License
+
+See main repository LICENSE file.
+
+## 🔗 References
+
+- **AI2027**: https://ai-2027.com
+- **Model Checking**: NuSMV, SPIN, PRISM, Storm
+- **Temporal Logic**: LTL, CTL, PCTL specifications
+- **Simulacra TTX**: Main game repository

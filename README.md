@@ -1,8 +1,32 @@
-# Simulacra - AI Tabletop Exercise
+# Simulacra - AI Tabletop Exercise & Formal Modeling Playground
 
 A web-based crisis simulation game where you role-play as a key decision-maker during an AI-driven global emergency. Make strategic choices that affect public trust and your secret objectives while an AI Game Master generates dynamic scenarios and consequences.
 
 Named after Jean Baudrillard's concept of *simulacra*—simulations that become more "real" than reality itself—this game explores hyperreality through AI-generated crises where synthetic and human decision-makers interact in emergent narratives.
+
+**🆕 Research Extension**: We're building a **formal modeling playground** to explore AI risk scenarios using state machines, temporal logics, and model checking. See [AI2027 Formal Modeling](research/ai_futures/) for the research documentation.
+
+---
+
+## 🎯 What's in This Repository
+
+### 1. Simulacra TTX Game (Production)
+The playable crisis simulation game - a web app where players make strategic decisions during AI-driven emergencies.
+
+**Tech**: React 19 + TypeScript + Vite + LiteLLM + PostgreSQL
+
+**Docs**: This README (setup instructions below)
+
+### 2. AI2027 Formal Modeling (Research)
+A formal methods framework for analyzing AI risk scenarios using state machines, temporal logics, and model checking.
+
+**Tech**: Next.js + React Flow + Python (Matrix service)
+
+**Docs**: [research/ai_futures/](research/ai_futures/) - Start with [MVP docs](research/ai_futures/mvp_docs/)
+
+**Motivation**: The TTX game demonstrates *emergent* scenarios through LLM-driven narratives. The formal modeling project explores *rigorous* analysis: "What's the probability of catastrophe?", "Can we prove safety properties?", "What are the optimal policies?"
+
+---
 
 ## What is a Tabletop Exercise (TTX)?
 
@@ -173,6 +197,32 @@ npm run analyze -- --help
 - `DATABASE_URL` - PostgreSQL connection string
 - `VITE_LITELLM_API_KEY` - LiteLLM proxy API key
 - `VITE_LLM_MODEL` - Model name (e.g., `gemini-2.5-flash`, `gpt-4o-mini`)
+
+---
+
+## 🔬 AI2027 Formal Modeling Research
+
+Explore AI risk scenarios using formal methods, state machines, and temporal logics.
+
+**Quick Links**:
+- **[MVP Implementation Plan](research/ai_futures/mvp_docs/impl_plan.md)** - Week-by-week roadmap
+- **[Tech Design](research/ai_futures/mvp_docs/tech_design.md)** - Next.js + React Flow + Matrix architecture
+- **[Model Design](research/ai_futures/mvp_docs/model_design.md)** - LTS → MDP progression
+- **[Tools Survey](research/ai_futures/TOOLS_LITERATURE_SURVEY.md)** - JS/Python library options
+- **[Formal Modeling Summary](research/ai_futures/FORMAL_MODELING_SUMMARY.md)** - High-level overview
+
+**What it does**:
+- Visualize AI risk scenarios as state machines (e.g., "Race to AGI", "Alignment Timeline")
+- Check temporal properties ("Can catastrophe be avoided?", "Must regulation happen by 2027?")
+- Quantify risks with probabilistic model checking ("What's P(catastrophe)?")
+- Explore counterfactuals ("What if we acted differently at step 5?")
+
+**Progressive complexity**:
+1. **Phase 1**: Deterministic state machines (simple, visual, immediate)
+2. **Phase 2**: Add time guards (deadlines, decision windows)
+3. **Phase 3**: Add probabilities (risk quantification, PCTL properties)
+
+**See [research/ai_futures/mvp_docs/](research/ai_futures/mvp_docs/) to get started.**
 
 ---
 
