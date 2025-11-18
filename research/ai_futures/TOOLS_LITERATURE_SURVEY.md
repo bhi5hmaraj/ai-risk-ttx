@@ -1,19 +1,32 @@
-# AI2027 Formal Modeling: MVP Implementation Plan
+# AI-2027 Formal Modeling: Tools & Libraries Literature Survey
+
+**Purpose**: Comprehensive survey of available tools and libraries for formal modeling, model checking, and temporal logic in JavaScript/TypeScript and Python ecosystems.
+
+**Note**: This is a **reference document** for library options and capabilities. For actual MVP implementation plans, see [mvp_docs/](mvp_docs/).
 
 ## TL;DR
 
-**Start deterministic, add complexity progressively.**
+**JavaScript/TypeScript Libraries**:
+- FSM: JSSM/FSL, XState, robot3
+- Visualization: React Flow, Cytoscape.js, vis.js
+- Logic: logic-solver, tau-prolog
 
+**Python Libraries**:
+- FSM: transitions, Sismic, automata-lib, python-statemachine
+- Temporal Logic: pyModelChecking, stormpy, spot
+- Model Checking: PRISM (via CLI), Storm (via stormpy), NuSMV
+
+**Progressive Complexity Approach**:
 - **Phase 1**: Deterministic LTS (JavaScript SPA) - 1 week
 - **Phase 2**: Add time guards - 3-5 days
 - **Phase 3**: Add stochasticity (MDP) - 2-3 weeks
 - **Phase 4** (Optional): Continuous time (CTMDP) - 3-4 weeks
 
-**Architecture**: JavaScript SPA for quick wins → Python "matrix" FastAPI service for experimentation
+**See [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) for actual implementation roadmap.**
 
 ---
 
-## Implementation Strategy
+## Library Capabilities by Phase
 
 ### Phase 1: Deterministic LTS (✅ Maximum Simplicity)
 
@@ -537,10 +550,18 @@ See [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md) for full integration de
 
 ## References
 
+### MVP Documentation
+- **Implementation Plan**: [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) 👈 **Start here for implementation**
+- **Tech Design**: [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+- **Model Design**: [mvp_docs/model_design.md](mvp_docs/model_design.md)
+
+### Formal Methods Background
 - **Summary**: [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
 - **Formal Models**: [formal_models/README.md](formal_models/README.md)
 - **Temporal Logics**: [logics/README.md](logics/README.md)
 - **Kripke Structures**: [kripke_models/README.md](kripke_models/README.md)
+
+### Integration
 - **Simulacra Integration**: [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
 - **Current Visualizer**: [visualizer_canvas_simple/DESIGN.md](visualizer_canvas_simple/DESIGN.md)
 
@@ -549,7 +570,9 @@ See [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md) for full integration de
 ## Questions?
 
 For implementation questions:
-- **JavaScript/Frontend**: See library docs (XState, React Flow)
-- **Python/Backend**: See matrix service design above
+- **Getting started**: See [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
+- **Tech stack choices**: See [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+- **Model scope**: See [mvp_docs/model_design.md](mvp_docs/model_design.md)
+- **Library options**: This document
 - **Formal Methods**: See formal_models/ and logics/ documentation
 - **AI2027 Scenarios**: https://ai-2027.com

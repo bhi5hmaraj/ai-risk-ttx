@@ -12,7 +12,11 @@ We've built a **formal modeling stack** for AI2027 scenarios spanning:
 
 **Implementation**: JavaScript SPA for quick wins → Python "matrix" service for experimentation.
 
-**👉 Detailed implementation plan**: See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)
+**👉 MVP Documentation**:
+- **Implementation Plan**: [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) - Complete roadmap
+- **Tech Design**: [mvp_docs/tech_design.md](mvp_docs/tech_design.md) - Architecture decisions
+- **Model Design**: [mvp_docs/model_design.md](mvp_docs/model_design.md) - Which models for MVP
+- **Tools Survey**: [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md) - Library options
 
 ## The Stack
 
@@ -72,7 +76,7 @@ We've built a **formal modeling stack** for AI2027 scenarios spanning:
 
 ## MVP Recommendation
 
-**See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) for detailed implementation guide.**
+**See [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) for detailed implementation guide.**
 
 ### Phase 1: Deterministic LTS (✅ Maximum simplicity)
 
@@ -147,7 +151,7 @@ Each step is an **extension**, not rewrite.
 
 ## Implementation Priorities
 
-**For detailed breakdown, see [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)**
+**For detailed breakdown, see [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)**
 
 ### Must Have (Phase 1-2)
 1. Deterministic LTS (week 1)
@@ -195,7 +199,7 @@ Each step is an **extension**, not rewrite.
 
 ## Next Steps
 
-**See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) for complete implementation roadmap.**
+**See [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) for complete implementation roadmap.**
 
 ### Immediate (Week 1)
 1. Set up JavaScript FSM (JSSM/XState)
@@ -237,16 +241,24 @@ Each step is an **extension**, not rewrite.
 - **With probabilities (MDP)**: 1.5 months
 - **Full stack (CTMDP)**: 2-3 months
 
-**👉 Ready to code?** See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)
+**👉 Ready to code?** See [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md)
 
 ## References
 
+### MVP Documentation
+- **Implementation Plan**: [mvp_docs/impl_plan.md](mvp_docs/impl_plan.md) 👈 **Start here for coding**
+- **Tech Design**: [mvp_docs/tech_design.md](mvp_docs/tech_design.md)
+- **Model Design**: [mvp_docs/model_design.md](mvp_docs/model_design.md)
+- **Tools Survey**: [TOOLS_LITERATURE_SURVEY.md](TOOLS_LITERATURE_SURVEY.md)
+
+### Formal Methods Background
 - **This summary**: [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
-- **Implementation plan**: [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) 👈 **Start here for coding**
-- **Simulacra integration**: [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
 - **Formal models**: [formal_models/README.md](formal_models/README.md)
 - **Temporal logics**: [logics/README.md](logics/README.md)
 - **Kripke structures**: [kripke_models/README.md](kripke_models/README.md)
+
+### Integration
+- **Simulacra integration**: [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
 - **Current visualizer**: [visualizer_canvas_simple/DESIGN.md](visualizer_canvas_simple/DESIGN.md)
 
 ---
