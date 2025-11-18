@@ -25,6 +25,26 @@ For a researcher or policymaker, Simulacra becomes an ongoing tool. They design 
 
 And here's the really interesting case: the skeptic. Imagine Vitalik Buterin says "AI 2027 is too doomy." Instead of arguing on Twitter, we say: "Here's the engine. Play it with your assumptions. Make it end well if you can." Either he finds a path that works—in which case great, we learned something—or he doesn't, which is also informative. The game becomes a constructive way to have disagreements. Instead of "your scenario is wrong," it's "here, I'll show you my scenario." That's what we mean by learn by doing, not reading. Customize, don't just consume. Test ideas, don't just argue.
 
+### Design Through the MDA Framework
+
+We're using the MDA (Mechanics-Dynamics-Aesthetics) framework from game design to ensure Simulacra works on multiple levels simultaneously. This isn't just academic—it's how we make something that's both rigorous and engaging.
+
+The mechanics are what players directly interact with: action points each round, dual objectives (public score everyone sees, hidden objective only you know), turn-based structure with chat between rounds, score tracking that shows consequences. These are the rules of the game—simple enough to learn in two minutes, deep enough to support genuine strategy.
+
+The dynamics emerge from how those mechanics interact. Racing versus coordination isn't programmed explicitly—it emerges from players balancing public good against hidden objectives. Trust erosion happens because successful deception in early rounds makes cooperation harder later. Coalition formation emerges from the chat system plus score incentives. These dynamics are what make each playthrough unique even with identical mechanics.
+
+The aesthetics are what players actually feel: Suspense—will we manage to coordinate this time? Tension—my hidden objective wants me to race, but I know that's collectively bad. Discovery—Oh, that's why coordination always fails in round 3. Schadenfreude—everyone else failed too, it's not just me being bad at this. Mastery—I found a strategy that works.
+
+Different player types engage with different layers. Casual players mostly experience aesthetics: "That was tense, I felt the pressure to race." Serious players start understanding dynamics: "The trust erosion is a feedback loop, we need to break it early." Researchers dig into mechanics: "If I change the action point cost of transparency from 2 to 1, does coordination become more common?"
+
+This layering is why the same engine supports 30-minute viral engagement and PhD dissertation research. We're not building different products for different audiences—we're building one system with progressive depth. The mechanics are simple enough for anyone. The dynamics are rich enough to sustain study. The aesthetics are compelling enough to spread.
+
+![MDA Framework](diagrams/mda_framework.png)
+*The MDA framework visualization showing how mechanics, dynamics, and aesthetics work together in Simulacra's design*
+
+![MDA Development Timeline](diagrams/mda_development.png)
+*How we prioritize different MDA elements across development phases*
+
 ---
 
 ## How This Extends AI 2027's Mission
@@ -36,6 +56,18 @@ Consider what AI 2027 achieved: it reached millions of people, made AGI scenario
 That's what Simulacra adds. First, it's interactive—you play through scenarios instead of reading them. Second, it's customizable—the system shows what happens with your assumptions about takeoff speed, actor incentives, and technical difficulty, not just ours. Third, it's experimental—you can run controlled studies, A/B test interventions, and measure outcomes quantitatively. Fourth, it scales engagement differently: one AI 2027 article reaches millions of readers for a few minutes each; one viral game generates millions of hours of deep engagement. And fifth, it's a living artifact—where AI 2027 captures a moment in time, Simulacra evolves as the world changes and our understanding deepens.
 
 The partnership makes sense because AI Futures brings domain expertise, scenario design, and credibility—people will take this seriously because it's grounded in real research. We bring a working engine and the execution capacity to scale it. Neither of us could build the complete vision alone, but together we can build something neither the research community nor the game development world has seen before: a tool that's simultaneously viral entertainment, serious policy planning, and experimental research platform.
+
+![Player Journey](diagrams/player_journey.png)
+*Engagement funnel showing how different player types derive value from Simulacra*
+
+![Progressive Complexity](diagrams/progression_pathway.png)
+*The same engine supports casual players, engaged thinkers, and researchers through progressive complexity*
+
+![Impact Dimensions](diagrams/impact_dimensions.png)
+*Simulacra creates value across three dimensions: viral reach, research depth, and policy impact*
+
+![Impact Over Time](diagrams/impact_over_time.png)
+*How different impact dimensions grow at different rates over the first year*
 
 ---
 
@@ -176,6 +208,9 @@ Build the community and long-term sustainability. Community scenario sharing. In
 
 Deliverable: Self-sustaining platform with active community, real-world data integration, published research validating the approach.
 
+![Success Timeline](diagrams/success_timeline.png)
+*12-month development roadmap showing phases, milestones, and cumulative growth metrics*
+
 ---
 
 ## What We Need
@@ -219,6 +254,12 @@ We bring:
 - Ability to ship quickly (v0 in 6 weeks with no funding)
 
 Together we can build something neither could alone: a platform that's simultaneously viral entertainment, serious policy tool, and experimental research infrastructure.
+
+![Partnership Value](diagrams/partnership_value.png)
+*Complementary strengths: AI Futures brings credibility and domain expertise, we bring execution capacity*
+
+![Risk Mitigation](diagrams/risk_mitigation.png)
+*How partnership reduces key risks across technical execution, research validity, and policy adoption*
 
 ---
 
