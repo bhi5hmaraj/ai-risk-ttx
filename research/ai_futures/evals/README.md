@@ -84,7 +84,22 @@ Extended comparison of **macro-level modeling approaches**:
 
 ---
 
-### 4. Use Case Portability ([use_case_portability.md](use_case_portability.md))
+### 4. Discrete-Time Modeling ([discrete_time_modeling.md](discrete_time_modeling.md))
+
+**Pragmatic focus**: Simulation and exploration **without formal verification**
+
+**Key argument**: For macro strategic problems (AI governance, climate, pandemic):
+- **Discrete time beats continuous** - matches real decision rhythms (monthly policies, quarterly budgets)
+- **Simulation beats verification** - stakeholders want scenarios, not theorems on approximate equations
+- **10x faster** - Monte Carlo exploration, clear semantics, easier implementation
+
+**Time quantum**: User selects horizon H (years) and resolution N (ticks) → Δt = H/N
+
+**Recommended**: Discrete-time hybrid system (modes + difference equations + agents) with Δt = 1 month for AI-2027
+
+---
+
+### 5. Use Case Portability ([use_case_portability.md](use_case_portability.md))
 
 **Abstract design principles** that generalize across domains:
 - Climate governance ↔ AI governance
@@ -263,6 +278,7 @@ Based on our evaluation, we propose a **three-tier architecture**:
 | **[comparison_matrix.md](comparison_matrix.md)** | Quantitative scoring | Which formalism scores best on dimension X? |
 | **[qualitative_analysis.md](qualitative_analysis.md)** | Strengths/weaknesses | When should I use SD vs HA vs ABM? |
 | **[macro_alternatives.md](macro_alternatives.md)** | Macro-scale comparison | What works for national-scale models? |
+| **[discrete_time_modeling.md](discrete_time_modeling.md)** | Discrete-time focus | Why discrete time? What's the right Δt? Skip verification? |
 | **[use_case_portability.md](use_case_portability.md)** | Domain generalization | Can this extend to climate/pandemic domains? |
 
 ---

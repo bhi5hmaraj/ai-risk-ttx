@@ -507,3 +507,5 @@ Based on scores, the optimal architecture combines:
 ---
 
 **Conclusion**: The comparison matrix reveals **no silver bullet**. Each formalism excels in some dimensions and fails in others. The optimal strategy is a **hybrid architecture** combining SD (macro), HA (critical transitions), ABM (micro heterogeneity), and temporal logic (verification), using each where its scores are highest.
+
+**Note**: For macro strategic problems where verification is not needed, see [discrete_time_modeling.md](discrete_time_modeling.md) for a **pragmatic simplification** that drops continuous time and formal verification in favor of discrete-time simulation (10x faster, matches decision rhythms, clearer communication).
