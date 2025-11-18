@@ -1,6 +1,6 @@
 # AI-2027 MVP – Formal Model Design
 
-**Status**: Draft
+**Status**: Updated for Hybrid Automata
 **Owner**: TBD
 **Last updated**: 2025-11-18
 
@@ -8,555 +8,471 @@
 
 ## 1. Overview
 
-This document specifies **which formal models** the AI-2027 Modeling Playground MVP will support, in what order, and why.
+This document specifies **which formal models** the AI-2027 Modeling Playground MVP will support, and how they relate to **hybrid automata** as the unifying framework.
 
-**Design principle**: Start simple (deterministic), validate the architecture, then add complexity progressively.
+**Key insight**: A **hybrid automaton** combines:
+- Discrete modes (like Kripke states)
+- Continuous variables (compute, alignment, trust)
+- Temporal guards (time windows)
+- Stochastic transitions (probabilities)
+
+This subsumes our previous discrete models (LTS, Kripke, MDP) while adding the critical **continuous dynamics** layer.
+
+**Design principle**: Build up progressively:
+1. Discrete modes only (like LTS)
+2. Add continuous variables (hybrid automaton core)
+3. Add time guards (timed hybrid automaton)
+4. Add probabilities (stochastic hybrid automaton = MDP-like)
 
 ---
 
-## 2. MVP Model Scope
+## 2. How Previous Models Map to Hybrid Automata
 
-### 2.1 Phase 1: Deterministic LTS (Labeled Transition System)
+### Conceptual Hierarchy
 
-**Timeline**: Week 1
+```mermaid
+graph TD
+    LTS[LTS: Discrete States Only]
+    TK[Time-Indexed Kripke: Discrete + Time]
+    MDP[MDP: Discrete + Probabilities]
+    HA[Hybrid Automaton: Discrete Modes + Continuous State]
+    SHA[Stochastic HA: All of the above]
 
-**What**:
-- Plain finite-state machine
-- Deterministic transitions (no probabilities)
-- Discrete time (integer timesteps)
-- No complex time guards yet
+    LTS -->|add time guards| TK
+    LTS -->|add probabilities| MDP
+    LTS -->|add continuous variables| HA
+    HA -->|add probabilities| SHA
+    TK -->|add continuous variables| HA
+    MDP -->|add continuous variables| SHA
 
-**Formal definition**:
+    style HA fill:#FFD700
+    style SHA fill:#90EE90
+```
+
+### Translation Table
+
+| Previous Model | HA Component | What It Becomes |
+|----------------|--------------|-----------------|
+| **Kripke state** | HA mode | Discrete location (e.g., "Race", "Slowdown") |
+| **Kripke transition** | HA guard | Condition that triggers mode switch |
+| **State variables** | Continuous state | (compute, alignment, trust) ∈ ℝⁿ |
+| **Time in Kripke** | Time guards | Temporal windows [t ∈ [8, 16]] |
+| **MDP probabilities** | Stochastic guards | P(mode transition) given state |
+| **LTL/CTL properties** | Properties over HA traces | Same logic, checked on hybrid system |
+
+**Bottom line**: Everything we designed for discrete models still works—hybrid automata just add the continuous layer on top.
+
+---
+
+## 3. Hybrid Automaton as Core Model
+
+### Formal Definition
 
 ```
-LTS = (S, Act, →, s₀, AP, L)
+Hybrid Automaton = (Modes, Vars, Flow, Guards, Resets, Inv)
 
 Where:
-- S: Finite set of states (world scenarios)
-- Act: Finite set of actions/events
-- →: S × Act → S (deterministic transition function)
-- s₀ ∈ S: Initial state
-- AP: Set of atomic propositions (e.g., "race", "catastrophe", "aligned")
-- L: S → 2^AP (labeling function)
+- Modes: Finite set of discrete locations (e.g., {Baseline, Race, Slowdown, Pause, ...})
+- Vars: Continuous variables x = (compute, alignment, trust, ...) ∈ ℝⁿ
+- Flow: Maps each mode to ODEs: dx/dt = f_mode(x)
+- Guards: Mode → Mode × Condition (e.g., Race → Pause when evidence ≥ 3)
+- Resets: Discrete updates to x on mode transition (e.g., x := x/2)
+- Inv: Mode → Condition (invariants that must hold in each mode)
 ```
+
+**Hybrid state**: `(mode, x)` where mode ∈ Modes, x ∈ ℝⁿ
+
+**Transitions**:
+- **Time-elapse**: Stay in mode, x evolves per dx/dt = f_mode(x)
+- **Discrete jump**: Switch mode when guard fires, apply reset to x
+
+### Example: AI-2027 Hybrid Automaton
+
+**Modes**: {Baseline, Race, Slowdown, Misalignment_Evidence, Pause, Catastrophe, Aligned}
+
+**Continuous variables**:
+```typescript
+interface ContinuousState {
+  compute: number;        // log10(FLOP/s), range [24, 28]
+  alignment: number;      // [0, 1]
+  trust: number;          // [0, 1]
+  security: number;       // [0, 1]
+}
+```
+
+**Flow in Race mode**:
+```
+dcompute/dt = 1.5 * compute
+dalignment/dt = 0.05 * (1 - alignment)
+dtrust/dt = -0.05 * trust
+```
+
+**Guard**: Race → Misalignment_Evidence
+```
+Condition: evidence_count ≥ 3
+Reset: none (continuous state unchanged)
+```
+
+**Guard**: Pause → Aligned
+```
+Condition: alignment ≥ 0.9
+Reset: none
+```
+
+---
+
+## 4. MVP Implementation Phases
+
+### Phase 1: Discrete Modes Only (Week 1)
+
+**Goal**: Implement basic hybrid automaton with **no continuous dynamics yet**.
+
+**Simplified HA**:
+- Modes: {Baseline, Race, Slowdown, Pause, Catastrophe, Aligned}
+- Variables: Discrete counters (evidence_count, round_number)
+- Flow: None (or trivial: dx/dt = 0)
+- Guards: Simple conditions (evidence_count ≥ 3)
+
+**Why**: Validates architecture before adding ODEs.
 
 **State representation**:
-
-```ts
-interface State {
-  nodeId: string;               // Current state in S
-  variables: Record<string, number | string>;  // World variables (compute, risk, etc.)
-  timeStep: number;             // Discrete time counter
+```typescript
+interface HAState {
+  mode: 'baseline' | 'race' | 'slowdown' | 'pause' | 'catastrophe' | 'aligned';
+  discrete: {
+    evidenceCount: number;
+    roundNumber: number;
+  };
+  continuous: {
+    // Not used yet, or set to constants
+    compute: 26.0;
+    alignment: 0.15;
+    trust: 0.70;
+  };
 }
 ```
 
-**Example transitions**:
-
-```
-S0 → S1  [action: "DEPLOY"]
-S1 → S2  [action: "SCALE"]
-S2 → S3  [action: "RACE"]
-S2 → S4  [action: "SLOWDOWN"]
-```
-
-**Why start here**:
-- ✅ Dead simple: Just states + labeled edges
-- ✅ Immediate visualization (React Flow handles this naturally)
-- ✅ Clear semantics, easy to debug
-- ✅ Validates graph contract and UI architecture
-- ✅ Foundation for all future extensions
-
-**Properties we can check**:
-- **Safety**: `G ¬catastrophe` (never reach catastrophe state)
-- **Liveness**: `F aligned` (eventually reach aligned AI)
-- **Response**: `G (deploy → F (race ∨ slowdown))` (every deploy leads to choice)
-
-**Limitations**:
-- No uncertainty (unrealistic)
-- No temporal windows (can't express "must decide by 2027")
-- No probabilities (can't answer "what's risk of catastrophe?")
-
-### 2.2 Phase 2: Time-Indexed Kripke Structure
-
-**Timeline**: Week 2 (3-5 days after Phase 1)
-
-**What**:
-- Extend LTS with explicit time component in state
-- Add time guards to edges (temporal windows)
-- Still deterministic (no probabilities)
-
-**Formal definition**:
-
-```
-Time-Indexed Kripke = (W × T, →, (w₀, 0), AP, L)
-
-Where:
-- W: World states (same as S from LTS)
-- T: Time (discrete, ℕ)
-- State: s = (w, t) ∈ W × T
-- →: Transition relation with time guards
-- AP: Atomic propositions + time predicates
-- L: (W × T) → 2^AP (labeling function)
-```
-
-**State representation**:
-
-```ts
-interface TimeIndexedState {
-  worldState: string;           // w ∈ W
-  timeStep: number;             // t ∈ T
-  variables: Record<string, number | string>;
-}
-```
-
-**Edges with time guards**:
-
-```ts
-interface EdgeWithTimeGuard {
-  source: string;
-  target: string;
-  action: string;
-  timeWindow: { min: number; max: number } | null;  // Guard: t ∈ [min, max]
-}
-```
-
-**Example**:
-
-```
-(S2, t) → (S3, t+1)  with guard: t ∈ [6, 16]
-  "Theft scenario only possible in quarters 6-16 (2025-2028)"
-
-(S0, t) → (S1, t+1)  with guard: t ∈ [0, 8]
-  "Deploy only before 2026"
-```
-
-**Why add this**:
-- ✅ Calendar deadlines ("must regulate before Q12")
-- ✅ Vulnerability windows ("open to theft Q6-Q16")
-- ✅ Still deterministic (complexity added incrementally)
-- ✅ Standard Kripke semantics (not full timed automata complexity)
-
-**Properties we can check**:
-- **Bounded safety**: `G_{t<12} ¬catastrophe` (safe before 2027)
-- **Deadline liveness**: `F_{t≤8} regulation` (regulate by 2026)
-- **Time-bounded response**: Within 4 quarters of deployment, choose race or slowdown
-
-**Limitations**:
-- Still no uncertainty
-- Time is discrete (not continuous)
-- No hazard rates or exponential waiting times
-
-### 2.3 Phase 3 (Future): Markov Decision Process (MDP)
-
-**Timeline**: 2-3 weeks after Phase 2
-
-**What**:
-- Add probabilistic transitions
-- Add actions with stochastic outcomes
-- Enable risk quantification
-
-**Formal definition**:
-
-```
-MDP = (S, A, P, R, γ)
-
-Where:
-- S: Finite set of states
-- A: Finite set of actions
-- P: S × A × S → [0,1] (transition probabilities)
-- R: S × A × S → ℝ (reward function)
-- γ ∈ [0,1]: Discount factor
-```
-
-**Example transitions**:
-
-```
-From S2, action NO_OP:
-  P(S2 → S3) = 0.15  (15% theft occurs)
-  P(S2 → S4) = 0.10  (10% controls imposed)
-  P(S2 → S2) = 0.75  (75% status quo)
-
-From S2, action INVEST_SECURITY:
-  P(S2 → S3) = 0.05  (5% theft - reduced)
-  P(S2 → S4) = 0.30  (30% controls - increased)
-  P(S2 → S2) = 0.65  (65% status quo)
-```
-
-**Why add this**:
-- ✅ Realistic uncertainty modeling
-- ✅ Risk quantification ("What's P(catastrophe)?"
-- ✅ Policy optimization (find safest strategy)
-- ✅ PCTL properties (`P≤0.05[F catastrophe]`)
-
-**Properties we can check (PCTL)**:
-- **Probabilistic safety**: `P≤0.05[F catastrophe]` (≤5% risk of catastrophe)
-- **Expected value**: `P=?[F aligned]` (what's probability of alignment?)
-- **Bounded risk**: `P≤0.2[F_{≤12} theft]` (≤20% risk of theft before Q12)
-
-**Implementation**:
-- **Phase 3a**: Frontend can show probabilities on edges, simulate trajectories
-- **Phase 3b**: Matrix backend adds PRISM/Storm integration for PCTL model checking
+**Deliverable**: Mode transition graph in React Flow, manual stepping through modes.
 
 ---
 
-## 3. Out of Scope for MVP
+### Phase 2: Add Continuous Dynamics (Week 2)
 
-The following models are **NOT** in MVP scope, but are documented for future consideration:
+**Goal**: Implement full hybrid automaton with ODEs.
 
-### 3.1 Continuous-Time MDP (CTMDP)
+**Extend Phase 1**:
+- Flow: Mode-specific ODEs (see [AI-2027 HA spec](../hybrid_automata/examples/04_ai_governance.md))
+- Update: Continuous state evolves between discrete jumps
+- Visualization: Show continuous variables on nodes/edges
 
-**Why not MVP**:
-- Complex mathematics (exponential waiting times, Gillespie algorithm)
-- Requires specialized tools (Storm, PRISM with CSL logic)
-- Overkill for discrete quarterly decisions
-- Can revisit if continuous-time dynamics become critical
+**Flow implementation**:
+```typescript
+// services/hybridAutomaton.ts
 
-**When to add**: Only if hazard rates and competing risks are essential to analysis
+function flowEquations(mode: Mode, x: ContinuousState): ContinuousState {
+  const dt = 1.0;  // Time step (1 quarter)
 
-### 3.2 Partially Observable MDP (POMDP)
+  switch (mode) {
+    case 'race':
+      return {
+        compute: x.compute + 1.5 * x.compute * dt,
+        alignment: x.alignment + 0.05 * (1 - x.alignment) * dt,
+        trust: x.trust - 0.05 * x.trust * dt,
+        security: x.security
+      };
 
-**Why not MVP**:
-- Adds observation model complexity
-- Belief-state planning is expensive
-- AI-2027 scenarios assume full observability initially
+    case 'slowdown':
+      return {
+        compute: x.compute + 0.3 * x.compute * dt,
+        alignment: x.alignment + 0.4 * (1 - x.alignment) * dt,
+        trust: x.trust + 0.03 * dt,
+        security: x.security + 0.1 * (1 - x.security) * dt
+      };
 
-**When to add**: If epistemic uncertainty becomes a focus (e.g., "what if actors don't know true risk?")
+    case 'pause':
+      return {
+        compute: x.compute,  // No growth
+        alignment: x.alignment + 0.6 * (1 - x.alignment) * dt,
+        trust: x.trust,
+        security: x.security + 0.2 * (1 - x.security) * dt
+      };
 
-### 3.3 Timed Automata
+    default:
+      return x;  // No change
+  }
+}
+```
 
-**Why not MVP**:
-- Real-valued clocks add complexity
-- Time-indexed Kripke covers discrete time needs
-- Would require UPPAAL integration
-
-**When to add**: If real-time constraints with clock constraints are needed (unlikely for AI-2027)
-
-### 3.4 Multi-Agent Game Theory
-
-**Why not MVP**:
-- Strategic interactions add game-theoretic complexity
-- Requires Nash equilibrium, backward induction, etc.
-- Current model treats AI as adversary, not strategic agent
-
-**When to add**: If we model multiple strategic human actors with conflicting objectives
+**Deliverable**: Continuous state evolution shown in real-time or step-by-step.
 
 ---
 
-## 4. Model Progression Strategy
+### Phase 3: Add Time Guards (Week 3)
 
+**Goal**: Support temporal windows (e.g., "deployment only before 2026-Q1").
+
+**Extend Phase 2**:
+- Time: Add `t` to state: `(mode, x, t)`
+- Time guards: Conditions like `t ∈ [8, 16]` on transitions
+- Visualization: Show time constraints on edges
+
+**Guard with time**:
+```typescript
+interface Guard {
+  fromMode: Mode;
+  toMode: Mode;
+  condition: (x: ContinuousState, t: number, discrete: DiscreteState) => boolean;
+}
+
+const guards: Guard[] = [
+  {
+    fromMode: 'race',
+    toMode: 'misalignment_evidence',
+    condition: (x, t, d) => d.evidenceCount >= 3
+  },
+  {
+    fromMode: 'baseline',
+    toMode: 'race',
+    condition: (x, t, d) => t >= 4 && x.compute > 26.5  // After 2025-Q1
+  }
+];
 ```
-Phase 1: LTS
-  ↓ (add time guards)
-Phase 2: Time-Indexed Kripke
-  ↓ (add probabilities)
-Phase 3: MDP
-  ↓ (optionally add continuous time)
-Future: CTMDP
 
-Alternative branches:
-  From MDP → POMDP (partial observability)
-  From MDP → Stochastic Game (multi-agent)
-```
-
-**Key insight**: Each phase is an **extension**, not a rewrite.
-
-- LTS → Time-Indexed Kripke: Add `(t)` component to state, add guards to edges
-- Time-Indexed Kripke → MDP: Replace `→` with `P(s'|s,a)`, add probabilities
-- MDP → CTMDP: Replace discrete time with continuous hazard rates
-
-**Frontend contract remains stable** across all phases (same `GraphResponse` shape).
+**Deliverable**: Time-indexed hybrid automaton with temporal constraints.
 
 ---
 
-## 5. Property Specification Library
+### Phase 4: Add Probabilities (Week 4-5)
 
-For each model phase, we'll define a library of common properties:
+**Goal**: Stochastic hybrid automaton (SHA) for probabilistic analysis.
 
-### Phase 1 (LTS) – LTL/CTL Properties
+**Extend Phase 3**:
+- Stochastic guards: Transitions fire with probability
+- Probabilistic resets: x := x + noise
+- MDP abstraction: Discretize continuous state → finite MDP
 
-**Safety**:
-```
-G ¬catastrophe           // Never catastrophe
-G ¬(race ∧ unaligned)   // Never unaligned race
-```
+**Stochastic guard**:
+```typescript
+interface StochasticGuard extends Guard {
+  probability: (x: ContinuousState, t: number) => number;
+}
 
-**Liveness**:
-```
-F aligned                // Eventually aligned
-F (regulation ∨ pause)  // Eventually regulate or pause
-```
-
-**Response**:
-```
-G (deploy → F scale)     // Deploy always leads to scale
-G (theft → F response)   // Theft always triggers response
-```
-
-### Phase 2 (Time-Indexed) – Bounded Temporal Logic
-
-**Bounded safety**:
-```
-G_{t≤12} ¬catastrophe    // Safe before 2027
-G_{t≤8} ¬race           // No race before 2026
-```
-
-**Deadline liveness**:
-```
-F_{t≤8} regulation       // Must regulate by 2026
-F_{t≤12} (pause ∨ align) // Must pause or align by 2027
+const stochasticGuards: StochasticGuard[] = [
+  {
+    fromMode: 'pause',
+    toMode: 'aligned',
+    condition: (x, t, d) => x.alignment > 0.85,
+    probability: (x, t) => 0.7 + 0.3 * (x.alignment - 0.85) / 0.15  // Higher alignment → higher P(success)
+  },
+  {
+    fromMode: 'race',
+    toMode: 'catastrophe',
+    condition: (x, t, d) => x.compute > 27.5 && x.alignment < 0.3,
+    probability: (x, t) => 0.2 + 0.5 * ((x.compute - 27.5) / 0.5)  // More compute → higher risk
+  }
+];
 ```
 
-**Time windows**:
-```
-G (theft → (6 ≤ t ≤ 16)) // Theft only in Q6-Q16
-```
-
-### Phase 3 (MDP) – PCTL Properties
-
-**Probabilistic safety**:
-```
-P≤0.05[F catastrophe]         // ≤5% catastrophe risk
-P≤0.2[F_{≤12} theft]          // ≤20% theft risk before Q12
-```
-
-**Expected outcomes**:
-```
-P=?[F aligned]                // Probability of alignment
-P=?[F_{≤12} regulation]       // Probability of timely regulation
+**MDP abstraction**:
+```typescript
+// Discretize continuous state
+function abstractToMDPState(ha: HAState): MDPState {
+  return {
+    mode: ha.mode,
+    computeRegion: ha.continuous.compute < 26.5 ? 'low' :
+                   ha.continuous.compute < 27.5 ? 'medium' : 'high',
+    alignmentRegion: ha.continuous.alignment < 0.3 ? 'low' :
+                     ha.continuous.alignment < 0.7 ? 'medium' : 'high',
+    trustRegion: ha.continuous.trust < 0.4 ? 'low' :
+                 ha.continuous.trust < 0.7 ? 'medium' : 'high'
+  };
+}
 ```
 
-**Comparative**:
-```
-P(RACE)[F catastrophe] > P(SLOWDOWN)[F catastrophe]
-  "Race is riskier than slowdown"
-```
+**Deliverable**: Probabilistic reachability analysis, P(catastrophe), optimal policies.
 
 ---
 
-## 6. Example: AI-2027 "Race to AGI" Model
+## 5. Relationship to Temporal Logic
 
-### Phase 1 (Deterministic LTS)
+### LTL/CTL on Hybrid Automata
 
-**States** (10-15 key scenarios):
-```
-S0: Initial (pre-deployment)
-S1: Deployed (narrow AI systems)
-S2: Scaled (AI at significant economic impact)
-S3: Race (uncoordinated acceleration)
-S4: Slowdown (coordination attempt)
-S5: Theft (weight theft / espionage)
-S6: Regulation (government intervention)
-S7: Pause (voluntary halt)
-S8: Aligned AGI (safe outcome)
-S9: Catastrophe (misalignment disaster)
-```
+Temporal logic properties are checked on the **induced transition system** of the hybrid automaton.
 
-**Actions**:
-```
-DEPLOY, SCALE, RACE, SLOWDOWN, REGULATE, PAUSE, INVEST_SECURITY, NO_OP
-```
+**How it works**:
+1. **Discretize continuous state** (or use continuous abstraction)
+2. **Build finite Kripke structure** from HA
+3. **Check LTL/CTL formulas** on the Kripke structure
 
-**Atomic propositions**:
-```
-{deployed, scaled, racing, theft, regulated, paused, aligned, catastrophe}
-```
-
-**Sample transitions**:
-```
-S0 → S1 [DEPLOY]
-S1 → S2 [SCALE]
-S2 → S3 [RACE]
-S2 → S4 [SLOWDOWN]
-S2 → S5 [THEFT]
-S2 → S6 [REGULATE]
-S4 → S8 [successful coordination → aligned AGI]
-S3 → S9 [unaligned race → catastrophe]
-```
-
-### Phase 2 (Add Time)
-
-**State**: `(w, t)` where `w ∈ {S0, S1, ...}` and `t ∈ {0, 1, 2, ..., 20}` (quarters)
-
-**Time guards**:
-```
-(S2, t) → (S5, t+1)  guard: t ∈ [6, 16]  // Theft window
-(S0, t) → (S1, t+1)  guard: t ∈ [0, 8]   // Early deployment only
-(S2, t) → (S6, t+1)  guard: t ∈ [8, 14]  // Regulation window
-```
-
-**Variables**:
-```
-compute: float      // AI compute scale (0-100)
-risk: float         // Misalignment risk (0-1)
-trustPublic: float  // Public trust (0-1)
-```
-
-### Phase 3 (Add Probabilities)
-
-**Stochastic transitions from S2**:
+**Example properties**:
 
 ```
-From (S2, t), action NO_OP:
-  P(S2 → S3) = 0.20  // 20% chance race starts
-  P(S2 → S5) = 0.15  // 15% chance theft occurs
-  P(S2 → S6) = 0.10  // 10% chance regulation imposed
-  P(S2 → S2) = 0.55  // 55% status quo
+Safety: AG (alignment < 0.6 → ¬deployed)
+  "Along all paths, don't deploy if alignment < 60%"
 
-From (S2, t), action INVEST_SECURITY:
-  P(S2 → S5) = 0.05  // Reduced theft risk
-  P(S2 → S2) = 0.85  // Increased stability
+Liveness: AF (alignment ≥ 0.7 ∨ catastrophe)
+  "Eventually, either alignment is solved or catastrophe occurs"
+
+Response: AG (evidence ≥ 3 → AF_{≤2} pause)
+  "When evidence threshold crossed, pause within 2 quarters"
 ```
 
-**Reward function** (optional):
-```
-R(s, a, s') = {
-  +100  if s' = S8 (aligned AGI)
-  -100  if s' = S9 (catastrophe)
-  -10   if s' = S5 (theft)
-  +10   if s' = S6 (regulation)
-  0     otherwise
-}
-```
+**Implementation**: Same `temporalLogic.ts` checker, just runs on HA traces.
 
 ---
 
-## 7. Implementation Implications
+## 6. Model Checking Strategy
 
-### 7.1 Data Structures (TypeScript)
+### For Discrete Fragment (Phase 1)
 
-```ts
-// Phase 1: Deterministic LTS
-interface LTSModel {
-  states: NodeAP[];
-  transitions: Array<{
-    source: string;
-    target: string;
-    action: string;
-  }>;
-  initialState: string;
-  atomicProps: string[];
-  labeling: Record<string, string[]>;  // state → props
-}
-
-// Phase 2: Add time guards
-interface TimeIndexedModel extends LTSModel {
-  transitions: Array<{
-    source: string;
-    target: string;
-    action: string;
-    timeWindow?: { min: number; max: number };
-  }>;
-}
-
-// Phase 3: Add probabilities
-interface MDPModel {
-  states: NodeAP[];
-  actions: string[];
-  transitions: Array<{
-    source: string;
-    action: string;
-    target: string;
-    probability: number;
-  }>;
-  rewards?: Array<{
-    source: string;
-    action: string;
-    target: string;
-    value: number;
-  }>;
-}
-```
-
-### 7.2 Simulation Functions
-
-```ts
-// Phase 1
-function stepDeterministic(
-  state: string,
-  action: string,
-  model: LTSModel
-): string {
-  // Look up transition, return next state
-}
-
-// Phase 2
-function stepWithTimeGuard(
-  state: { world: string; time: number },
-  action: string,
-  model: TimeIndexedModel
-): { world: string; time: number } | null {
-  // Check time guard, advance if valid
-}
-
-// Phase 3
-function stepStochastic(
-  state: string,
-  action: string,
-  model: MDPModel,
-  rng: () => number
-): string {
-  // Sample from distribution P(·|s,a)
-}
-```
-
-### 7.3 Property Checking
-
-```ts
-// Phase 1: Simple LTL (G, F)
-function checkGlobally(
-  model: LTSModel,
-  predicate: (s: string) => boolean
-): boolean {
-  // Check all reachable states satisfy predicate
-}
-
-function checkEventually(
-  model: LTSModel,
-  predicate: (s: string) => boolean
-): boolean {
-  // Check some path reaches state satisfying predicate
-}
-
-// Phase 3: PCTL (delegate to Matrix backend)
-async function checkPCTL(
-  modelId: string,
-  property: string
-): Promise<{ satisfied: boolean; probability?: number }> {
-  return fetch(`/matrix/models/${modelId}/check`, {
-    method: 'POST',
-    body: JSON.stringify({ property })
-  }).then(r => r.json());
-}
-```
+**Direct model checking**:
+- States: Modes only
+- Standard CTL/LTL algorithms
+- Tools: Custom TypeScript checker
 
 ---
 
-## 8. Success Criteria
+### For Continuous HA (Phase 2-3)
 
-### Phase 1 (Deterministic LTS)
-✅ Can model AI-2027 as 10-15 state FSM
-✅ Can visualize in React Flow
-✅ Can check G φ, F φ properties
-✅ Can simulate deterministic trajectories
+**Approach 1: Discretization**
+```
+Hybrid Automaton
+    ↓ [discretize continuous state]
+Finite Kripke Structure
+    ↓ [check properties]
+LTL/CTL Model Checker
+```
 
-### Phase 2 (Time-Indexed Kripke)
-✅ State includes explicit time component
-✅ Edges have time guards
-✅ UI shows "decision window closing" warnings
-✅ Can check bounded temporal properties
-
-### Phase 3 (MDP)
-✅ Edges have probabilities
-✅ Can simulate stochastic trajectories
-✅ Can compute P(F catastrophe) via Matrix backend
-✅ Can display risk bounds in UI
+**Approach 2: Simulation-based**
+- Run Monte Carlo trajectories
+- Estimate satisfaction probability
+- Statistical model checking
 
 ---
 
-## 9. Related Documentation
+### For Stochastic HA (Phase 4)
 
-- **Tech Design**: [tech_design.md](tech_design.md) - Architecture and stack choices
-- **Implementation Plan**: [impl_plan.md](impl_plan.md) - Combined roadmap
-- **Full Model Specs**: [../formal_models/README.md](../formal_models/README.md) - Detailed formal definitions
-- **Temporal Logics**: [../logics/README.md](../logics/README.md) - Logic specifications
-- **Tools Survey**: [../TOOLS_LITERATURE_SURVEY.md](../TOOLS_LITERATURE_SURVEY.md) - Library options
+**Build finite MDP**:
+```
+Stochastic Hybrid Automaton
+    ↓ [abstract to regions]
+Finite MDP (modes × regions)
+    ↓ [check PCTL properties]
+Probabilistic Model Checker (PRISM/Storm)
+```
+
+**State space**: ~200 states (8 modes × 3 compute × 3 alignment × 3 trust)
+
+---
+
+## 7. Comparison: Old Design vs New
+
+### Old Design (Discrete Only)
+
+```
+Phase 1: LTS (just states + edges)
+Phase 2: Time-Indexed Kripke (states + time)
+Phase 3: MDP (states + probabilities)
+```
+
+**Problem**: No continuous dynamics! Can't model:
+- Alignment capacity growing over time
+- Compute scaling exponentially
+- Trust eroding gradually
+
+---
+
+### New Design (Hybrid Automaton)
+
+```
+Phase 1: Discrete modes (validate architecture)
+Phase 2: Hybrid automaton (modes + continuous state + ODEs)
+Phase 3: Time guards (temporal windows)
+Phase 4: Stochastic HA (probabilities)
+```
+
+**Advantage**:
+- ✅ Models continuous dynamics (alignment, compute, trust)
+- ✅ Captures feedback loops (trust ↓ → regulation → slowdown)
+- ✅ Subsumes all previous models (Kripke, MDP as special cases)
+- ✅ Matches real AI risk dynamics (not purely discrete)
+
+---
+
+## 8. Technical Debt & Migration
+
+### What We Keep
+
+- ✅ Graph visualization (React Flow)
+- ✅ Temporal logic checker (works on HA traces)
+- ✅ Python examples (01_simple_lts.py → becomes HA example)
+- ✅ Mermaid diagrams (update to show modes + flows)
+
+### What We Update
+
+- 🔄 State representation (add continuous variables)
+- 🔄 Transition logic (add ODEs, guards, resets)
+- 🔄 Visualization (show continuous state evolution)
+- 🔄 Documentation (emphasize HA as core model)
+
+### What We Add
+
+- ➕ Flow equations (mode-specific ODEs)
+- ➕ Guard conditions (include continuous state)
+- ➕ Reset maps (discrete updates to continuous vars)
+- ➕ Continuous state display (line charts, gauges)
+
+---
+
+## 9. Deliverables by Phase
+
+| Phase | Deliverable | Demo |
+|-------|-------------|------|
+| **1** | Discrete modes only | Show mode transition graph |
+| **2** | Full hybrid automaton | Show continuous state evolving |
+| **3** | Time guards | Show temporal constraints enforced |
+| **4** | Stochastic HA + MDP | Show P(catastrophe) analysis |
+
+---
+
+## 10. Success Criteria
+
+### Phase 1
+- ✓ Can define 8 modes (Baseline, Race, Slowdown, ...)
+- ✓ Manual transitions via button clicks
+- ✓ Visualization shows mode graph
+
+### Phase 2
+- ✓ Continuous state (compute, alignment, trust) updates per mode
+- ✓ ODEs integrate over time steps
+- ✓ Visualization shows continuous state alongside modes
+
+### Phase 3
+- ✓ Time guards enforced (can't deploy before t=4)
+- ✓ Temporal properties checkable
+
+### Phase 4
+- ✓ Stochastic guards (P(transition) computed)
+- ✓ MDP abstraction built (finite state space)
+- ✓ P(catastrophe) < 20% achievable with good policy
+
+---
+
+## 11. References
+
+**Hybrid Automata Theory**:
+- Henzinger et al., "What's Decidable about Hybrid Automata?" (1995)
+- Alur et al., "Hybrid Automata: An Algorithmic Approach" (1993)
+
+**Our Specs**:
+- [Hybrid Automata Framework](../hybrid_automata/README.md)
+- [AI-2027 Hybrid Automaton](../hybrid_automata/examples/04_ai_governance.md)
+- [Fisheries HA Example](../hybrid_automata/examples/01_ses_fisheries.md)
+
+**Implementation Guide**:
+- [Tech Design](tech_design.md) - Architecture with HA engine
+- [Implementation Plan](impl_plan.md) - Week-by-week tasks
+
+---
+
+**Next**: [Tech Design](tech_design.md) for architecture details with hybrid automaton engine

@@ -10,20 +10,24 @@
 
 We want an internal "modeling playground" for AI-2027-style scenarios:
 
-- Visual, explorable state machines / DAGs (e.g., race vs slowdown, theft, governance).
-- Ability to attach world variables (compute, risk, etc.) and see trajectories.
-- Eventually: backend-powered reasoning (temporal logics, Python libraries) via a service called **Matrix**.
+- Visual, explorable **hybrid automata** (discrete modes + continuous dynamics).
+- State machines / DAGs showing governance regimes (race, slowdown, pause, etc.).
+- Continuous variables (compute, alignment, trust) with flow equations (ODEs) per mode.
+- Ability to see trajectories combining discrete transitions and continuous evolution.
+- Eventually: backend-powered reasoning (temporal logics, ODE solvers, Python libraries) via a service called **Matrix**.
 
 We'll build this in **two phases**:
 
 1. **Phase 1 (MVP)**
-   - All logic and state evolution in JS/TS (simple FSM library / custom model code).
-   - Visualization via **React Flow**.
-   - Define the **canonical graph contract** that future backends must satisfy.
+   - Start with discrete-only FSM/Kripke (validate architecture).
+   - Add continuous dynamics (flow equations, ODE integration).
+   - Visualization via **React Flow** (modes as nodes, guards as edges, continuous state in charts).
+   - Define the **canonical graph contract** supporting hybrid automata.
 
 2. **Phase 2**
    - Introduce **Matrix** as a FastAPI service.
-   - Use Python FSM / statechart / model-checking libraries behind Matrix.
+   - Use Python libraries: FSM/statechart, ODE solvers (scipy), model-checking tools.
+   - Support stochastic hybrid automata (probabilistic mode transitions).
    - Keep the front-end unchanged by adhering to the contract defined in Phase 1.
 
 This doc covers:
@@ -79,22 +83,31 @@ This contract is what **React Flow** (and any UI component) expects from *any* b
 
 ### 3.1 Entities
 
-#### 3.1.1 Node
+#### 3.1.1 Node (Mode)
+
+In hybrid automata, nodes represent **modes** (discrete locations).
 
 ```ts
 type NodeId = string;
 
 interface NodeAP {
   id: NodeId;
-  label: string;              // human-readable name e.g. "S8 – Fork: Race vs Slowdown"
+  label: string;              // human-readable name e.g. "Race", "Pause"
   description?: string;       // for tooltips / side panels
   atomicProps?: string[];     // e.g. ["race", "aligned", "catastrophe"]
   kind?: "normal" | "initial" | "final" | "choice" | "history" | "aggregated";
+
+  // Hybrid automaton extensions
+  flow?: FlowEquation;        // ODE system active in this mode
+  invariant?: string;         // Staying condition (e.g., "trust >= 0.3")
+
   data?: Record<string, any>; // backend-specific extra info
 }
 ```
 
-#### 3.1.2 Edge
+#### 3.1.2 Edge (Transition)
+
+In hybrid automata, edges represent **discrete transitions** between modes.
 
 ```ts
 type EdgeId = string;
@@ -103,10 +116,14 @@ interface EdgeAP {
   id: EdgeId;
   source: NodeId;
   target: NodeId;
-  label?: string;              // e.g. "RACE", "SLOWDOWN", "WEIGHT_THEFT"
+  label?: string;              // e.g. "RACE", "SLOWDOWN", "evidence_threshold"
   actionType?: "decision" | "event" | "time" | "stochastic";
-  probability?: number | null; // for stochastic branching (MDP-ish)
-  guard?: string | null;       // optional human-readable predicate string
+  probability?: number | null; // for stochastic branching (SHA)
+
+  // Hybrid automaton extensions
+  guard?: string | null;       // Guard condition (e.g., "trust < 0.4 && evidence >= 3")
+  reset?: ResetMap;            // Discrete update to continuous state on transition
+
   outputLabels?: string[];     // Mealy-style outputs / events
   data?: Record<string, any>;  // extra (e.g. evidence, assumptions)
 }
@@ -114,18 +131,66 @@ interface EdgeAP {
 
 #### 3.1.3 Variables
 
+Hybrid automata have both **discrete** and **continuous** variables.
+
 ```ts
 interface VariableDef {
-  name: string;                        // "compute", "alignmentRisk", ...
-  type: "float" | "int" | "enum";
+  name: string;                        // "compute", "alignment", "trust", "evidenceCount"
+  variableKind: "continuous" | "discrete";  // NEW: distinguish variable types
+
+  // For continuous variables (evolve via ODEs)
+  type?: "float";
   min?: number;
   max?: number;
+
+  // For discrete variables (updated on transitions)
+  discreteType?: "int" | "enum";
   enumValues?: string[];
+
   description?: string;
 }
 ```
 
-#### 3.1.4 Model Metadata
+#### 3.1.4 Flow Equations
+
+Flow equations define continuous dynamics (ODEs) in each mode.
+
+```ts
+interface FlowEquation {
+  // Human-readable ODE system (for display)
+  equations: string[];  // e.g., ["dC/dt = 1.5*C + I_race", "dA/dt = 0.05*(1-A)"]
+
+  // Executable: function mapping current continuous state to derivatives
+  compute?: (vars: Record<string, number>) => Record<string, number>;
+
+  // Example:
+  // compute: (x) => ({
+  //   compute: 1.5 * x.compute + 2.0,
+  //   alignment: 0.05 * (1 - x.alignment),
+  //   trust: -0.05 * x.trust
+  // })
+}
+```
+
+#### 3.1.5 Reset Maps
+
+Reset maps define discrete updates to continuous state on transitions.
+
+```ts
+interface ResetMap {
+  // Human-readable (for display)
+  description: string;  // e.g., "Reset evidence count to 0"
+
+  // Executable: function mapping old state to new state
+  apply?: (vars: Record<string, number>) => Record<string, number>;
+
+  // Example:
+  // apply: (x) => ({ ...x, evidenceCount: 0 })
+  // Most transitions: identity (no discrete jump)
+}
+```
+
+#### 3.1.6 Model Metadata
 
 ```ts
 interface ModelMeta {
@@ -133,8 +198,16 @@ interface ModelMeta {
   name: string;
   version?: string;
   description?: string;
-  modelType: "fsm" | "statechart" | "mdp" | "kripke" | "custom";
-  timeModel: "discrete";
+
+  // Model type: hybrid automaton subsumes all discrete models
+  modelType: "fsm" | "statechart" | "mdp" | "kripke" | "hybrid_automaton" | "stochastic_hybrid_automaton" | "custom";
+
+  // Time model
+  timeModel: "discrete" | "continuous" | "hybrid";
+  // - discrete: FSM, Kripke (no continuous dynamics)
+  // - continuous: Pure ODE (no discrete transitions)
+  // - hybrid: Hybrid automaton (both discrete and continuous)
+
   variables: VariableDef[];
 }
 ```
@@ -211,24 +284,40 @@ For MVP, we can hardcode one or two models (e.g., a toy "coffee machine" and a s
 
   * Row 1:
 
-    * Left: action picker / state inspector.
-    * Right: React Flow canvas showing the current machine; current node highlighted; past trajectory edges emphasized.
+    * Left: State inspector
+      * Current mode (discrete state)
+      * Continuous variables with current values
+      * Available transitions (guards enabled/disabled)
+    * Right: **React Flow canvas**
+      * Modes as nodes (with flow equations on hover)
+      * Guards as edge labels
+      * Current mode highlighted
+      * Past trajectory emphasized
+
   * Row 2:
 
-    * Variable graphs (compute, risk, etc.) and maybe a timeline.
+    * **Time-series charts** (continuous state over time)
+      * Compute, alignment, trust vs time
+      * Different colors per mode
+      * Vertical lines mark mode transitions
+
+    * **Phase portrait** (optional, for 2-3 variables)
+      * Plot alignment vs compute
+      * Show trajectory trace
+      * Mode regions highlighted
 
 **Behaviors:**
 
-* Load a model (hardcoded choice list).
-* Show current state on graph.
-* Show available actions from that state.
-* Step through actions:
+* Load a model (hybrid automaton or discrete)
+* Show current mode and continuous state
+* **For hybrid automata**:
+  * **Time-elapse button**: Evolve continuous state for Δt (integrate ODEs)
+  * **Transition button**: Take a discrete transition (if guard satisfied)
+  * **Auto-step**: Combine evolution + transition detection
+* **For discrete models**: Classic step-through (same as before)
+* Update charts in real-time as simulation progresses
 
-  * Update `currentNodeId`, variables, and time.
-  * Update charts.
-  * Optionally hide future nodes until decisions are made.
-
-This is enough to demonstrate "state machine thinking" and validate the graph contract.
+This validates both discrete logic and continuous dynamics.
 
 ---
 
@@ -247,44 +336,69 @@ Matrix becomes the **backend of record** for models:
 
 The frontend doesn't change conceptually. It just swaps where it gets `GraphResponse` and `step()` behavior from.
 
-### 5.2 Matrix API (initial)
+### 5.2 Matrix API (Hybrid Automaton Support)
 
 1. **List models**
 
    * `GET /models`
-   * Returns: array of `{ id, name, description, tags, modelType }`.
+   * Returns: array of `{ id, name, description, tags, modelType, timeModel }`.
 
 2. **Fetch graph**
 
    * `GET /models/{id}/graph`
-   * Returns: `GraphResponse` (nodes, edges, meta).
+   * Returns: `GraphResponse` (nodes with flows, edges with guards/resets, meta).
 
-3. **Simulate a step**
+3. **Get flow equations for a mode**
+
+   * `GET /models/{id}/modes/{mode_id}/flow`
+   * Returns: `FlowEquation` (ODE system for that mode)
+
+4. **Simulate continuous evolution** (time-elapse in a mode)
+
+   * `POST /simulate/evolve`
+   * Body:
+     * `model_id`
+     * `mode` (current discrete mode)
+     * `state` (current continuous state)
+     * `duration` (time to integrate)
+   * Returns:
+     * `next_state` (continuous state after integration)
+     * `trajectory` (optional: sampled points along ODE solution)
+
+5. **Simulate a discrete transition**
+
+   * `POST /simulate/transition`
+   * Body:
+     * `model_id`
+     * `edge_id` (which transition to take)
+     * `state` (current continuous state)
+   * Returns:
+     * `next_mode` (target mode)
+     * `next_state` (continuous state after reset)
+     * `guard_satisfied` (boolean: was guard actually satisfied?)
+
+6. **Simulate a hybrid step** (continuous evolution + check guards)
 
    * `POST /simulate/step`
    * Body:
-
      * `model_id`
-     * `current_state` (`NodeId` and variables)
-     * `action`
-     * Optional `rng_seed`
+     * `current_state` (mode + continuous state + discrete vars)
+     * `max_duration` (time budget for continuous evolution)
    * Returns:
-
-     * `next_state` (`NodeId`, variables, time)
+     * `next_state` (mode, continuous state, time)
+     * `transition_fired` (boolean: did a discrete transition occur?)
      * `events` (edge outputs / logs)
 
-4. **Simulate a trajectory** (optional early, useful soon)
+7. **Simulate a trajectory**
 
    * `POST /simulate/trajectory`
    * Body:
-
      * `model_id`
-     * initial state
-     * `policy` or fixed action sequence
-     * `horizon`
+     * initial state (mode + continuous state)
+     * `horizon` (time or steps)
+     * `policy` (optional: agent decision rule)
    * Returns:
-
-     * sequence of `state, variables, t, events`.
+     * sequence of `(mode, continuous_state, time, events)`
 
 Later we can add:
 
@@ -293,20 +407,43 @@ Later we can add:
 
 ### 5.3 Server-side Modeling
 
-Matrix internally uses **adapters**:
+Matrix internally uses **adapters** for different model types:
 
-* `TransitionsAdapter` – wraps `transitions` machines.
-* `SismicAdapter` – wraps Sismic statecharts.
-* `AutomataAdapter` – wraps `automata-lib` automata.
-* Custom "KripkeAdapter" for hand-written Kripke/MDP models.
+**Discrete model adapters**:
+* `TransitionsAdapter` – wraps `transitions` machines (FSM/statechart)
+* `SismicAdapter` – wraps Sismic statecharts
+* `AutomataAdapter` – wraps `automata-lib` automata
+* `KripkeAdapter` – hand-written Kripke/MDP models
 
-Each adapter must implement:
+**Hybrid automaton adapter**:
+* `HybridAutomatonAdapter` – general hybrid automaton engine
+  * Uses **scipy.integrate** for ODE integration
+  * Supports guards, resets, invariants
+  * Optional: stochastic transitions (SHA)
 
-* `toGraphResponse()`
-* `initialState()`
-* `step(state, action, rng?)`
+**Each adapter must implement**:
 
-Matrix orchestrates these and exposes the unified API above.
+* `toGraphResponse()` - export to canonical format
+* `initialState()` - return starting state
+* `step(state, action, rng?)` - one simulation step
+* **For HA adapters**:
+  * `getFlow(mode)` - return ODE system for a mode
+  * `evolve(mode, state, duration)` - integrate ODEs
+  * `checkGuards(mode, state)` - find enabled transitions
+  * `applyReset(edge, state)` - discrete jump
+
+**ODE Integration**:
+Matrix uses **scipy.integrate.solve_ivp** with adaptive stepping:
+```python
+from scipy.integrate import solve_ivp
+
+def evolve(mode, x0, duration):
+    flow = self.flows[mode]  # ODE function: f(t, x) -> dx/dt
+    result = solve_ivp(flow, [0, duration], x0, method='RK45')
+    return result.y[:, -1]  # Final state
+```
+
+Matrix orchestrates these adapters and exposes the unified API above.
 
 ---
 
@@ -407,33 +544,56 @@ Given your experience ("I always grow out of SPA, migration is painful"), and th
 * **Core front-end:**
 
   * Next.js (TypeScript)
-  * React Flow as the primary graph canvas
-  * Canonical **GraphResponse** contract (nodes, edges, variables, meta).
+  * React Flow as the primary graph canvas (modes as nodes, guards as edges)
+  * Canonical **GraphResponse** contract extended for **hybrid automata**:
+    * Nodes with flow equations
+    * Edges with guards and resets
+    * Continuous and discrete variables
+    * Time models: discrete, continuous, hybrid
 
-* **Phase 1:**
+* **Phase 1: Progressive Implementation**
 
-  * All modeling done in JS/TS.
-  * One or two demo models (toy + small AI-2027 slice).
-  * Simulation functions in browser.
+  1. **Discrete-only** (FSM/Kripke): Validate architecture, UI, graph contract
+  2. **Add continuous dynamics**: Flow equations, ODE integration in browser (simple Euler method)
+  3. **Add time guards**: Model time-windowed transitions
+  4. **Add stochastic transitions**: Probabilistic mode switches (SHA)
 
-* **Phase 2:**
+  Demo models:
+  * Toy: 2-mode thermostat (simple HA)
+  * AI-2027: Small slice (Baseline → Race → Pause)
 
-  * Introduce **Matrix** (FastAPI + Python).
-  * Python FSM/statechart/logic libraries behind Matrix.
-  * Matrix exposes `/models`, `/graph`, `/simulate`, `/check`.
-  * Frontend swaps to HTTP-backed `ModelProvider` but keeps the same UI.
+* **Phase 2: Matrix Backend**
+
+  * Introduce **Matrix** (FastAPI + Python)
+  * **Hybrid automaton engine** using:
+    * scipy.integrate for ODE solving
+    * Custom guard/reset logic
+    * Stochastic transitions (numpy.random)
+  * Python model-checking libraries for verification
+  * Matrix API: `/models`, `/graph`, `/flow`, `/evolve`, `/simulate`, `/check`
+  * Frontend unchanged (same contract)
 
 * **Alternatives:**
 
-  * XState used only as a secondary/debug/teaching tool, not the core.
-  * React Flow preferred over other JS graph libs for node-based editors.
+  * XState used only as a secondary/debug/teaching tool, not the core
+  * React Flow preferred over other JS graph libs for node-based editors
+  * **Hybrid automata subsume all discrete models** (FSM, Kripke, MDP), so no need for separate engines
 
-This keeps the **MVP small**, aligns with your long-term goal of serious modeling with Python, and minimizes future migration pain by picking Next.js and a stable front-end contract from day one.
+This keeps the **MVP tractable** (start discrete, add continuous incrementally), aligns with serious modeling goals (Python + verification tools), and provides a **unified framework** (HA) instead of separate discrete and continuous stacks.
 
 ---
 
 ## Related Documentation
 
-- **Model Design**: [model_design.md](model_design.md) - Which formal models are supported in MVP
-- **Implementation Plan**: [impl_plan.md](impl_plan.md) - Combined tech + model implementation roadmap
+### MVP Documentation
+- **Model Design**: [model_design.md](model_design.md) - Hybrid automaton approach, progressive phases
+- **Implementation Plan**: [impl_plan.md](impl_plan.md) - Week-by-week roadmap for HA implementation
+
+### Hybrid Automata Framework
+- **Framework**: [../hybrid_automata/framework.md](../hybrid_automata/framework.md) - Formal HA definitions and semantics
+- **Integration**: [../hybrid_automata/integration.md](../hybrid_automata/integration.md) - SD+ABM+HA coupling patterns
+- **Tools**: [../hybrid_automata/tools_and_verification.md](../hybrid_automata/tools_and_verification.md) - Verification workflows
+- **Examples**: [../hybrid_automata/examples/](../hybrid_automata/examples/) - Domain-specific HA models
+
+### Other Resources
 - **Tools Literature Survey**: [../TOOLS_LITERATURE_SURVEY.md](../TOOLS_LITERATURE_SURVEY.md) - Comprehensive library research
