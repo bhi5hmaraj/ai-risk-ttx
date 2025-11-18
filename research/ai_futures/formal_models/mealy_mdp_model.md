@@ -10,6 +10,37 @@
 
 **Solution**: Combine Mealy machine (outputs on edges) with MDP (stochastic transitions + time steps).
 
+## Important Distinctions
+
+### Stochastic Mealy vs MDP vs POMDP
+
+**Clarification**: This model is fundamentally an **MDP** with Mealy-style outputs, not a pure Mealy machine.
+
+**Stochastic Mealy Machine** (automata theory):
+- Focus: **Transduction** (input stream → output stream)
+- Formal: `(S, S₀, Σ, Λ, T, G)` where outputs live on edges
+- Question: "Given input word, what output distribution?"
+- Emphasis: Language/automata, stream processing
+
+**Markov Decision Process** (control/RL):
+- Focus: **Optimal control** under uncertainty
+- Formal: `(S, A, P, R)` with policy optimization
+- Question: "What policy maximizes expected reward?"
+- Emphasis: Decision-making, planning, risk
+
+**Practical truth**: **MDP is the cleaner core** for AI2027-style decision dynamics.
+- Side-effects are just state updates (part of `S`)
+- Mealy-style outputs `G(s,a,s')` are cosmetic labels for UI/narrative
+- Can layer Mealy outputs on top of MDP without new formalism
+
+**POMDP** (Partially Observable MDP):
+- MDP + observation model `O(o | s', a)`
+- Agent doesn't see true state, only observations
+- Maintains belief state `b(s)` (distribution over states)
+- Use when: Partial observability matters (e.g., "what is China really doing?")
+
+**Recommendation**: Start with MDP core, add Mealy outputs for visualization.
+
 ## Formal Definition
 
 A **Stochastic Mealy Transducer** (discrete-time MDP with output function):
@@ -17,6 +48,11 @@ A **Stochastic Mealy Transducer** (discrete-time MDP with output function):
 ```
 M = (S, A, E, P, G, γ, s₀, t₀)
 ```
+
+**Note**: This is an MDP `(S, A, P, R)` extended with:
+- Event space `E` (exogenous randomness)
+- Output function `G` (Mealy-style edge labels)
+- The MDP part handles dynamics; `G` provides interpretable outputs.
 
 **Components:**
 - **S**: State space (discrete scenarios × continuous variables)
@@ -119,6 +155,78 @@ G((S4, v₄, 2), INVEST_SECURITY, WEIGHT_THEFT, (S5, v₅, 3)) = {
   events: [{type: "THEFT", severity: "HIGH", actor: "APT-42"}]
 }
 ```
+
+## Side-Effects as State Updates
+
+**Important**: "Side-effects" are not a separate mechanism - they're just state updates in the MDP.
+
+### How Side-Effects Work
+
+**In pure Mealy formalism**: Outputs are symbols on edges
+**In this model (MDP)**: World changes are state transitions
+
+```
+State s = (scenario, variables, time)
+
+Transition: s →^(a,e) s'
+
+"Side-effects":
+  - Scenario change: σ → σ' (e.g., S4 → S5)
+  - Variable updates: v → v' (compute ×1.2, hack +0.05)
+  - Time advance: t → t+1
+```
+
+**These are all part of `P(s' | s, a, e)`** - the transition kernel!
+
+### Example: Weight Theft
+
+```
+Before: s = (S4, {compute: 1.2, sec: 2.0, hack: 0.35, ...}, 8)
+Action: a = NO_OP
+Event:  e = WEIGHT_THEFT (sampled with prob λ_theft)
+
+Transition P(s' | s, NO_OP, WEIGHT_THEFT):
+  Scenario: S4 → S5
+  Variables:
+    sec:  2.0 → 1.5  (security degraded)
+    hack: 0.35 → 0.50 (theft risk increased)
+  Time: 8 → 9
+
+After:  s' = (S5, {compute: 1.2, sec: 1.5, hack: 0.50, ...}, 9)
+```
+
+**All these changes** are the "side-effect" - but formally, it's just:
+```
+s' ~ P(· | s, a, e)
+```
+
+### Output Function is Interpretive
+
+The output function `G` doesn't change state - it **interprets** the transition:
+
+```javascript
+output = G(s, a, e, s') = {
+  narrative: "State-sponsored APT successfully stole model weights.",
+  metrics: s'.variables,  // Just reading new state
+  events: [{type: "THEFT", impact: "MAJOR"}]
+}
+```
+
+**Key**: `G` is for **UI/logging**, not dynamics. Dynamics are in `P`.
+
+### Why This Matters
+
+**Common confusion**: "Where do I put side-effects in an MDP?"
+
+**Answer**: They're already there!
+- MDP state `S` includes everything that changes
+- Transition `P(s' | s, a)` updates all components
+- No special "side-effect mechanism" needed
+
+**Mealy flavor** is cosmetic:
+- Attach `G(s,a,s')` to compute edge labels
+- Use for narrative generation, event logs
+- But dynamics live in `P`, not `G`
 
 ## Time as an Actor
 
