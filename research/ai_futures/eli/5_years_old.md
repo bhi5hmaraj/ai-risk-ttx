@@ -93,12 +93,12 @@ Some games have a timer. You have to act fast!
 stateDiagram-v2
     direction LR
 
-    [*] --> Start: Game begins!<br/>Timer: 10 seconds
+    [*] --> Start: Game begins! (10 seconds)
 
-    Start --> PresButton: Press the button<br/>BEFORE 10 seconds!
-    Start --> TooLate: Timer runs out<br/>AFTER 10 seconds
+    Start --> PressButton: Press button in time!
+    Start --> TooLate: Timer runs out
 
-    PresButton --> YouWin: 🎉 You Win!
+    PressButton --> YouWin: 🎉 You Win!
     TooLate --> GameOver: ❌ Game Over
 
     note right of Start
@@ -127,8 +127,8 @@ Let's play a dice game!
 stateDiagram-v2
     [*] --> RollDice: Roll the dice!
 
-    RollDice --> BigNumber: Roll 4, 5, or 6<br/>(50% chance)
-    RollDice --> SmallNumber: Roll 1, 2, or 3<br/>(50% chance)
+    RollDice --> BigNumber: Roll 4, 5, or 6 (50% chance)
+    RollDice --> SmallNumber: Roll 1, 2, or 3 (50% chance)
 
     BigNumber --> Candy: Get candy! 🍬
     SmallNumber --> Sticker: Get sticker! ⭐

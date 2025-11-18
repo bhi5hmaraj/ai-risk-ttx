@@ -141,20 +141,20 @@ If you already understand formal methods:
 
 ```mermaid
 graph TD
-    Start{Choose<br/>Your Level}
+    Start{Choose Your Level}
 
-    Start -->|"Complete beginner<br/>Visual learner"| L1[5 Year Old<br/>Traffic lights<br/>Adventure games<br/>Dice rolls]
+    Start -->|"Complete beginner / Visual learner"| L1[5 Year Old: Traffic lights, Adventure games, Dice rolls]
 
-    Start -->|"Teen/Young adult<br/>Gamer mindset"| L2[15 Year Old<br/>Video games<br/>Speedruns<br/>Loot boxes]
+    Start -->|"Teen/Young adult / Gamer mindset"| L2[15 Year Old: Video games, Speedruns, Loot boxes]
 
-    Start -->|"STEM background<br/>Systems thinker"| L3[Engineering Grad<br/>Process control<br/>Reliability<br/>Optimization]
+    Start -->|"STEM background / Systems thinker"| L3[Engineering Grad: Process control, Reliability, Optimization]
 
-    L1 --> Basics["Core Concepts:<br/>• States<br/>• Transitions<br/>• Time<br/>• Probability<br/>• Safety"]
+    L1 --> Basics["Core Concepts: States, Transitions, Time, Probability, Safety"]
 
     L2 --> Basics
     L3 --> Basics
 
-    Basics --> AI2027["Applied to AI:<br/>• Capability levels<br/>• Deployment decisions<br/>• Safety properties<br/>• Risk quantification"]
+    Basics --> AI2027["Applied to AI: Capability levels, Deployment decisions, Safety properties, Risk quantification"]
 
     AI2027 --> Next{Want More?}
 

@@ -82,12 +82,12 @@ In games like Fortnite, the safe zone shrinks over time. You MUST move or die!
 stateDiagram-v2
     direction LR
 
-    [*] --> SafeZone1: t=0<br/>Full map
+    [*] --> SafeZone1: t=0, Full map
 
-    SafeZone1 --> SafeZone2: t=300s<br/>Zone shrinks
+    SafeZone1 --> SafeZone2: t=300s, Zone shrinks
     SafeZone1 --> OutsideZone: Don't move in time
 
-    SafeZone2 --> SafeZone3: t=600s<br/>Zone shrinks
+    SafeZone2 --> SafeZone3: t=600s, Zone shrinks
     SafeZone2 --> OutsideZone: Don't move in time
 
     SafeZone3 --> Victory: Last alive
@@ -284,9 +284,9 @@ graph TD
     style Victory fill:#90EE90
     style Death fill:#FFB6C6
 
-    note1["Property: F victory<br/>TRUE ✅<br/>(path exists to victory)"]
-    note2["Property: G ¬death<br/>FALSE ❌<br/>(death paths exist)"]
-    note3["Property: F_{t≤600} victory<br/>TRUE ✅<br/>(9 min < 10 min)"]
+    note1["Property: F victory - TRUE ✅ (path exists to victory)"]
+    note2["Property: G ¬death - FALSE ❌ (death paths exist)"]
+    note3["Property: F_{t≤600} victory - TRUE ✅ (9 min < 10 min)"]
 ```
 
 ### AI2027 Properties to Check
@@ -323,9 +323,9 @@ In esports, players choose strategies to maximize win probability:
 ```mermaid
 graph LR
     subgraph "Your Strategies"
-    A[Aggressive<br/>High Risk]
-    B[Balanced<br/>Medium Risk]
-    C[Defensive<br/>Low Risk]
+    A[Aggressive - High Risk]
+    B[Balanced - Medium Risk]
+    C[Defensive - Low Risk]
     end
 
     subgraph "Opponent Strategies"
@@ -400,18 +400,18 @@ Let's combine everything we learned:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Current: 2024<br/>t=0
+    [*] --> Current: 2024, t=0
 
-    Current --> GPT5: Deploy advanced AI<br/>[t ∈ [0,8]]<br/>p=0.7
+    Current --> GPT5: Deploy advanced AI [t ∈ [0,8]], p=0.7
 
-    GPT5 --> SafeAGI: Cautious scaling<br/>[t ∈ [4,12]]<br/>p=0.4
-    GPT5 --> Race: Competitive pressure<br/>[t ∈ [4,16]]<br/>p=0.6
+    GPT5 --> SafeAGI: Cautious scaling [t ∈ [4,12]], p=0.4
+    GPT5 --> Race: Competitive pressure [t ∈ [4,16]], p=0.6
 
-    Race --> AGI: Rushed development<br/>[t ∈ [8,16]]<br/>p=0.8
-    SafeAGI --> AGI: Careful development<br/>[t ∈ [12,20]]<br/>p=0.9
+    Race --> AGI: Rushed development [t ∈ [8,16]], p=0.8
+    SafeAGI --> AGI: Careful development [t ∈ [12,20]], p=0.9
 
-    AGI --> Aligned: Alignment succeeds<br/>p=0.3
-    AGI --> Misaligned: Alignment fails<br/>p=0.7
+    AGI --> Aligned: Alignment succeeds, p=0.3
+    AGI --> Misaligned: Alignment fails, p=0.7
 
     Aligned --> HumanFlourishing: ✅ Good outcome
     Misaligned --> Catastrophe: ❌ Bad outcome

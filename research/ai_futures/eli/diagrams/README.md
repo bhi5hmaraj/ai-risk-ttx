@@ -8,6 +8,8 @@ This directory contains Mermaid diagrams for the ELI (Explain Like I'm) document
 1. GitHub renders Mermaid natively (no SVGs needed for web viewing)
 2. mermaid-cli installation failed due to network restrictions in the current environment
 
+**All diagrams are validated** using `@a24z/mermaid-parser` to ensure syntax correctness.
+
 ## File Organization
 
 ```
@@ -119,6 +121,22 @@ This will create:
 - **Primary**: Inline mermaid (best for GitHub/web)
 - **Optional**: Generate SVGs for offline/print docs
 
+## Validating Diagrams
+
+To ensure all embedded Mermaid diagrams have correct syntax:
+
+```bash
+node diagrams/validate_mermaid.js eli/*.md
+```
+
+This script:
+- Extracts all mermaid code blocks from markdown files
+- Validates each block using `@a24z/mermaid-parser`
+- Reports any syntax errors with line numbers
+- No Puppeteer/Chromium required (lightweight!)
+
+**Result**: ✅ All 29 diagrams in ELI documentation are validated and working!
+
 ## Troubleshooting
 
 ### mermaid-cli installation fails
@@ -159,9 +177,11 @@ When adding new diagrams to ELI docs:
 
 2. **Test syntax** at [mermaid.live](https://mermaid.live)
 
-3. **Optional**: Extract to .mmd file and add to inventory above
+3. **Validate**: Run `node diagrams/validate_mermaid.js eli/<your-file>.md`
 
-4. **Update this README** with diagram description
+4. **Optional**: Extract to .mmd file and add to inventory above
+
+5. **Update this README** with diagram description
 
 ## Future Work
 

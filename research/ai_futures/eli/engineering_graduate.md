@@ -160,16 +160,16 @@ Example: (Heating, 25min) → Temperature still rising
 stateDiagram-v2
     direction LR
 
-    [*] --> t0: (Baseline, t=0)<br/>2024-Q1
+    [*] --> t0: (Baseline, t=0), 2024-Q1
 
-    t0 --> t4: (NarrowAI, t=4)<br/>2025-Q1<br/>[deployed if t<8]
+    t0 --> t4: (NarrowAI, t=4), 2025-Q1, [deployed if t<8]
 
-    t4 --> t8a: (AGI-race, t=8)<br/>2026-Q1<br/>[if no regulation]
-    t4 --> t8b: (AGI-safe, t=8)<br/>2026-Q1<br/>[if regulated by t=8]
+    t4 --> t8a: (AGI-race, t=8), 2026-Q1, [if no regulation]
+    t4 --> t8b: (AGI-safe, t=8), 2026-Q1, [if regulated by t=8]
 
-    t8a --> t12: (Catastrophe, t=12)<br/>2027-Q1<br/>[p=0.6 given race]
+    t8a --> t12: (Catastrophe, t=12), 2027-Q1, [p=0.6 given race]
 
-    t8b --> t16: (Aligned, t=16)<br/>2028-Q1<br/>[p=0.8 given safety]
+    t8b --> t16: (Aligned, t=16), 2028-Q1, [p=0.8 given safety]
 
     note right of t0
         Time windows create
@@ -200,18 +200,18 @@ Mechanical systems fail probabilistically:
 stateDiagram-v2
     [*] --> Operating
 
-    Operating --> Operating: Preventive maintenance<br/>p=0.95 (continues)
-    Operating --> Degraded: Normal wear<br/>p=0.05 (degrades)
+    Operating --> Operating: Preventive maintenance, p=0.95 (continues)
+    Operating --> Degraded: Normal wear, p=0.05 (degrades)
 
-    Operating --> Failed: Random failure<br/>p=0.01
+    Operating --> Failed: Random failure, p=0.01
 
-    Degraded --> Degraded: Corrective maintenance<br/>p=0.7 (stabilizes)
-    Degraded --> Failed: Continued use<br/>p=0.3 (fails)
+    Degraded --> Degraded: Corrective maintenance, p=0.7 (stabilizes)
+    Degraded --> Failed: Continued use, p=0.3 (fails)
 
     Failed --> Repair
 
-    Repair --> Operating: Successful repair<br/>p=0.90
-    Repair --> Scrapped: Unrepairable<br/>p=0.10
+    Repair --> Operating: Successful repair, p=0.90
+    Repair --> Scrapped: Unrepairable, p=0.10
 
     note right of Operating
         Decisions with
@@ -252,16 +252,16 @@ Cost(B) = $0 × 0.7 + $5,000 × 0.3 = $1,500
 stateDiagram-v2
     [*] --> ChooseStrategy
 
-    ChooseStrategy --> Aggressive: "Deploy fast"<br/>Lower cost, higher risk
-    ChooseStrategy --> Cautious: "Deploy safe"<br/>Higher cost, lower risk
+    ChooseStrategy --> Aggressive: "Deploy fast" - Lower cost, higher risk
+    ChooseStrategy --> Cautious: "Deploy safe" - Higher cost, lower risk
 
-    Aggressive --> Success: Market leader<br/>p=0.30, reward=+$100B
-    Aggressive --> Misaligned: Safety failure<br/>p=0.50, reward=-$10B
-    Aggressive --> Catastrophe: Critical failure<br/>p=0.20, reward=-$1T
+    Aggressive --> Success: Market leader, p=0.30, reward=+$100B
+    Aggressive --> Misaligned: Safety failure, p=0.50, reward=-$10B
+    Aggressive --> Catastrophe: Critical failure, p=0.20, reward=-$1T
 
-    Cautious --> Success: Safe deployment<br/>p=0.60, reward=+$50B
-    Cautious --> Delayed: Too slow<br/>p=0.30, reward=-$5B
-    Cautious --> Catastrophe: Despite precautions<br/>p=0.10, reward=-$1T
+    Cautious --> Success: Safe deployment, p=0.60, reward=+$50B
+    Cautious --> Delayed: Too slow, p=0.30, reward=-$5B
+    Cautious --> Catastrophe: Despite precautions, p=0.10, reward=-$1T
 
     note right of ChooseStrategy
         MDP optimization:
@@ -311,9 +311,9 @@ Engineers check: "Can this system fail unsafely?"
 graph TD
     Init[System Design] --> HAZOP{HAZOP Analysis}
 
-    HAZOP -->|Check| P1["Property 1:<br/>G (P ≤ P_max)"]
-    HAZOP -->|Check| P2["Property 2:<br/>F steady_state"]
-    HAZOP -->|Check| P3["Property 3:<br/>G (overtemp → F_{≤1s} shutdown)"]
+    HAZOP -->|Check| P1["Property 1: G (P ≤ P_max)"]
+    HAZOP -->|Check| P2["Property 2: F steady_state"]
+    HAZOP -->|Check| P3["Property 3: G (overtemp → F_{≤1s} shutdown)"]
 
     P1 -->|Pass ✓| Safe1[Safe: Pressure limit enforced]
     P1 -->|Fail ✗| Fix1[Add pressure relief valve]
@@ -350,13 +350,13 @@ Replace "physical safety" with "alignment safety":
 
 ```mermaid
 flowchart TD
-    Model[Build Formal Model<br/>States, transitions, probabilities]
+    Model[Build Formal Model: States, transitions, probabilities]
     -->
-    Property[Specify Properties<br/>LTL/CTL/PCTL formulas]
+    Property[Specify Properties: LTL/CTL/PCTL formulas]
     -->
-    Verify{Automated<br/>Verification}
+    Verify{Automated Verification}
 
-    Verify -->|Property holds ✓| Safe[System provably safe<br/>for given assumptions]
+    Verify -->|Property holds ✓| Safe[System provably safe for given assumptions]
     Verify -->|Property fails ✗| Counter[Counterexample found]
 
     Counter --> Analyze[Analyze failure scenario]
@@ -365,7 +365,7 @@ flowchart TD
 
     Safe --> Deploy[Deploy with confidence]
 
-    note1["Tools:<br/>- PRISM (probabilistic)<br/>- NuSMV (symbolic)<br/>- Storm (continuous-time)"]
+    note1["Tools: PRISM (probabilistic), NuSMV (symbolic), Storm (continuous-time)"]
 ```
 
 **Engineering Insight**: This is like **Failure Modes and Effects Analysis (FMEA)** but mathematically rigorous and automated!
@@ -417,9 +417,9 @@ graph LR
 ```mermaid
 graph LR
     subgraph "Yield vs Safety Trade-off"
-    P1["Low Temp<br/>High Safety<br/>Low Yield"]
-    P2["Medium Temp<br/>Medium Safety<br/>Medium Yield"]
-    P3["High Temp<br/>Low Safety<br/>High Yield"]
+    P1["Low Temp - High Safety - Low Yield"]
+    P2["Medium Temp - Medium Safety - Medium Yield"]
+    P3["High Temp - Low Safety - High Yield"]
     end
 
     P1 -.->|"Pareto frontier"| P2
@@ -496,48 +496,48 @@ graph TD
 
 ```mermaid
 flowchart TD
-    Sensors[Sensors<br/>T, P, Flow, Level]
-    --> Controller[PID Controller<br/>FSM Logic]
-    --> Actuators[Actuators<br/>Valves, Pumps, Heaters]
-    --> Process[Chemical Process<br/>Reactor, Separator]
+    Sensors[Sensors: T, P, Flow, Level]
+    --> Controller[PID Controller + FSM Logic]
+    --> Actuators[Actuators: Valves, Pumps, Heaters]
+    --> Process[Chemical Process: Reactor, Separator]
     --> Sensors
 
-    Controller --> Safety[Safety System<br/>Interlocks, Shutdowns]
+    Controller --> Safety[Safety System: Interlocks, Shutdowns]
     Safety -.->|Override| Actuators
 
     Monitor[Monitoring System] -.->|Observes| Process
-    Monitor --> Alarm{Property<br/>Violation?}
+    Monitor --> Alarm{Property Violation?}
     Alarm -->|Yes| SafetyOverride[Emergency Shutdown]
     Alarm -->|No| Continue[Normal Operation]
 
-    note1["State Machine:<br/>Defines operating modes"]
-    note2["Time Constraints:<br/>Reaction times, delays"]
-    note3["Uncertainty:<br/>Sensor noise, disturbances"]
-    note4["Properties:<br/>Safety, performance, efficiency"]
+    note1["State Machine: Defines operating modes"]
+    note2["Time Constraints: Reaction times, delays"]
+    note3["Uncertainty: Sensor noise, disturbances"]
+    note4["Properties: Safety, performance, efficiency"]
 ```
 
 ### AI System: Autonomous AI Development
 
 ```mermaid
 flowchart TD
-    Capabilities[AI Capabilities<br/>Models, Training, Data]
-    --> Deployment[Deployment System<br/>Scaling, Distribution]
-    --> Impact[Real-World Impact<br/>Economic, Social]
-    --> Feedback[Feedback Loop<br/>Data, Metrics]
+    Capabilities[AI Capabilities: Models, Training, Data]
+    --> Deployment[Deployment System: Scaling, Distribution]
+    --> Impact[Real-World Impact: Economic, Social]
+    --> Feedback[Feedback Loop: Data, Metrics]
     --> Capabilities
 
-    Deployment --> Safety[Safety Layer<br/>Alignment, Monitoring]
+    Deployment --> Safety[Safety Layer: Alignment, Monitoring]
     Safety -.->|Intervene| Deployment
 
     Monitor[Verification System] -.->|Checks| Impact
-    Monitor --> Alarm{Property<br/>Violation?}
+    Monitor --> Alarm{Property Violation?}
     Alarm -->|Yes| Pause[Pause/Rollback]
     Alarm -->|No| Scale[Continue Scaling]
 
-    note1["State Machine:<br/>Capability levels"]
-    note2["Time Constraints:<br/>Deployment windows"]
-    note3["Uncertainty:<br/>Alignment success rates"]
-    note4["Properties:<br/>Safety, beneficial impact"]
+    note1["State Machine: Capability levels"]
+    note2["Time Constraints: Deployment windows"]
+    note3["Uncertainty: Alignment success rates"]
+    note4["Properties: Safety, beneficial impact"]
 ```
 
 **Key Similarities:**
