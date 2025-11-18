@@ -8,6 +8,28 @@ A **time-indexed Kripke structure** is a minimal formalism for modeling discrete
 
 **Sweet spot**: Simpler than timed automata, more expressive than plain LTS, compatible with all temporal logics.
 
+### Visual Concept
+
+```mermaid
+graph LR
+    subgraph "Plain Kripke Structure"
+    A1[S0<br/>p,q] --> B1[S1<br/>p,¬q]
+    B1 --> C1[S2<br/>¬p,q]
+    C1 --> D1[S3<br/>p,q]
+    end
+
+    subgraph "Time-Indexed Kripke"
+    A2["(S0,0)<br/>p,q,t=0"] --> B2["(S1,1)<br/>p,¬q,t=1"]
+    B2 --> C2["(S2,2)<br/>¬p,q,t=2"]
+    C2 --> D2["(S3,3)<br/>p,q,t=3"]
+    end
+
+    style A1 fill:#e1f5ff
+    style A2 fill:#ffe1f5
+```
+
+**Difference**: States become **(world, time)** pairs, time is an atomic proposition
+
 ## Motivation
 
 **Problem with plain Kripke structures**: No notion of time windows or temporal constraints.
@@ -177,6 +199,48 @@ L((S14, 18)) = {cat, superint}
 
 **Core mechanism**: Restrict transitions to time windows.
 
+### Visual Example: AI Race with Time Guards
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> S0_t0: (S0, 0)<br/>2024-Q1
+
+    S0_t0 --> S1_t1: deploy<br/>[t ∈ [0,8]]
+    S0_t0 --> S0_t1: wait
+
+    S1_t1 --> S2_t2: scale<br/>[t ∈ [4,∞)]
+    S1_t1 --> S1_t2: wait
+
+    S2_t2 --> S3_t3: race<br/>[t ∈ [6,16]]
+    S2_t2 --> S4_t3: slowdown<br/>[t ∈ [6,18]]
+    S2_t2 --> S2_t3: wait
+
+    S3_t3 --> S5_t4: catastrophe<br/>[t ∈ [12,∞)]
+    S4_t3 --> S6_t4: aligned
+
+    note right of S1_t1
+        Deploy window:
+        Must act before
+        2026 (t < 8)
+    end note
+
+    note right of S3_t3
+        Race window:
+        Only quarters
+        6-16 (2025-2028)
+    end note
+
+    note right of S5_t4
+        Late-stage failure:
+        Only after 2027
+        (t ≥ 12)
+    end note
+```
+
+**Key insight**: Time guards create **decision windows** and **temporal dependencies**
+
 ### Interval Types
 
 ```
@@ -239,6 +303,38 @@ S6 → S8 (race):     I = [18, ∞)
 S4 → S5 (theft): I = [6, 16]
 ```
 "Weight theft only possible in 2025-2028 (quarters 6-16)."
+
+#### Timeline Visualization
+
+```mermaid
+gantt
+    title AI2027 Time Windows (Quarters from 2024-Q1)
+    dateFormat YYYY-MM-DD
+    axisFormat Q%q %Y
+
+    section Deploy
+    Deploy window [0,8]           :a1, 2024-01-01, 730d
+
+    section Theft Risk
+    Theft window [6,16]           :a2, 2025-04-01, 912d
+
+    section Policy Choice
+    Slowdown option [6,18]        :a3, 2025-04-01, 1095d
+    Race lock-in [18,∞)           :a4, 2028-07-01, 365d
+
+    section AGI Risk
+    AGI earliest [8,∞)            :a5, 2026-01-01, 1095d
+
+    section Late Stage
+    Catastrophe risk [12,∞)       :a6, 2027-01-01, 730d
+```
+
+**Reading the timeline**:
+- Deployment must happen in first 2 years (quarters 0-8)
+- Theft vulnerability opens Q6, closes Q16
+- Policy decision window closes Q18 - after that, locked into race
+- AGI cannot emerge before Q8 (2026)
+- Catastrophic failures only possible after Q12 (2027)
 
 ## Semantics
 
