@@ -8,7 +8,11 @@ We've built a **formal modeling stack** for AI2027 scenarios spanning:
 - **Time-indexed Kripke structures** (the sweet spot)
 - **Complete specification libraries** for AI risk analysis
 
-**Recommendation**: Start with **Time-Indexed Kripke + Basic MDP**, progressively add complexity.
+**Recommendation**: Start with **Deterministic LTS**, add time and stochasticity progressively.
+
+**Implementation**: JavaScript SPA for quick wins → Python "matrix" service for experimentation.
+
+**👉 Detailed implementation plan**: See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)
 
 ## The Stack
 
@@ -68,92 +72,48 @@ We've built a **formal modeling stack** for AI2027 scenarios spanning:
 
 ## MVP Recommendation
 
-### Phase 1: Time-Indexed Kripke (✅ Quick wins)
+**See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) for detailed implementation guide.**
 
-**What**: Discrete-time Kripke structure with time guards
+### Phase 1: Deterministic LTS (✅ Maximum simplicity)
 
-```
-State: s = (world_state, time_step)
-       = (S4, 8)  "Scaled agents at quarter 8"
+**Timeline**: 1 week
 
-Edges: S4 → S5 with guard t ∈ [6, 16]
-       "Theft only possible quarters 6-16"
-```
+**What**: Plain Labeled Transition System - deterministic state machine with no probabilities
 
-**Why**:
-- ✅ Simple (just add time to state)
-- ✅ Standard LTL/CTL work unchanged
-- ✅ Time windows naturally expressed
-- ✅ Easy to implement
-- ✅ Tool-friendly (PRISM, NuSMV, SPIN)
+**Why start here**:
+- ✅ Dead simple (just states + labeled edges)
+- ✅ Immediate visualization with existing tools
+- ✅ Clear semantics, easy to understand
+- ✅ Fast iteration cycle
+- ✅ LTL/CTL ready out of the box
 
-**Deliverables**:
-1. Model AI2027 as Kripke structure
-2. Add time component to states
-3. Define time windows on edges
-4. Write LTL/CTL properties
-5. Verify with model checker
+**Tech Stack**: JSSM/FSL or XState + React Flow + Dagre
 
-**Effort**: 1-2 weeks for working prototype
+### Phase 2: Add Time Guards (📅 Temporal constraints)
 
-### Phase 2: Add Stochasticity (MDP) (📈 Realism)
+**Timeline**: 3-5 days
 
-**What**: Extend with probabilities
+**What**: Make time explicit, add temporal window constraints
 
-```
-P(S4 → S5 | NO_OP) = 0.15  (15% theft per quarter)
-P(S4 → S6 | NO_OP) = 0.10  (10% controls)
-P(S4 → S4 | NO_OP) = 0.75  (75% nothing)
-```
+**Why**: Calendar deadlines, time windows, still deterministic
 
-**Why**:
-- ✅ Realistic uncertainty
-- ✅ Risk quantification
-- ✅ PCTL properties
-- ✅ Policy optimization possible
+**Implementation**: Extend state to `(world, t)` with guards `t ∈ [k₁, k₂]`
 
-**Deliverables**:
-1. Calibrate transition probabilities
-2. Add PCTL specifications
-3. Compute P(F catastrophe)
-4. Sensitivity analysis
+### Phase 3: Add Stochasticity (MDP) (📈 Realism)
 
-**Effort**: 2-3 weeks (includes calibration)
+**Timeline**: 2-3 weeks
 
-### Phase 3: Add Mealy Outputs (🎨 UX)
+**What**: Extend with transition probabilities and actions
 
-**What**: Edge labels for narrative
+**Why**: Realistic uncertainty, risk quantification, PCTL properties, policy optimization
 
-```
-G(s, a, e, s') = {
-  narrative: "APT successfully stole model weights.",
-  events: [{type: "THEFT", quarter: 8}],
-  metrics: {compute: 1.2, sec: 1.5, ...}
-}
-```
-
-**Why**:
-- ✅ Rich UI feedback
-- ✅ Interpretable transitions
-- ✅ Event logging
-- ✅ Story generation
-
-**Deliverables**:
-1. Define output function
-2. Generate narratives
-3. Event visualization
-4. Metric deltas display
-
-**Effort**: 1 week
+**Implementation**: Python "matrix" FastAPI service (stormpy, pyModelChecking)
 
 ### Phase 4 (Optional): Continuous Time (CTMDP) (🔬 High fidelity)
 
-**Only if** temporal dynamics critical:
-- Hazard rates (exponential waiting times)
-- "What happens if we wait 6 months?"
-- Competing risks
+**Timeline**: 3-4 weeks
 
-**Effort**: 3-4 weeks (complex math, Gillespie algorithm)
+**Only if**: Temporal dynamics critical (hazard rates, competing risks)
 
 ## Key Insights
 
@@ -187,17 +147,19 @@ Each step is an **extension**, not rewrite.
 
 ## Implementation Priorities
 
+**For detailed breakdown, see [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)**
+
 ### Must Have (Phase 1-2)
-1. Time-indexed Kripke structure
-2. Basic MDP with probabilities
+1. Deterministic LTS (week 1)
+2. Time guards (week 2)
 3. LTL/CTL properties
-4. Model checker integration (PRISM)
+4. Interactive visualization
 
 ### Should Have (Phase 3)
-5. Mealy-style outputs
+5. MDP with probabilities
 6. PCTL risk bounds
-7. Narrative generation
-8. Interactive visualization
+7. Model checker integration (PRISM/Storm)
+8. Python matrix service
 
 ### Could Have (Phase 4+)
 9. CTMDP continuous time
@@ -233,43 +195,59 @@ Each step is an **extension**, not rewrite.
 
 ## Next Steps
 
-### Immediate (Week 1-2)
-1. Build time-indexed Kripke in PRISM
-2. Define 10-15 key AI2027 states
-3. Write 5-10 core properties (safety, liveness)
-4. Run model checker
+**See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) for complete implementation roadmap.**
 
-### Short-term (Week 3-6)
-5. Calibrate probabilities (expert elicitation)
-6. Add PCTL risk bounds
-7. Sensitivity analysis
-8. Documentation + examples
+### Immediate (Week 1)
+1. Set up JavaScript FSM (JSSM/XState)
+2. Define 10-15 key AI2027 states (deterministic)
+3. Build React Flow visualization
+4. Write 5-10 LTL/CTL properties
 
-### Medium-term (Month 2-3)
-9. Narrative generation (Mealy outputs)
-10. Interactive UI with property checking
-11. Integration with existing visualizer
-12. User study / validation
+### Short-term (Week 2-3)
+5. Add time to state (Phase 2)
+6. Implement time guards
+7. Basic property checker (G, F)
+8. UI enhancements
+
+### Medium-term (Month 2)
+9. Python matrix service setup (FastAPI)
+10. Add probabilities (MDP)
+11. PCTL checking (stormpy/PRISM)
+12. Simulacra integration
 
 ## Bottom Line
 
-**The sweet spot**: Time-indexed Kripke + MDP + PCTL
+**Start simple, add complexity progressively**
 
-- **Simple enough** to implement quickly
-- **Expressive enough** for meaningful analysis
-- **Standard enough** for tool support
-- **Extensible enough** for future needs
+**Phase 1 (MVP)**: Deterministic LTS + basic temporal logic
+- ✅ Simple enough to build in 1 week
+- ✅ Expressive enough for meaningful properties
+- ✅ Visualizable with existing React Flow
+- ✅ Foundation for all future extensions
+
+**Phase 2-3 (Full)**: Time-indexed Kripke + MDP + PCTL
+- ✅ Standard enough for tool support (PRISM, Storm)
+- ✅ Extensible enough for future needs (POMDP, CTMDP)
 
 **Avoid**: Jumping straight to CTMDP, timed automata, POMDPs
-**Instead**: Build foundation, add complexity incrementally
+**Instead**: Build foundation, validate, then extend
 
-**Estimated time to MVP**: 4-6 weeks full-time
+**Estimated time**:
+- **MVP (Deterministic)**: 1-2 weeks
+- **With probabilities (MDP)**: 1.5 months
+- **Full stack (CTMDP)**: 2-3 months
+
+**👉 Ready to code?** See [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md)
 
 ## References
 
-- This summary: `/research/ai_futures/FORMAL_MODELING_SUMMARY.md`
-- Full docs: `/research/ai_futures/{formal_models,logics,kripke_models}/`
-- Implementation: `/research/ai_futures/visualizer_canvas_simple/`
+- **This summary**: [FORMAL_MODELING_SUMMARY.md](FORMAL_MODELING_SUMMARY.md)
+- **Implementation plan**: [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md) 👈 **Start here for coding**
+- **Simulacra integration**: [SIMULACRA_INTEGRATION.md](SIMULACRA_INTEGRATION.md)
+- **Formal models**: [formal_models/README.md](formal_models/README.md)
+- **Temporal logics**: [logics/README.md](logics/README.md)
+- **Kripke structures**: [kripke_models/README.md](kripke_models/README.md)
+- **Current visualizer**: [visualizer_canvas_simple/DESIGN.md](visualizer_canvas_simple/DESIGN.md)
 
 ---
 
