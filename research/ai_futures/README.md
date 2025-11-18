@@ -58,6 +58,17 @@ Three levels of explanation:
 - [15 years old](eli/15_years_old.md) - Video games, speedruns, loot boxes
 - [Engineering graduate](eli/engineering_graduate.md) - Process control, reliability, HAZOP
 
+### I want to see how everything connects (SD + ABM + FM)
+
+**Read**: [hybrid_automata/README.md](hybrid_automata/README.md)
+
+Hybrid automata provide the formal backbone that unifies:
+- System Dynamics (continuous equations)
+- Agent-Based Models (discrete decisions)
+- Formal verification (temporal logic, model checking)
+
+See concrete examples from fisheries, epidemics, smart grids, and AI governance.
+
 ---
 
 ## 📁 Directory Structure
@@ -102,6 +113,17 @@ research/ai_futures/
 ├── kripke_models/                      # Kripke structure specs
 │   ├── README.md                       # Kripke integration guide
 │   └── time_indexed_kripke.md          # Time-indexed Kripke (the sweet spot)
+│
+├── hybrid_automata/                    # 🔗 Unifying SD + ABM + FM
+│   ├── README.md                       # Theory: How HA combines everything
+│   ├── framework.md                    # Formal definitions and semantics
+│   ├── integration.md                  # SD+ABM+HA coupling patterns
+│   ├── tools_and_verification.md       # Model checking workflows
+│   └── examples/
+│       ├── 01_ses_fisheries.md         # Social-ecological systems (resource mgmt)
+│       ├── 02_epidemic_control.md      # Multi-phase epidemic response
+│       ├── 03_smart_grid.md            # Smart grid & EV logistics
+│       └── 04_ai_governance.md         # AI-2027 as hybrid automaton
 │
 ├── FORMAL_MODELING_SUMMARY.md          # High-level overview
 ├── TOOLS_LITERATURE_SURVEY.md          # JS/Python library options
