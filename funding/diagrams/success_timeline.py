@@ -117,6 +117,6 @@ for month, label in milestones:
             bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.3))
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/success_timeline.png', dpi=300, bbox_inches='tight')
-print("Saved: success_timeline.png")
+plt.savefig('funding/diagrams/success_timeline.svg', format='svg', bbox_inches='tight')
+print("Saved: success_timeline.svg")
 plt.close('all')

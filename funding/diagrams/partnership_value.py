@@ -135,8 +135,8 @@ for i, synergy in enumerate(synergies):
 ax2.set_title('Value Multiplication (1+1=3)', fontsize=13, fontweight='bold')
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/partnership_value.png', dpi=300, bbox_inches='tight')
-print("Saved: partnership_value.png")
+plt.savefig('funding/diagrams/partnership_value.svg', format='svg', bbox_inches='tight')
+print("Saved: partnership_value.svg")
 
 # Create second figure: Risk mitigation matrix
 fig2, ax = plt.subplots(figsize=(12, 8))
@@ -186,6 +186,6 @@ for i, risk in enumerate(risks):
 ax.set_xlim(0, 16)  # Extended to fit mitigation text
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/risk_mitigation.png', dpi=300, bbox_inches='tight')
-print("Saved: risk_mitigation.png")
+plt.savefig('funding/diagrams/risk_mitigation.svg', format='svg', bbox_inches='tight')
+print("Saved: risk_mitigation.svg")
 plt.close('all')

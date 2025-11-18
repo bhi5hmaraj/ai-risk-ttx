@@ -163,8 +163,8 @@ ax3.set_title('Design Decision Impact Matrix', fontsize=12, fontweight='bold')
 ax3.tick_params(labelsize=9)
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/mda_framework.png', dpi=300, bbox_inches='tight')
-print("Saved: mda_framework.png")
+plt.savefig('funding/diagrams/mda_framework.svg', format='svg', bbox_inches='tight')
+print("Saved: mda_framework.svg")
 
 # Create second figure: MDA through development phases
 fig2, ax = plt.subplots(figsize=(14, 8))
@@ -208,6 +208,6 @@ for i, desc in enumerate(phase_desc):
            bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.4))
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/mda_development.png', dpi=300, bbox_inches='tight')
-print("Saved: mda_development.png")
+plt.savefig('funding/diagrams/mda_development.svg', format='svg', bbox_inches='tight')
+print("Saved: mda_development.svg")
 plt.close('all')

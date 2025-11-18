@@ -55,8 +55,8 @@ ax2.set_xlim(0, 12)
 ax2.set_ylim(0, 25)
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/player_journey.png', dpi=300, bbox_inches='tight')
-print("Saved: player_journey.png")
+plt.savefig('funding/diagrams/player_journey.svg', format='svg', bbox_inches='tight')
+print("Saved: player_journey.svg")
 
 # Create second figure: Progression pathway
 fig2, ax = plt.subplots(figsize=(14, 8))
@@ -117,6 +117,6 @@ for feat in features:
 ax.set_title('Progressive Complexity: Same Engine, Different Interfaces',
             fontsize=16, fontweight='bold', pad=20)
 
-plt.savefig('funding/diagrams/progression_pathway.png', dpi=300, bbox_inches='tight')
-print("Saved: progression_pathway.png")
+plt.savefig('funding/diagrams/progression_pathway.svg', format='svg', bbox_inches='tight')
+print("Saved: progression_pathway.svg")
 plt.close('all')

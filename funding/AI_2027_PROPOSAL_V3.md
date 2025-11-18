@@ -39,10 +39,10 @@ Different player types engage with different layers. Casual players mostly exper
 
 This layering is why the same engine supports 30-minute viral engagement and PhD dissertation research. We're not building different products for different audiences—we're building one system with progressive depth. The mechanics are simple enough for anyone. The dynamics are rich enough to sustain study. The aesthetics are compelling enough to spread.
 
-![MDA Framework](diagrams/mda_framework.png)
+![MDA Framework](diagrams/mda_framework.svg)
 *The MDA framework visualization showing how mechanics, dynamics, and aesthetics work together in Simulacra's design*
 
-![MDA Development Timeline](diagrams/mda_development.png)
+![MDA Development Timeline](diagrams/mda_development.svg)
 *How we prioritize different MDA elements across development phases*
 
 ---
@@ -57,16 +57,16 @@ That's what Simulacra adds. First, it's interactive—you play through scenarios
 
 The partnership makes sense because AI Futures brings domain expertise, scenario design, and credibility—people will take this seriously because it's grounded in real research. We bring a working engine and the execution capacity to scale it. Neither of us could build the complete vision alone, but together we can build something neither the research community nor the game development world has seen before: a tool that's simultaneously viral entertainment, serious policy planning, and experimental research platform.
 
-![Player Journey](diagrams/player_journey.png)
+![Player Journey](diagrams/player_journey.svg)
 *Engagement funnel showing how different player types derive value from Simulacra*
 
-![Progressive Complexity](diagrams/progression_pathway.png)
+![Progressive Complexity](diagrams/progression_pathway.svg)
 *The same engine supports casual players, engaged thinkers, and researchers through progressive complexity*
 
-![Impact Dimensions](diagrams/impact_dimensions.png)
+![Impact Dimensions](diagrams/impact_dimensions.svg)
 *Simulacra creates value across three dimensions: viral reach, research depth, and policy impact*
 
-![Impact Over Time](diagrams/impact_over_time.png)
+![Impact Over Time](diagrams/impact_over_time.svg)
 *How different impact dimensions grow at different rates over the first year*
 
 ---
@@ -208,7 +208,7 @@ Build the community and long-term sustainability. Community scenario sharing. In
 
 Deliverable: Self-sustaining platform with active community, real-world data integration, published research validating the approach.
 
-![Success Timeline](diagrams/success_timeline.png)
+![Success Timeline](diagrams/success_timeline.svg)
 *12-month development roadmap showing phases, milestones, and cumulative growth metrics*
 
 ---
@@ -255,10 +255,10 @@ We bring:
 
 Together we can build something neither could alone: a platform that's simultaneously viral entertainment, serious policy tool, and experimental research infrastructure.
 
-![Partnership Value](diagrams/partnership_value.png)
+![Partnership Value](diagrams/partnership_value.svg)
 *Complementary strengths: AI Futures brings credibility and domain expertise, we bring execution capacity*
 
-![Risk Mitigation](diagrams/risk_mitigation.png)
+![Risk Mitigation](diagrams/risk_mitigation.svg)
 *How partnership reduces key risks across technical execution, research validity, and policy adoption*
 
 ---

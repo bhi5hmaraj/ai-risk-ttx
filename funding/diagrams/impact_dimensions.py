@@ -94,8 +94,8 @@ ax2.text(9, 2, 'Viral Fluff\n(Reach, no depth)', ha='center', fontsize=9,
         bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.3))
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/impact_dimensions.png', dpi=300, bbox_inches='tight')
-print("Saved: impact_dimensions.png")
+plt.savefig('funding/diagrams/impact_dimensions.svg', format='svg', bbox_inches='tight')
+print("Saved: impact_dimensions.svg")
 
 # Create second figure: Impact over time
 fig2, ax = plt.subplots(figsize=(14, 8))
@@ -149,6 +149,6 @@ ax.annotate('Policy follows credibility\n(months 4-9)',
            fontsize=10, bbox=dict(boxstyle='round', facecolor=curve_colors[2], alpha=0.3))
 
 plt.tight_layout()
-plt.savefig('funding/diagrams/impact_over_time.png', dpi=300, bbox_inches='tight')
-print("Saved: impact_over_time.png")
+plt.savefig('funding/diagrams/impact_over_time.svg', format='svg', bbox_inches='tight')
+print("Saved: impact_over_time.svg")
 plt.close('all')
