@@ -14,6 +14,7 @@ Finalized Plan (as of 2025-11-20)
   - POST /api/llm/generate/scenario → synthesize a session and use nextEvent as initialEvent
   - POST /api/scenarios with { customPrompt, gameSetup, initialEvent } → persisted entry
 - Visibility and moderation: finalized scenarios are private by default; “Make Public” remains a separate flow using existing moderation.
+  - Compatibility note: today, `POST /api/scenarios` sets `status='pending'` (public submission flow). Private‑by‑default requires the Option A migration (add `visibility` and `state`). Until that lands, the library endpoints should filter by author and not surface pending items publicly.
 - Identity: authorProvider + authorKey (fingerprint now, user later) without API changes; drafts bound to a secret draftToken.
 - Enforcement: single “IDL” in TS + Zod; server parses inputs; ESLint/dependency rules to prevent cross-layer drift; rate limiting tracked as TODO.
 
