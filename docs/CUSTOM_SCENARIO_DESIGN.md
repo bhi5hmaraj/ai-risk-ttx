@@ -96,9 +96,9 @@ initialEvent = { headline, detail }
 
 Finalization Flow (Converging to existing generator)
 
-- On accept or when `turn == 5`, compile a single natural‑language scenario description from the accumulated `draft` (title, description, core metric, stakeholders, constraints/time horizon if present).
+- On accept or when `turn == 5`, compile a single natural‑language scenario description from the accumulated `draft` (title, description, core metric, stakeholders, constraints/time horizon if present). The final generator must produce `coreMetric.value`.
 - Call existing endpoint: `POST /api/llm/generate/custom-scenario` with `{ scenarioDescription }` (let the generator infer AI players).
-- Receive `gameSetup` (validated by existing infra). Do NOT generate `initialEvent` here — generate lazily when a game actually starts.
+- Receive `gameSetup` (validated by existing infra) where `coreMetric.value` is returned. Do NOT generate `initialEvent` here — generate lazily when a game actually starts.
 - Persist finalized scenario via existing `POST /api/scenarios` with `{ customPrompt: scenarioDescription, gameSetup }`. Default visibility is private.
 
 Data Model

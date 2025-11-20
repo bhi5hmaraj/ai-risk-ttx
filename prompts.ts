@@ -172,9 +172,9 @@ const buildGameSetupSchema = (maxAIPlayers: number) => ({
             properties: {
                 name: { type: "string", description: "The name of the central score for this scenario (e.g., 'Public Trust', 'Market Stability')." },
                 description: { type: "string", description: "A brief explanation of what this score represents." },
-                initialValue: { type: "number", description: "The starting value for the score, typically between 70 and 100." }
+                value: { type: "number", description: "The starting value for the score, typically between 70 and 100." }
             },
-            required: ['name', 'description', 'initialValue']
+            required: ['name', 'description', 'value']
         },
         stakeholders: {
             type: "array",
@@ -587,7 +587,7 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string, ai
       1.  **Scenario Title & Description:** Invent a catchy, evocative title and write a compelling one-paragraph description that sets the scene and establishes the stakes.
       2.  **Core Metric:**
           -   Invent a central game score that is thematic to the scenario. Instead of "Democratic Legitimacy," it could be "Global Economic Stability," "Public Health Confidence," or "Inter-species Trust."
-          -   The 'initialValue' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
+          -   The 'value' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
       3.  **Stakeholders (target ${stakeholdersMax} roles):**
           -   Create a cast of between 5 and ${stakeholdersMax} distinct, believable stakeholder roles (prefer exactly ${stakeholdersMax} when plausible). These should be the key players in the crisis.
           -   Include a balanced mix:
