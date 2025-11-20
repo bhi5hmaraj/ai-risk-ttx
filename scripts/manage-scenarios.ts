@@ -300,7 +300,7 @@ async function viewScenario(id: string) {
     if (gameSetup?.coreMetric) {
       console.log(`\nCore Metric: ${gameSetup.coreMetric.name}`);
       console.log(`Description: ${gameSetup.coreMetric.description}`);
-      console.log(`Initial Value: ${gameSetup.coreMetric.initialValue}`);
+      console.log(`Initial Value: ${gameSetup.coreMetric.value}`);
     }
 
     if (gameSetup?.stakeholders) {
