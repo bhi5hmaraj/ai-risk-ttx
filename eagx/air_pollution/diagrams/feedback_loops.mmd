@@ -1,0 +1,48 @@
+```mermaid
+graph LR
+    subgraph "Reinforcing Loop 1: Pollution Trap"
+        PM[High PM2.5] -->|Respiratory illness| Health[Poor Health]
+        Health -->|Missed work| Productivity[Lower Productivity]
+        Productivity -->|Less income| Poverty[Poverty]
+        Poverty -->|Cheap fuels, no alternatives| PM
+
+        style PM fill:#ff6b6b
+        style Poverty fill:#ff6b6b
+    end
+
+    subgraph "Balancing Loop 1: Political Pressure"
+        AQI[Severe AQI] -->|Visibility, fear| Alarm[Public Alarm]
+        Alarm -->|Media coverage| Pressure[Political Pressure]
+        Pressure -->|Emergency measures| Action[Policy Action]
+        Action -->|Emissions ↓| AQI_Down[AQI Decreases]
+        AQI_Down -.->|Negative feedback| AQI
+
+        style Action fill:#51cf66
+        style AQI_Down fill:#51cf66
+    end
+
+    subgraph "Reinforcing Loop 2: Meteorological"
+        PM2[PM2.5 in air] -->|Blocks sunlight| Cooling[Surface Cooling]
+        Cooling -->|Stable atmosphere| Inversion[Temperature Inversion]
+        Inversion -->|Traps pollution| PM2
+
+        style Inversion fill:#ffa94d
+    end
+
+    subgraph "Balancing Loop 2: Compliance Fatigue"
+        Restrictions[Strict Restrictions] -->|Initially| Compliance[High Compliance]
+        Compliance -->|Effective| AQI_Better[AQI Improves]
+        AQI_Better -->|Complacency| Fatigue[Compliance Fatigue]
+        Fatigue -.->|Negative feedback| Compliance
+
+        style Compliance fill:#74c0fc
+    end
+
+    subgraph "Reinforcing Loop 3: Social Contagion (Burning)"
+        Farmer1[Farmer Burns] -->|Neighbors observe| Norm[Social Norm]
+        Norm -->|"Everyone's doing it"| Farmer2[More Farmers Burn]
+        Farmer2 -->|Reinforces| Farmer1
+
+        style Farmer2 fill:#ffd43b
+    end
+```
