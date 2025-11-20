@@ -6,6 +6,17 @@ Owner: Platform/Gameplay
 
 Why: Let any player turn a rough idea into a structured, playable scenario via a short guided chat (≤5 user turns or early accept), then save it to a simple library. No classifier; prompts handle intent detection and playful/off‑topic behavior.
 
+Finalized Plan (as of 2025-11-20)
+- CopilotKit-first UX: start with a form-filling builder that mirrors the GameSetup schema, then add chat-assisted refinement (≤5 turns) backed by our own REST endpoints. CopilotKit is a UI layer; all contracts and persistence remain on our server.
+- Standardized schema: coreMetric.value is the only field (replaces initialValue everywhere). Shared TS types + Zod schemas enforce this at runtime.
+- Finalize chain (no drift, existing infra):
+  - POST /api/llm/generate/custom-scenario → returns canonical GameSetup with coreMetric.value
+  - POST /api/llm/generate/scenario → synthesize a session and use nextEvent as initialEvent
+  - POST /api/scenarios with { customPrompt, gameSetup, initialEvent } → persisted entry
+- Visibility and moderation: finalized scenarios are private by default; “Make Public” remains a separate flow using existing moderation.
+- Identity: authorProvider + authorKey (fingerprint now, user later) without API changes; drafts bound to a secret draftToken.
+- Enforcement: single “IDL” in TS + Zod; server parses inputs; ESLint/dependency rules to prevent cross-layer drift; rate limiting tracked as TODO.
+
 Scope (Phase 1)
 - Public API (non‑admin) for prompt refinement chat with a hard 5‑turn cap.
 - Prompting that detects gibberish/single letters, off‑topic requests (e.g., poems), and prompt‑probe attempts; shifts tone if playful without leaking internals.
