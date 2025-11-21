@@ -1,0 +1,53 @@
+{
+  "validated_at": "2025-11-21T04:36:51.263375Z",
+  "validator_version": "1.0",
+  "consistency_checks": {
+    "all_passed": true,
+    "checks": [
+      {
+        "name": "required_fields_present",
+        "passed": true,
+        "reason": null
+      },
+      {
+        "name": "initial_values_in_bounds",
+        "passed": true,
+        "reason": null
+      },
+      {
+        "name": "win_conditions_non_contradictory",
+        "passed": true,
+        "reason": null
+      },
+      {
+        "name": "event_triggers_reachable",
+        "passed": true,
+        "reason": null
+      },
+      {
+        "name": "budget_consistency",
+        "passed": true,
+        "reason": null
+      }
+    ]
+  },
+  "balance_checks": {
+    "simulation_runs": 5,
+    "win_rate": 0.0,
+    "avg_final_aqi": 273.6,
+    "role_win_rates": {},
+    "dominant_strategy_detected": false,
+    "dominant_strategy": null
+  },
+  "playability_checks": {
+    "avg_meaningful_choices_per_round": 5.0,
+    "round_budget_warnings": []
+  },
+  "issues": [],
+  "warnings": [
+    "Very low win rate (0%). Scenario may be too hard."
+  ],
+  "suggestions": [],
+  "gm_overrides": [],
+  "all_checks_passed": true
+}

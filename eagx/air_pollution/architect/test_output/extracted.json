@@ -1,0 +1,251 @@
+{
+  "stakeholders": [
+    {
+      "id": "delhi_cm",
+      "name": "Delhi Chief Minister",
+      "description": "Elected official managing Delhi government",
+      "public_objective": "Keep AQI below 300 throughout pollution season",
+      "potential_hidden_objectives": [
+        "Maintain public approval >60%",
+        "Win re-election in 18 months",
+        "Avoid blame from neighboring states"
+      ],
+      "constraints": [
+        "Cannot force Punjab/Haryana actions",
+        "Budget: ₹800 crores",
+        "Supreme Court oversight"
+      ],
+      "resources": {
+        "budget": 800,
+        "political_capital": 100
+      }
+    },
+    {
+      "id": "punjab_farmer",
+      "name": "Punjab Farmer Representative",
+      "description": "Represents 5 million farmers needing to clear fields before wheat planting",
+      "public_objective": "Protect farmer livelihoods and ensure timely wheat planting",
+      "potential_hidden_objectives": [
+        "Minimize farmer costs (<₹500/acre)",
+        "Maintain independence from government control",
+        "Secure subsidies >₹200cr"
+      ],
+      "constraints": [
+        "Wheat planting deadline: Nov 15",
+        "Happy Seeder cost: ₹1500/acre",
+        "Limited time for training"
+      ],
+      "resources": {
+        "acreage": 5000000,
+        "collective_influence": 80
+      }
+    },
+    {
+      "id": "central_minister",
+      "name": "Central Environment Minister",
+      "description": "Federal-level authority with interstate coordination power",
+      "public_objective": "Coordinate multi-state response to pollution crisis",
+      "potential_hidden_objectives": [
+        "Avoid political fallout from state conflicts",
+        "Position for national leadership role",
+        "Balance economy vs environment"
+      ],
+      "constraints": [
+        "Limited federal budget: ₹500 crores",
+        "Must negotiate with states",
+        "Election year politics"
+      ],
+      "resources": {
+        "budget": 500,
+        "regulatory_authority": 90
+      }
+    },
+    {
+      "id": "industry_leader",
+      "name": "Industry Association Head",
+      "description": "Represents construction, manufacturing, and power sectors",
+      "public_objective": "Minimize economic disruption from pollution controls",
+      "potential_hidden_objectives": [
+        "Avoid mandatory shutdowns",
+        "Shift blame to stubble burning",
+        "Secure subsidies for cleaner tech"
+      ],
+      "constraints": [
+        "Economic losses from shutdowns: ₹200cr/day",
+        "Technology upgrade costs high",
+        "Labor union pressures"
+      ],
+      "resources": {
+        "lobbying_power": 70,
+        "media_access": 60
+      }
+    },
+    {
+      "id": "health_activist",
+      "name": "Public Health Advocate",
+      "description": "Leads civil society coalition for clean air rights",
+      "public_objective": "Achieve AQI <100 and protect right to clean air",
+      "potential_hidden_objectives": [
+        "Force Supreme Court intervention",
+        "Build mass movement (>10,000 protesters)",
+        "Expose government inaction"
+      ],
+      "constraints": [
+        "No budget or formal authority",
+        "Depends on media coverage",
+        "Limited technical expertise"
+      ],
+      "resources": {
+        "public_support": 75,
+        "legal_expertise": 50
+      }
+    }
+  ],
+  "key_parameters": {
+    "emission_model": {
+      "stubble_burning_baseline": {
+        "value": 3000,
+        "unit": "tons_pm25_per_day",
+        "source": "SAFAR 2023, Table 4.2",
+        "confidence": "high"
+      },
+      "sector_shares": {
+        "vehicles": 0.28,
+        "industry": 0.2,
+        "construction": 0.17,
+        "stubble_burning": 0.26,
+        "residential": 0.09
+      },
+      "source": "SAFAR Delhi Emission Inventory 2023"
+    },
+    "behavioral_model": {
+      "subsidy_elasticity": {
+        "value": -0.6,
+        "description": "60% reduction in burning at 75% subsidy coverage",
+        "source": "IIT Delhi Stubble Study, p.42",
+        "confidence": "medium"
+      },
+      "enforcement_compliance": {
+        "value": 0.8,
+        "description": "Compliance rate with active enforcement",
+        "source": "Literature review",
+        "confidence": "medium"
+      }
+    },
+    "dispersion_model": {
+      "wind_dispersion_coeff": 0.4,
+      "rain_removal_rate": 0.85,
+      "inversion_trapping_factor": 0.7
+    }
+  },
+  "initial_conditions": {
+    "aqi": 150,
+    "pm25": 80,
+    "pm10": 160,
+    "season": "pre_diwali",
+    "budget_delhi": 800,
+    "budget_central": 500,
+    "public_approval": 65,
+    "public_alarm": 40,
+    "farmers_compliance": 0.3,
+    "industry_compliance": 0.5,
+    "enforcement_capacity": 0.5,
+    "round": 0,
+    "current_date": "2024-10-15"
+  },
+  "events": [
+    {
+      "id": "diwali_spike",
+      "name": "Diwali Firecracker Spike",
+      "type": "scheduled",
+      "trigger": {
+        "round": 3
+      },
+      "effects": {
+        "aqi": "+100",
+        "public_alarm": "+20",
+        "media_attention": "+30"
+      },
+      "narrative_template": "Despite bans, firecrackers lit across Delhi through the night. By morning, a thick, acrid haze blankets the city.",
+      "source": "Historical pattern (2019-2023)",
+      "confidence": "very_high"
+    },
+    {
+      "id": "supreme_court_hearing",
+      "name": "Supreme Court Summons Government",
+      "type": "conditional",
+      "trigger": {
+        "condition": "(aqi > 400) AND (days_in_severe >= 2)"
+      },
+      "effects": {
+        "government_accountability": "+50",
+        "public_alarm": "+30",
+        "political_pressure": "+40"
+      },
+      "narrative_template": "The Supreme Court issues notice demanding immediate action plan. 'The right to breathe clean air is a fundamental right,' the bench declares.",
+      "source": "MC Mehta vs Union of India (1998)",
+      "confidence": "high"
+    },
+    {
+      "id": "stubble_burning_peak",
+      "name": "Peak Stubble Burning Season",
+      "type": "scheduled",
+      "trigger": {
+        "round": 2
+      },
+      "effects": {
+        "stubble_emissions": "*2.5",
+        "aqi": "+80",
+        "farmer_pressure": "+40"
+      },
+      "narrative_template": "Satellite imagery shows 3,500 active fire spots across Punjab and Haryana. Smoke plumes visible from space drift toward Delhi.",
+      "source": "NASA FIRMS data 2019-2023",
+      "confidence": "very_high"
+    },
+    {
+      "id": "cold_wave_inversion",
+      "name": "Temperature Inversion Layer Forms",
+      "type": "conditional",
+      "trigger": {
+        "condition": "temperature_drop > 5 AND round >= 4"
+      },
+      "effects": {
+        "dispersion_rate": "*0.3",
+        "aqi": "+60",
+        "visibility": "-50%"
+      },
+      "narrative_template": "A sudden cold wave traps pollutants under a dense inversion layer. Meteorologists warn the smog could persist for days.",
+      "source": "IMD historical data",
+      "confidence": "high"
+    }
+  ],
+  "constraints": {
+    "delhi_cm": [
+      "Cannot force actions in Punjab/Haryana (jurisdictional)",
+      "Budget cannot exceed ₹800cr (fiscal)",
+      "Must comply with Supreme Court directives (legal)",
+      "Re-election in 18 months (temporal)"
+    ],
+    "punjab_farmer": [
+      "Wheat planting deadline Nov 15 (temporal)",
+      "Limited access to Happy Seeder machines (resource)",
+      "High upfront costs for alternatives (economic)"
+    ],
+    "central_minister": [
+      "Requires state cooperation (political)",
+      "Election year constraints (temporal)",
+      "Federal budget ₹500cr (fiscal)"
+    ]
+  },
+  "_metadata": {
+    "extraction_timestamp": "2025-01-15T10:30:00Z",
+    "extraction_method": "mock_data_v1",
+    "domain": "air_pollution",
+    "completeness": 0.85,
+    "requires_gm_input": [
+      "Select final stakeholder hidden objectives",
+      "Set difficulty level",
+      "Configure win/lose conditions"
+    ]
+  }
+}

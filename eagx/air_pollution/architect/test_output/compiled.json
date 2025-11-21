@@ -1,0 +1,521 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "id": "test_october_crisis",
+    "name": "Test: October Crisis 2024",
+    "description": "Navigate Delhi's air pollution crisis with multiple stakeholders",
+    "author": "Test Suite",
+    "created_at": "2025-11-21T04:36:51.261538Z",
+    "version": "1.0",
+    "target_audience": "policy_students",
+    "difficulty": "medium",
+    "learning_objectives": [
+      "Understand multi-stakeholder coordination challenges",
+      "Experience policy trade-offs between economy and environment",
+      "Navigate temporal and resource constraints"
+    ],
+    "duration": {
+      "rounds": 5,
+      "minutes_per_round": 8,
+      "estimated_total_minutes": 78
+    },
+    "tags": [
+      "air_pollution",
+      "delhi",
+      "coordination",
+      "test"
+    ],
+    "source_documents": []
+  },
+  "initial_state": {
+    "aqi": 150,
+    "pm25": 80,
+    "pm10": 160,
+    "season": "pre_diwali",
+    "budget_delhi": 800.0,
+    "budget_central": 500.0,
+    "public_approval": 65,
+    "public_alarm": 40,
+    "farmers_compliance": 0.3,
+    "industry_compliance": 0.5,
+    "enforcement_capacity": 0.5,
+    "round": 0,
+    "current_date": "2024-10-15"
+  },
+  "stakeholders": [
+    {
+      "id": "delhi_cm",
+      "name": "Delhi Chief Minister",
+      "description": "Elected official managing Delhi government",
+      "public_objective": {
+        "short": "Keep AQI below 300 throughout pollution season",
+        "detailed": "Keep AQI below 300 throughout pollution season"
+      },
+      "hidden_objective": {
+        "condition": "custom_condition_placeholder",
+        "description": "Maintain public approval >60%"
+      },
+      "initial_resources": {
+        "budget": 800,
+        "political_capital": 100
+      },
+      "constraints": [
+        "Cannot force Punjab/Haryana actions",
+        "Budget: ₹800 crores",
+        "Supreme Court oversight"
+      ],
+      "action_permissions": {
+        "allowed_primitives": [
+          "SUBSIDIZE",
+          "TAX",
+          "BAN",
+          "MANDATE",
+          "MONITOR",
+          "PUBLICIZE",
+          "BUILD",
+          "RESEARCH",
+          "ENFORCE",
+          "COORDINATE",
+          "REGULATE"
+        ],
+        "forbidden_primitives": [
+          "NEGOTIATE"
+        ],
+        "budget_limit": 800,
+        "geographic_scope": "regional"
+      },
+      "ai_persona": {
+        "strategy": "Balance keep objectives with resource constraints",
+        "risk_tolerance": "moderate",
+        "priority_order": [
+          "public_objective",
+          "hidden_objective",
+          "budget"
+        ]
+      }
+    },
+    {
+      "id": "punjab_farmer",
+      "name": "Punjab Farmer Representative",
+      "description": "Represents 5 million farmers needing to clear fields before wheat planting",
+      "public_objective": {
+        "short": "Protect farmer livelihoods and ensure timely wheat",
+        "detailed": "Protect farmer livelihoods and ensure timely wheat planting"
+      },
+      "hidden_objective": {
+        "condition": "custom_condition_placeholder",
+        "description": "Minimize farmer costs (<₹500/acre)"
+      },
+      "initial_resources": {
+        "acreage": 5000000,
+        "collective_influence": 80
+      },
+      "constraints": [
+        "Wheat planting deadline: Nov 15",
+        "Happy Seeder cost: ₹1500/acre",
+        "Limited time for training"
+      ],
+      "action_permissions": {
+        "allowed_primitives": [
+          "SUBSIDIZE",
+          "TAX",
+          "BAN",
+          "MANDATE",
+          "MONITOR",
+          "PUBLICIZE",
+          "NEGOTIATE",
+          "BUILD",
+          "RESEARCH",
+          "ENFORCE",
+          "COORDINATE",
+          "REGULATE"
+        ],
+        "forbidden_primitives": [],
+        "budget_limit": 1000,
+        "geographic_scope": "regional"
+      },
+      "ai_persona": {
+        "strategy": "Balance protect objectives with resource constraints",
+        "risk_tolerance": "moderate",
+        "priority_order": [
+          "public_objective",
+          "hidden_objective",
+          "budget"
+        ]
+      }
+    },
+    {
+      "id": "central_minister",
+      "name": "Central Environment Minister",
+      "description": "Federal-level authority with interstate coordination power",
+      "public_objective": {
+        "short": "Coordinate multi-state response to pollution crisi",
+        "detailed": "Coordinate multi-state response to pollution crisis"
+      },
+      "hidden_objective": {
+        "condition": "custom_condition_placeholder",
+        "description": "Avoid political fallout from state conflicts"
+      },
+      "initial_resources": {
+        "budget": 500,
+        "regulatory_authority": 90
+      },
+      "constraints": [
+        "Limited federal budget: ₹500 crores",
+        "Must negotiate with states",
+        "Election year politics"
+      ],
+      "action_permissions": {
+        "allowed_primitives": [
+          "SUBSIDIZE",
+          "TAX",
+          "BAN",
+          "MANDATE",
+          "MONITOR",
+          "PUBLICIZE",
+          "NEGOTIATE",
+          "BUILD",
+          "RESEARCH",
+          "ENFORCE",
+          "COORDINATE",
+          "REGULATE"
+        ],
+        "forbidden_primitives": [],
+        "budget_limit": 500,
+        "geographic_scope": "regional"
+      },
+      "ai_persona": {
+        "strategy": "Balance coordinate objectives with resource constraints",
+        "risk_tolerance": "moderate",
+        "priority_order": [
+          "public_objective",
+          "hidden_objective",
+          "budget"
+        ]
+      }
+    },
+    {
+      "id": "industry_leader",
+      "name": "Industry Association Head",
+      "description": "Represents construction, manufacturing, and power sectors",
+      "public_objective": {
+        "short": "Minimize economic disruption from pollution contro",
+        "detailed": "Minimize economic disruption from pollution controls"
+      },
+      "hidden_objective": {
+        "condition": "custom_condition_placeholder",
+        "description": "Avoid mandatory shutdowns"
+      },
+      "initial_resources": {
+        "lobbying_power": 70,
+        "media_access": 60
+      },
+      "constraints": [
+        "Economic losses from shutdowns: ₹200cr/day",
+        "Technology upgrade costs high",
+        "Labor union pressures"
+      ],
+      "action_permissions": {
+        "allowed_primitives": [
+          "SUBSIDIZE",
+          "TAX",
+          "BAN",
+          "MANDATE",
+          "MONITOR",
+          "PUBLICIZE",
+          "NEGOTIATE",
+          "BUILD",
+          "RESEARCH",
+          "ENFORCE",
+          "COORDINATE",
+          "REGULATE"
+        ],
+        "forbidden_primitives": [],
+        "budget_limit": 1000,
+        "geographic_scope": "regional"
+      },
+      "ai_persona": {
+        "strategy": "Balance minimize objectives with resource constraints",
+        "risk_tolerance": "moderate",
+        "priority_order": [
+          "public_objective",
+          "hidden_objective",
+          "budget"
+        ]
+      }
+    },
+    {
+      "id": "health_activist",
+      "name": "Public Health Advocate",
+      "description": "Leads civil society coalition for clean air rights",
+      "public_objective": {
+        "short": "Achieve AQI <100 and protect right to clean air",
+        "detailed": "Achieve AQI <100 and protect right to clean air"
+      },
+      "hidden_objective": {
+        "condition": "custom_condition_placeholder",
+        "description": "Force Supreme Court intervention"
+      },
+      "initial_resources": {
+        "public_support": 75,
+        "legal_expertise": 50
+      },
+      "constraints": [
+        "No budget or formal authority",
+        "Depends on media coverage",
+        "Limited technical expertise"
+      ],
+      "action_permissions": {
+        "allowed_primitives": [
+          "SUBSIDIZE",
+          "TAX",
+          "BAN",
+          "MANDATE",
+          "MONITOR",
+          "PUBLICIZE",
+          "NEGOTIATE",
+          "BUILD",
+          "RESEARCH",
+          "ENFORCE",
+          "COORDINATE",
+          "REGULATE"
+        ],
+        "forbidden_primitives": [],
+        "budget_limit": 1000,
+        "geographic_scope": "regional"
+      },
+      "ai_persona": {
+        "strategy": "Balance achieve objectives with resource constraints",
+        "risk_tolerance": "moderate",
+        "priority_order": [
+          "public_objective",
+          "hidden_objective",
+          "budget"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "diwali_spike",
+      "name": "Diwali Firecracker Spike",
+      "type": "scheduled",
+      "trigger": {
+        "round": 3
+      },
+      "effects": {
+        "aqi": "+100",
+        "public_alarm": "+20",
+        "media_attention": "+30"
+      },
+      "narrative": {
+        "template": "Despite bans, firecrackers lit across Delhi through the night. By morning, a thick, acrid haze blankets the city.",
+        "media_headline": "Diwali Firecracker Spike: Crisis Deepens"
+      },
+      "flavor": {
+        "severity": "medium",
+        "tone": "crisis",
+        "visual_cue": "red alert"
+      }
+    },
+    {
+      "id": "supreme_court_hearing",
+      "name": "Supreme Court Summons Government",
+      "type": "conditional",
+      "trigger": {
+        "condition": "(aqi > 400) AND (days_in_severe >= 2)"
+      },
+      "effects": {
+        "government_accountability": "+50",
+        "public_alarm": "+30",
+        "political_pressure": "+40"
+      },
+      "narrative": {
+        "template": "The Supreme Court issues notice demanding immediate action plan. 'The right to breathe clean air is a fundamental right,' the bench declares.",
+        "media_headline": "Supreme Court Summons Government: Crisis Deepens"
+      },
+      "flavor": {
+        "severity": "low",
+        "tone": "crisis",
+        "visual_cue": "legal alert"
+      }
+    },
+    {
+      "id": "stubble_burning_peak",
+      "name": "Peak Stubble Burning Season",
+      "type": "scheduled",
+      "trigger": {
+        "round": 2
+      },
+      "effects": {
+        "stubble_emissions": "*2.5",
+        "aqi": "+80",
+        "farmer_pressure": "+40"
+      },
+      "narrative": {
+        "template": "Satellite imagery shows 3,500 active fire spots across Punjab and Haryana. Smoke plumes visible from space drift toward Delhi.",
+        "media_headline": "Peak Stubble Burning Season: Crisis Deepens"
+      },
+      "flavor": {
+        "severity": "medium",
+        "tone": "crisis",
+        "visual_cue": "warning"
+      }
+    },
+    {
+      "id": "cold_wave_inversion",
+      "name": "Temperature Inversion Layer Forms",
+      "type": "conditional",
+      "trigger": {
+        "condition": "temperature_drop > 5 AND round >= 4"
+      },
+      "effects": {
+        "dispersion_rate": "*0.3",
+        "aqi": "+60",
+        "visibility": "-50%"
+      },
+      "narrative": {
+        "template": "A sudden cold wave traps pollutants under a dense inversion layer. Meteorologists warn the smog could persist for days.",
+        "media_headline": "Temperature Inversion Layer Forms: Crisis Deepens"
+      },
+      "flavor": {
+        "severity": "medium",
+        "tone": "crisis",
+        "visual_cue": "warning"
+      }
+    }
+  ],
+  "parameters": {
+    "emission_model": {
+      "stubble_burning_baseline": {
+        "value": 3000,
+        "unit": "tons_pm25_per_day",
+        "source": "SAFAR 2023, Table 4.2",
+        "confidence": "high"
+      },
+      "sector_shares": {
+        "vehicles": 0.28,
+        "industry": 0.2,
+        "construction": 0.17,
+        "stubble_burning": 0.26,
+        "residential": 0.09
+      },
+      "source": "SAFAR Delhi Emission Inventory 2023"
+    },
+    "behavioral_model": {
+      "subsidy_elasticity": {
+        "value": -0.6,
+        "description": "60% reduction in burning at 75% subsidy coverage",
+        "source": "IIT Delhi Stubble Study, p.42",
+        "confidence": "medium"
+      },
+      "enforcement_compliance": {
+        "value": 0.8,
+        "description": "Compliance rate with active enforcement",
+        "source": "Literature review",
+        "confidence": "medium"
+      }
+    },
+    "dispersion_model": {
+      "wind_dispersion_coeff": 0.4,
+      "rain_removal_rate": 0.85,
+      "inversion_trapping_factor": 0.7
+    },
+    "difficulty": {
+      "multipliers": {
+        "budget": 1.0,
+        "action_effectiveness": 1.0,
+        "event_severity": 1.0,
+        "time_pressure": 1.0
+      },
+      "constraints": {
+        "allow_deficit_spending": false,
+        "allow_cross_jurisdiction_actions": false,
+        "strict_timeline": true
+      }
+    }
+  },
+  "win_conditions": {
+    "public_goal": {
+      "description": "Keep crisis manageable",
+      "conditions": [
+        {
+          "metric": "aqi_average",
+          "operator": "<",
+          "threshold": 250,
+          "weight": 1.0
+        },
+        {
+          "metric": "rounds_completed",
+          "operator": "==",
+          "threshold": 5,
+          "weight": 1.0
+        }
+      ],
+      "required": "all"
+    },
+    "hidden_goals": {},
+    "failure_conditions": [
+      {
+        "metric": "aqi",
+        "operator": ">",
+        "threshold": 500,
+        "description": "Public health catastrophe",
+        "game_over": true
+      },
+      {
+        "metric": "budget",
+        "operator": "<",
+        "threshold": 0,
+        "description": "Bankruptcy",
+        "game_over": true
+      }
+    ]
+  },
+  "narrative_config": {
+    "tone": "serious_journalistic",
+    "detail_level": "medium",
+    "region_specificity": "delhi",
+    "llm_settings": {
+      "model": "gemini-2.0-flash-exp",
+      "temperature": 0.7,
+      "system_prompt": "You are a game master for a policy simulation...",
+      "narrative_constraints": [
+        "Use Delhi-specific references (India Gate, Connaught Place, etc.)",
+        "Reference real policies (GRAP, odd-even, Happy Seeder)",
+        "Include diverse perspectives (farmers, patients, activists)",
+        "Maintain scientific accuracy (cite actual AQI thresholds)"
+      ]
+    },
+    "templates": {
+      "round_intro": "Round {round}: {date_range}. Current AQI: {aqi} ({regime}). {weather_description}",
+      "consequence_structure": [
+        "Opening: Describe initial state",
+        "Action effects: What changed due to player actions",
+        "Emergent dynamics: Unintended consequences",
+        "Stakeholder reactions: Quotes from affected parties",
+        "Forward tension: What's at stake next round"
+      ],
+      "media_headline_style": "Delhi Times journalistic"
+    },
+    "character_database": {
+      "farmer_names": [
+        "Ram Singh",
+        "Gurpreet Kaur",
+        "Amarjit Singh"
+      ],
+      "locations": [
+        "Ludhiana",
+        "Karnal",
+        "Rohtak",
+        "Meerut"
+      ],
+      "hospitals": [
+        "AIIMS",
+        "RML Hospital",
+        "GTB Hospital"
+      ]
+    }
+  },
+  "validation_report": null
+}
