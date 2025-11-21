@@ -1,0 +1,46 @@
+```mermaid
+sequenceDiagram
+    participant P as Players
+    participant UI as Web Interface
+    participant C as Coordinator
+    participant ABM as Agent Model
+    participant SD as System Dynamics
+    participant HA as Hybrid Automaton
+    participant LLM as Narrative Engine
+
+    Note over P,LLM: Round N begins
+
+    UI->>P: Display briefing (AQI, health, budget, events)
+    P->>P: Deliberate (8 minutes)
+
+    P->>UI: Submit actions (subsidy, ban, restriction)
+    UI->>C: POST /api/turn (actions, weather)
+
+    C->>ABM: compute_compliance(actions)
+    Note over ABM: Farmers decide: burn or not?<br/>Industries: comply or evade?
+    ABM-->>C: {burning_fires: 2500, industry_compliance: 0.6}
+
+    C->>SD: update_emissions(burning, compliance, weather)
+    Note over SD: Emissions → Dispersion → Accumulation<br/>PM2.5 stock changes
+    SD-->>C: {PM2.5_delta: +150 μg/m³, new_AQI: 320}
+
+    C->>HA: update_regime(AQI=320)
+    Note over HA: Guard: AQI > 300 → HAZARDOUS<br/>Trigger GRAP Stage 3
+    HA-->>C: {regime: HAZARDOUS, events: [GRAP_3, SCHOOL_CLOSURE]}
+
+    C->>LLM: generate_narrative(AQI, burning, compliance, events)
+    Note over LLM: "Delhi wakes to apocalyptic orange skies.<br/>3,500 farm fires detected..."
+    LLM-->>C: {story_beats: [...], headlines: [...], quotes: [...]}
+
+    C-->>UI: TurnResult {AQI, regime, health, events, narrative}
+    UI->>P: Show consequences + narrative
+
+    alt AQI > 400 (SEVERE)
+        UI->>P: EMERGENCY! Crisis round triggered
+        Note over P: Forced emergency actions
+    else Round < 5
+        Note over P,LLM: Proceed to Round N+1
+    else Round == 5
+        UI->>P: Game Over - Calculate scores
+    end
+```

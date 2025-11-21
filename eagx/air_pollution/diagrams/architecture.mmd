@@ -1,0 +1,48 @@
+```mermaid
+graph TB
+    subgraph "Layer 1: Game Interface (Web UI)"
+        UI[React + TypeScript Frontend]
+        Players[4-8 Players]
+        Players -->|Select actions| UI
+        UI -->|Display state, narrative| Players
+    end
+
+    subgraph "Layer 2: Coordination Layer (Python)"
+        Coordinator[MultiModelCoordinator]
+        EventMgr[Event Manager]
+        LLM[LLM Narrative Engine]
+
+        Coordinator -->|Check triggers| EventMgr
+        Coordinator -->|Request narrative| LLM
+    end
+
+    subgraph "Layer 3: Simulation Engine"
+        HA[Hybrid Automaton<br/>Regime Switching]
+        SD[System Dynamics<br/>Emissions & Dispersion]
+        ABM[Agent-Based Model<br/>Stakeholder Behavior]
+
+        HA -->|AQI classification| Coordinator
+        SD -->|Physical dynamics| Coordinator
+        ABM -->|Compliance rates| Coordinator
+    end
+
+    UI <-->|FastAPI| Coordinator
+
+    Coordinator -->|Actions + Weather| ABM
+    ABM -->|Burning decisions, compliance| Coordinator
+
+    Coordinator -->|Compliance + Weather| SD
+    SD -->|PM2.5, AQI| Coordinator
+
+    Coordinator -->|AQI value| HA
+    HA -->|Regime, GRAP stage| Coordinator
+
+    LLM -->|Narrative, events| Coordinator
+    Coordinator -->|Turn result| UI
+
+    style HA fill:#f9d5e5
+    style SD fill:#eeac99
+    style ABM fill:#c7ceea
+    style LLM fill:#b5ead7
+    style Coordinator fill:#ff9aa2
+```
