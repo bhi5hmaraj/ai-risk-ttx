@@ -1,0 +1,22 @@
+# AI2027 Formal Models - Python Dependencies
+
+# Core scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+pandas>=2.0.0
+
+# State machine / automata libraries
+transitions>=0.9.0  # Finite state machines
+pytransitions>=0.9.0  # Alternative FSM library
+
+# Plotting and visualization
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Formal methods (optional, for advanced demos)
+# stormpy  # Probabilistic model checking (requires manual install)
+# pyModelChecking>=1.3.3  # LTL/CTL model checking
+
+# Utility
+tqdm>=4.65.0  # Progress bars for simulations
