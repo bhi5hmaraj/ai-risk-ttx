@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bars3Icon, XMarkIcon, HomeIcon, ChatBubbleLeftIcon, InformationCircleIcon, BellIcon } from './Icons';
 
 interface NavigationProps {
@@ -19,8 +19,21 @@ export const Navigation: React.FC<NavigationProps> = ({
   showFeedback = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  // Listen for Escape key to show navbar when collapsed
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCollapsed) {
+        setIsCollapsed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCollapsed]);
 
   const handleNavigateHome = () => {
     onNavigateHome();
@@ -43,19 +56,34 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo/Title */}
-          <div className="flex items-center gap-3">
-            <button
-              className="text-left"
-              onClick={handleNavigateHome}
-              aria-label="Go to Home"
-              title="Go to Home"
-            >
-              <h1 className="text-xl font-bold text-blue-300 hover:text-white transition-colors">Simulacra</h1>
-            </button>
+    <>
+      {/* Floating toggle button when collapsed */}
+      {isCollapsed && (
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="fixed top-2 right-2 z-50 p-2 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all shadow-lg"
+          aria-label="Show navigation"
+          title="Show navigation"
+        >
+          <Bars3Icon className="h-5 w-5" />
+        </button>
+      )}
+
+      <nav className={`fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 transition-transform duration-300 ${
+        isCollapsed ? '-translate-y-full' : 'translate-y-0'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo/Title */}
+            <div className="flex items-center gap-3">
+              <button
+                className="text-left"
+                onClick={handleNavigateHome}
+                aria-label="Go to Home"
+                title="Go to Home"
+              >
+                <h1 className="text-xl font-bold text-blue-300 hover:text-white transition-colors">Simulacra</h1>
+              </button>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs text-gray-500">AI Tabletop Exercise</span>
               <ModelInfo />
@@ -71,6 +99,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             <NavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <NavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              aria-label="Hide navigation"
+              title="Hide navigation (Escape to show)"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -102,6 +138,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
       )}
     </nav>
+    </>
   );
 };
 
