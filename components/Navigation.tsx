@@ -9,6 +9,7 @@ interface NavigationProps {
   onOpenAbout: () => void;
   onOpenUpdates: () => void;
   showFeedback?: boolean; // Only show feedback option when in game
+  autoCollapse?: boolean; // Auto-collapse on mount (for game screen)
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -17,9 +18,10 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenAbout,
   onOpenUpdates,
   showFeedback = false,
+  autoCollapse = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(autoCollapse);
 
   const closeMenu = () => setIsMenuOpen(false);
 
