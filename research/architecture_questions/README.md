@@ -27,6 +27,27 @@ Playable TTX
 
 **Key questions**: Does this actually work? Where does it break? How do we make it reliable?
 
+### Visual Overview
+
+![Overall Pipeline](diagrams/01_overall_pipeline.svg)
+
+*Figure 1: Complete pipeline from GM's informal mental model to playable TTX*
+
+---
+
+## Visual Diagrams
+
+We've created detailed diagrams to visualize key architectural concepts:
+
+1. **[Overall Pipeline](diagrams/01_overall_pipeline.svg)** - End-to-end flow from informal to executable
+2. **[Agent Architecture](diagrams/02_agent_architecture.svg)** - How LLM agents use Matrix tools
+3. **[Multi-Agent Verification](diagrams/03_multi_agent_verification.svg)** - Storyteller → Fact-Checker → Editor pipeline
+4. **[GM Control Panel](diagrams/04_gm_control_panel.svg)** - Runtime spec adjustment workflow
+5. **[Progressive Formalization](diagrams/05_progressive_formalization.svg)** - 6-level formalization ladder
+6. **[Multi-View System](diagrams/06_multi_view_system.svg)** - Same backend, multiple presentations
+
+All diagrams are in SVG format (vector graphics, fully zoomable) and can be found in the [`diagrams/`](diagrams/) folder.
+
 ---
 
 ## Document Map

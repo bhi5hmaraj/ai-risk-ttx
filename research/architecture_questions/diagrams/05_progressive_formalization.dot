@@ -1,0 +1,42 @@
+digraph ProgressiveFormalization {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    label="Progressive Formalization Ladder\n(GM can stop at any level)";
+    labelloc="t";
+    fontsize=16;
+
+    level0 [label="Level 0: Pure Informal\n\n📝 GM blog post:\n'If we hit 10^28 FLOP without solving\nalignment, and China steals the weights,\nwe're probably doomed.'\n\nFormality: 0%\nExecutable: No", fillcolor="#FFE4B5"];
+
+    level1 [label="Level 1: Extracted Structure\n\n📊 Modes:\n• Baseline\n• Race\n• Catastrophe\n\nTransitions:\n• Baseline → Race (compute threshold)\n• Race → Catastrophe (alignment gap)\n\nFormality: 20%\nExecutable: No", fillcolor="#FFD9B3"];
+
+    level2 [label="Level 2: Quantified Parameters\n\n📐 Variables:\n• compute ∈ [24, 28] (log10 FLOP)\n• alignment ∈ [0, 1]\n\nGuards:\n• compute ≥ 27.5 ∧ alignment < 0.6\n  → Catastrophe\n\nFormality: 50%\nExecutable: Partially", fillcolor="#FFCEB3"];
+
+    level3 [label="Level 3: Validated Spec\n\n✅ Consistency checks:\n• All modes reachable\n• No undefined variables\n• Guards are boolean\n• No negative probabilities\n\nFormality: 70%\nExecutable: Yes (with warnings)", fillcolor="#FFB6B3"];
+
+    level4 [label="Level 4: Tested Spec\n\n🧪 Quick simulation:\n• Initial state → 36 months\n• Result: Catastrophe at month 24\n• Outcome distribution reasonable\n\nFormality: 85%\nExecutable: Yes", fillcolor="#FFA3B3"];
+
+    level5 [label="Level 5: Calibrated Spec\n\n📈 Validated against:\n• Historical compute scaling (2018-2024)\n• Expert forecasts (Metaculus)\n• Sensitivity analysis\n\nFormality: 95%\nExecutable: Yes (production-ready)", fillcolor="#FF90B3"];
+
+    optional [label="Level 5 is OPTIONAL\n(validation is GM's choice)", shape=note, fillcolor=lightyellow];
+
+    // Edges
+    level0 -> level1 [label="  LLM extraction"];
+    level1 -> level2 [label="  LLM + human iteration"];
+    level2 -> level3 [label="  Automated validation"];
+    level3 -> level4 [label="  Matrix test run"];
+    level4 -> level5 [label="  Optional calibration", style=dashed, color=blue];
+
+    // Iteration paths
+    level1 -> level0 [label="refine", style=dashed, dir=back, color=gray];
+    level2 -> level1 [label="refine", style=dashed, dir=back, color=gray];
+    level3 -> level2 [label="refine", style=dashed, dir=back, color=gray];
+
+    // Sufficient for Simulacra
+    level4 -> sufficient [style=invis];
+    sufficient [label="✅ Sufficient for Simulacra TTX", shape=note, fillcolor=lightgreen];
+
+    {rank=same; level5; optional;}
+    {rank=same; level4; sufficient;}
+}

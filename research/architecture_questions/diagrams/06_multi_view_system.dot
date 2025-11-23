@@ -1,0 +1,45 @@
+digraph MultiViewSystem {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    label="Multi-View System\n(Same simulation engine, different presentations)";
+    labelloc="t";
+    fontsize=16;
+
+    subgraph cluster_matrix {
+        label="Matrix Core (Universal Backend)";
+        style=filled;
+        color="#E6FFE6";
+
+        formal_spec [label="Formal Spec\n(Hybrid Automaton)", fillcolor="#90EE90"];
+        adapters [label="Adapters:\n• SystemDynamics\n• HybridAutomaton\n• AgentBased\n• Kripke\n• MDP", fillcolor="#90EE90"];
+        simulation [label="Simulation Engine\n(scipy, networkx, numpy)", fillcolor="#90EE90"];
+    }
+
+    subgraph cluster_views {
+        label="View System (Presentation Layer)";
+        style=filled;
+        color="#FFE6F0";
+
+        view1 [label="View 1: Simulacra TTX\n\n👥 Audience: Players, policymakers\n\n📱 Interface:\n• Natural language narrative\n• Action cards\n• Story + scores\n\n🎯 Purpose:\n• Interactive exploration\n• Stakeholder engagement", fillcolor="#FFB6C1"];
+
+        view2 [label="View 2: Policy Dashboard\n\n👥 Audience: Analysts, decision-makers\n\n📊 Interface:\n• Scenario levers\n• Outcome distributions\n• P(catastrophe), P(aligned)\n• Sensitivity charts\n\n🎯 Purpose:\n• Policy analysis\n• Risk quantification", fillcolor="#DDA0DD"];
+
+        view3 [label="View 3: Research View\n\n👥 Audience: Researchers, formal methods\n\n🔬 Interface:\n• Full formal model\n• Verification results (PRISM)\n• Reachability bounds\n• LaTeX export\n\n🎯 Purpose:\n• Rigorous analysis\n• Paper writing", fillcolor="#B19CD9"];
+
+        view4 [label="View 4: Education View\n\n👥 Audience: Students, public\n\n🎓 Interface:\n• Interactive explainer\n• Stock-flow diagrams\n• Agent animations\n• 'What if' playground\n\n🎯 Purpose:\n• Teaching\n• Building intuition", fillcolor="#D8BFD8"];
+    }
+
+    // Connections
+    formal_spec -> adapters;
+    adapters -> simulation;
+
+    simulation -> view1 [label="  state updates +\n  narrative prompts"];
+    simulation -> view2 [label="  monte carlo +\n  statistics"];
+    simulation -> view3 [label="  MDP abstraction +\n  verification"];
+    simulation -> view4 [label="  simplified model +\n  step-by-step"];
+
+    // Note
+    note [label="Key Insight:\nSame formal model,\npackaged differently\nfor each audience", shape=note, fillcolor=lightyellow];
+}

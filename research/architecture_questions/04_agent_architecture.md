@@ -4,6 +4,14 @@
 
 ---
 
+## Agent Workflow with Matrix Tools
+
+![Agent Architecture](diagrams/02_agent_architecture.svg)
+
+*Figure: LLM agent calling Matrix formal methods tools to generate grounded narrative*
+
+---
+
 ## Vision
 
 **Traditional LLM TTX**:

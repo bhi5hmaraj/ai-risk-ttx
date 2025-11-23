@@ -6,6 +6,12 @@
 
 ## The Grounding Problem
 
+### Multi-Agent Verification Pipeline
+
+![Multi-Agent Verification](diagrams/03_multi_agent_verification.svg)
+
+*Figure: Storyteller → Fact-Checker → Editor pipeline ensures narrative consistency*
+
 ### Traditional TTX (Pure LLM)
 ```
 Player action: "I propose a 6-month pause on AI development"

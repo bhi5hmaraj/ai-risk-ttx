@@ -6,6 +6,10 @@
 
 ## The Pipeline
 
+![Progressive Formalization](diagrams/05_progressive_formalization.svg)
+
+*Figure: Progressive formalization ladder - GM can stop at any level*
+
 ```
 GM's Mental Model (blogs, notes, conversations)
     ↓

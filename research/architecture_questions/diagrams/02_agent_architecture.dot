@@ -1,0 +1,67 @@
+digraph AgentArchitecture {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    subgraph cluster_player {
+        label="Player Input";
+        style=filled;
+        color=lightgrey;
+
+        player_action [label="Player Action\n'Implement pause on\nAI development'", fillcolor="#FFE4B5"];
+    }
+
+    subgraph cluster_agent {
+        label="LLM Agent (Consequence Generator)";
+        style=filled;
+        color="#E6F3FF";
+
+        agent_thought1 [label="💭 Thought:\n'Let me simulate\nwhat happens'", shape=ellipse, fillcolor="#87CEEB"];
+        agent_thought2 [label="💭 Thought:\n'Let me check for\ndangerous transitions'", shape=ellipse, fillcolor="#87CEEB"];
+        agent_thought3 [label="💭 Thought:\n'60% breakdown risk\nLet me explain this'", shape=ellipse, fillcolor="#87CEEB"];
+    }
+
+    subgraph cluster_tools {
+        label="Matrix Formal Methods Tools";
+        style=filled;
+        color="#E6FFE6";
+
+        tool_simulate [label="🔧 matrix.simulate()\nRun ODE integration", fillcolor="#90EE90"];
+        tool_guards [label="🔧 matrix.check_guards()\nFind enabled transitions", fillcolor="#90EE90"];
+        tool_verify [label="🔧 matrix.verify_property()\nCheck temporal logic", fillcolor="#90EE90"];
+        tool_monte [label="🔧 matrix.monte_carlo()\nProbabilistic analysis", fillcolor="#90EE90"];
+    }
+
+    subgraph cluster_results {
+        label="Formal Results";
+        style=filled;
+        color="#FFF5E6";
+
+        result1 [label="Trajectory:\nmode: Race → Pause\ncompute: 27.2 (frozen)\nalignment: 0.43 → 0.52\ntrust: 0.70 → 0.28", fillcolor="#FFDAB9", shape=note];
+        result2 [label="Enabled transitions:\nPause → Breakdown\nP = 0.6 (trust < 0.3)", fillcolor="#FFDAB9", shape=note];
+    }
+
+    subgraph cluster_output {
+        label="Output";
+        style=filled;
+        color="#FFE6F0";
+
+        narrative [label="Grounded Narrative:\n\n'Your pause freezes compute at 10^27.2.\nAlignment improves to 0.52.\n\nBUT trust eroded to 0.28 - below\ncrisis threshold. 60% chance the\npause collapses within 6 months.\n\nIf it does, catastrophe follows:\ncompute → 28.5, alignment stalls at 0.48'", fillcolor="#FFB6C1"];
+    }
+
+    // Flow
+    player_action -> agent_thought1;
+    agent_thought1 -> tool_simulate [label="  call"];
+    tool_simulate -> result1 [label="  returns"];
+    result1 -> agent_thought2;
+    agent_thought2 -> tool_guards [label="  call"];
+    tool_guards -> result2 [label="  returns"];
+    result2 -> agent_thought3;
+    agent_thought3 -> narrative [label="  generates"];
+
+    // Additional tools (available but not shown in flow)
+    tool_verify [style=dashed];
+    tool_monte [style=dashed];
+
+    {rank=same; tool_simulate; tool_guards; tool_verify; tool_monte;}
+}

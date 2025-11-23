@@ -1,0 +1,76 @@
+digraph GMControlPanel {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    round_complete [label="⏹️ Round Completes\n(player actions processed)", fillcolor="#FFE4B5"];
+
+    subgraph cluster_monitor {
+        label="Monitor & Detect";
+        style=filled;
+        color="#E6F3FF";
+
+        gm_review [label="📊 GM Reviews State\n\n• Current values\n• Trajectory plot\n• Health checks", fillcolor="#87CEEB"];
+        health_check [label="Health Checks:\n\n✅ Variables in bounds?\n⚠️  Trust = 0.55 (expected 0.35)\n✅ Transitions plausible?", fillcolor="#FFDAB9", shape=note];
+    }
+
+    issue_found [label="Issue detected?", shape=diamond, fillcolor="#FFFFCC"];
+
+    no_issue [label="✅ Continue Game", fillcolor="#90EE90"];
+
+    subgraph cluster_suggest {
+        label="AI Assistance";
+        style=filled;
+        color="#FFE6E6";
+
+        ai_suggest [label="🤖 AI Suggests Edits\n\nTrust declining too slowly.\n\nSuggested fix:\ndTrust/dt: -0.05 → -0.12", fillcolor="#FFB6B6"];
+    }
+
+    subgraph cluster_edit {
+        label="GM Decision";
+        style=filled;
+        color="#E6FFE6";
+
+        gm_choose [label="✏️ GM Chooses Edit\n\n• Accept suggestion\n• Modify suggestion\n• Custom edit", fillcolor="#90EE90"];
+        preview [label="📈 Preview Impact\n\nSimulating 3 rounds ahead...\n\nBefore:\n  Round 4: trust = 0.48\n  Round 5: trust = 0.44\n\nAfter:\n  Round 4: trust = 0.42\n  Round 5: trust = 0.33 ⚠️ Crisis!", fillcolor="#FFDAB9", shape=note];
+    }
+
+    approve [label="Approve edit?", shape=diamond, fillcolor="#FFFFCC"];
+
+    subgraph cluster_apply {
+        label="Apply & Log";
+        style=filled;
+        color="#E6F0FF";
+
+        apply [label="💾 Apply Edit\n(update spec)", fillcolor="#87CEEB"];
+        log [label="📝 Log to Spec History\n\nRound 3 edit:\n- Parameter: dTrust/dt\n- Before: -0.05\n- After: -0.12\n- Reason: 'Trust declining\n  too slowly'", fillcolor="#FFDAB9", shape=note];
+    }
+
+    discard [label="❌ Discard\n(keep original)", fillcolor="#FFB6B6"];
+
+    next_round [label="▶️ Continue to Next Round", fillcolor="#DDA0DD"];
+
+    // Flow
+    round_complete -> gm_review;
+    gm_review -> health_check [label="  run"];
+    health_check -> issue_found;
+
+    issue_found -> no_issue [label="  No", color=green];
+    issue_found -> ai_suggest [label="  Yes", color=orange];
+
+    ai_suggest -> gm_choose;
+    gm_choose -> preview [label="  preview"];
+    preview -> approve;
+
+    approve -> apply [label="  Yes", color=green];
+    approve -> discard [label="  No", color=red];
+
+    apply -> log;
+    log -> next_round;
+
+    no_issue -> next_round;
+    discard -> next_round [style=dashed];
+
+    // Rollback path
+    log -> apply [label="  rollback\n  (if needed)", style=dashed, dir=back, color=red];
+}

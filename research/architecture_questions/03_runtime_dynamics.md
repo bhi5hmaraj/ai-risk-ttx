@@ -4,6 +4,14 @@
 
 ---
 
+## GM Control Panel Workflow
+
+![GM Control Panel](diagrams/04_gm_control_panel.svg)
+
+*Figure: Complete workflow for runtime spec adjustment with AI assistance*
+
+---
+
 ## Why Runtime Tweaking is Essential
 
 ### The Reality of Live Games

@@ -1,0 +1,75 @@
+digraph OverallPipeline {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    // Define colors
+    subgraph cluster_input {
+        label="Input Layer";
+        style=filled;
+        color=lightgrey;
+
+        gm [label="GM's Mental Model\n(blogs, notes, conversations)", fillcolor="#FFE4B5"];
+    }
+
+    subgraph cluster_elicitation {
+        label="Elicitation Layer (LLM-Driven)";
+        style=filled;
+        color="#E6F3FF";
+
+        llm_extract [label="LLM Extraction\n(Structured Output)", fillcolor="#87CEEB"];
+        semi_formal [label="Semi-Formal Spec\n(modes, transitions, ~params)", fillcolor="#87CEEB"];
+        human_iter [label="Human Iteration\n(GM refines, corrects)", fillcolor="#87CEEB"];
+    }
+
+    subgraph cluster_formal {
+        label="Formalization Layer";
+        style=filled;
+        color="#E6FFE6";
+
+        formal_spec [label="Formal Spec\n(Hybrid Automaton JSON)", fillcolor="#90EE90"];
+        matrix_adapter [label="Matrix Adapter\n(scipy, networkx)", fillcolor="#90EE90"];
+        executable [label="Executable Simulation\n(ODE integration, guards)", fillcolor="#90EE90"];
+    }
+
+    subgraph cluster_runtime {
+        label="Runtime Layer (Agent-Driven)";
+        style=filled;
+        color="#FFE6F0";
+
+        agent [label="LLM Agent\n(calls formal tools)", fillcolor="#FFB6C1"];
+        matrix_tools [label="Matrix Tools\n(simulate, check_guards,\nverify_property)", fillcolor="#FFB6C1"];
+        narrative [label="Grounded Narrative\n(cites formal state)", fillcolor="#FFB6C1"];
+    }
+
+    subgraph cluster_output {
+        label="Output Layer";
+        style=filled;
+        color=lightgrey;
+
+        ttx [label="Playable TTX\n(interactive scenario)", fillcolor="#DDA0DD"];
+        insights [label="Insights Loop\n(gameplay → GM)", fillcolor="#DDA0DD"];
+    }
+
+    // Edges
+    gm -> llm_extract [label="  parse"];
+    llm_extract -> semi_formal [label="  structure"];
+    semi_formal -> human_iter [label="  review"];
+    human_iter -> formal_spec [label="  validate"];
+    human_iter -> semi_formal [label="iterate", style=dashed];
+
+    formal_spec -> matrix_adapter [label="  compile"];
+    matrix_adapter -> executable [label="  instantiate"];
+
+    executable -> matrix_tools [label="  expose as tools"];
+    matrix_tools -> agent [label="  available to"];
+    agent -> narrative [label="  generates"];
+
+    narrative -> ttx [label="  renders"];
+    ttx -> insights [label="  analytics"];
+    insights -> formal_spec [label="  GM tweaks", style=dashed, color=red];
+
+    // Legend
+    {rank=same; gm; note1 [shape=note, label="Start: Informal\n(text, intuitions)", fillcolor=white]}
+    {rank=same; ttx; note2 [shape=note, label="End: Playable\n(grounded narrative)", fillcolor=white]}
+}

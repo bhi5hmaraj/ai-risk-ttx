@@ -1,0 +1,54 @@
+digraph MultiAgentVerification {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+
+    formal_state [label="Formal State\n\nmode: Race\ncompute: 27.5\nalignment: 0.43\ntrust: 0.32", fillcolor="#90EE90", shape=note];
+
+    subgraph cluster_agent1 {
+        label="Agent 1: Storyteller";
+        style=filled;
+        color="#E6F3FF";
+
+        storyteller [label="📖 Storyteller LLM\n\nGenerate engaging narrative\nbased on formal state", fillcolor="#87CEEB"];
+        narrative_v1 [label="Narrative v1:\n\n'The race intensifies as compute\nscaling accelerates. Public trust\nis at an all-time low of 0.30...'", fillcolor="#FFDAB9", shape=note];
+    }
+
+    subgraph cluster_agent2 {
+        label="Agent 2: Fact-Checker";
+        style=filled;
+        color="#FFE6E6";
+
+        factchecker [label="🔍 Fact-Checker LLM\n\nVerify narrative matches\nformal state", fillcolor="#FFB6B6"];
+        issues [label="Issues Found:\n\n❌ Trust is 0.32, not 0.30\n❌ Didn't mention compute = 27.5\n❌ Missing alignment gap warning", fillcolor="#FFB6B6", shape=note];
+    }
+
+    check_pass [label="Issues found?", shape=diamond, fillcolor="#FFFFCC"];
+
+    subgraph cluster_agent3 {
+        label="Agent 3: Editor";
+        style=filled;
+        color="#E6FFE6";
+
+        editor [label="✏️ Editor LLM\n\nRewrite to fix issues\nwhile maintaining quality", fillcolor="#90EE90"];
+        narrative_v2 [label="Narrative v2 (Fixed):\n\n'The race intensifies. Compute\nscaling has reached 10^27.5 FLOP.\nPublic trust eroded to 0.32.\n\nAlignment capacity (0.43) lags\ndangerously behind - gap is 6.5.\nCatastrophe risk rising.'", fillcolor="#90EE90", shape=note];
+    }
+
+    output [label="✅ Final Narrative\n(grounded & consistent)", fillcolor="#DDA0DD"];
+
+    // Flow
+    formal_state -> storyteller [label="  input"];
+    storyteller -> narrative_v1 [label="  generates"];
+    narrative_v1 -> factchecker [label="  verify"];
+    factchecker -> issues [label="  finds"];
+    issues -> check_pass;
+
+    check_pass -> output [label="  No issues", color=green];
+    check_pass -> editor [label="  Yes (fix needed)", color=red];
+
+    editor -> narrative_v2 [label="  rewrites"];
+    narrative_v2 -> factchecker [label="  re-verify", style=dashed];
+    narrative_v2 -> output [label="  approved"];
+
+    formal_state -> factchecker [label="  reference", style=dotted];
+}
