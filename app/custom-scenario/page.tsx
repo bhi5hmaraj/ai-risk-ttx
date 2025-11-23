@@ -342,15 +342,23 @@ function CustomScenarioPageContent() {
 
       {/* Sidebar - extends to screen edge, resizable */}
       <aside
-        className="relative hidden lg:flex border-l border-gray-800"
+        className="relative hidden lg:flex border-l border-gray-800 flex-shrink-0"
         style={{
-          width: isLg ? `clamp(24rem, var(--rail-pref, 35vw), 48rem)` : '35vw',
-          minWidth: '24rem',
-          maxWidth: '60vw',
+          width: `clamp(24rem, var(--rail-pref, 35vw), 60vw)`,
         }}
       >
+        {/* Resizer handle - positioned at the left edge of sidebar */}
         <div
-          className="sticky flex flex-col overflow-hidden"
+          className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-purple-500/40 active:bg-purple-500/60 transition-colors z-50 flex items-center justify-center"
+          onMouseDown={startResize}
+          title="Drag to resize panel"
+          aria-label="Resize chat panel"
+        >
+          <div className="w-0.5 h-16 bg-gray-600 hover:bg-purple-500 rounded transition-colors" />
+        </div>
+
+        <div
+          className="sticky flex flex-col overflow-hidden w-full"
           style={{
             top: 'var(--nav-h, 64px)',
             height: 'calc(100vh - var(--nav-h, 64px))',
@@ -367,17 +375,8 @@ function CustomScenarioPageContent() {
             ['--copilot-kit-primary-color' as any]: '#34d399',
           } as React.CSSProperties}
         >
-          {/* Resizer handle - positioned at the left edge */}
-          <div
-            className="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-gray-700/50 hover:bg-purple-500/60 active:bg-purple-500 transition-colors z-30 group"
-            onMouseDown={startResize}
-            title="Drag to resize panel"
-            aria-label="Resize chat panel"
-          >
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-purple-500/0 group-hover:bg-purple-500/80 rounded-r transition-colors" />
-          </div>
-
           <CopilotChat
+            makeMarkdownText={true}
             title="The Architect"
             instructions={providerInstructions}
             className="flex-1 min-h-0"
