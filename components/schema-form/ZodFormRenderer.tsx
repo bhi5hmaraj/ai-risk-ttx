@@ -10,6 +10,7 @@ import {
   type UseFormWatch,
 } from 'react-hook-form';
 import { defaultValueForSchema, getZodLeafType, unwrap } from './utils';
+import { matrixTheme } from '@/styles/matrixTheme';
 
 type AnyValues = Record<string, any>;
 
@@ -307,40 +308,46 @@ const LeafRenderer: React.FC<ZodFormRendererProps & { schema: any }> = ({
 
   // For unions or fallbacks, default to text input
   const common = (
-    <div className="space-y-1">
-      {key && <label className="block text-sm text-gray-300">{key}</label>}
+    <div className={matrixTheme.form.field}>
+      {key && <label className={matrixTheme.form.label}>{key}</label>}
       {shouldUseTextarea(key, path) ? (
         <textarea
           rows={4}
           disabled={!!disabled}
           aria-invalid={!!errorMsg}
-          className={`w-full bg-gray-900 border ${errorMsg ? 'border-red-600 focus:ring-red-500' : 'border-gray-700 focus:ring-2 focus:ring-emerald-500'} rounded px-3 py-2 text-base leading-6 resize-y ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`${matrixTheme.form.textarea} ${errorMsg ? 'border-red-600 focus:ring-red-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           {...register(path as any)}
         />
       ) : (
         <input
           disabled={!!disabled}
           aria-invalid={!!errorMsg}
-          className={`w-full bg-gray-900 border ${errorMsg ? 'border-red-600 focus:ring-red-500' : 'border-gray-700 focus:ring-2 focus:ring-emerald-500'} rounded px-3 py-2 text-base ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`${matrixTheme.form.input} ${errorMsg ? 'border-red-600 focus:ring-red-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           {...register(path as any)}
         />
       )}
-      {errorMsg && <div className="text-xs text-red-400 mt-0.5">{errorMsg}</div>}
+      {errorMsg && <div className={matrixTheme.form.error}>{errorMsg}</div>}
     </div>
   );
 
   let control: React.ReactNode = common;
   if (t === 'number') {
     control = (
-      <div className="space-y-1">
-        {key && <label className="block text-sm text-gray-300">{key}</label>}
-        <input type="number" disabled={!!disabled} aria-invalid={!!errorMsg} className={`w-full bg-gray-900 border ${errorMsg ? 'border-red-600 focus:ring-red-500' : 'border-gray-700 focus:ring-2 focus:ring-emerald-500'} rounded px-3 py-2 text-base ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`} {...register(path as any, { valueAsNumber: true })} />
+      <div className={matrixTheme.form.field}>
+        {key && <label className={matrixTheme.form.label}>{key}</label>}
+        <input
+          type="number"
+          disabled={!!disabled}
+          aria-invalid={!!errorMsg}
+          className={`${matrixTheme.form.input} ${errorMsg ? 'border-red-600 focus:ring-red-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          {...register(path as any, { valueAsNumber: true })}
+        />
       </div>
     );
   } else if (t === 'boolean') {
     control = (
-      <label className="inline-flex items-center gap-2 text-sm text-gray-300">
-        <input type="checkbox" disabled={!!disabled} className="bg-gray-900 border border-gray-700 rounded" {...register(path as any)} />
+      <label className={`inline-flex items-center gap-2 ${matrixTheme.form.label}`}>
+        <input type="checkbox" disabled={!!disabled} className={matrixTheme.form.checkbox} {...register(path as any)} />
         {key}
       </label>
     );
