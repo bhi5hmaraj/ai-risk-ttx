@@ -36,20 +36,28 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 - Prisma + PostgreSQL for persistence
 - Vercel for deployment
 
+### New (November 2025)
+- The Architect – scenario builder sidebar with compact Zod‑driven form, field locks, preview, and one‑click apply
+- Mobile bottom panel for The Architect (drag‑to‑resize)
+- Resizable sticky right rail on desktop
+- Matrix‑inspired background + emerald accent theme
+- Switched project to pnpm for faster, deterministic installs
+
 ---
 
 ## Quick Start (Next.js)
 
 ### Prerequisites
 - Node.js 20+
+- pnpm 10+
 - PostgreSQL (for local development)
 - LiteLLM API key (or compatible LLM provider)
 
 ### Setup
 
-1. **Install dependencies:**
+1. **Install dependencies (pnpm):**
    ```bash
-   npm ci
+   pnpm install
    ```
 
 2. **Set up database:**
@@ -77,8 +85,8 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 
 4. **Start development server:**
    ```bash
-   npm run dev                 # http://localhost:3000
-   npm run dev -- --port 4000  # Forwarded to Next.js
+   pnpm dev                    # http://localhost:3000
+   pnpm dev -- --port 4000
    ```
 
 ## Documentation
@@ -92,13 +100,13 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 ### Available Commands
 
 ```bash
-npm run dev               # Start Next dev server
-npm run build             # Production build
-npm run start             # Start built app
-npm run db:migrate        # Prisma migrate in dev
-npm run db:studio         # Prisma Studio
-npm run analyze           # Analyze feedback (scripts/analyze-feedback.ts)
-npm run scenarios         # Manage scenarios (scripts/manage-scenarios.ts)
+pnpm dev               # Start Next dev server
+pnpm build             # Production build
+pnpm start             # Start built app
+pnpm db:migrate        # Prisma migrate in dev
+pnpm db:studio         # Prisma Studio
+pnpm analyze           # Analyze feedback (scripts/analyze-feedback.ts)
+pnpm scenarios         # Manage scenarios (scripts/manage-scenarios.ts)
 ```
 
 ### API Health / Fail‑Fast

@@ -19,6 +19,36 @@ interface UpdatePeriod {
 const UPDATES: UpdatePeriod[] = [
   {
     period: 'November 2025',
+    date: 'Nov 23, 2025',
+    color: 'green',
+    categories: [
+      {
+        title: '🧠 The Architect (Scenario Builder)',
+        items: [
+          'Compact Zod‑driven form with field locks and inline validation',
+          'Desktop: sticky, resizable right rail; Mobile: drag‑to‑resize bottom panel',
+          'One‑click Apply with human‑in‑the‑loop approval and lock checks',
+        ],
+      },
+      {
+        title: '🎨 Visual & Theme',
+        items: [
+          'Matrix background and emerald accent palette',
+          'Larger, more readable form typography',
+          '“Score Δ” terminology across debrief and round snapshots',
+        ],
+      },
+      {
+        title: '🛠️ Tooling',
+        items: [
+          'Switched to pnpm (faster installs, deterministic lockfile)',
+          'Vercel build uses “pnpm exec prisma migrate deploy && pnpm build”',
+        ],
+      },
+    ],
+  },
+  {
+    period: 'November 2025',
     date: 'Nov 1, 2025',
     color: 'blue',
     categories: [
