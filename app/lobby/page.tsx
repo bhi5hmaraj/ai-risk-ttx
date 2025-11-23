@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen, LoadingScreen } from '@/screens';
@@ -17,7 +17,7 @@ import { useActionStore } from '@/stores/actionStore';
 import { generateCustomScenario } from '@/services/llmApiClient';
 import { GAME_CONFIG } from '@/gameConfig';
 
-export default function LobbyPage() {
+function LobbyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, isFromPublicCatalog, setIsFromPublicCatalog, reset: resetLobby } = useLobby();
@@ -136,5 +136,13 @@ export default function LobbyPage() {
         />
       )}
     </>
+  );
+}
+
+export default function LobbyPage() {
+  return (
+    <Suspense fallback={<LoadingScreen message="Loading..." error={null} />}>
+      <LobbyPageContent />
+    </Suspense>
   );
 }
