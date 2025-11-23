@@ -63,7 +63,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       {isCollapsed && (
         <button
           onClick={() => setIsCollapsed(false)}
-          className="fixed top-2 right-2 z-50 p-2 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all shadow-lg"
+          className="fixed top-2 left-2 z-50 p-2 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all shadow-lg"
           aria-label="Show navigation"
           title="Show navigation"
         >

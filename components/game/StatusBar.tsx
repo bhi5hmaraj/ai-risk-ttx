@@ -50,7 +50,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </div>
 
         {/* Left: Role & Hidden Goal */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded flex-shrink-0">
             {typeof player.role.icon === 'function'
               ? player.role.icon({ className: 'h-4 w-4 text-blue-300' })
@@ -58,7 +58,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             }
             <span className="font-semibold text-white whitespace-nowrap">{player.role.name}</span>
           </div>
-          <div className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic truncate">
+          <div
+            className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic whitespace-nowrap overflow-hidden text-ellipsis"
+            title={player.role.hiddenObjective}
+          >
             {player.role.hiddenObjective}
           </div>
         </div>
@@ -115,7 +118,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               💬
             </button>
           )}
-          {showMakePublic && onMakePublic && (
+          {onMakePublic && (
             <button
               onClick={onMakePublic}
               disabled={scenarioAlreadyPublic}
@@ -124,6 +127,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
                   ? 'bg-gray-600 cursor-not-allowed opacity-60 text-gray-400'
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
               }`}
+              title={scenarioAlreadyPublic ? 'Already shared with community' : 'Share scenario with community'}
             >
               {scenarioAlreadyPublic ? '✓' : '📢'}
             </button>
@@ -141,8 +145,10 @@ interface MetricProps {
 }
 
 const Metric: React.FC<MetricProps> = ({ label, value, accent }) => (
-  <div className="flex flex-col items-center px-2 py-1 bg-gray-800 rounded min-w-[60px]">
-    <span className="text-[9px] uppercase tracking-wider text-gray-400 font-semibold">{label}</span>
+  <div
+    className="flex items-center gap-1 px-2 py-1 bg-gray-800 rounded min-w-[50px]"
+    title={label}
+  >
     <span className={`text-sm font-semibold ${accent} leading-none`}>{value}</span>
   </div>
 );
