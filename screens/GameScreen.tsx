@@ -1,6 +1,9 @@
+"use client";
+
 import React from 'react';
 import type { ActionOption, GameLogEntry, GameState, Player } from '../types';
 import { RoundSnapshotCard, EventLog, ActionSelection, StatusBar } from '../components/game';
+import { useUIStore } from '../stores/uiStore';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -28,7 +31,7 @@ interface GameScreenProps {
   scenarioAlreadyPublic?: boolean;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({
+const GameScreen: React.FC<GameScreenProps> = ({
   gameState,
   players,
   humanPlayer,
@@ -52,7 +55,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onOpenFeedback,
   maxRounds,
   scenarioAlreadyPublic,
-}) => (
+}) => {
+  const { isHistoryOpen: historyOpen } = useUIStore();
+
+  return (
   <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-12">
     <div className="max-w-[1920px] mx-auto">
       <StatusBar
@@ -62,14 +68,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         onPauseClick={onPauseToggle}
         player={humanPlayer}
         maxRounds={maxRounds}
-        onToggleHistory={onToggleHistory}
         onOpenActionTree={onOpenActionTree}
-        isHistoryOpen={isHistoryOpen}
         canViewActionTree={canViewActionTree}
         onOpenFeedback={onOpenFeedback}
         onMakePublic={onMakePublic}
         showMakePublic={isCustomScenario}
         scenarioAlreadyPublic={scenarioAlreadyPublic}
+        availablePoints={humanPlayer.actionPoints}
       />
       {error && (
         <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
@@ -87,7 +92,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         availablePoints={humanPlayer.actionPoints}
         humanPlayer={humanPlayer}
       />
-      {isHistoryOpen && (
+      {historyOpen && (
         <div className="mt-6" data-testid="event-log">
           <EventLog
             gameState={gameState}
@@ -101,4 +106,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       )}
     </div>
   </div>
-);
+  );
+};
+
+export { GameScreen };

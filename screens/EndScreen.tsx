@@ -55,8 +55,8 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 md:p-10 pt-24 flex flex-col items-center">
-      <div className="w-full max-w-5xl space-y-8">
+    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6 pt-20 flex flex-col items-center">
+      <div className="w-full max-w-[1920px] space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">Simulation Over</h1>
           <p className="text-base md:text-lg text-gray-300">
@@ -72,26 +72,60 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
           </p>
         </div>
 
-        {/* AI Debrief Section - Auto-generated */}
-        <div className="bg-gray-800 rounded-lg p-6 md:p-8 space-y-4">
-          <h2 className="text-2xl md:text-3xl font-bold">AI Debrief</h2>
-          {debriefLoading && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <LoadingSpinner />
-              <p className="mt-4 text-sm text-gray-400 italic text-center">
-                "{joke}"
-              </p>
-            </div>
-          )}
-          {debriefError && (
-            <div className="text-red-300 text-sm">{debriefError}</div>
-          )}
-          {debrief && !debriefLoading && (
-            <div className="space-y-6">
-              <p className="text-gray-100 leading-relaxed whitespace-pre-wrap">{debrief.summary}</p>
+        {/* Two-column layout: Personal Objective + AI Debrief Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6">
+          {/* Your Personal Objective */}
+          {(() => {
+            const humanPlayer = players.find(p => p.isHuman);
+            return humanPlayer && (
+              <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-4 md:p-6 h-fit">
+                <div className="flex items-center gap-3 mb-2">
+                  {typeof humanPlayer.role.icon === 'function'
+                    ? humanPlayer.role.icon({ className: 'h-6 w-6 text-amber-400' })
+                    : <span className="text-2xl">{humanPlayer.role.icon}</span>
+                  }
+                  <h3 className="text-lg md:text-xl font-bold text-amber-300">Your Role: {humanPlayer.role.name}</h3>
+                </div>
+                <p className="text-sm md:text-base text-amber-100/90">
+                  <span className="font-semibold">Secret Objective:</span> {humanPlayer.role.hiddenObjective}
+                </p>
+                <p className="text-sm md:text-base text-amber-100/90 mt-2">
+                  <span className="font-semibold">Personal Score:</span>{' '}
+                  <span className="text-xl font-mono text-amber-300">
+                    {humanPlayer.hiddenScore > 0 ? '+' : ''}{humanPlayer.hiddenScore}
+                  </span>
+                </p>
+              </div>
+            );
+          })()}
 
-              {/* Round Impact Table */}
-              <div className="space-y-2">
+          {/* AI Debrief Summary */}
+          <div className="bg-gray-800 rounded-lg p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold mb-3">AI Debrief</h2>
+            {debriefLoading && (
+              <div className="flex flex-col items-center justify-center py-8">
+                <LoadingSpinner />
+                <p className="mt-4 text-sm text-gray-400 italic text-center">
+                  "{joke}"
+                </p>
+              </div>
+            )}
+            {debriefError && (
+              <div className="text-red-300 text-sm">{debriefError}</div>
+            )}
+            {debrief && !debriefLoading && (
+              <p className="text-gray-100 leading-relaxed whitespace-pre-wrap">{debrief.summary}</p>
+            )}
+          </div>
+        </div>
+
+        {/* AI Debrief Tables - Full Width */}
+        {debrief && !debriefLoading && (
+          <div className="space-y-6">
+            <div className="bg-gray-800 rounded-lg p-6 md:p-8 space-y-6">
+
+            {/* Round Impact Table */}
+            <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-blue-200">Round Impact (Score Changes)</p>
                 <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
                   <div className="inline-block min-w-full align-middle">
@@ -127,10 +161,10 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                     </table>
                   </div>
                 </div>
-              </div>
+            </div>
 
-              {/* Key Events Table */}
-              {debrief.keyEvents?.length > 0 && (
+            {/* Key Events Table */}
+            {debrief.keyEvents?.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-blue-200">Key Decisive Events</p>
                   <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
@@ -169,11 +203,11 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                       </table>
                     </div>
                   </div>
-                </div>
-              )}
+              </div>
+            )}
 
-              {/* Human Actions Table */}
-              {debrief.userActions && (
+            {/* Human Actions Table */}
+            {debrief.userActions && (
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-amber-200">Your Influential Actions</p>
                   <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
@@ -206,11 +240,11 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                       </table>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
+        )}
 
         <div className="bg-gray-800 rounded-lg p-6 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">Final Scores</h2>
@@ -223,17 +257,18 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                   key={p.id}
                   className={`flex items-center justify-between p-4 rounded-lg ${p.isHuman ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700/80'}`}
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-center flex-1 min-w-0 mr-4">
                     {typeof p.role.icon === 'function'
-                      ? p.role.icon({ className: 'h-8 w-8 mr-4 text-blue-300' })
-                      : <span className="text-3xl mr-4">{p.role.icon}</span>
+                      ? p.role.icon({ className: 'h-8 w-8 mr-4 text-blue-300 flex-shrink-0' })
+                      : <span className="text-3xl mr-4 flex-shrink-0">{p.role.icon}</span>
                     }
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <span className="font-bold block">{p.role.name}</span>
-                      <span className="text-xs uppercase tracking-wide text-gray-400">{p.isHuman ? 'You' : 'AI Stakeholder'}</span>
+                      <span className="text-xs uppercase tracking-wide text-gray-400 block">{p.isHuman ? 'You' : 'AI Stakeholder'}</span>
+                      <span className="text-xs italic text-amber-300 block mt-1 break-words">{p.role.hiddenObjective}</span>
                     </div>
                   </div>
-                  <span className="text-xl font-mono">
+                  <span className="text-xl font-mono flex-shrink-0">
                     {p.hiddenScore > 0 ? '+' : ''}
                     {p.hiddenScore}
                   </span>

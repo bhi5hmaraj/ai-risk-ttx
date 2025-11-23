@@ -47,6 +47,7 @@ export default function EndPage() {
         onOpenAbout={() => router.push('/about')}
         onOpenUpdates={() => router.push('/updates')}
         showFeedback={false}
+        allowCollapse={false}
       />
       {actionTree}
       <FeedbackModal
