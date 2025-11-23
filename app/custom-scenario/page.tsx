@@ -376,11 +376,11 @@ function CustomScenarioPageContent() {
               title: 'The Architect',
               placeholder: 'Ask for a title, overview, stakeholders…',
               initial:
-                'Ergo, I am The Architect. I assist you in constructing a coherent scenario with depth and consequence.\n' +
-                'Tips to begin:\n' +
-                '• Say “fill core metric to Public Trust 86” or “add 2 more stakeholders with emojis.”\n' +
-                '• I will first propose changes and ask for your confirmation before applying them.\n' +
-                '• I anchor to what you have already entered and only modify what you approve.',
+                'Ergo, I am **The Architect**. I assist you in constructing a coherent scenario with depth and consequence.\n\n' +
+                '**Tips to begin:**\n\n' +
+                '- Say "fill core metric to Public Trust 86" or "add 2 more stakeholders with emojis"\n' +
+                '- I will first propose changes and ask for your confirmation before applying them\n' +
+                '- I anchor to what you have already entered and only modify what you approve',
             }}
             suggestions="auto"
             onSubmitMessage={(msg: string) => {

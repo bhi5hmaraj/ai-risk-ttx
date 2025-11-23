@@ -27,8 +27,8 @@ export function ScenarioForm({
 }: ScenarioFormProps) {
   return (
     <div className="space-y-3">
-      <h1 className="text-2xl font-semibold">Matrix | Scenario builder</h1>
-      <p className="text-gray-300 text-base">Sketch the crisis or whisper to The Architect—either way, you stay in control before anything locks in.</p>
+      <h1 className="text-2xl font-semibold text-emerald-400">Matrix | Scenario builder</h1>
+      <p className="text-gray-400 text-base">Sketch the crisis or whisper to The Architect—either way, you stay in control before anything locks in.</p>
 
       {/* Basics: Title + Rounds (responsive), then Description */}
       <section className="space-y-2">
