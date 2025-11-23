@@ -362,17 +362,17 @@ function CustomScenarioPageContent() {
           style={{
             top: 'var(--nav-h, 64px)',
             height: 'calc(100vh - var(--nav-h, 64px))',
-            // CopilotKit CSS variables (from docs) for a crisp dark theme
-            ['--copilot-kit-primary-color' as any]: '#6366f1',
-            ['--copilot-kit-contrast-color' as any]: '#e5e7eb',
-            ['--copilot-kit-background-color' as any]: '#0b0f1a',
-            ['--copilot-kit-input-background-color' as any]: '#0f172a',
-            ['--copilot-kit-secondary-color' as any]: '#111827',
-            ['--copilot-kit-secondary-contrast-color' as any]: '#e5e7eb',
-            ['--copilot-kit-separator-color' as any]: '#1f2937',
-            ['--copilot-kit-muted-color' as any]: '#9ca3af',
-            // Switch to Matrix-green accent for this page
+            // CopilotKit CSS variables - Matrix theme
             ['--copilot-kit-primary-color' as any]: '#34d399',
+            ['--copilot-kit-contrast-color' as any]: '#cbd5e0',
+            ['--copilot-kit-background-color' as any]: '#0a0f1a',
+            ['--copilot-kit-input-background-color' as any]: '#0f1419',
+            ['--copilot-kit-secondary-color' as any]: '#1a1f2e',
+            ['--copilot-kit-secondary-contrast-color' as any]: '#a7f3d0',
+            ['--copilot-kit-separator-color' as any]: 'rgba(52, 211, 153, 0.15)',
+            ['--copilot-kit-muted-color' as any]: '#6b7280',
+            ['--copilot-kit-response-button-color' as any]: '#34d399',
+            ['--copilot-kit-response-button-background-color' as any]: 'rgba(52, 211, 153, 0.1)',
           } as React.CSSProperties}
         >
           <CopilotChat
