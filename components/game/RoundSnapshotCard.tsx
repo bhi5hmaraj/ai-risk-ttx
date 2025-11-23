@@ -89,7 +89,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
           <p className="text-xs uppercase tracking-wide text-blue-200 mb-2 font-semibold">Key Moments</p>
           {hasLastRound && latestLogEntry?.outcomeTimeline?.length ? (
-            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {latestLogEntry.outcomeTimeline.map((item, index) => (
                 <div key={`km_${index}`} className="bg-gray-950/60 border border-blue-800/30 rounded p-2">
                   <div className="flex items-start gap-1.5">
@@ -126,7 +126,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
           <p className="text-xs uppercase tracking-wide text-blue-200 mb-2 font-semibold">Actions &amp; Score Changes</p>
           {hasLastRound && playerActions.length > 0 ? (
-            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {playerActions.map((playerAction) => {
                 const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
                 const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
@@ -254,7 +254,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-1.5 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                <div className="grid gap-1.5 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
                   {actionOptions.map((opt) => {
                     const isSelected = selected.some((s) => s.title === opt.title);
                     const canSelect = pointsRemaining >= opt.cost || isSelected;
