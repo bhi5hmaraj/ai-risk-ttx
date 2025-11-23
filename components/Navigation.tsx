@@ -10,6 +10,7 @@ interface NavigationProps {
   onOpenUpdates: () => void;
   showFeedback?: boolean; // Only show feedback option when in game
   autoCollapse?: boolean; // Auto-collapse on mount (for game screen)
+  allowCollapse?: boolean; // Show close button to allow collapsing (only for game screen)
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -19,23 +20,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenUpdates,
   showFeedback = false,
   autoCollapse = false,
+  allowCollapse = true,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(autoCollapse);
 
   const closeMenu = () => setIsMenuOpen(false);
-
-  // Listen for Escape key to show navbar when collapsed
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isCollapsed) {
-        setIsCollapsed(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCollapsed]);
 
   const handleNavigateHome = () => {
     onNavigateHome();
@@ -58,19 +48,6 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <>
-      {/* Floating toggle button when collapsed */}
-      {isCollapsed && (
-        <button
-          onClick={() => setIsCollapsed(false)}
-          className="fixed top-2 left-2 z-50 p-2 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all shadow-lg"
-          aria-label="Show navigation"
-          title="Show navigation"
-        >
-          <Bars3Icon className="h-5 w-5" />
-        </button>
-      )}
-
       <nav className={`fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 transition-transform duration-300 ${
         isCollapsed ? '-translate-y-full' : 'translate-y-0'
       }`}>
@@ -101,14 +78,24 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             <NavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <NavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
-            <button
-              onClick={() => setIsCollapsed(true)}
-              className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              aria-label="Hide navigation"
-              title="Hide navigation (Escape to show)"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
+            {allowCollapse && (
+              <button
+                onClick={() => {
+                  setIsCollapsed(true);
+                  // Also update the DOM classes directly to sync with StatusBar
+                  const navbar = document.querySelector('nav');
+                  if (navbar) {
+                    navbar.classList.remove('translate-y-0');
+                    navbar.classList.add('-translate-y-full');
+                  }
+                }}
+                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                aria-label="Hide navigation"
+                title="Hide navigation"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -140,7 +127,6 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
       )}
     </nav>
-    </>
   );
 };
 
