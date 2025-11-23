@@ -35,9 +35,6 @@ function CustomScenarioPageContent() {
   const [locks, setLocks] = useState<Record<string, boolean>>({});
   const [ephemeralInstructions, setEphemeralInstructions] = useState('');
   const [toast, setToast] = useState('');
-  // Preferred rail width (as vw via CSS var) is controlled via CSS clamp,
-  // avoiding fixed px widths. We still keep a pixel fallback for legacy logic.
-  const [railWidth, setRailWidth] = useState(560);
   const [isLg, setIsLg] = useState(false);
   const resizingRef = useRef<{ startX: number; startVW: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -239,6 +236,8 @@ function CustomScenarioPageContent() {
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+
     // Read current preferred width as vw from CSS var (fallback 35)
     let curVW = 35;
     try {
@@ -247,27 +246,34 @@ function CustomScenarioPageContent() {
       const num = parseFloat(raw.replace('vw', ''));
       if (!Number.isNaN(num)) curVW = num;
     } catch {}
+
     resizingRef.current = { startX: e.clientX, startVW: curVW };
-    try {
-      const onMove = (ev: MouseEvent) => {
-        if (!resizingRef.current) return;
-        const dx = ev.clientX - resizingRef.current.startX;
-        const vwDelta = (dx / Math.max(1, window.innerWidth)) * 100;
-        const nextVW = clamp(resizingRef.current.startVW - vwDelta, 24, 60);
-        try { containerRef.current?.style.setProperty('--rail-pref', `${nextVW}vw`); } catch {}
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-      };
-      const onUp = () => {
-        resizingRef.current = null;
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        window.removeEventListener('mousemove', onMove as any);
-        window.removeEventListener('mouseup', onUp as any);
-      };
-      window.addEventListener('mousemove', onMove as any);
-      window.addEventListener('mouseup', onUp as any);
-    } catch {}
+
+    const onMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return;
+      // Calculate delta from starting position
+      const dx = resizingRef.current.startX - ev.clientX; // Reversed for left-to-right resize
+      const vwDelta = (dx / Math.max(1, window.innerWidth)) * 100;
+      const nextVW = clamp(resizingRef.current.startVW + vwDelta, 20, 60);
+
+      try {
+        containerRef.current?.style.setProperty('--rail-pref', `${nextVW}vw`);
+      } catch {}
+
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    };
+
+    const onUp = () => {
+      resizingRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
   // Copilot bindings live in a child component to ensure
@@ -305,20 +311,16 @@ function CustomScenarioPageContent() {
     />
     <div
       ref={containerRef}
-      className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4"
-      style={
-        isLg
-          ? ({
-              // Use CSS clamp with a variable preferred width to avoid hardcoding px
-              gridTemplateColumns: 'minmax(0,1fr) clamp(22rem, var(--rail-pref, 35vw), 56rem)',
-              // Push content below fixed nav using measured height
-              paddingTop: 'calc(var(--nav-h, 64px) + 0.5rem)',
-            } as React.CSSProperties)
-          : ({ paddingTop: 'calc(var(--nav-h, 64px) + 0.5rem)' } as React.CSSProperties)
-      }
+      className="flex flex-col lg:flex-row"
+      style={{
+        paddingTop: 'calc(var(--nav-h, 64px) + 0.5rem)',
+        minHeight: 'calc(100vh - var(--nav-h, 64px))',
+      }}
     >
-      <div>
-        <ScenarioForm
+      {/* Main form content - centered with max width */}
+      <div className="flex-1 overflow-auto px-4 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <ScenarioForm
           control={control}
           register={register}
           setValue={setValue}
@@ -335,13 +337,23 @@ function CustomScenarioPageContent() {
           stakeholdersCount={(stakeholders || []).length}
           validationStatus={validationStatus}
         />
+        </div>
       </div>
-      <aside className="relative hidden lg:block">
+
+      {/* Sidebar - extends to screen edge, resizable */}
+      <aside
+        className="relative hidden lg:flex border-l border-gray-800"
+        style={{
+          width: isLg ? `clamp(24rem, var(--rail-pref, 35vw), 48rem)` : '35vw',
+          minWidth: '24rem',
+          maxWidth: '60vw',
+        }}
+      >
         <div
-          className="sticky rounded-md border border-gray-800 overflow-auto flex"
+          className="sticky flex flex-col overflow-hidden"
           style={{
             top: 'var(--nav-h, 64px)',
-            height: 'calc(100vh - var(--nav-h, 64px) - 1rem)',
+            height: 'calc(100vh - var(--nav-h, 64px))',
             // CopilotKit CSS variables (from docs) for a crisp dark theme
             ['--copilot-kit-primary-color' as any]: '#6366f1',
             ['--copilot-kit-contrast-color' as any]: '#e5e7eb',
@@ -355,6 +367,16 @@ function CustomScenarioPageContent() {
             ['--copilot-kit-primary-color' as any]: '#34d399',
           } as React.CSSProperties}
         >
+          {/* Resizer handle - positioned at the left edge */}
+          <div
+            className="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-gray-700/50 hover:bg-purple-500/60 active:bg-purple-500 transition-colors z-30 group"
+            onMouseDown={startResize}
+            title="Drag to resize panel"
+            aria-label="Resize chat panel"
+          >
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-purple-500/0 group-hover:bg-purple-500/80 rounded-r transition-colors" />
+          </div>
+
           <CopilotChat
             title="The Architect"
             instructions={providerInstructions}
@@ -396,13 +418,6 @@ function CustomScenarioPageContent() {
                 setEphemeralInstructions('');
               }
             }}
-          />
-          {/* Resizer handle (visible on lg+) */}
-          <div
-            className="lg:block absolute left-[-8px] top-0 h-full w-4 cursor-col-resize bg-gray-800/40 hover:bg-gray-700/60 active:bg-gray-600/60 rounded-r z-20"
-            onMouseDown={startResize}
-            title="Drag to resize"
-            aria-label="Resize chat panel"
           />
         </div>
       </aside>
