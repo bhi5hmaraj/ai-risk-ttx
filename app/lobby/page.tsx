@@ -133,6 +133,7 @@ function LobbyPageContent() {
           isLoading={isLoading}
           handleCustomGameStart={handleCustomGameStart}
           handleStartGame={handleStartGame}
+          onNavigateToCustomScenario={() => router.push('/custom-scenario')}
         />
       )}
     </>

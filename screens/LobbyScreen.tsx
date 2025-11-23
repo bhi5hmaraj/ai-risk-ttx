@@ -42,6 +42,7 @@ interface LobbyScreenProps {
   isLoading: boolean;
   handleCustomGameStart: () => void;
   handleStartGame: () => void;
+  onNavigateToCustomScenario?: () => void;
 }
 
 const LobbyExperienceCard: React.FC<{
@@ -297,6 +298,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   isLoading,
   handleCustomGameStart,
   handleStartGame,
+  onNavigateToCustomScenario,
 }) => {
   const [isMakePublicModalOpen, setIsMakePublicModalOpen] = useState(false);
   const [publicScenarios, setPublicScenarios] = useState<ScenarioCatalogItem[]>([]);
@@ -460,10 +462,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               title="Create Your Own"
               description="Describe any crisis and let the AI Game Master craft a bespoke simulation with tailored roles."
               onSelect={() => {
-                setGamePath('custom');
-                setIsFromPublicCatalog(false);
+                if (onNavigateToCustomScenario) {
+                  onNavigateToCustomScenario();
+                } else {
+                  // Fallback to old behavior
+                  setGamePath('custom');
+                  setIsFromPublicCatalog(false);
+                }
               }}
-              cta="Generate Scenario"
+              cta="Build Scenario"
               accent="purple"
             />
           </div>
