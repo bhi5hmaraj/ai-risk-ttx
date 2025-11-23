@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen, LoadingScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
@@ -18,6 +19,7 @@ import { GAME_CONFIG } from '@/gameConfig';
 
 export default function LobbyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, isFromPublicCatalog, setIsFromPublicCatalog, reset: resetLobby } = useLobby();
   const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
@@ -25,11 +27,17 @@ export default function LobbyPage() {
   const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
 
-  // Reset lobby state on mount to always show the scenario catalog
+  // Reset lobby state on mount unless arriving from builder with prefilled setup
   useEffect(() => {
+    const from = (searchParams?.get('from') || '').toLowerCase();
+    if (from === 'custom-scenario') {
+      console.log('[LobbyPage] Arrived from custom-scenario builder; preserving lobby state');
+      return;
+    }
     console.log('[LobbyPage] Component mounted, resetting lobby state');
     resetLobby();
-  }, []); // Empty dependency array = run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
 
   // Handler for custom scenario generation
   const handleCustomGameStart = async () => {

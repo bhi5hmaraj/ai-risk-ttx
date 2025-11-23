@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
@@ -12,6 +12,7 @@ import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useRoundOptions } from '@/hooks/useRoundOptions';
+import { GAME_CONFIG } from '@/gameConfig';
 import { GamePhase } from '@/types';
 import { useTimer } from '@/hooks/useTimer';
 import type { GameMetadata } from '@/types/feedback';
@@ -41,12 +42,23 @@ export default function GamePage() {
     () => gameState.eventLog.some((e) => e.playerActions.length > 0),
     [gameState.eventLog]
   );
-  const { timer, isPaused, togglePause: handlePauseToggle } = useTimer({
+  const { timer, isPaused, togglePause: handlePauseToggle, reset } = useTimer({
     phase: gameState.phase,
     humanHasSubmitted: Boolean(humanPlayer?.hasSubmittedActions),
     onTimeout: () => handleConfirmActions([]),
-    initial: 300,
+    initial: GAME_CONFIG.ACTION_PHASE_SECONDS,
   });
+
+  // Reset the per-round timer to 5 minutes at the start of each ACTION phase
+  const lastRoundRef = useRef<number>(-1);
+  useEffect(() => {
+    if (gameState.phase === GamePhase.ACTION) {
+      if (lastRoundRef.current !== gameState.round) {
+        reset(GAME_CONFIG.ACTION_PHASE_SECONDS);
+        lastRoundRef.current = gameState.round;
+      }
+    }
+  }, [gameState.phase, gameState.round, reset]);
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);

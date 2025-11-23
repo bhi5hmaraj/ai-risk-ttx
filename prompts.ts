@@ -352,7 +352,9 @@ export const getActionOptionsPromptAndSchema = (player: Player, gameState: GameS
                 const actionTitles = pa.actions.length > 0 ? pa.actions.map(a => a.title).join(", ") : 'Took no action';
                 return `  - ${pa.roleName}: ${actionTitles}.`
             }).join("\n");
-    }
+}
+
+// Note: Copilot instructions moved to client-safe file: '@/copilot/instructions'
 
     const prompt = `
       You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
