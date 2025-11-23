@@ -192,6 +192,70 @@ Each formalism is scored on each dimension using a **normalized 0-5 scale**:
 
 ---
 
+## Weighted Scoring (GM Profiles)
+
+**Problem**: Different GMs have different priorities. Equal weighting doesn't capture this.
+
+**Solution**: **Weighted scoring** based on GM profiles
+
+### Weighted Score Formula
+
+```python
+weighted_score = Σ(dimension_score × weight) / Σweights
+```
+
+Each dimension gets a weight (higher = more important to GM).
+
+### GM Profiles
+
+We define 5 standard profiles with different dimension weights:
+
+#### 1. Research Prototyper
+**Goal**: Explore scenarios quickly, iterate rapidly
+**Weights**: High on Learnability (10), Tractability (8), Tools (7)
+**Top Recommendation**: System Dynamics (4.07/5.0)
+
+#### 2. Safety-Critical Engineer
+**Goal**: Prove system safety, pass certification
+**Weights**: High on Verification (10), Tractability (6)
+**Top Recommendation**: System Dynamics (3.30/5.0) or Timed Automata (3.30/5.0)
+
+#### 3. Policy Analyst
+**Goal**: Quantify P(catastrophe), communicate to decision-makers
+**Weights**: High on Stochasticity (10), Tractability (9), Learnability (7)
+**Top Recommendation**: System Dynamics (3.53/5.0)
+
+#### 4. Multidisciplinary Team
+**Goal**: Complex system with domain experts (not all technical)
+**Weights**: High on Expressiveness (10), Modularity (8), Learnability (8)
+**Top Recommendation**: System Dynamics (3.71/5.0)
+
+#### 5. Balanced (Equal Weights)
+**Goal**: All dimensions equally important
+**Weights**: All 1.0
+**Top Recommendation**: System Dynamics (3.50/5.0)
+
+### Usage
+
+Generate weighted spider graphs:
+```bash
+# Show all profile recommendations
+python spider_graphs.py --profiles
+
+# Generate weighted graphs for all profiles
+python spider_graphs.py --weighted
+
+# Show rankings for specific profile
+python spider_graphs.py --profile safety --table
+
+# Custom weights (8 comma-separated values)
+python spider_graphs.py --custom-weights "2,6,2,10,5,3,5,4" --table
+```
+
+**Limitation**: Dimension weights are heuristic, not validated by user studies. See [dimension_rationale.md](dimension_rationale.md) for validation plan.
+
+---
+
 ## Benchmark Scenarios
 
 To compare formalisms empirically, we use **standard test scenarios**:
@@ -336,8 +400,8 @@ This framework is validated by:
 3. **User Studies**: Do GMs using decision tree choose better formalisms?
 4. **Case Study Accumulation**: More scenarios → better recommendations
 
-**Status**: Initial draft (2025-11-23)
-**Next**: Implement spider graph generator, run benchmark comparisons
+**Status**: Framework v1.5 with weighted scoring (2025-11-23)
+**Next**: User studies to validate dimensions, empirical benchmark comparisons
 
 ---
 
@@ -366,6 +430,6 @@ To add a benchmark scenario:
 
 ---
 
-**Status**: Framework v1.0
+**Status**: Framework v1.5 (weighted scoring implemented)
 **Last updated**: 2025-11-23
-**Contributors**: Claude (assistant), MedhAI (evaluation philosophy)
+**Contributors**: Claude (implementation), MedhAI (evaluation philosophy, meta-critique)

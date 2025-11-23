@@ -46,6 +46,36 @@ COLORS = {
     "Timed Automata": "#8ECAE6",  # Light blue
 }
 
+# GM Profiles: Different weight vectors for different user priorities
+# Each profile maps dimension indices to weights (higher = more important)
+GM_PROFILES = {
+    "research": {
+        "name": "Research Prototyper",
+        "description": "Explore scenarios quickly, iterate rapidly",
+        "weights": [3, 8, 10, 3, 5, 4, 3, 7],  # High: Learnability, Tractability, Tools
+    },
+    "safety": {
+        "name": "Safety-Critical Engineer",
+        "description": "Prove system safety, pass certification",
+        "weights": [2, 6, 2, 10, 5, 3, 5, 4],  # High: Verification, Tractability
+    },
+    "policy": {
+        "name": "Policy Analyst",
+        "description": "Quantify risks, communicate to decision-makers",
+        "weights": [5, 9, 7, 4, 6, 10, 4, 6],  # High: Stochasticity, Tractability
+    },
+    "team": {
+        "name": "Multidisciplinary Team",
+        "description": "Complex system with domain experts (not all technical)",
+        "weights": [10, 4, 8, 2, 5, 4, 8, 7],  # High: Expressiveness, Modularity, Learnability
+    },
+    "balanced": {
+        "name": "Balanced (Equal Weights)",
+        "description": "All dimensions equally important",
+        "weights": [1, 1, 1, 1, 1, 1, 1, 1],
+    },
+}
+
 
 def radar_factory(num_vars, frame='circle'):
     """
@@ -115,6 +145,47 @@ def radar_factory(num_vars, frame='circle'):
 
     register_projection(RadarAxes)
     return theta
+
+
+def calculate_weighted_score(scores, weights):
+    """
+    Calculate weighted score for a formalism
+
+    Args:
+        scores (list): Dimension scores [0-5]
+        weights (list): Dimension weights (higher = more important)
+
+    Returns:
+        float: Weighted average score (0-5 scale)
+    """
+    if len(scores) != len(weights):
+        raise ValueError(f"Scores and weights must have same length: {len(scores)} vs {len(weights)}")
+
+    weighted_sum = sum(s * w for s, w in zip(scores, weights))
+    weight_sum = sum(weights)
+
+    return weighted_sum / weight_sum if weight_sum > 0 else 0.0
+
+
+def get_weighted_rankings(weights, top_n=None):
+    """
+    Rank all formalisms by weighted score
+
+    Args:
+        weights (list): Dimension weights
+        top_n (int): Optional limit to top N results
+
+    Returns:
+        list: Tuples of (formalism_name, weighted_score) sorted by score
+    """
+    rankings = []
+    for formalism, scores in FORMALISM_SCORES.items():
+        weighted_score = calculate_weighted_score(scores, weights)
+        rankings.append((formalism, weighted_score))
+
+    rankings.sort(key=lambda x: x[1], reverse=True)
+
+    return rankings[:top_n] if top_n else rankings
 
 
 def plot_single_formalism(formalism_name, save_path=None):
@@ -191,6 +262,68 @@ def plot_comparison(formalism_list, save_path=None):
     plt.close()
 
 
+def plot_weighted_comparison(formalism_list, weights, profile_name="Custom", save_path=None):
+    """
+    Plot comparison spider graph with weighted scores displayed
+
+    Args:
+        formalism_list (list): List of formalism names to compare
+        weights (list): Dimension weights
+        profile_name (str): Name of GM profile
+        save_path (str): Optional path to save figure
+    """
+    theta = radar_factory(8, frame='polygon')
+
+    fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection='radar'))
+    fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.15)
+
+    # Calculate weighted scores for ranking
+    weighted_scores = []
+    for formalism in formalism_list:
+        scores = FORMALISM_SCORES[formalism].copy()
+        weighted_score = calculate_weighted_score(scores, weights)
+        weighted_scores.append((formalism, weighted_score))
+
+        ax.plot(theta, scores, color=COLORS[formalism], linewidth=2, label=formalism)
+        ax.fill(theta, scores, alpha=0.15, color=COLORS[formalism])
+
+    # Sort by weighted score for legend
+    weighted_scores.sort(key=lambda x: x[1], reverse=True)
+
+    ax.set_varlabels(DIMENSION_LABELS)
+    ax.set_ylim(0, 5)
+    ax.set_yticks([1, 2, 3, 4, 5])
+    ax.grid(True)
+
+    plt.title(f"Formalism Comparison: {profile_name} Profile\nWeighted Scoring",
+              weight='bold', size=16, position=(0.5, 1.1),
+              horizontalalignment='center', verticalalignment='center')
+
+    # Create legend with weighted scores
+    legend_labels = [f"{name}: {score:.2f}/5.0" for name, score in weighted_scores]
+    ax.legend(legend_labels, loc='upper right', bbox_to_anchor=(1.35, 1.1), title="Weighted Scores")
+
+    # Add weight visualization below chart
+    weight_text = "Dimension Weights:\n"
+    for i, (dim, weight) in enumerate(zip(DIMENSION_LABELS, weights)):
+        weight_text += f"{dim}: {weight}  "
+        if (i + 1) % 3 == 0:  # Line break every 3 dimensions
+            weight_text += "\n"
+
+    fig.text(0.5, 0.05, weight_text, ha='center', va='top', fontsize=10,
+             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"Saved: {save_path}")
+    else:
+        plt.show()
+
+    plt.close()
+
+    return weighted_scores
+
+
 def plot_all_individual(output_dir="diagrams"):
     """Generate individual spider graphs for all formalisms"""
     import os
@@ -238,35 +371,143 @@ def plot_use_case_comparisons(output_dir="diagrams"):
     )
 
 
-def print_scores_table():
-    """Print ASCII table of all scores"""
-    print("\n" + "="*100)
-    print(f"{'Formalism':<20} | Express | Tract | Learn | Verify | Cont | Stoch | Modul | Tools | Total")
-    print("="*100)
+def plot_all_weighted_profiles(output_dir="diagrams"):
+    """Generate weighted comparison graphs for all GM profiles"""
+    import os
+    os.makedirs(output_dir, exist_ok=True)
 
-    for formalism, scores in FORMALISM_SCORES.items():
-        total = sum(scores)
-        scores_str = " | ".join(f"{s:5}" for s in scores)
-        print(f"{formalism:<20} | {scores_str} | {total:5}")
+    for profile_key, profile_data in GM_PROFILES.items():
+        save_path = os.path.join(output_dir, f"weighted_{profile_key}_profile.png")
+        plot_weighted_comparison(
+            list(FORMALISM_SCORES.keys()),
+            weights=profile_data["weights"],
+            profile_name=profile_data["name"],
+            save_path=save_path
+        )
 
-    print("="*100)
+
+def print_scores_table(weights=None, profile_name=None):
+    """
+    Print ASCII table of all scores
+
+    Args:
+        weights (list): Optional dimension weights for weighted scoring
+        profile_name (str): Optional name of profile for display
+    """
+    if weights:
+        print(f"\n{'='*100}")
+        print(f"Weighted Scores: {profile_name or 'Custom Profile'}")
+        print(f"{'='*100}")
+        print(f"Weights: {weights}")
+        print(f"{'='*100}")
+        print(f"{'Formalism':<20} | Weighted Score (0-5)")
+        print(f"{'='*100}")
+
+        rankings = get_weighted_rankings(weights)
+        for i, (formalism, score) in enumerate(rankings, 1):
+            print(f"{i}. {formalism:<18} | {score:.3f}")
+
+        print(f"{'='*100}\n")
+    else:
+        print("\n" + "="*100)
+        print(f"{'Formalism':<20} | Express | Tract | Learn | Verify | Cont | Stoch | Modul | Tools | Total")
+        print("="*100)
+
+        for formalism, scores in FORMALISM_SCORES.items():
+            total = sum(scores)
+            scores_str = " | ".join(f"{s:5}" for s in scores)
+            print(f"{formalism:<20} | {scores_str} | {total:5}")
+
+        print("="*100)
+
+
+def print_all_profiles():
+    """Print rankings for all GM profiles"""
+    print("\n" + "="*120)
+    print("GM PROFILE RECOMMENDATIONS")
+    print("="*120)
+
+    for profile_key, profile_data in GM_PROFILES.items():
+        print(f"\n{profile_data['name'].upper()}")
+        print(f"Description: {profile_data['description']}")
+        print("-" * 100)
+
+        rankings = get_weighted_rankings(profile_data["weights"], top_n=3)
+        print("Top 3 Recommended Formalisms:")
+        for i, (formalism, score) in enumerate(rankings, 1):
+            print(f"  {i}. {formalism:<25} (score: {score:.3f}/5.0)")
+
+    print("\n" + "="*120)
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Generate spider graphs for formalism comparison")
+    parser = argparse.ArgumentParser(
+        description="Generate spider graphs for formalism comparison",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Generate all unweighted graphs
+  python spider_graphs.py --all
+
+  # Show weighted rankings for safety-critical profile
+  python spider_graphs.py --profile safety --table
+
+  # Generate weighted graphs for all profiles
+  python spider_graphs.py --weighted
+
+  # Show all profile recommendations
+  python spider_graphs.py --profiles
+
+  # Custom weights (comma-separated, 8 values)
+  python spider_graphs.py --custom-weights 1,2,3,10,5,4,3,2 --table
+        """
+    )
     parser.add_argument("--individual", action="store_true", help="Generate individual graphs")
     parser.add_argument("--comparisons", action="store_true", help="Generate comparison graphs")
     parser.add_argument("--table", action="store_true", help="Print scores table")
-    parser.add_argument("--all", action="store_true", help="Generate all outputs")
+    parser.add_argument("--all", action="store_true", help="Generate all outputs (unweighted)")
+    parser.add_argument("--weighted", action="store_true", help="Generate weighted graphs for all GM profiles")
+    parser.add_argument("--profiles", action="store_true", help="Print recommendations for all GM profiles")
+    parser.add_argument("--profile", choices=list(GM_PROFILES.keys()),
+                        help="Use specific GM profile for weighted scoring")
+    parser.add_argument("--custom-weights", type=str,
+                        help="Custom weights (comma-separated, 8 values)")
     parser.add_argument("--output", default="diagrams", help="Output directory")
 
     args = parser.parse_args()
 
-    if args.table or args.all:
-        print_scores_table()
+    # Parse custom weights if provided
+    weights = None
+    profile_name = None
 
+    if args.custom_weights:
+        try:
+            weights = [float(w.strip()) for w in args.custom_weights.split(",")]
+            if len(weights) != 8:
+                print(f"Error: Expected 8 weights, got {len(weights)}")
+                exit(1)
+            profile_name = "Custom Weights"
+        except ValueError as e:
+            print(f"Error parsing weights: {e}")
+            exit(1)
+    elif args.profile:
+        weights = GM_PROFILES[args.profile]["weights"]
+        profile_name = GM_PROFILES[args.profile]["name"]
+
+    # Print profiles overview
+    if args.profiles:
+        print_all_profiles()
+
+    # Print table (weighted or unweighted)
+    if args.table or args.all:
+        if weights:
+            print_scores_table(weights, profile_name)
+        else:
+            print_scores_table()
+
+    # Generate graphs
     if args.individual or args.all:
         print("\nGenerating individual spider graphs...")
         plot_all_individual(args.output)
@@ -275,9 +516,16 @@ if __name__ == "__main__":
         print("\nGenerating comparison spider graphs...")
         plot_use_case_comparisons(args.output)
 
-    if not any([args.individual, args.comparisons, args.table, args.all]):
-        # Default: show example comparison
+    if args.weighted:
+        print("\nGenerating weighted spider graphs for all GM profiles...")
+        plot_all_weighted_profiles(args.output)
+
+    # Default behavior if no args provided
+    if not any([args.individual, args.comparisons, args.table, args.all,
+                args.weighted, args.profiles, args.profile, args.custom_weights]):
         print("No arguments provided. Showing example comparison...")
-        print("Use --help to see all options")
+        print("Use --help to see all options\n")
         print_scores_table()
-        plot_comparison(["System Dynamics", "Hybrid Automaton", "Kripke"])
+        print("\nExample GM profile (Safety-Critical):")
+        safety_weights = GM_PROFILES["safety"]["weights"]
+        print_scores_table(safety_weights, GM_PROFILES["safety"]["name"])
