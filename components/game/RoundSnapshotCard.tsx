@@ -97,9 +97,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white mb-0.5 line-clamp-1 break-words">{item.title}</p>
-                      <p className="text-[11px] text-gray-300 leading-tight line-clamp-3 break-words">{item.description}</p>
-                      <p className="text-[10px] text-blue-300 mt-0.5 line-clamp-1 break-words">
+                      <p className="text-xs font-semibold text-white mb-0.5 break-words">{item.title}</p>
+                      <p className="text-[11px] text-gray-300 leading-tight break-words">{item.description}</p>
+                      <p className="text-[10px] text-blue-300 mt-0.5 break-words">
                         <span className="text-blue-100">{item.impact}</span>
                       </p>
                       {item.causes && item.causes.length > 0 && (
@@ -134,7 +134,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
                     <div className="mb-1">
                       <div className="flex items-start justify-between gap-1 mb-0.5">
-                        <span className="font-semibold text-white text-xs line-clamp-1 break-words">{playerAction.roleName}</span>
+                        <span className="font-semibold text-white text-xs break-words">{playerAction.roleName}</span>
                         {hiddenUpdate && (
                           <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
@@ -142,7 +142,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         )}
                       </div>
                       {matchingPlayer && (
-                        <span className="text-[10px] text-amber-400 italic block line-clamp-1 break-words">
+                        <span className="text-[10px] text-amber-400 italic block break-words">
                           {matchingPlayer.role.hiddenObjective}
                         </span>
                       )}
@@ -151,7 +151,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                       {playerAction.actions.length > 0 ? (
                         playerAction.actions.map((action, idx) => (
                           <li key={idx} className="flex justify-between items-start gap-1 text-[11px]">
-                            <span className="leading-tight flex-1 text-gray-300 line-clamp-2 break-words">{action.title}</span>
+                            <span className="leading-tight flex-1 text-gray-300 break-words">{action.title}</span>
                             <span className="flex-shrink-0 text-[10px] font-semibold text-blue-300">{action.cost}AP</span>
                           </li>
                         ))
@@ -274,8 +274,8 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                       >
                         <div className="flex items-start justify-between gap-1.5">
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-xs line-clamp-1 break-words ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
-                            <p className="mt-0.5 text-[11px] leading-tight text-gray-200 line-clamp-2 break-words">{opt.description}</p>
+                            <p className={`font-semibold text-xs break-words ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
+                            <p className="mt-0.5 text-[11px] leading-tight text-gray-200 break-words">{opt.description}</p>
                           </div>
                           <span className="inline-flex items-center text-[10px] font-semibold bg-gray-800 text-blue-300 px-1.5 py-0.5 rounded-full shrink-0">
                             {opt.cost} AP

@@ -45,7 +45,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             }
             <span className="font-semibold text-white whitespace-nowrap">{player.role.name}</span>
           </div>
-          <div className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic truncate max-w-xs">
+          <div className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic break-words max-w-xs">
             {player.role.hiddenObjective}
           </div>
         </div>
