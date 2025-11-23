@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { Navigation } from '@/components/Navigation';
 import MatrixBackground from '@/components/ui/MatrixBackground';
 import ScenarioForm from '@/components/custom-scenario/ScenarioForm';
+import { matrixTheme } from '@/styles/matrixTheme';
 
 function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(max, n)); }
 
@@ -362,18 +363,8 @@ function CustomScenarioPageContent() {
           style={{
             top: 'var(--nav-h, 64px)',
             height: 'calc(100vh - var(--nav-h, 64px))',
-            // CopilotKit CSS variables - Matrix theme
-            ['--copilot-kit-primary-color' as any]: '#34d399',
-            ['--copilot-kit-contrast-color' as any]: '#cbd5e0',
-            ['--copilot-kit-background-color' as any]: '#0a0f1a',
-            ['--copilot-kit-input-background-color' as any]: '#0f1419',
-            ['--copilot-kit-secondary-color' as any]: '#1a1f2e',
-            ['--copilot-kit-secondary-contrast-color' as any]: '#a7f3d0',
-            ['--copilot-kit-separator-color' as any]: 'rgba(52, 211, 153, 0.15)',
-            ['--copilot-kit-muted-color' as any]: '#6b7280',
-            ['--copilot-kit-response-button-color' as any]: '#34d399',
-            ['--copilot-kit-response-button-background-color' as any]: 'rgba(52, 211, 153, 0.1)',
-          } as React.CSSProperties}
+            ...matrixTheme.copilotKit,
+          }}
         >
           <CopilotChat
             makeMarkdownText={true}
