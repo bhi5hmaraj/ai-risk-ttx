@@ -53,7 +53,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   maxRounds,
   scenarioAlreadyPublic,
 }) => (
-  <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-10">
+  <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-12">
     <div className="max-w-[1920px] mx-auto">
       <StatusBar
         gameState={gameState}
