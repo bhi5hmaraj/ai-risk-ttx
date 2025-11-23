@@ -32,3 +32,55 @@
 - [ ] Re-run smoke tests after refactor: start game, complete round, open history/action tree, verify build.
 - [ ] Replace Cytoscape-based action tree with React Flow (`reactflow`), including new component, layout helper, and simplified styling.
 - [ ] Ensure `reactflow` package is installed (`npm install reactflow`) and customize mobile node styles/detail drawer.
+
+---
+
+## Custom Scenario — Compiled Prompt Builder
+- [ ] Build a compiler that turns the form (GameSetup + per-field `comments`) into a single LLM-ready prompt string.
+  - Includes stakeholder `character` notes; drops `publicObjective`.
+  - Enforce `coreMetric.value` ∈ [70, 100].
+  - Deterministic sections: Title, Overview, Core Metric, Stakeholders (character + hidden), Optional: Max Rounds.
+- [ ] Refactor `/custom-scenario` to `react-hook-form` + `useFieldArray` for stakeholders; store comments by field path.
+- [ ] Propagate schema: remove `publicObjective`, add `character` across shared types and prompt generators.
+- [ ] Tests: snapshot compiled prompt outputs using debug prefill as golden samples.
+- [ ] Security: sanitize comments, strip control tokens, and add anti-injection guards in the compiler.
+- [ ] Docs: write a short spec and examples for the compiled prompt format.
+
+### New: Copilot pre-fill for stakeholders (Phase 1.5)
+- [ ] Before compiling and sending to `/api/llm/generate/custom-scenario`, call Copilot to fill any missing stakeholder fields (name, character, hiddenObjective, icon) based on title/overview/core metric.
+  - Inputs: current form state + per-field comments
+  - Output: patched form with empty fields populated; user remains in control (show a diff or soft preview)
+  - Relax validation: roles/character/hiddenObjective optional; allow Copilot to backfill
+- [x] UI: make `character` a multi-line textarea to encourage richer notes
+
+### TODO: Evaluate JSON Forms (jsonforms.io)
+- Decision status: Investigate later; continue with Zod-driven renderer for now.
+
+- Why consider JSON Forms
+  - Declarative UI from JSON Schema + UISchema; reduces hand-written form code
+  - Pluggable renderers (Material/Vanilla), accessibility, i18n, layout system
+  - AJV validation and error mapping out of the box
+  - Ecosystem of custom renderers for arrays, tables, enums, etc.
+
+- Why keep Zod for now
+  - We already use Zod across runtime parsing and types; single source for compile/prompt and Copilot actions
+  - Tight TypeScript integration and safeParse ergonomics in app code
+  - Lower migration risk; no additional theming layer or UISchema to maintain
+
+- Bridge option (if we adopt JSON Forms later)
+  - Generate JSON Schema from Zod using `zod-to-json-schema` and feed it to JSON Forms
+  - Author a small UISchema to control layout/labels; keep Zod as the domain source of truth
+  - Keep AJV in sync with Zod rules; rely on server-side Zod for final validation
+
+- Risks / cons
+  - Extra dependency + bundle size; theming to Tailwind requires work
+  - Zod→JSON Schema conversion is lossy for some refinements/custom checks
+  - Mapping our per-field `comments` UX into JSON Forms requires custom renderer slots
+
+- Rough migration plan (if we greenlight)
+  1) Add `zod-to-json-schema` and a build step that exports Schema + UISchema
+  2) Render `<JsonForms schema uiSchema data onChange>` for `/custom-scenario`
+  3) Write custom renderers for stakeholder arrays and comments alongside fields
+  4) Keep Zod validation at the edges (API + compile), AJV for UI feedback
+
+Beads (bd) plan script: `bash scripts/bd_add_compiled_prompt_plan.sh` to create tasks and dependencies under the existing epic.
