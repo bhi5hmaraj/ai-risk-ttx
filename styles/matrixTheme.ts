@@ -44,8 +44,8 @@ export const matrixTheme = {
     '--copilot-kit-contrast-color': '#cbd5e0',
     '--copilot-kit-background-color': '#0a0f1a',
     '--copilot-kit-input-background-color': '#0f1419',
-    '--copilot-kit-secondary-color': '#1a1f2e',
-    '--copilot-kit-secondary-contrast-color': '#a7f3d0',
+    '--copilot-kit-secondary-color': '#065f46', // Darker emerald for better contrast
+    '--copilot-kit-secondary-contrast-color': '#d1fae5', // Light green text for dark backgrounds
     '--copilot-kit-separator-color': 'rgba(52, 211, 153, 0.15)',
     '--copilot-kit-muted-color': '#6b7280',
     '--copilot-kit-response-button-color': '#34d399',

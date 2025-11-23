@@ -163,3 +163,44 @@ body {
     color: #a7f3d0;
   }
 }
+
+/* CopilotKit Message Bubble Overrides - FORCE BLACK BACKGROUNDS */
+/* Nuclear option: target everything */
+[data-copilot-chat] div[class*="Message"],
+[data-copilot-chat] div[class*="message"],
+[data-copilot-chat] [data-message-role],
+[data-copilot-chat] [data-role],
+.copilotKitMessage,
+.copilot-message,
+[class*="CopilotMessage"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Target all text inside messages */
+[data-copilot-chat] div[class*="Message"] *,
+[data-copilot-chat] div[class*="message"] *,
+[data-copilot-chat] [data-message-role] *,
+[data-copilot-chat] [data-role] * {
+  color: #ffffff !important;
+}
+
+/* Override any inline styles with green backgrounds */
+[data-copilot-chat] [style*="background"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Fix input area */
+[data-copilot-chat] input,
+[data-copilot-chat] textarea {
+  background-color: #0f1419 !important;
+  color: #cbd5e0 !important;
+  border-color: rgba(52, 211, 153, 0.3) !important;
+}
+
+[data-copilot-chat] input::placeholder,
+[data-copilot-chat] textarea::placeholder {
+  color: #6b7280 !important;
+}
