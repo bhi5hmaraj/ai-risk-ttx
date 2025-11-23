@@ -8,10 +8,6 @@ import { useRotatingJoke } from '@/lib/loadingJokes';
 interface RoundSnapshotCardProps {
   gameState: GameState;
   latestLogEntry: GameLogEntry | null;
-  onToggleHistory: () => void;
-  isHistoryOpen: boolean;
-  onViewActionTree: () => void;
-  canViewActionTree: boolean;
   players: any[];
   actionOptions: ActionOption[];
   onConfirmActions: (actions: ActionOption[]) => void;
@@ -26,10 +22,6 @@ interface RoundSnapshotCardProps {
 export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   gameState,
   latestLogEntry,
-  onToggleHistory,
-  isHistoryOpen,
-  onViewActionTree,
-  canViewActionTree,
   players,
   actionOptions,
   onConfirmActions,
@@ -76,38 +68,18 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
     <div className="bg-gray-800 rounded-lg p-2">
       {/* Compact Header */}
       <div className="bg-blue-900/30 border border-blue-700/40 rounded-md p-1.5 mb-1.5">
-        <div className="flex flex-col gap-2">
-          {/* Event details - side by side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Event details - side by side */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <p className="text-xs font-semibold text-blue-200 mb-1">Current Event:</p>
+            <p className="text-xs text-blue-100/90 leading-relaxed">{gameState.currentEvent?.detail ?? gameState.currentEvent?.headline ?? 'Awaiting next event'}</p>
+          </div>
+          {hasLastRound && latestLogEntry?.event && (
             <div>
-              <p className="text-xs font-semibold text-blue-200 mb-1">Current Event:</p>
-              <p className="text-xs text-blue-100/90 leading-relaxed">{gameState.currentEvent?.detail ?? gameState.currentEvent?.headline ?? 'Awaiting next event'}</p>
+              <p className="text-xs font-semibold text-blue-200 mb-1">Last Round:</p>
+              <p className="text-xs text-blue-100/90 leading-relaxed">{latestLogEntry.event.detail ?? latestLogEntry.event.headline}</p>
             </div>
-            {hasLastRound && latestLogEntry?.event && (
-              <div>
-                <p className="text-xs font-semibold text-blue-200 mb-1">Last Round:</p>
-                <p className="text-xs text-blue-100/90 leading-relaxed">{latestLogEntry.event.detail ?? latestLogEntry.event.headline}</p>
-              </div>
-            )}
-          </div>
-          {/* Action buttons - below on mobile, right on desktop */}
-          <div className="flex flex-wrap gap-2 sm:self-end">
-            <button
-              onClick={onToggleHistory}
-              className="px-2 py-1 rounded text-[11px] font-semibold bg-gray-700 hover:bg-gray-600 text-white transition-colors"
-            >
-              {isHistoryOpen ? 'Hide History' : 'View History'}
-            </button>
-            <button
-              onClick={onViewActionTree}
-              disabled={!canViewActionTree}
-              className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
-                canViewActionTree ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              Action Tree
-            </button>
-          </div>
+          )}
         </div>
       </div>
 

@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
-import { ConnectionStatusPill } from '@/components/ConnectionStatus';
 import { GameScreen, LoadingScreen } from '@/screens';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
@@ -143,10 +142,8 @@ export default function GamePage() {
         onOpenAbout={() => router.push('/about')}
         onOpenUpdates={() => router.push('/updates')}
         showFeedback
+        autoCollapse
       />
-      <div className="fixed top-4 right-4 z-50">
-        <ConnectionStatusPill />
-      </div>
       {actionTree}
       {showLoadingOverlay ? (
         <LoadingScreen

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ActionOption, GameLogEntry, GameState, Player } from '../types';
-import { RoundSnapshotCard, EventLog, ActionSelection, GameStatusPanel } from '../components/game';
+import { RoundSnapshotCard, EventLog, ActionSelection, StatusBar } from '../components/game';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -53,30 +53,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   maxRounds,
   scenarioAlreadyPublic,
 }) => (
-  <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-16">
+  <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-10">
     <div className="max-w-[1920px] mx-auto">
-      {error && (
-        <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
-      )}
-      <GameStatusPanel
+      <StatusBar
         gameState={gameState}
         timer={timer}
         isPaused={isPaused}
         onPauseClick={onPauseToggle}
         player={humanPlayer}
-        isCustomScenario={isCustomScenario}
-        onMakePublic={onMakePublic}
-        onOpenFeedback={onOpenFeedback}
         maxRounds={maxRounds}
-        scenarioAlreadyPublic={scenarioAlreadyPublic}
+        onToggleHistory={onToggleHistory}
+        onOpenActionTree={onOpenActionTree}
+        isHistoryOpen={isHistoryOpen}
+        canViewActionTree={canViewActionTree}
       />
+      {error && (
+        <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
+      )}
       <RoundSnapshotCard
         gameState={gameState}
         latestLogEntry={latestLogEntry}
-        onToggleHistory={onToggleHistory}
-        isHistoryOpen={isHistoryOpen}
-        onViewActionTree={onOpenActionTree}
-        canViewActionTree={canViewActionTree}
         players={players}
         actionOptions={actionOptions}
         onConfirmActions={onConfirmActions}
