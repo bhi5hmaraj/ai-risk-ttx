@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { flushSync } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { generateCustomScenario } from '@/services/llmApiClient';
@@ -18,7 +18,7 @@ import ScenarioForm from '@/components/custom-scenario/ScenarioForm';
 
 function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(max, n)); }
 
-export default function CustomScenarioPage() {
+function CustomScenarioPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setGamePath, setCustomScenario: setLobbyCustomScenario, setGameSetup: setLobbyGameSetup, setMaxRounds: setLobbyMaxRounds } = useLobby();
@@ -436,5 +436,22 @@ export default function CustomScenarioPage() {
       <CopilotBindings />
       {content}
     </CopilotProvider>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-6" />
+      <p className="text-xl text-blue-300">Loading scenario builder...</p>
+    </div>
+  );
+}
+
+export default function CustomScenarioPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CustomScenarioPageContent />
+    </Suspense>
   );
 }
