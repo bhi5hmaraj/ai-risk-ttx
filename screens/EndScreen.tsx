@@ -126,7 +126,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
 
             {/* Round Impact Table */}
             <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Round Impact (Score Changes)</p>
+                <p className="text-xs uppercase tracking-wide text-blue-200">Round Impact (Score Δ)</p>
                 <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
                   <div className="inline-block min-w-full align-middle">
                     <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">

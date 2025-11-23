@@ -153,10 +153,10 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
           </div>
         </div>
 
-        {/* SECTION 2: Score Changes */}
+        {/* SECTION 2: Score Δ */}
         <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Changes</p>
+            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
           </div>
           <div className="flex-1 min-w-0">
             {hasLastRound && playerActions.length > 0 ? (
@@ -199,7 +199,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
               </div>
             ) : (
               <div className="bg-blue-950/60 border border-blue-700/30 rounded-md p-3">
-                <p className="text-xs text-blue-100/80 leading-relaxed">Actions and score changes will appear here after the first round.</p>
+                <p className="text-xs text-blue-100/80 leading-relaxed">Actions and score Δ will appear here after the first round.</p>
               </div>
             )}
           </div>
