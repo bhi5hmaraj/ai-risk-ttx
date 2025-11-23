@@ -19,3 +19,132 @@ body {
     text-wrap: balance;
   }
 }
+
+/* CopilotKit Markdown Styling */
+[data-copilot-chat] .copilotKitMarkdown,
+[data-copilot-chat] [class*="markdown"],
+[data-copilot-chat] [class*="Message"] {
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+
+  h1 { font-size: 1.5em; color: #34d399; }
+  h2 { font-size: 1.3em; color: #60a5fa; }
+  h3 { font-size: 1.15em; color: #a78bfa; }
+  h4, h5, h6 { font-size: 1em; color: #e5e7eb; }
+
+  /* Paragraphs */
+  p {
+    margin-bottom: 1em;
+    line-height: 1.6;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  li {
+    margin: 0.25em 0;
+    line-height: 1.5;
+  }
+
+  /* Inline code */
+  code {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: #a78bfa;
+    padding: 0.15em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Code blocks */
+  pre {
+    background-color: #1a1a2e;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 1em;
+    overflow-x: auto;
+    margin: 1em 0;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+    color: #e5e7eb;
+    font-size: 0.875em;
+    line-height: 1.5;
+  }
+
+  /* Links */
+  a {
+    color: #60a5fa;
+    text-decoration: underline;
+    text-decoration-color: rgba(96, 165, 250, 0.3);
+    transition: all 0.2s;
+  }
+
+  a:hover {
+    color: #93c5fd;
+    text-decoration-color: rgba(147, 197, 253, 0.6);
+  }
+
+  /* Bold and italic */
+  strong, b {
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  em, i {
+    font-style: italic;
+    color: #e5e7eb;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 3px solid #34d399;
+    padding-left: 1em;
+    margin: 1em 0;
+    color: #d1d5db;
+    font-style: italic;
+  }
+
+  /* Horizontal rule */
+  hr {
+    border: none;
+    border-top: 1px solid #374151;
+    margin: 1.5em 0;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+
+  th, td {
+    border: 1px solid #374151;
+    padding: 0.5em;
+    text-align: left;
+  }
+
+  th {
+    background-color: rgba(99, 102, 241, 0.1);
+    font-weight: 600;
+  }
+}
