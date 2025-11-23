@@ -73,9 +73,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3">
+    <div className="bg-gray-800 rounded-lg p-2">
       {/* Compact Header */}
-      <div className="bg-blue-900/30 border border-blue-700/40 rounded-md p-2 mb-2">
+      <div className="bg-blue-900/30 border border-blue-700/40 rounded-md p-1.5 mb-1.5">
         <div className="flex flex-col gap-2">
           {/* Event details - side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -112,22 +112,22 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
       </div>
 
       {/* 3 Sections Stacked as Rows */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {/* SECTION 1: Key Moments */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3">
-          <p className="text-xs uppercase tracking-wide text-blue-200 mb-3 font-semibold">Key Moments</p>
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
+          <p className="text-xs uppercase tracking-wide text-blue-200 mb-2 font-semibold">Key Moments</p>
           {hasLastRound && latestLogEntry?.outcomeTimeline?.length ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
               {latestLogEntry.outcomeTimeline.map((item, index) => (
                 <div key={`km_${index}`} className="bg-gray-950/60 border border-blue-800/30 rounded p-2">
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-1.5">
                     <div className="h-4 w-4 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-bold text-[10px] flex items-center justify-center">
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white mb-0.5">{item.title}</p>
-                      <p className="text-[11px] text-gray-300 leading-snug">{item.description}</p>
-                      <p className="text-[10px] text-blue-300 mt-1">
+                      <p className="text-xs font-semibold text-white mb-0.5 line-clamp-1 break-words">{item.title}</p>
+                      <p className="text-[11px] text-gray-300 leading-tight line-clamp-3 break-words">{item.description}</p>
+                      <p className="text-[10px] text-blue-300 mt-0.5 line-clamp-1 break-words">
                         <span className="text-blue-100">{item.impact}</span>
                       </p>
                       {item.causes && item.causes.length > 0 && (
@@ -151,18 +151,18 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 2: Actions & Score Changes */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3">
-          <p className="text-xs uppercase tracking-wide text-blue-200 mb-3 font-semibold">Actions &amp; Score Changes</p>
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
+          <p className="text-xs uppercase tracking-wide text-blue-200 mb-2 font-semibold">Actions &amp; Score Changes</p>
           {hasLastRound && playerActions.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
               {playerActions.map((playerAction) => {
                 const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
                 const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
                 return (
                   <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
                     <div className="mb-1">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="font-semibold text-white text-xs">{playerAction.roleName}</span>
+                      <div className="flex items-start justify-between gap-1 mb-0.5">
+                        <span className="font-semibold text-white text-xs line-clamp-1 break-words">{playerAction.roleName}</span>
                         {hiddenUpdate && (
                           <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
@@ -170,16 +170,16 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         )}
                       </div>
                       {matchingPlayer && (
-                        <span className="text-[10px] text-amber-400 italic block truncate">
+                        <span className="text-[10px] text-amber-400 italic block line-clamp-1 break-words">
                           {matchingPlayer.role.hiddenObjective}
                         </span>
                       )}
                     </div>
-                    <ul className="space-y-0.5">
+                    <ul className="space-y-0.5 mt-1">
                       {playerAction.actions.length > 0 ? (
                         playerAction.actions.map((action, idx) => (
-                          <li key={idx} className="flex justify-between items-start gap-2 text-[11px]">
-                            <span className="leading-snug flex-1 text-gray-300 line-clamp-1">{action.title}</span>
+                          <li key={idx} className="flex justify-between items-start gap-1 text-[11px]">
+                            <span className="leading-tight flex-1 text-gray-300 line-clamp-2 break-words">{action.title}</span>
                             <span className="flex-shrink-0 text-[10px] font-semibold text-blue-300">{action.cost}AP</span>
                           </li>
                         ))
@@ -199,7 +199,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 3: Your Actions */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3 relative">
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 relative">
           {isPaused && (
             <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
               <div className="h-12 w-12 text-blue-400 mb-4">⏸️</div>
@@ -282,7 +282,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5 mb-2">
                   {actionOptions.map((opt) => {
                     const isSelected = selected.some((s) => s.title === opt.title);
                     const canSelect = pointsRemaining >= opt.cost || isSelected;
@@ -292,7 +292,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         type="button"
                         onClick={() => toggleAction(opt)}
                         disabled={!canSelect && !isSelected}
-                        className={`w-full text-left p-2 rounded-md border transition-colors ${
+                        className={`w-full text-left p-1.5 rounded-md border transition-colors ${
                           isSelected
                             ? 'border-blue-500 bg-blue-900/40 shadow-inner'
                             : canSelect
@@ -300,10 +300,10 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                             : 'border-gray-800 bg-gray-900/20 text-gray-500 cursor-not-allowed'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-1.5">
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-xs ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
-                            <p className="mt-1 text-[11px] leading-snug text-gray-200">{opt.description}</p>
+                            <p className={`font-semibold text-xs line-clamp-1 break-words ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
+                            <p className="mt-0.5 text-[11px] leading-tight text-gray-200 line-clamp-2 break-words">{opt.description}</p>
                           </div>
                           <span className="inline-flex items-center text-[10px] font-semibold bg-gray-800 text-blue-300 px-1.5 py-0.5 rounded-full shrink-0">
                             {opt.cost} AP
