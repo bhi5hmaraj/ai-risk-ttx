@@ -15,6 +15,10 @@ interface StatusBarProps {
   onOpenActionTree: () => void;
   isHistoryOpen: boolean;
   canViewActionTree: boolean;
+  onOpenFeedback?: () => void;
+  onMakePublic?: () => void;
+  showMakePublic?: boolean;
+  scenarioAlreadyPublic?: boolean;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -28,6 +32,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onOpenActionTree,
   isHistoryOpen,
   canViewActionTree,
+  onOpenFeedback,
+  onMakePublic,
+  showMakePublic,
+  scenarioAlreadyPublic,
 }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
@@ -35,17 +43,22 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   return (
     <div className="fixed top-0 left-0 right-0 z-30 bg-gray-900/98 backdrop-blur-sm border-b border-gray-800">
-      <div className="max-w-[1920px] mx-auto px-2 py-1.5 flex items-center justify-between gap-2 text-xs">
+      <div className="max-w-[1920px] mx-auto px-2 py-1.5 flex items-center gap-2 text-xs">
+        {/* Simulacra Banner */}
+        <div className="flex-shrink-0">
+          <h1 className="text-base font-bold text-blue-300 whitespace-nowrap">Simulacra</h1>
+        </div>
+
         {/* Left: Role & Hidden Goal */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded flex-shrink-0">
             {typeof player.role.icon === 'function'
               ? player.role.icon({ className: 'h-4 w-4 text-blue-300' })
               : <span className="text-sm">{player.role.icon}</span>
             }
             <span className="font-semibold text-white whitespace-nowrap">{player.role.name}</span>
           </div>
-          <div className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic break-words max-w-xs">
+          <div className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic truncate">
             {player.role.hiddenObjective}
           </div>
         </div>
@@ -77,13 +90,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
         </div>
 
-        {/* Right: History & Action Tree buttons */}
+        {/* Right: Buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             onClick={onToggleHistory}
             className="px-2 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-gray-600 text-white transition-colors whitespace-nowrap"
           >
-            {isHistoryOpen ? 'Hide History' : 'View History'}
+            {isHistoryOpen ? 'Hide' : 'History'}
           </button>
           <button
             onClick={onOpenActionTree}
@@ -92,8 +105,29 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               canViewActionTree ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
             }`}
           >
-            Action Tree
+            Tree
           </button>
+          {onOpenFeedback && (
+            <button
+              onClick={onOpenFeedback}
+              className="px-2 py-1 rounded text-[10px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors whitespace-nowrap"
+            >
+              💬
+            </button>
+          )}
+          {showMakePublic && onMakePublic && (
+            <button
+              onClick={onMakePublic}
+              disabled={scenarioAlreadyPublic}
+              className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors whitespace-nowrap ${
+                scenarioAlreadyPublic
+                  ? 'bg-gray-600 cursor-not-allowed opacity-60 text-gray-400'
+                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+              }`}
+            >
+              {scenarioAlreadyPublic ? '✓' : '📢'}
+            </button>
+          )}
         </div>
       </div>
     </div>

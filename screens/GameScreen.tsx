@@ -66,6 +66,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         onOpenActionTree={onOpenActionTree}
         isHistoryOpen={isHistoryOpen}
         canViewActionTree={canViewActionTree}
+        onOpenFeedback={onOpenFeedback}
+        onMakePublic={onMakePublic}
+        showMakePublic={isCustomScenario}
+        scenarioAlreadyPublic={scenarioAlreadyPublic}
       />
       {error && (
         <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
