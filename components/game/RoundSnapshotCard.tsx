@@ -111,13 +111,13 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
       </div>
 
-      {/* 3 Sections Side by Side */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1.2fr] gap-2">
+      {/* 3 Sections Stacked as Rows */}
+      <div className="flex flex-col gap-3">
         {/* SECTION 1: Key Moments */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
-          <p className="text-[10px] uppercase tracking-wide text-blue-200 mb-2 font-semibold">Key Moments</p>
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3">
+          <p className="text-xs uppercase tracking-wide text-blue-200 mb-3 font-semibold">Key Moments</p>
           {hasLastRound && latestLogEntry?.outcomeTimeline?.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {latestLogEntry.outcomeTimeline.map((item, index) => (
                 <div key={`km_${index}`} className="bg-gray-950/60 border border-blue-800/30 rounded p-2">
                   <div className="flex items-start gap-2">
@@ -151,10 +151,10 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 2: Actions & Score Changes */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2">
-          <p className="text-[10px] uppercase tracking-wide text-blue-200 mb-2 font-semibold">Actions &amp; Score Changes</p>
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3">
+          <p className="text-xs uppercase tracking-wide text-blue-200 mb-3 font-semibold">Actions &amp; Score Changes</p>
           {hasLastRound && playerActions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {playerActions.map((playerAction) => {
                 const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
                 const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
@@ -199,17 +199,17 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 3: Your Actions */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 relative">
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-3 relative">
           {isPaused && (
             <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
               <div className="h-12 w-12 text-blue-400 mb-4">⏸️</div>
               <h3 className="text-xl font-bold">Game Paused</h3>
             </div>
           )}
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-[10px] uppercase tracking-wide text-blue-200 font-semibold">Your Actions</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">
+              <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold">Your Actions</p>
+              <p className="text-xs text-gray-400 mt-1">
                 {availablePoints} AP (max {GAME_CONFIG.MAX_ACTION_POINTS})
               </p>
             </div>
@@ -282,7 +282,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 mb-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-3">
                   {actionOptions.map((opt) => {
                     const isSelected = selected.some((s) => s.title === opt.title);
                     const canSelect = pointsRemaining >= opt.cost || isSelected;
