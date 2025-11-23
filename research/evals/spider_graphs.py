@@ -130,8 +130,7 @@ def plot_single_formalism(formalism_name, save_path=None):
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='radar'))
     fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 
-    scores = FORMALISM_SCORES[formalism_name]
-    scores += scores[:1]  # Close the polygon
+    scores = FORMALISM_SCORES[formalism_name].copy()  # Copy to avoid mutation
 
     ax.plot(theta, scores, color=COLORS[formalism_name], linewidth=2)
     ax.fill(theta, scores, alpha=0.25, color=COLORS[formalism_name])
@@ -167,8 +166,7 @@ def plot_comparison(formalism_list, save_path=None):
     fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 
     for formalism in formalism_list:
-        scores = FORMALISM_SCORES[formalism]
-        scores += scores[:1]  # Close the polygon
+        scores = FORMALISM_SCORES[formalism].copy()  # Copy to avoid mutation
 
         ax.plot(theta, scores, color=COLORS[formalism], linewidth=2, label=formalism)
         ax.fill(theta, scores, alpha=0.15, color=COLORS[formalism])
