@@ -9,6 +9,8 @@ interface EventLogProps {
   canViewActionTree: boolean;
   expandedRound: number | null;
   setExpandedRound: (round: number | null) => void;
+  /** Order of rounds: 'desc' (latest-first, default) or 'asc' (oldest-first). */
+  order?: 'asc' | 'desc';
 }
 
 export const EventLog: React.FC<EventLogProps> = ({
@@ -18,9 +20,13 @@ export const EventLog: React.FC<EventLogProps> = ({
   canViewActionTree,
   expandedRound,
   setExpandedRound,
+  order = 'desc',
 }) => {
   const metricName = gameState.coreMetric.name;
-  const reversedLog = useMemo(() => gameState.eventLog.slice().reverse(), [gameState.eventLog]);
+  const orderedLog = useMemo(() => {
+    const copy = gameState.eventLog.slice();
+    return order === 'asc' ? copy : copy.reverse();
+  }, [gameState.eventLog, order]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 max-h-[50vh] overflow-y-auto">
@@ -38,10 +44,10 @@ export const EventLog: React.FC<EventLogProps> = ({
       </div>
 
       <div className="space-y-4">
-      {reversedLog.map((log, index) => {
+      {orderedLog.map((log, index) => {
         const scoreDelta = log.publicScoreChange;
         const deltaLabel = log.round > 0 ? `${scoreDelta >= 0 ? '+' : ''}${scoreDelta}` : null;
-        const isLastRound = index === reversedLog.length - 1;
+        const isLastRound = index === orderedLog.length - 1;
 
         return (
           <React.Fragment key={log.round}>

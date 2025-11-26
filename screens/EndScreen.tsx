@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChatBubbleLeftIcon, LoadingSpinner } from '../components/Icons';
 import type { GameState, Player } from '../types';
 import { CauseTag } from '../components/game/CauseTag';
+import { EventLog } from '../components/game';
 import type { AIDebriefResponse } from '../server/types/core';
 import { useRotatingJoke } from '@/lib/loadingJokes';
 
@@ -20,6 +21,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   const [debriefLoading, setDebriefLoading] = useState(false);
   const [debriefError, setDebriefError] = useState<string | null>(null);
   const joke = useRotatingJoke(4000);
+  const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
   const impactClass = (impact: string) => {
     const v = (impact || '').toLowerCase();
@@ -408,6 +410,20 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             )}
           </div>
         )}
+
+        {/* Full Event Log across all rounds */}
+        <div className="bg-gray-800 rounded-lg p-4 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold mb-3">All Rounds — Event Log</h2>
+          <EventLog
+            gameState={gameState}
+            players={players}
+            onViewActionTree={() => { /* disabled on End screen; action tree handled by page */ }}
+            canViewActionTree={false}
+            expandedRound={expandedRound}
+            setExpandedRound={setExpandedRound}
+            order="asc"
+          />
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
