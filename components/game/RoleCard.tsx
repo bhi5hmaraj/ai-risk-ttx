@@ -12,7 +12,10 @@ export const RoleCard: React.FC<RoleCardProps> = ({ role, onSelect, isSelected }
   <div className={`bg-gray-800 rounded-lg p-6 border-2 transition-all duration-300 ease-in-out ${isSelected ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-700 hover:border-blue-600'}`}>
     <div className="flex items-center mb-4">
       <div className="bg-gray-700 p-2 rounded-md mr-4">
-        {role.icon({ className: 'h-8 w-8 text-blue-400' })}
+        {typeof role.icon === 'function'
+          ? role.icon({ className: 'h-8 w-8 text-blue-400' })
+          : <span className="text-3xl">{role.icon}</span>
+        }
       </div>
       <h3 className="text-2xl font-bold text-white">{role.name}</h3>
     </div>

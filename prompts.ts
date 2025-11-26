@@ -1,5 +1,5 @@
 import { RoleName } from './types/core';
-import type { GameState, Player, ActionOption, PlayerRoundActions } from './types/core';
+import type { GameState, Player, ActionOption, PlayerRoundActions, GameSetup } from './types/core';
 import { GAME_CONFIG } from "./gameConfig";
 
 // Number of roles in the game (avoids importing React-dependent constants.tsx)
@@ -21,6 +21,19 @@ const AIConsequenceResponseSchema = {
           title: { type: "string", description: "A short label for the moment." },
           description: { type: "string", description: "1-2 sentences describing what happened during this beat." },
           impact: { type: "string", description: "A concise explanation of how this beat affected the core metric or player goals." },
+          causes: {
+            type: "array",
+            description: "Optional causal citations explaining why this beat happened, linking to prior events or actions.",
+            items: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["event", "action", "exogenous"], description: "What is being cited (prior event, player action, or external factor)." },
+                ref: { type: "string", description: "Reference id or descriptor (e.g., prior event id or 'Role:Action@Round')." },
+                rationale: { type: "string", description: "Short explanation of the causal link." }
+              },
+              required: ["type", "ref", "rationale"],
+            }
+          },
         },
         required: ['title', 'description', 'impact'],
       },
@@ -149,7 +162,7 @@ const AITurnSchema = {
   required: ['options', 'chosenActions', 'reasoning']
 } as const;
 
-const GameSetupSchema = {
+const buildGameSetupSchema = (maxAIPlayers: number) => ({
     type: "object",
     properties: {
         scenarioTitle: { type: "string", description: "A short, catchy title for the scenario." },
@@ -159,15 +172,15 @@ const GameSetupSchema = {
             properties: {
                 name: { type: "string", description: "The name of the central score for this scenario (e.g., 'Public Trust', 'Market Stability')." },
                 description: { type: "string", description: "A brief explanation of what this score represents." },
-                initialValue: { type: "number", description: "The starting value for the score, typically between 70 and 100." }
+                value: { type: "number", description: "The starting value for the score, typically between 70 and 100." }
             },
-            required: ['name', 'description', 'initialValue']
+            required: ['name', 'description', 'value']
         },
         stakeholders: {
             type: "array",
-            description: "A list of 4 to 6 relevant and distinct stakeholder roles for this scenario.",
-            minItems: 4,
-            maxItems: 6,
+            description: `A list of 5 to ${1 + maxAIPlayers} relevant and distinct stakeholder roles for this scenario. Include a balanced cast with both protagonists and antagonists, and mix individuals and institutions.`,
+            minItems: 5,
+            maxItems: 1 + maxAIPlayers,
             items: {
                 type: "object",
                 properties: {
@@ -181,7 +194,7 @@ const GameSetupSchema = {
         }
     },
     required: ['scenarioTitle', 'scenarioDescription', 'coreMetric', 'stakeholders']
-} as const;
+} as const);
 
 
 /**
@@ -192,17 +205,19 @@ export const getInitialScenarioPromptAndSchema = () => {
     const prompt = `
       You are a master storyteller and the Game Master for 'Crisis Command', a serious simulation game.
       Your primary task is to establish a tense, realistic, and thought-provoking starting scenario.
-      The game begins with the 'Democratic Legitimacy' score at a fragile 100.
+      The game begins with the core metric at a fragile 100. Do not assume a specific metric name; choose a scenario-appropriate one (e.g., "Global Stability", "Public Trust").
 
       Tell the story in a way that players can scan quickly:
       - Use the 'roundSummary' field for a tight plain-language recap (no more than 3 sentences).
-      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects Democratic Legitimacy or the players.
+      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects the core metric or the players.
       - The 'counterfactualNote' should begin with "If no one had acted..." and briefly explain the expected score change (remember, this is the first round so reference the escalating crisis rather than player decisions).
 
       Here are your strict instructions for the response:
       1.  Generate that structured summary plus a specific, actionable crisis event.
       2.  The 'publicScoreUpdate' field MUST be a significant negative integer. A value between -15 and -25 is ideal to create immediate tension. The game will start at (100 + this value).
       3.  For the 'hiddenScoreUpdates', every role MUST be present. Each must have an 'update' of 0 and a 'justification' of 'Game start.'. This is a non-negotiable setup requirement.
+
+      Fairness & Neutrality: Avoid national/ethnic stereotyping or default moral judgments. If geopolitical actors are involved (e.g., US, China, EU), frame causes and risks in terms of concrete actions/decisions, not identity.
 
       You must respond ONLY with a single, valid JSON object that conforms to the provided schema. Do not include any explanatory text or markdown formatting outside of the JSON structure.
     `;
@@ -218,9 +233,32 @@ export const getInitialScenarioPromptAndSchema = () => {
  */
 export const getConsequencesPromptAndSchema = (gameState: GameState, players: Player[], counterfactualScoreChange: number) => {
     const playerActionsText = players.map(p => {
-        const actionTitles = p.actions.length > 0 ? p.actions.map(a => a.title).join(", ") : 'Took no action';
+        const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
         return `  - ${p.role.name} (Secret Goal: ${p.role.hiddenObjective}): ${actionTitles}.`
     }).join("\n");
+
+    const historyBlocks = (gameState.eventLog || [])
+      .filter(e => (e.round ?? 0) > 0 && e.round < gameState.round)
+      .map(e => {
+        const actions = (e.playerActions || [])
+          .map(pa => {
+            const titles = (pa.actions || []).map(a => a.title).join('; ');
+            return `    <actor name="${pa.roleName}" human="${pa.isHuman}">${titles || 'none'}</actor>`;
+          })
+          .join('\n');
+        return [
+          `<round n="${e.round}">`,
+          `  <headline>${e.event?.headline || ''}</headline>`,
+          `  <summary>${e.roundSummary}</summary>`,
+          `  <publicScoreChange>${e.publicScoreChange}</publicScoreChange>`,
+          `  <publicScoreAfter>${e.publicScoreAfter}</publicScoreAfter>`,
+          `  <actions>`,
+          actions,
+          `  </actions>`,
+          `</round>`
+        ].join('\n');
+      })
+      .join('\n');
 
     const prompt = `
       You are the Game Master for 'Crisis Command', and you are the impartial arbiter of consequences.
@@ -234,9 +272,27 @@ export const getConsequencesPromptAndSchema = (gameState: GameState, players: Pl
       PLAYER ACTIONS TAKEN:
       ${playerActionsText}
 
+      PRIOR ROUND HISTORY (use for long‑horizon causes):
+      <rounds>
+${historyBlocks || '        <!-- no prior rounds -->'}
+      </rounds>
+
       Now, determine the outcome. Your response must be logical and fair.
+      FAIRNESS & NEUTRALITY (MUST FOLLOW):
+      - Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
+      - Avoid stereotypes or blanket judgments (e.g., anti-Chinese framing, or always praising a particular role like an AI alignment researcher by default).
+      - Assign credit/blame ONLY for concrete actions or inaction in THIS round.
+      - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
       2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
+          For each beat, when applicable, add 'causes' entries that cite why it happened by referencing:
+            • prior events (use their id or exact headline) or
+            • specific player actions from this round or previous rounds.
+          - For action causes, set ref to "Role:Exact Action Title@Round" and write a mechanism‑focused rationale (what changed, how it propagated, over what timeframe).
+          - For event causes, use the prior event id or exact headline and explain the causal link (not just correlation).
+          - Keep rationales specific (1–2 sentences) and avoid repeating the same generic text.
+          - Keep each causes.rationale concise (<= 180 characters).
+          - Consider long‑horizon dependencies: include at least one root‑cause citation from earlier rounds when appropriate, not only immediate antecedents. You may reference data from the <rounds> XML blocks above.
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
       5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
@@ -270,6 +326,8 @@ export const getAIPlayerActionsPromptAndSchema = (player: Player, gameState: Gam
       YOUR TASK:
       From the list of available actions below, select a combination that adds up to your action point budget and best serves your HIDDEN objective. You can use your public objective as a cover.
 
+      Fairness note: Do not assume benevolence or malice based on identity (nationality, ideology, profession). Choose strictly on how options advance your hidden objective within the current situation.
+
       AVAILABLE ACTIONS:
 ${optionsText}
 
@@ -294,7 +352,9 @@ export const getActionOptionsPromptAndSchema = (player: Player, gameState: GameS
                 const actionTitles = pa.actions.length > 0 ? pa.actions.map(a => a.title).join(", ") : 'Took no action';
                 return `  - ${pa.roleName}: ${actionTitles}.`
             }).join("\n");
-    }
+}
+
+// Note: Copilot instructions moved to client-safe file: '@/copilot/instructions'
 
     const prompt = `
       You are the Game Master for 'Crisis Command'. Your task is to generate a set of 5 distinct, strategic action options for a player. These options are their primary way of interacting with the game world.
@@ -314,16 +374,187 @@ ${previousActionsText}
       1.  **Create 5 Unique Options:** The options must be genuinely different from each other. Avoid simple rephrasings.
       2.  **Ensure Coherence:** The new options should be a logical evolution from the previous round's actions. They should react to, build upon, or counter what happened before. Do not suggest actions that are functionally identical to what was done last round.
       3.  **Tailor to the Role:** The actions must feel authentic to the player's role. A Tech CEO has different capabilities than a Journalist.
-      4.  **Create Strategic Tension:** Design the options to create a difficult choice.
+      4.  **Create Strategic Tension (without ideological bias):** Design the options to create a difficult choice.
           - At least two options should clearly serve the public objective.
           - At least two should subtly serve the hidden objective.
           - One option could be a high-risk/high-reward gamble, a compromise, or an unconventional idea.
-      5.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
-      6.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
+      5.  **Fairness & Neutrality:** Avoid privileging a specific ideology or faction by default. The attractiveness of an option must come from its trade-offs in this situation, not the role's identity.
+      6.  **Assign Logical Costs:** Each action must have a cost from 1 to ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}. More impactful or complex actions should cost more.
+      7.  **Write Clear Descriptions:** The description should help the player understand the action's intent and potential effects without revealing the exact mechanical outcome.
 
       Respond ONLY with a valid JSON object matching the provided schema.
     `;
     return { prompt, schema: AIActionOptionsResponseSchema };
+};
+
+/** CHAT MODE PROMPTS **/
+
+export const getInitialScenarioChatPrompt = () => {
+  return `Begin the simulation by generating the opening crisis scenario.
+
+You must provide:
+1. **roundSummary**: 2-3 sentence overview of the starting crisis
+2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats)
+3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
+4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
+5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
+6. **nextEvent**: The first actionable crisis the players will face
+
+Fairness & Neutrality (must follow):
+- Avoid national/ethnic stereotyping or default moral judgments.
+- If geopolitical actors are involved (e.g., US, China, EU), attribute causes/risks to concrete actions or decisions, not identity.
+- Do not implicitly praise or condemn specific roles by default. Let actions drive tone.`;
+};
+
+export const getChatConsequencesPrompt = (
+  gameState: GameState,
+  players: Player[],
+  counterfactualScoreChange: number
+) => {
+  const playerActionsText = players
+    .map(p => {
+      const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
+      return `- **${p.role.name}**: ${actionTitles}`;
+    })
+    .join("\n");
+
+  const historyBlocks = (gameState.eventLog || [])
+    .filter(e => (e.round ?? 0) > 0 && e.round < gameState.round)
+    .map(e => {
+      const actions = (e.playerActions || [])
+        .map(pa => {
+          const titles = (pa.actions || []).map(a => a.title).join('; ');
+          return `    <actor name="${pa.roleName}" human="${pa.isHuman}">${titles || 'none'}</actor>`;
+        })
+        .join('\n');
+      return [
+        `<round n="${e.round}">`,
+        `  <headline>${e.event?.headline || ''}</headline>`,
+        `  <summary>${e.roundSummary}</summary>`,
+        `  <publicScoreChange>${e.publicScoreChange}</publicScoreChange>`,
+        `  <publicScoreAfter>${e.publicScoreAfter}</publicScoreAfter>`,
+        `  <actions>`,
+        actions,
+        `  </actions>`,
+        `</round>`
+      ].join('\n');
+    })
+    .join('\n');
+
+  return `# Round ${gameState.round} - Determine Consequences
+
+## Current Status
+- **${gameState.coreMetric.name}**: ${gameState.coreMetric.value}
+- **Crisis**: "${gameState.currentEvent?.headline}"
+${gameState.currentEvent?.detail}
+
+## Player Actions This Round
+${playerActionsText}
+
+## Prior Round History (XML blocks)
+<rounds>
+${historyBlocks || '  <!-- no prior rounds -->'}
+</rounds>
+
+## Counterfactual Analysis
+If no one had acted, the ${gameState.coreMetric.name} would have changed by **${counterfactualScoreChange}** points.
+
+## Output (Structured)
+Return a JSON object matching this structure:
+- roundSummary (string)
+- outcomeTimeline (array of 3-5 items), each item has:
+   - title (string)
+   - description (string)
+   - impact (string)
+   - causes (optional, array) with entries: { type: 'event'|'action'|'exogenous', ref: string, rationale: string }
+- counterfactualNote (string)
+- publicScoreUpdate (number)
+- hiddenScoreUpdates (array, one per role)
+- nextEvent { headline, detail }
+
+Fairness & Neutrality (must follow):
+- Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
+- Avoid stereotypes or blanket judgments; assign credit/blame only for concrete actions this round.
+- Hidden score updates must be action-justified.
+
+Long‑horizon dependencies (must consider):
+  - When selecting causes, include immediate antecedents and, when relevant, a root‑cause from earlier rounds using the <rounds> XML blocks above.
+  - For action refs use "Role:Exact Action Title@Round"; for events include the original round in the ref if possible (e.g., evt_r2_k1 or "Exact Headline @Round 2").
+  - Keep each causes.rationale concise (<= 180 characters).
+`;
+};
+
+export const getDebriefPrompt = (
+  gameState: GameState,
+  players: Player[],
+  humanRoleName?: string,
+  gameSetup?: GameSetup
+) => {
+  const human = humanRoleName || players.find(p => (p as any).isHuman)?.role.name || 'Human Player';
+  const outcome = `${gameState.coreMetric.name}: ${gameState.coreMetric.value}`;
+
+  const realEntries = gameState.eventLog.filter((e: any) => (e.round ?? 0) > 0 && (gameState.round ? e.round <= gameState.round : true));
+  const allowedRounds = realEntries.map((e: any) => e.round);
+  const roundsList = realEntries.map((e: any) => `Round ${e.round}: ${e.event?.headline || 'N/A'} (Δ ${e.publicScoreChange})`).join('\n');
+
+  const actionsByRole = new Map<string, { round: number; titles: string[] }[]>();
+  for (const entry of realEntries) {
+    for (const pra of entry.playerActions || []) {
+      const arr = actionsByRole.get(pra.roleName) ?? [];
+      arr.push({ round: entry.round, titles: (pra.actions || []).map((a: any) => a.title) });
+      actionsByRole.set(pra.roleName, arr);
+    }
+  }
+
+  const humanActionsList = (actionsByRole.get(human) || [])
+    .flatMap(a => a.titles.map(t => `Round ${a.round}: ${t}`));
+  const actionsText = `Human (${human}): ${humanActionsList.join(', ') || 'no recorded actions'}`;
+
+  const roleCounts: string[] = [];
+  const roleSummaries: string[] = [];
+  for (const p of players) {
+    const arr = actionsByRole.get(p.role.name) || [];
+    const count = arr.reduce((sum, rr) => sum + rr.titles.length, 0);
+    roleCounts.push(`${p.role.name}: ${count}`);
+    const perRound = arr.map(rr => `Round ${rr.round}: [${rr.titles.join('; ')}]`).join(' | ');
+    roleSummaries.push(`${p.role.name} => ${perRound || 'no recorded actions'}`);
+  }
+
+  const setupBlock = gameSetup ? `SETUP SUMMARY (initial conditions only):\n` +
+    `Scenario: ${gameSetup.scenarioTitle}\n${gameSetup.scenarioDescription}\n` +
+    `Core Metric (initial): ${gameSetup.coreMetric.name} — ${gameSetup.coreMetric.description} (start ${gameSetup.coreMetric.value})\n` +
+    `Stakeholders:\n` +
+    gameSetup.stakeholders.map(s => `- ${s.name}: Public="${s.publicObjective}" | Hidden="${s.hiddenObjective}"`).join('\n') +
+    `\n\n` : '';
+
+  return `You are debriefing the just-completed Simulacra simulation. Provide a structured debrief.
+
+FINAL OUTCOME: ${outcome}
+
+${setupBlock}
+ALLOWED_ROUNDS: [${allowedRounds.join(', ')}]
+ROUND HEADLINES (only these rounds exist):
+${roundsList}
+
+HUMAN ACTIONS BY ROUND (choose only from these):
+${actionsText}
+
+ROLE ACTION COUNTS: { ${roleCounts.join('; ')} }
+ROLE ACTIONS BY ROUND:
+${roleSummaries.join('\n')}
+
+CONSTRAINTS (MUST FOLLOW):
+- Do NOT reference any rounds that are not listed in ALLOWED_ROUNDS.
+- If there are fewer than 3 rounds, return at most that many keyEvents.
+- userActions must reference the human's recorded actions above. If NONE exist, userActions may be an empty array.
+- Do NOT state that "no actions were taken" for any role whose ROLE ACTION COUNTS is greater than 0.
+- For each keyEvent, include an "actor" field with the primary stakeholder responsible (choose from the Stakeholders list above). If no stakeholder primarily caused the event, set actor = "System".
+- For each keyEvent, OPTIONALLY include a "causes" array citing the specific prior events or actions that led to this decisive moment. Each cause must be:
+  * type: "event" (for a prior round's headline), "action" (for a player action), or "exogenous" (for external/systemic factors)
+  * ref: For "event", use the event headline. For "action", use format "RoleName:ActionTitle@RoundNumber". For "exogenous", use a brief descriptor.
+  * rationale: A short explanation of why this cause was significant (1-2 sentences)
+
+Respond using the required schema.`;
 };
 
 export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
@@ -343,7 +574,9 @@ export const getCounterfactualPromptAndSchema = (gameState: GameState) => {
     return { prompt, schema: AICounterfactualResponseSchema };
 };
 
-export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) => {
+export const getCustomScenarioPromptAndSchema = (scenarioDescription: string, aiPlayers?: number) => {
+    const desiredAI = Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, Math.floor(aiPlayers ?? GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM)));
+    const stakeholdersMax = 1 + desiredAI;
     const prompt = `
       You are a world-class Game Designer and Storyteller. Your task is to take a user's idea for a crisis and transform it into a complete, playable setup for a strategic simulation game.
 
@@ -356,17 +589,22 @@ export const getCustomScenarioPromptAndSchema = (scenarioDescription: string) =>
       1.  **Scenario Title & Description:** Invent a catchy, evocative title and write a compelling one-paragraph description that sets the scene and establishes the stakes.
       2.  **Core Metric:**
           -   Invent a central game score that is thematic to the scenario. Instead of "Democratic Legitimacy," it could be "Global Economic Stability," "Public Health Confidence," or "Inter-species Trust."
-          -   The 'initialValue' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
-      3.  **Stakeholders (4-6 Roles):**
-          -   Create a cast of 4 to 6 distinct, believable stakeholder roles. These should be the key players in the crisis.
-          -   **Crucially, their objectives must create tension and potential conflict.** Give them reasons to disagree and compete.
+          -   The 'value' MUST be an integer between 70 and 100. This represents a high but fragile starting point.
+      3.  **Stakeholders (target ${stakeholdersMax} roles):**
+          -   Create a cast of between 5 and ${stakeholdersMax} distinct, believable stakeholder roles (prefer exactly ${stakeholdersMax} when plausible). These should be the key players in the crisis.
+          -   Include a balanced mix:
+              • 2–3 protagonists (public‑minded)
+              • 1–2 antagonists/adversaries (e.g., rival state operator, troll‑farm lead, rogue executive)
+              • 1 neutral/referee/regulator role that may constrain others
+          -   Stakeholders can be individuals (e.g., "Chief Epidemiologist"), institutions (e.g., "National Grid Operator"), or organized adversaries (e.g., "Disinformation Cell Director"). Choose what best fits the scenario.
+          -   Do NOT make everyone cooperative; ensure at least one stakeholder is structurally opposed to the others so the game has real conflict.
           -   For each role's 'icon', choose a SINGLE emoji that visually represents their role or domain. Examples: 🔬 (scientist), 💼 (executive), 🏥 (medical), ⚖️ (legal/regulatory), 🎖️ (military), 🏭 (industrial), 🌍 (environmental), 📡 (communications), 🛡️ (security), 💊 (pharmaceutical), etc. The emoji should be intuitive and immediately recognizable.
           -   The 'publicObjective' should be what they say they want in press conferences.
           -   The 'hiddenObjective' should be their true, often selfish or controversial, goal. This is the key to strategic gameplay. Avoid generic goals; make them specific and compelling.
 
       Be creative, insightful, and strategic in your design. The quality of the game depends on the rich conflict you build into this setup.
     `;
-    return { prompt, schema: GameSetupSchema };
+    return { prompt, schema: buildGameSetupSchema(desiredAI) };
 };
 
 /**

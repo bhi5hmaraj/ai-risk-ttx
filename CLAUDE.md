@@ -23,8 +23,8 @@ npx prisma migrate dev   # Run database migrations (requires DATABASE_URL)
 
 ### Development
 ```bash
-npm run dev              # Start development server (Vercel CLI - for API routes)
-npm run dev:vite         # Start with plain Vite (no API routes)
+npm run dev              # Start Vite dev server (frontend only)
+./dev.sh                 # Start with Vercel (frontend + API routes)
 npm run build            # Production build
 npm run preview          # Preview production build locally
 

@@ -1,0 +1,4 @@
+# Expanded search results in commit messages
+# Patterns: colyseus|coleseyus|websocket|ws-transport|matchmaker|express|gamer?oom|server/index\.ts|server\.ts|room code|cloud run|admin/rooms|next handler
+# Generated: 2025-11-24T23:45:29+05:30
+

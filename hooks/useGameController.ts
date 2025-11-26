@@ -5,18 +5,16 @@ import type {
   RoleData,
   ActionOption,
   GameLogEntry,
-  HiddenScoreUpdate,
-  AIHiddenScoreUpdate,
   GameSetup,
   CoreMetric,
   PlayerRoundActions,
 } from '../types';
 import { GamePhase } from '../types';
 import { ROLES, GAME_CONFIG } from '../constants';
+import { clampScore, createInitialGameStateFromScenario, applyConsequences } from '../lib/gameLogic';
+import { buildRolesFromSetup as buildRolesFromSetupHelper, selectInitialPlayers, createCanonicalSetup } from '../lib/gameSetup';
 import { AI_SAFETY_SCENARIO } from '../presets';
 import {
-  generateInitialScenario,
-  generateConsequences,
   generateActionOptions,
   generateCounterfactualConsequences,
   generateCustomScenario,
@@ -24,6 +22,12 @@ import {
   generateInitialScenarioChat,
   generateConsequencesChat,
 } from '../services/llmApiClient';
+import { SessionService } from '@/services/SessionService';
+import { useGameActions as useModularGameActions } from '@/hooks/useGameActions';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useGameStore } from '@/stores/gameStore';
+import { useUIStore } from '@/stores/uiStore';
+import { useRoundOptions } from '@/hooks/useRoundOptions';
 
 const DEFAULT_CORE_METRIC: CoreMetric = {
   name: 'Democratic Legitimacy',
@@ -31,35 +35,57 @@ const DEFAULT_CORE_METRIC: CoreMetric = {
   value: 100,
 };
 
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+// clampScore imported from lib/gameLogic
 
 export const useGameController = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    phase: GamePhase.LOBBY,
-    round: 0,
-    coreMetric: { ...DEFAULT_CORE_METRIC },
-    eventLog: [],
-    currentEvent: null,
-  });
-  const [players, setPlayers] = useState<Player[]>([]);
+  const gameState = useGameStore((s) => s.gameState);
+  const players = useGameStore((s) => s.players);
+  const setGameStateStore = useGameStore((s) => s.setGameState);
+  const setPlayersStore = useGameStore((s) => s.setPlayers);
+  const resetGameStore = useGameStore((s) => s.reset);
   const [selectedRoleName, setSelectedRoleName] = useState<string | null>(null);
   const [gamePath, setGamePath] = useState<'classic' | 'custom' | 'ai_safety' | null>(null);
-  const [gameSetup, setGameSetup] = useState<GameSetup | null>(null);
+  const gameSetup = useGameStore((s) => s.gameSetup);
+  const setGameSetupStore = useGameStore((s) => s.setGameSetup);
+  const setGameSetup = setGameSetupStore;
   const [customScenario, setCustomScenario] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(GAME_CONFIG.ACTION_PHASE_SECONDS);
   const [isPaused, setIsPaused] = useState(false);
-  const geminiCallsThisRoundRef = useRef(0);
+  // Tracks number of AI (LLM) API calls in the current round
+  const llmCallsThisRoundRef = useRef(0);
   const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
+  const actionReqInFlightRef = useRef(false);
   const [aiCompletionStatus, setAiCompletionStatus] = useState<Record<string, boolean>>({});
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
+  // sessionStreamRef removed - SSE now managed by SessionMonitor component
+  // Backend mode always on
+  const { sessionMeta, setSessionMeta, setStartIntent, clear: clearSessionStore } = useSessionStore();
+  const setStartStep = useUIStore((s) => s.setStartStep);
+  const resetUI = useUIStore((s) => s.reset);
+
+  // wrappers so existing code continues to work
+  const setGameState = useCallback(
+    (next: GameState | ((prev: GameState) => GameState)) => setGameStateStore(next as any),
+    [setGameStateStore]
+  );
+  const setPlayers = useCallback(
+    (next: Player[] | ((prev: Player[]) => Player[])) => setPlayersStore(next as any),
+    [setPlayersStore]
+  );
 
   // Chat history for maintaining conversation context (managed client-side, sent to backend)
   const chatHistoryRef = useRef<any[] | null>(null);
+
+  // Modular actions (compat shim): allow pages to keep using useGameController while we migrate
+  const { handleStartGame: modularStart, handleConfirmActions: modularConfirm } = useModularGameActions();
+
+  // Round options hook (must be called at top level, not in useEffect)
+  const { loadHumanOptions } = useRoundOptions();
 
   const humanPlayer = useMemo(() => players.find((p) => p.isHuman), [players]);
   const latestLogEntry = useMemo(
@@ -82,13 +108,11 @@ export const useGameController = () => {
     [expandedRound, gameState.eventLog, latestLogEntry]
   );
 
-  const convertAiUpdatesToRecord = (updates: AIHiddenScoreUpdate[]): Record<string, HiddenScoreUpdate> => {
-    return Object.fromEntries(updates.map((item) => [item.roleName, { update: item.update, justification: item.justification }]));
-  };
+  // No local converters; use helpers in lib/gameLogic where needed
 
-  const callGeminiAndCount = useCallback(
+  const callLLMAndCount = useCallback(
     async <T extends (...args: any[]) => Promise<any>>(apiFunc: T, ...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | null> => {
-      geminiCallsThisRoundRef.current += 1;
+      llmCallsThisRoundRef.current += 1;
       const result = await apiFunc(...args);
       if (result === null) {
         setError('An API call to the AI model failed. Check the console for details.');
@@ -100,8 +124,7 @@ export const useGameController = () => {
   );
 
   const resetState = useCallback(() => {
-    setGameState({ phase: GamePhase.LOBBY, round: 0, coreMetric: { ...DEFAULT_CORE_METRIC }, eventLog: [], currentEvent: null });
-    setPlayers([]);
+    resetGameStore();
     setSelectedRoleName(null);
     setGamePath(null);
     setGameSetup(null);
@@ -111,13 +134,16 @@ export const useGameController = () => {
     setActionOptions([]);
     setIsPaused(false);
     setAiCompletionStatus({});
-    geminiCallsThisRoundRef.current = 0;
+    llmCallsThisRoundRef.current = 0;
     setIsActionTreeOpen(false);
     setIsHistoryOpen(false);
     setExpandedRound(null);
     // Clean up chat history
     chatHistoryRef.current = null;
-  }, []);
+    try { setStartIntent(false); } catch {}
+    try { clearSessionStore(); } catch {}
+    try { resetUI(); } catch {}
+  }, [resetGameStore, clearSessionStore, setStartIntent]);
 
   const handleCustomGameStart = useCallback(async () => {
     if (!customScenario.trim()) return;
@@ -136,253 +162,61 @@ export const useGameController = () => {
     setLoadingMessage('');
   }, [customScenario]);
 
-  const runConsequencePhase = useCallback(
-    async (currentPlayers: Player[], currentGameState: GameState) => {
-      setIsLoading(true);
+  // Pruned: consequence logic handled by modular useGameActions
+  const runConsequencePhase = useCallback((currentPlayers: Player[], currentGameState: GameState) => {
+    console.warn('[useGameController] runConsequencePhase is deprecated; use useGameActions instead.');
+  }, []);
 
-      let playersWithActions = [...currentPlayers];
-      const aiPlayers = currentPlayers.filter((p) => !p.isHuman);
+  // Pruned: confirm logic handled by modular useGameActions
+  const handleConfirmActions = useCallback((actions: ActionOption[]) => {
+    console.warn('[useGameController] handleConfirmActions is deprecated; use useGameActions instead.');
+  }, []);
 
-      const initialStatus = Object.fromEntries(aiPlayers.map((p) => [p.role.name, false]));
-      setAiCompletionStatus(initialStatus);
-
-      setLoadingMessage('AI Game Master is assessing the situation...');
-      const counterfactualPromise = callGeminiAndCount(generateCounterfactualConsequences, currentGameState);
-
-      const previousRoundLog = currentGameState.eventLog.find((entry) => entry.round === currentGameState.round - 1);
-      const previousRoundActions = previousRoundLog ? previousRoundLog.playerActions : null;
-
-      // OPTIMIZED: Use single generateAITurn call instead of separate options + actions
-      let aiTurnResults: (Awaited<ReturnType<typeof generateAITurn>> | null)[] = [];
-
-      if (aiPlayers.length > 0) {
-        setLoadingMessage('AI players are analyzing and choosing their actions...');
-        const aiTurnPromises = aiPlayers.map((player) =>
-          callGeminiAndCount(generateAITurn, player, currentGameState, previousRoundActions).then((result) => {
-            setAiCompletionStatus((prev) => ({ ...prev, [player.role.name]: true }));
-            return result;
-          })
-        );
-        aiTurnResults = await Promise.all(aiTurnPromises);
-
-        if (aiTurnResults.some((r) => r === null)) {
-          setError('Failed to generate AI player turns. The simulation cannot continue.');
-          setIsLoading(false);
-          setLoadingMessage('');
-          return;
-        }
-
-        const aiActionsByRole: Record<string, ActionOption[]> = {};
-        aiPlayers.forEach((player, index) => {
-          aiActionsByRole[player.role.name] = aiTurnResults[index]?.chosenActions || [];
-        });
-
-        playersWithActions = currentPlayers.map((p) => {
-          if (!p.isHuman && aiActionsByRole[p.role.name]) {
-            return { ...p, actions: aiActionsByRole[p.role.name], hasSubmittedActions: true };
-          }
-          return p;
-        });
-      }
-
-      setPlayers(playersWithActions);
-
-      setLoadingMessage('AI Game Master is processing the consequences...');
-      const counterfactualResult = await counterfactualPromise;
-      if (!counterfactualResult) {
-        setError('The AI Game Master failed to calculate the counterfactual. The simulation cannot continue.');
-        setIsLoading(false);
-        setLoadingMessage('');
-        return;
-      }
-
-      // Use chat mode if enabled and history exists
-      let result;
-      if (GAME_CONFIG.USE_CHAT_MODE && chatHistoryRef.current && gameSetup) {
-        const chatResult = await callGeminiAndCount(
-          () => generateConsequencesChat(
-            currentGameState,
-            playersWithActions,
-            counterfactualResult.publicScoreUpdate,
-            chatHistoryRef.current!,
-            gameSetup
-          )
-        );
-
-        if (chatResult) {
-          result = chatResult.consequences;
-          chatHistoryRef.current = chatResult.chatHistory;
-        } else {
-          // Fallback to stateless consequence generation if chat mode fails
-          result = await callGeminiAndCount(
-            generateConsequences,
-            currentGameState,
-            playersWithActions,
-            counterfactualResult.publicScoreUpdate
-          );
-        }
-      } else {
-        result = await callGeminiAndCount(
-          generateConsequences,
-          currentGameState,
-          playersWithActions,
-          counterfactualResult.publicScoreUpdate
-        );
-      }
-
-      if (result) {
-        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-
-        const playerActionsForLog: PlayerRoundActions[] = playersWithActions.map((p) => {
-          let availableOptions: ActionOption[] = [];
-          if (p.isHuman) {
-            availableOptions = actionOptions;
-          } else {
-            const aiPlayerIndex = aiPlayers.findIndex((ap) => ap.id === p.id);
-            if (aiPlayerIndex !== -1 && aiTurnResults[aiPlayerIndex]) {
-              availableOptions = aiTurnResults[aiPlayerIndex]?.options || [];
-            }
-          }
-          return {
-            roleName: p.role.name,
-            actions: p.actions,
-            availableOptions,
-            isHuman: p.isHuman,
-          };
-        });
-
-        const newScoreValue = clampScore(currentGameState.coreMetric.value + result.publicScoreUpdate);
-
-        const newGameState: GameState = {
-          ...currentGameState,
-          phase: GamePhase.ACTION,
-          round: currentGameState.round + 1,
-          coreMetric: { ...currentGameState.coreMetric, value: newScoreValue },
-          eventLog: [
-            ...currentGameState.eventLog,
-            {
-              round: currentGameState.round,
-              roundSummary: result.roundSummary,
-              outcomeTimeline: result.outcomeTimeline ?? [],
-              counterfactualNote: result.counterfactualNote ?? '',
-              event: currentGameState.currentEvent,
-              playerActions: playerActionsForLog,
-              publicScoreChange: result.publicScoreUpdate,
-              publicScoreAfter: newScoreValue,
-              hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: geminiCallsThisRoundRef.current,
-            },
-          ],
-          currentEvent: result.nextEvent,
-        };
-        const newPlayers = playersWithActions.map((p) => {
-          const pointsSpent = p.actions.reduce((sum, action) => sum + action.cost, 0);
-          const newPoints = Math.min(
-            p.actionPoints - pointsSpent + GAME_CONFIG.ACTION_POINTS_PER_ROUND,
-            GAME_CONFIG.MAX_ACTION_POINTS
-          );
-          return {
-            ...p,
-            hiddenScore: p.hiddenScore + (hiddenScoreUpdatesRecord[p.role.name]?.update || 0),
-            actionPoints: newPoints,
-            actions: [],
-            hasSubmittedActions: false,
-          };
-        });
-
-        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-        setGameState(newGameState);
-        setPlayers(newPlayers);
-        setActionOptions([]);
-        setIsLoading(false);
-        setLoadingMessage('');
-        setAiCompletionStatus({});
-        geminiCallsThisRoundRef.current = 0;
-      } else {
-        setError('The AI Game Master failed to provide a consequence. The simulation cannot continue.');
-        setIsLoading(false);
-        setLoadingMessage('');
-      }
-    },
-    [actionOptions, callGeminiAndCount]
-  );
-
-  const handleConfirmActions = useCallback(
-    (actions: ActionOption[]) => {
-      if (!humanPlayer) return;
-      const updatedPlayer = { ...humanPlayer, actions, hasSubmittedActions: true };
-      const updatedPlayers = players.map((p) => (p.isHuman ? updatedPlayer : p));
-      setPlayers(updatedPlayers);
-      runConsequencePhase(updatedPlayers, gameState);
-    },
-    [gameState, humanPlayer, players, runConsequencePhase]
-  );
-
-  const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] =>
-    setup.stakeholders.map((stakeholder) => {
-      const emoji = stakeholder.icon || '❓';
-      const EmojiIcon = (props: React.SVGProps<SVGSVGElement>) =>
-        React.createElement('span', {
-          className: 'text-2xl',
-          role: 'img',
-          'aria-label': 'role icon'
-        }, emoji);
-
-      return {
-        name: stakeholder.name,
-        publicObjective: stakeholder.publicObjective,
-        hiddenObjective: stakeholder.hiddenObjective,
-        resources: stakeholder.resources ?? [],
-        constraints: stakeholder.constraints ?? [],
-        icon: EmojiIcon,
-      };
-    }),
-  []);
+  const buildRolesFromSetup = useCallback((setup: GameSetup): RoleData[] => buildRolesFromSetupHelper(setup), []);
 
   const handleStartGame = useCallback(() => {
     if (!selectedRoleName) return;
     const path = gamePath ?? 'classic';
+    try { setStartIntent(true); } catch {}
+    // Reset and start progress indicator
+    try {
+      setStartStep('creatingSession', 'running');
+      setStartStep('buildingPlayers', 'running');
+      setStartStep('generatingScenario', 'idle');
+      setStartStep('connectingStream', 'running');
+      setStartStep('ready', 'idle');
+    } catch {}
 
-    let roles: RoleData[] = [];
-    let coreMetric: CoreMetric = { ...DEFAULT_CORE_METRIC };
-
-    if (path === 'custom') {
-      if (!gameSetup) {
-        setError('Cannot start game without a generated scenario.');
-        return;
-      }
-      roles = buildRolesFromSetup(gameSetup);
-      const initial = Number.isFinite(gameSetup.coreMetric.value)
-        ? clampScore(gameSetup.coreMetric.value)
-        : 75;
-      coreMetric = {
-        name: gameSetup.coreMetric.name,
-        description: gameSetup.coreMetric.description,
-        value: initial,
-      };
-    } else if (path === 'ai_safety') {
-      roles = buildRolesFromSetup(AI_SAFETY_SCENARIO);
-      coreMetric = {
-        name: AI_SAFETY_SCENARIO.coreMetric.name,
-        description: AI_SAFETY_SCENARIO.coreMetric.description,
-        value: clampScore(AI_SAFETY_SCENARIO.coreMetric.value),
-      };
-    } else {
-      roles = Object.values(ROLES);
-      coreMetric = { ...DEFAULT_CORE_METRIC };
-    }
-
-    const initialPlayers: Player[] = roles.map((role, index) => ({
-      id: role.name === selectedRoleName ? 'human_player' : `ai_${index}`,
-      role,
-      isHuman: role.name === selectedRoleName,
-      hiddenScore: 0,
-      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
-      actions: [],
-      hasSubmittedActions: false,
-    }));
+    // Build players FIRST so we can create proper setup for session
+    const { players: initialPlayers, coreMetric } = selectInitialPlayers(
+      selectedRoleName,
+      path,
+      gameSetup,
+      AI_SAFETY_SCENARIO,
+      DEFAULT_CORE_METRIC,
+    );
 
     setPlayers(initialPlayers);
+
+    // Initialize a server session in the background when feature flag is on
+    // Must happen AFTER players are built so we can create canonical setup
+    if (!sessionMeta) {
+      (async () => {
+        try {
+          // Build canonical setup from players (all modes need full roster)
+          const tempState = { phase: GamePhase.LOBBY, round: 0, coreMetric, eventLog: [], currentEvent: null } as GameState;
+          const canonicalSetup = gameSetup || createCanonicalSetup(tempState, initialPlayers);
+          const created = await SessionService.create({ mode: path as any, setup: canonicalSetup });
+          setSessionMeta({ id: created.id, revision: created.revision, hostToken: created.hostToken });
+          try { setStartStep('creatingSession', 'done'); } catch {}
+        } catch (e) {
+          // non-fatal for client path; we still start game locally
+          try { console.warn('[useGameController] createSession failed (non-fatal):', e); } catch {}
+          try { setStartStep('creatingSession', 'error'); } catch {}
+        }
+      })();
+    }
+    try { setStartStep('buildingPlayers', 'done'); } catch {}
     setGameState((prev) => ({
       ...prev,
       phase: GamePhase.STARTING,
@@ -393,88 +227,50 @@ export const useGameController = () => {
     }));
     setIsLoading(true);
     setLoadingMessage('AI Game Master is generating the initial scenario...');
+    try { setStartStep('generatingScenario', 'running'); } catch {}
   }, [selectedRoleName, gamePath, gameSetup, buildRolesFromSetup]);
 
   useEffect(() => {
     if (gameState.phase !== GamePhase.STARTING) return;
 
     const initializeClassicScenario = async () => {
-      geminiCallsThisRoundRef.current = 0;
+      llmCallsThisRoundRef.current = 0;
 
-      // Use chat mode if enabled
-      let result;
-      if (GAME_CONFIG.USE_CHAT_MODE) {
-        // Create game setup for chat mode
-        const setup = gameSetup || {
-          scenarioTitle: 'Election Crisis 2024',
-          scenarioDescription: 'A rapidly escalating crisis threatens democratic legitimacy.',
-          coreMetric: gameState.coreMetric,
-          stakeholders: players.map(p => ({
-            name: p.role.name,
-            icon: '🎭',
-            publicObjective: p.role.publicObjective,
-            hiddenObjective: p.role.hiddenObjective,
-            resources: p.role.resources,
-            constraints: p.role.constraints,
-          })),
-        };
+      // Chat mode only: Create and persist canonical setup, then call chat endpoint
+      const setup = gameSetup || createCanonicalSetup(gameState, players);
+      setGameSetupStore(setup);
 
-        const chatResult = await callGeminiAndCount(() => generateInitialScenarioChat(setup, players));
-
-        if (chatResult) {
-          result = chatResult.scenario;
-          chatHistoryRef.current = chatResult.chatHistory;
-        } else {
-          result = null;
-        }
-      } else {
-        result = await callGeminiAndCount(generateInitialScenario);
-      }
+      const initChat = await callLLMAndCount(() => generateInitialScenarioChat(setup, players));
+      const result = initChat ? initChat.scenario : null;
+      if (initChat) chatHistoryRef.current = initChat.chatHistory;
 
       if (result) {
-        const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(result.hiddenScoreUpdates);
-        const newScoreValue = clampScore(gameState.coreMetric.value + result.publicScoreUpdate);
-        const initialGameState: GameState = {
-          ...gameState,
-          phase: GamePhase.ACTION,
-          round: 1,
-          coreMetric: { ...gameState.coreMetric, value: newScoreValue },
-          currentEvent: result.nextEvent,
-          eventLog: [
-            {
-              round: 0,
-              roundSummary: result.roundSummary,
-              outcomeTimeline: result.outcomeTimeline ?? [],
-              counterfactualNote: result.counterfactualNote ?? '',
-              event: null,
-              playerActions: [],
-              publicScoreChange: result.publicScoreUpdate,
-              publicScoreAfter: newScoreValue,
-              hiddenScoreChanges: hiddenScoreUpdatesRecord,
-              geminiCalls: geminiCallsThisRoundRef.current,
-            },
-          ],
-        };
+        const initialGameState = createInitialGameStateFromScenario(gameState, result, llmCallsThisRoundRef.current);
         setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
         setGameState(initialGameState);
         setIsLoading(false);
         setLoadingMessage('');
+        try {
+          setStartStep('generatingScenario', 'done');
+          setStartStep('ready', 'done');
+        } catch {}
       } else {
         setError('The AI Game Master failed to initialize the game. Please refresh and try again.');
         setGameState((prev) => ({ ...prev, phase: GamePhase.LOBBY }));
         setIsLoading(false);
         setLoadingMessage('');
+        try { setStartStep('generatingScenario', 'error'); } catch {}
       }
     };
 
     const initializePresetScenario = (setup: GameSetup) => {
-      geminiCallsThisRoundRef.current = 0;
+      llmCallsThisRoundRef.current = 0;
 
-      // Initialize chat history for preset scenarios if chat mode is enabled
-      // The backend will create the system prompt on first request
-      if (GAME_CONFIG.USE_CHAT_MODE) {
-        chatHistoryRef.current = [];
-      }
+      // Persist canonical setup for AI Safety / predefined scenarios
+      setGameSetupStore(setup);
+
+      // Initialize chat history for preset scenarios (chat mode only)
+      chatHistoryRef.current = [];
 
       const initialGameState: GameState = {
         ...gameState,
@@ -504,6 +300,10 @@ export const useGameController = () => {
       setGameState(initialGameState);
       setIsLoading(false);
       setLoadingMessage('');
+      try {
+        setStartStep('generatingScenario', 'done');
+        setStartStep('ready', 'done');
+      } catch {}
     };
 
     if (gamePath === 'classic' || !gamePath) {
@@ -519,7 +319,7 @@ export const useGameController = () => {
       }
       initializePresetScenario(setup);
     }
-  }, [callGeminiAndCount, gamePath, gameSetup, gameState, runConsequencePhase]);
+  }, [callLLMAndCount, gamePath, gameSetup, gameState]);
 
   useEffect(() => {
     if (
@@ -527,22 +327,22 @@ export const useGameController = () => {
       humanPlayer &&
       !humanPlayer.hasSubmittedActions &&
       actionOptions.length === 0 &&
-      !isLoading
+      !isLoading &&
+      !actionReqInFlightRef.current
     ) {
+      actionReqInFlightRef.current = true;
       setIsLoading(true);
       setLoadingMessage('Generating action options...');
-      geminiCallsThisRoundRef.current = 0;
-      callGeminiAndCount(generateActionOptions, humanPlayer, gameState, lastCompletedLogEntry?.playerActions || null).then((res) => {
-        if (res) {
-          setActionOptions(res.options);
-        } else {
-          setError('Failed to generate action options. You may not be able to proceed.');
-        }
-        setIsLoading(false);
-        setLoadingMessage('');
-      });
+      llmCallsThisRoundRef.current = 0;
+      loadHumanOptions()
+        .catch(() => {})
+        .finally(() => {
+          actionReqInFlightRef.current = false;
+          setIsLoading(false);
+          setLoadingMessage('');
+        });
     }
-  }, [actionOptions.length, callGeminiAndCount, gameState, humanPlayer, isLoading, lastCompletedLogEntry]);
+  }, [gameState.phase, humanPlayer?.hasSubmittedActions, actionOptions.length, isLoading, gameSetup, gamePath, loadHumanOptions]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -555,19 +355,31 @@ export const useGameController = () => {
   }, [gameState.phase, handleConfirmActions, humanPlayer, isPaused, timer]);
 
   useEffect(() => {
+    const maxRounds = (gameSetup as any)?.maxRounds ?? GAME_CONFIG.MAX_ROUNDS;
     if (
-      (gameState.round > GAME_CONFIG.MAX_ROUNDS || (gameState.coreMetric.value <= 0 && gameState.round > 0)) &&
+      (gameState.round > maxRounds || (gameState.coreMetric.value <= 0 && gameState.round > 0)) &&
       gameState.phase !== GamePhase.END
     ) {
       setGameState((prev) => ({ ...prev, phase: GamePhase.END }));
     }
-  }, [gameState.coreMetric.value, gameState.phase, gameState.round]);
+  }, [gameSetup, gameState.coreMetric.value, gameState.phase, gameState.round]);
+
+  // When the game ends, clear the start intent so the router doesn't bounce back to /game.
+  useEffect(() => {
+    if (gameState.phase === GamePhase.END) {
+      try { setStartIntent(false); } catch {}
+    }
+  }, [gameState.phase]);
 
   useEffect(() => {
     if (!isHistoryOpen) {
       setExpandedRound(null);
     }
   }, [isHistoryOpen]);
+
+  // NOTE: SSE connection is now managed by SessionMonitor component
+  // This legacy SSE code has been removed to prevent duplicate subscriptions
+  // See: ai-risk-ttx-113 (Remove legacy SSE stream from useGameController)
 
   const handleOpenActionTree = useCallback(() => {
     setIsActionTreeOpen(true);
@@ -604,14 +416,14 @@ export const useGameController = () => {
     actions: {
       setSelectedRoleName,
       setGamePath,
-      setGameSetup,
+      setGameSetup: setGameSetupStore,
       setCustomScenario,
       setExpandedRound,
       setIsActionTreeOpen,
       setIsPaused,
       handleCustomGameStart,
-      handleStartGame,
-      handleConfirmActions,
+      handleStartGame: modularStart,
+      handleConfirmActions: modularConfirm,
       resetState,
       handleOpenActionTree,
       handleToggleHistory,

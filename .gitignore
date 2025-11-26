@@ -7,6 +7,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.vite-temp/**
+
 node_modules
 dist
 dist-ssr
@@ -29,6 +31,7 @@ temp
 # Framework/platform dirs
 .vercel
 .netlify
+.next
 
 # Editor directories and files
 .vscode/*
