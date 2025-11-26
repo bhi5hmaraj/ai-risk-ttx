@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { ActionOption, Player } from '../../types';
 import { GAME_CONFIG } from '../../constants';
 import { LoadingSpinner, CheckCircleIcon, PauseIcon } from '../Icons';
+import { useRotatingJoke } from '@/lib/loadingJokes';
 
 interface ActionSelectionProps {
   options: ActionOption[];
@@ -29,7 +30,17 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   const pointsRemaining = availablePoints - pointsUsed;
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
   const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+  const human = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
   const confirmDisabled = isLoading || isPaused;
+  const joke = useRotatingJoke(4000); // Rotate jokes every 4 seconds
+
+  console.log('[ActionSelection] Render:', {
+    hasSubmitted,
+    allAIsDone,
+    jokeLength: joke?.length,
+    aiPlayers: aiPlayers.length,
+    aiCompletionStatus
+  });
 
   const toggleAction = (option: ActionOption) => {
     if (hasSubmitted || isPaused) return;
@@ -44,26 +55,54 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   if (hasSubmitted) {
     return (
       <div className="bg-gray-800 rounded-lg p-6 sticky top-6 text-center">
-        <h3 className="text-xl font-bold mb-4">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
-        {!allAIsDone && (
-          <div className="space-y-3 text-left">
-            {aiPlayers.map((player) => {
-              const isComplete = aiCompletionStatus[player.role.name];
-              return (
-                <div
-                  key={player.id}
-                  className={`flex items-center p-3 rounded-lg transition-all duration-300 ${
-                    isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
-                  }`}
-                >
-                  {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
-                  <span className={isComplete ? 'text-gray-300' : 'text-gray-400'}>{player.role.name}</span>
-                </div>
-              );
-            })}
+        {human && Array.isArray(human.actions) && human.actions.length > 0 && (
+          <div className="mb-5 text-left">
+            <h4 className="text-lg font-semibold mb-2">Your submitted actions</h4>
+            <ul className="space-y-2">
+              {human.actions.map((a) => (
+                <li key={a.title} className="bg-gray-700/40 border border-gray-700 rounded px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-200 font-medium">{a.title}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-blue-300">{a.cost} AP</span>
+                  </div>
+                  {a.description && <p className="text-xs text-gray-400 mt-1 whitespace-pre-line">{a.description}</p>}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-        {allAIsDone && <LoadingSpinner />}
+        <h3 className="text-xl font-bold mb-4">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
+        {!allAIsDone && (
+          <>
+            <div className="space-y-3 text-left">
+              {aiPlayers.map((player) => {
+                const isComplete = aiCompletionStatus[player.role.name];
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center p-3 rounded-lg transition-all duration-300 ${
+                      isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
+                    }`}
+                  >
+                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-green-400 mr-3" /> : <LoadingSpinner />}
+                    <span className={isComplete ? 'text-gray-300' : 'text-gray-400'}>{player.role.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-4 text-sm text-gray-400 italic text-center">
+              "{joke}"
+            </p>
+          </>
+        )}
+        {allAIsDone && (
+          <div className="flex flex-col items-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-sm text-gray-400 italic text-center">
+              "{joke}"
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -102,14 +141,16 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         </div>
       </div>
       {isLoading && !options.length ? (
-        <div className="flex justify-center items-center h-48">
+        <div className="flex flex-col justify-center items-center h-48 px-4">
           <LoadingSpinner />
+          <p className="mt-4 text-sm text-gray-400 italic text-center">
+            "{joke}"
+          </p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="space-y-2">
           {options.map((opt) => {
             const isSelected = selected.some((s) => s.title === opt.title);
-            const preview = opt.description.length > 110 ? `${opt.description.slice(0, 110).trim()}…` : opt.description;
             const canSelect = pointsRemaining >= opt.cost || isSelected;
             return (
               <button
@@ -128,9 +169,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-200'}`}>{opt.title}</p>
-                    <p className={`mt-2 text-sm leading-snug ${isSelected ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {isSelected ? opt.description : preview}
-                    </p>
+                    <p className={`mt-2 text-sm leading-snug text-gray-200 whitespace-pre-line`}>{opt.description}</p>
                   </div>
                   <span className="inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full shrink-0">
                     {opt.cost} AP
@@ -155,4 +194,3 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
     </div>
   );
 };
-

@@ -1,0 +1,4 @@
+# Search results for Express/Colyseus hints
+# Patterns: colyseus, websocket, ws-transport, matchmaker, express, admin/rooms
+# Generated: 2025-11-24T23:26:55+05:30
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { GameState, Player } from '../../types';
 import { GamePhase } from '../../types';
 import { GAME_CONFIG } from '../../constants';
@@ -12,38 +12,63 @@ interface GameStatusPanelProps {
   player: Player;
   isCustomScenario?: boolean;
   onMakePublic?: () => void;
+  onOpenFeedback?: () => void;
+  maxRounds?: number; // display denominator; defaults to GAME_CONFIG.MAX_ROUNDS
+  scenarioAlreadyPublic?: boolean;
 }
 
-export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic }) => {
+export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, timer, isPaused, onPauseClick, player, isCustomScenario, onMakePublic, onOpenFeedback, maxRounds, scenarioAlreadyPublic }) => {
   const metricValue = gameState.coreMetric.value;
   const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
-  const [showHiddenObjective, setShowHiddenObjective] = useState(false);
+  const roundCap = typeof maxRounds === 'number' && maxRounds > 0 ? maxRounds : GAME_CONFIG.MAX_ROUNDS;
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 md:p-5 mb-6 space-y-3">
+    <div className="bg-gray-800 rounded-lg p-4 md:p-5 mb-3 space-y-3">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-gray-700 p-3 rounded-lg">
-            {player.role.icon({ className: 'h-9 w-9 text-blue-300' })}
+            {typeof player.role.icon === 'function'
+              ? player.role.icon({ className: 'h-9 w-9 text-blue-300' })
+              : <span className="text-4xl">{player.role.icon}</span>
+            }
           </div>
           <div className="flex-1">
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold">Your Role</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-2xl font-bold text-white leading-tight">{player.role.name}</h2>
-              {isCustomScenario && onMakePublic && (
-                <button
-                  onClick={onMakePublic}
-                  className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
-                  title="Share this scenario with the community"
-                >
-                  📢 Make Public
-                </button>
-              )}
+              <span className="text-sm text-amber-400 italic px-3 py-1 bg-amber-900/20 rounded border border-amber-700/30">
+                {player.role.hiddenObjective}
+              </span>
+              <div className="flex items-center gap-2">
+                {isCustomScenario && onMakePublic && (
+                  <button
+                    onClick={onMakePublic}
+                    disabled={scenarioAlreadyPublic}
+                    className={`px-3 py-1 rounded-md text-white text-xs font-medium transition-colors ${
+                      scenarioAlreadyPublic
+                        ? 'bg-gray-600 cursor-not-allowed opacity-60'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                    title={scenarioAlreadyPublic ? "Already shared with the community" : "Share this scenario with the community"}
+                  >
+                    {scenarioAlreadyPublic ? '✓ Already Public' : '📢 Make Public'}
+                  </button>
+                )}
+                {onOpenFeedback && (
+                  <button
+                    onClick={onOpenFeedback}
+                    className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
+                    title="Share your feedback about this game"
+                  >
+                    💬 Feedback
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 lg:flex-nowrap lg:gap-8 w-full lg:w-auto">
-          <MetricPill label="Round" value={`${gameState.round} / ${GAME_CONFIG.MAX_ROUNDS}`} accent="text-blue-300" />
+          <MetricPill label="Round" value={`${gameState.round} / ${roundCap}`} accent="text-blue-300" />
           <MetricPill label={gameState.coreMetric.name} value={`${metricValue}%`} accent={metricClass} />
           <MetricPill label="Personal Score" value={player.hiddenScore.toString()} accent="text-amber-300" />
           <div className="flex items-center gap-3">
@@ -65,49 +90,6 @@ export const GameStatusPanel: React.FC<GameStatusPanelProps> = ({ gameState, tim
           </div>
         </div>
       </div>
-      <div className="bg-gray-900/70 border border-gray-700 rounded-md p-4 space-y-2.5">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-gray-400">Public Objective</p>
-          <p className="text-sm text-gray-200 leading-relaxed">{player.role.publicObjective}</p>
-        </div>
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowHiddenObjective((prev) => !prev)}
-            className="flex items-center justify-between w-full text-sm font-semibold text-amber-300"
-          >
-            <span>Hidden Objective</span>
-            <span className="text-xs uppercase tracking-wide text-gray-400">
-              {showHiddenObjective ? 'Hide' : 'Reveal'}
-            </span>
-          </button>
-          {showHiddenObjective && <p className="mt-2 text-sm text-amber-200 italic leading-relaxed">{player.role.hiddenObjective}</p>}
-        </div>
-      </div>
-      {(player.role.resources.length > 0 || player.role.constraints.length > 0) && (
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-4 space-y-3">
-          {player.role.resources.length > 0 && (
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-400">Resources</p>
-              <ul className="mt-1 text-sm text-gray-300 list-disc list-inside space-y-1">
-                {player.role.resources.map((resource) => (
-                  <li key={resource}>{resource}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {player.role.constraints.length > 0 && (
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-400">Constraints</p>
-              <ul className="mt-1 text-sm text-gray-300 list-disc list-inside space-y-1">
-                {player.role.constraints.map((constraint) => (
-                  <li key={constraint}>{constraint}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

@@ -107,7 +107,7 @@ const GameSetupZ = z.object({
     coreMetric: z.object({
         name: z.string(),
         description: z.string(),
-        initialValue: z.number(),
+        value: z.number(),
     }).strict(),
     stakeholders: z.array(z.object({
         name: z.string(),
@@ -119,7 +119,7 @@ const GameSetupZ = z.object({
     }).strict()).min(4).max(6),
 }).strict();
 
-async function parseWithZod<T>(schema: z.ZodSchema<T>, prompt: string, name: string): Promise<T | null> {
+async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
   try {
     const completion = await client.chat.completions.create({
       model,
@@ -262,7 +262,7 @@ export const generateCustomScenario = async (scenarioDescription: string): Promi
  * These functions use the chat session for better context and caching
  */
 
-import type { GameChatSession } from './chatSession';
+import type { GameChatSession } from '../server/services/chatSession';
 
 /**
  * Generate initial scenario using chat session

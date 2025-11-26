@@ -152,3 +152,17 @@ export const BellIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M15 17h5l-1.4-1.4A6.5 6.5 0 0 1 17 11V9a5 5 0 0 0-10 0v2c0 1.7-.7 3.4-1.6 4.6L4 17h11Zm0 0v1a3 3 0 0 1-6 0v-1" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+export const ClockIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const Cog6ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M9.6 3h4.8l.9 2.4a8 8 0 0 1 2 1.2l2.5-.5 2.4 4.2-1.8 1.8c.1.5.1 1 0 1.6l1.8 1.8-2.4 4.2-2.5-.5a8 8 0 0 1-2 1.2l-.9 2.4H9.6l-.9-2.4a8 8 0 0 1-2-1.2l-2.5.5-2.4-4.2 1.8-1.8c-.1-.5-.1-1 0-1.6L1.8 10.3l2.4-4.2 2.5.5a8 8 0 0 1 2-1.2L9.6 3Z" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);

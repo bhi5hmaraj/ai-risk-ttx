@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { Bars3Icon, XMarkIcon, HomeIcon, ChatBubbleLeftIcon, InformationCircleIcon, BellIcon } from './Icons';
 
 interface NavigationProps {
@@ -7,6 +9,8 @@ interface NavigationProps {
   onOpenAbout: () => void;
   onOpenUpdates: () => void;
   showFeedback?: boolean; // Only show feedback option when in game
+  autoCollapse?: boolean; // Auto-collapse on mount (for game screen)
+  allowCollapse?: boolean; // Show close button to allow collapsing (only for game screen)
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -15,8 +19,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenAbout,
   onOpenUpdates,
   showFeedback = false,
+  autoCollapse = false,
+  allowCollapse = true,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(autoCollapse);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -41,12 +48,21 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo/Title */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-blue-300">Simulacra</h1>
+      <nav className={`fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 transition-transform duration-300 ${
+        isCollapsed ? '-translate-y-full' : 'translate-y-0'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo/Title */}
+            <div className="flex items-center gap-3">
+              <button
+                className="text-left"
+                onClick={handleNavigateHome}
+                aria-label="Go to Home"
+                title="Go to Home"
+              >
+                <h1 className="text-xl font-bold text-blue-300 hover:text-white transition-colors">Simulacra</h1>
+              </button>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs text-gray-500">AI Tabletop Exercise</span>
               <ModelInfo />
@@ -62,6 +78,24 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             <NavButton onClick={handleOpenUpdates} icon={BellIcon} label="Updates" />
             <NavButton onClick={handleOpenAbout} icon={InformationCircleIcon} label="About" />
+            {allowCollapse && (
+              <button
+                onClick={() => {
+                  setIsCollapsed(true);
+                  // Also update the DOM classes directly to sync with StatusBar
+                  const navbar = document.querySelector('nav');
+                  if (navbar) {
+                    navbar.classList.remove('translate-y-0');
+                    navbar.classList.add('-translate-y-full');
+                  }
+                }}
+                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                aria-label="Hide navigation"
+                title="Hide navigation"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -128,7 +162,7 @@ const MobileNavButton: React.FC<{
 
 // Model Information Display
 const ModelInfo: React.FC = () => {
-  const model = import.meta.env.VITE_LLM_MODEL || 'Unknown';
+  const model = process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'Unknown';
   const isFlashLite = model.toLowerCase().includes('flash') && model.toLowerCase().includes('lite');
 
   return (

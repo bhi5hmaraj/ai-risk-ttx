@@ -1,6 +1,9 @@
+"use client";
+
 import React from 'react';
 import type { ActionOption, GameLogEntry, GameState, Player } from '../types';
-import { RoundSnapshotCard, EventLog, ActionSelection, GameStatusPanel } from '../components/game';
+import { RoundSnapshotCard, EventLog, ActionSelection, StatusBar } from '../components/game';
+import { useUIStore } from '../stores/uiStore';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -23,9 +26,12 @@ interface GameScreenProps {
   error: string | null;
   isCustomScenario?: boolean;
   onMakePublic?: () => void;
+  onOpenFeedback?: () => void;
+  maxRounds?: number;
+  scenarioAlreadyPublic?: boolean;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({
+const GameScreen: React.FC<GameScreenProps> = ({
   gameState,
   players,
   humanPlayer,
@@ -46,56 +52,61 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   error,
   isCustomScenario,
   onMakePublic,
-}) => (
-  <div className="min-h-screen bg-gray-900 px-4 pb-4 md:px-6 md:pb-6 lg:px-8 lg:pb-8 pt-28">
-    <div className="max-w-8xl mx-auto">
-      {error && (
-        <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
-      )}
-      <GameStatusPanel
+  onOpenFeedback,
+  maxRounds,
+  scenarioAlreadyPublic,
+}) => {
+  const { isHistoryOpen: historyOpen } = useUIStore();
+
+  return (
+  <div className="min-h-screen bg-gray-900 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-12">
+    <div className="max-w-[1920px] mx-auto">
+      <StatusBar
         gameState={gameState}
         timer={timer}
         isPaused={isPaused}
         onPauseClick={onPauseToggle}
         player={humanPlayer}
-        isCustomScenario={isCustomScenario}
+        maxRounds={maxRounds}
+        onOpenActionTree={onOpenActionTree}
+        canViewActionTree={canViewActionTree}
+        onOpenFeedback={onOpenFeedback}
         onMakePublic={onMakePublic}
+        showMakePublic={isCustomScenario}
+        scenarioAlreadyPublic={scenarioAlreadyPublic}
+        availablePoints={humanPlayer.actionPoints}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-9 space-y-6">
-          <RoundSnapshotCard
+      {error && (
+        <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
+      )}
+      <RoundSnapshotCard
+        gameState={gameState}
+        latestLogEntry={latestLogEntry}
+        players={players}
+        actionOptions={actionOptions}
+        onConfirmActions={onConfirmActions}
+        isLoading={isLoading && !humanPlayer.hasSubmittedActions}
+        hasSubmitted={humanPlayer.hasSubmittedActions}
+        isPaused={isPaused}
+        aiCompletionStatus={aiCompletionStatus}
+        availablePoints={humanPlayer.actionPoints}
+        humanPlayer={humanPlayer}
+      />
+      {historyOpen && (
+        <div className="mt-6" data-testid="event-log">
+          <EventLog
             gameState={gameState}
-            latestLogEntry={latestLogEntry}
-            onToggleHistory={onToggleHistory}
-            isHistoryOpen={isHistoryOpen}
+            players={players}
             onViewActionTree={onOpenActionTree}
             canViewActionTree={canViewActionTree}
-          />
-          {isHistoryOpen && (
-            <EventLog
-              gameState={gameState}
-              players={players}
-              onViewActionTree={onOpenActionTree}
-              canViewActionTree={canViewActionTree}
-              expandedRound={expandedRound}
-              setExpandedRound={onSetExpandedRound}
-            />
-          )}
-        </div>
-        <div className="lg:col-span-3">
-          <ActionSelection
-            key={gameState.round}
-            options={actionOptions}
-            onConfirm={onConfirmActions}
-            isLoading={isLoading && !humanPlayer.hasSubmittedActions}
-            hasSubmitted={humanPlayer.hasSubmittedActions}
-            isPaused={isPaused}
-            players={players}
-            aiCompletionStatus={aiCompletionStatus}
-            availablePoints={humanPlayer.actionPoints}
+            expandedRound={expandedRound}
+            setExpandedRound={onSetExpandedRound}
           />
         </div>
-      </div>
+      )}
     </div>
   </div>
-);
+  );
+};
+
+export { GameScreen };

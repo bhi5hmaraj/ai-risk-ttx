@@ -1,0 +1,539 @@
+# Commits whose changed files hint at Express/Colyseus implementation
+# Generated: 2025-11-24T23:45:29+05:30
+# Columns: <hash>|<date>|<subject>|<branches>
+#   Matching files:
+
+ca98aa7|2025-11-17 21:13:56 +0530|Move current-round panel into blue card; enforce 3-col grid|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/ai-risk-ttx.db
+  - app/lobby/page.tsx
+  - components/game/ActionSelection.tsx
+  - components/game/EventLog.tsx
+  - components/game/GameStatusPanel.tsx
+  - components/game/RoundSnapshotCard.tsx
+  - gameConfig.ts
+  - hooks/useGameActions.ts
+  - lib/gameSetup.ts
+  - lib/loadingJokes.ts
+  - notes.md
+  - prompts.ts
+  - screens/GameScreen.tsx
+  - screens/LobbyScreen.tsx
+  - server/api/llm-handlers.ts
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+  - server/services/llm/types.ts
+  - server/services/llmService.ts
+  - server/types/scenario.ts
+  - server/types/session.ts
+  - services/llmApiClient.ts
+  - stores/lobbyStore.ts
+  - tests/lib/game-logic.test.ts
+
+2fe6f74|2025-11-16 18:21:40 +0530|docs: update admin design for catch-all router; add custom scenario refinement design|feat/nextjs-migration,origin/feat/nextjs-migration
+  - docs/ADMIN_DESIGN.md
+  - docs/CUSTOM_SCENARIO_DESIGN.md
+
+dff348d|2025-11-16 18:21:23 +0530|chore(admin): remove individual admin API routes now consolidated in catch-all|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/admin/env-debug/route.ts
+  - app/api/admin/feedback/[id]/route.ts
+  - app/api/admin/feedback/route.ts
+  - app/api/admin/metrics/route.ts
+  - app/api/admin/scenarios/[id]/route.ts
+  - app/api/admin/scenarios/route.ts
+
+8be37db|2025-11-16 18:18:56 +0530|feat(admin): add catch-all admin API router for metrics, feedback, and scenarios|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/admin/[[...parts]]/route.ts
+
+6c09473|2025-11-15 22:47:17 +0530|feat: Add role-based admin access control with Clerk|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .env.example
+  - app/admin/dashboard/page.tsx
+  - app/admin/forbidden/page.tsx
+  - app/api/admin/feedback/[id]/route.ts
+  - app/api/admin/feedback/route.ts
+  - app/api/admin/metrics/route.ts
+  - app/api/admin/scenarios/[id]/route.ts
+  - app/api/admin/scenarios/route.ts
+  - app/layout.tsx
+  - app/login/page.tsx
+  - components/admin/LogoutButton.tsx
+  - middleware.ts
+  - server/lib/adminAccess.ts
+
+bd1c6a9|2025-11-15 22:32:21 +0530|feat: Replace NextAuth with Clerk for admin authentication|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .env.example
+  - app/admin/dashboard/page.tsx
+  - app/admin/login/page.tsx
+  - app/api/admin/env-debug/route.ts
+  - app/api/admin/feedback/[id]/route.ts
+  - app/api/admin/feedback/route.ts
+  - app/api/admin/login/route.ts
+  - app/api/admin/logout/route.ts
+  - app/api/admin/metrics/route.ts
+  - app/api/admin/scenarios/[id]/route.ts
+  - app/api/admin/scenarios/route.ts
+  - app/api/auth/[...nextauth]/route.ts
+  - app/layout.tsx
+  - components/admin/LogoutButton.tsx
+  - middleware.ts
+  - package-lock.json
+  - package.json
+
+da862a5|2025-11-15 22:01:04 +0530|debug logs fix for auth|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/admin/env-debug/route.ts
+  - app/api/auth/[...nextauth]/route.ts
+
+c9703b2|2025-11-15 18:51:47 +0530|feat: Final admin panel touches and metrics documentation|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/admin/dashboard/page.tsx
+  - docs/METRICS_DESIGN.md
+  - services/adminClient.ts
+
+3d88344|2025-11-15 18:36:43 +0530|feat: Update admin dashboard with enhanced metrics and components|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/admin/dashboard/page.tsx
+  - app/admin/feedback/page.tsx
+  - app/api/admin/metrics/route.ts
+
+3d3958d|2025-11-15 18:36:37 +0530|feat: Enhance data repositories and feedback types|feat/nextjs-migration,origin/feat/nextjs-migration
+  - server/data/feedbackRepo.ts
+  - server/data/metricsRepo.ts
+  - types/feedback.ts
+
+339f49d|2025-11-15 18:36:28 +0530|feat: Add admin client and type definitions|feat/nextjs-migration,origin/feat/nextjs-migration
+  - services/adminClient.ts
+  - types/admin.ts
+
+93460a6|2025-11-15 18:36:21 +0530|feat: Add specialized admin UI components|feat/nextjs-migration,origin/feat/nextjs-migration
+  - components/admin/AdminMetricCards.tsx
+  - components/admin/AvgRoundDurationsTable.tsx
+  - components/admin/RoundFunnelTable.tsx
+  - components/admin/ScenarioTable.tsx
+  - components/admin/TimelineSeriesChart.tsx
+
+9c454e3|2025-11-15 15:41:16 +0530|chore: Update dependencies and session router integration|feat/nextjs-migration,origin/feat/nextjs-migration
+  - package-lock.json
+  - server/api/session-router.ts
+
+2e8e61e|2025-11-15 15:41:12 +0530|feat: Update admin API endpoints to use data repositories|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/admin/feedback/[id]/route.ts
+  - app/api/admin/feedback/route.ts
+  - app/api/admin/metrics/route.ts
+  - app/api/admin/scenarios/[id]/route.ts
+  - app/api/admin/scenarios/route.ts
+
+51f3fba|2025-11-15 15:41:07 +0530|feat: Update admin UI pages to use data repositories|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/admin/dashboard/page.tsx
+  - app/admin/feedback/page.tsx
+  - app/admin/scenarios/page.tsx
+
+ce68e76|2025-11-15 15:40:57 +0530|refactor: Add data layer repositories for queries|feat/nextjs-migration,origin/feat/nextjs-migration
+  - server/data/feedbackRepo.ts
+  - server/data/metricsRepo.ts
+  - server/data/publicScenarioRepo.ts
+  - server/data/sessionMetricsRepo.ts
+
+1a476bb|2025-11-15 14:31:52 +0530|docs: Export admin panel Beads task breakdown|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/ai-risk-ttx.db
+  - admin-panel-tasks.json
+
+01d6a31|2025-11-15 14:31:46 +0530|chore: Add admin dependencies and update configurations|feat/nextjs-migration,origin/feat/nextjs-migration
+  - MIGRATION_STATUS.md
+  - package-lock.json
+  - package.json
+  - scripts/dev.mjs
+  - scripts/prisma-migrate-dev.mjs
+  - scripts/prisma-studio-dev.mjs
+  - server/lib/env.ts
+  - server/lib/prisma.ts
+
+e8ad964|2025-11-15 14:30:56 +0530|feat: Admin panel UI with dashboard, scenarios, feedback, and health pages|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/admin/dashboard/page.tsx
+  - app/admin/feedback/page.tsx
+  - app/admin/health/page.tsx
+  - app/admin/layout.tsx
+  - app/admin/login/page.tsx
+  - app/admin/page.tsx
+  - app/admin/scenarios/page.tsx
+  - components/admin/AdminSidebar.tsx
+  - components/admin/LogoutButton.tsx
+  - docs/ADMIN_DESIGN.md
+
+2554a4d|2025-11-15 14:30:47 +0530|feat: Admin API endpoints for metrics, scenarios, and feedback|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/admin/feedback/[id]/route.ts
+  - app/api/admin/feedback/route.ts
+  - app/api/admin/login/route.ts
+  - app/api/admin/logout/route.ts
+  - app/api/admin/metrics/route.ts
+  - app/api/admin/scenarios/[id]/route.ts
+  - app/api/admin/scenarios/route.ts
+
+eaf47ac|2025-11-15 14:30:41 +0530|feat: Admin authentication and database schema updates|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .env.example
+  - app/api/auth/[...nextauth]/route.ts
+  - middleware.ts
+  - prisma/migrations/20251115075223_init/migration.sql
+  - prisma/migrations/20251115085947_add_reviewed_field/migration.sql
+  - prisma/schema.prisma
+  - server/lib/adminAuth.ts
+
+3997283|2025-11-15 10:01:30 +0530|refactor: Remove realtime dependencies and enhance UX|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/session/[[...parts]]/route.ts
+  - app/game/page.tsx
+  - app/layout.tsx
+  - app/lobby/page.tsx
+  - components/SessionMonitor.tsx
+  - components/game/ActionSelection.tsx
+  - components/game/GameStatusPanel.tsx
+  - components/game/RoleCard.tsx
+  - docs/observability-setup.md
+  - hooks/useGameActions.ts
+  - hooks/useLobby.ts
+  - lib/loadingJokes.ts
+  - lib/observability.ts
+  - package-lock.json
+  - package.json
+  - screens/EndScreen.tsx
+  - screens/GameScreen.tsx
+  - screens/LoadingScreen.tsx
+  - screens/LobbyScreen.tsx
+  - server/api/session-router.ts
+  - services/sessionClient.ts
+  - stores/lobbyStore.ts
+
+5c64590|2025-11-15 02:50:07 +0530|feat: Add SSE auto-reconnection and comprehensive observability|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/session/[[...parts]]/route.ts
+  - components/SessionMonitor.tsx
+  - docs/observability-setup.md
+  - lib/observability.ts
+  - package-lock.json
+  - package.json
+  - server/stores/sessionStore.memory.ts
+  - server/stores/sessionStore.redis.integration.test.ts
+
+b9d6b56|2025-11-15 01:53:35 +0530|SSE flakyness bug fix, learn code base|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/session/[[...parts]]/route.ts
+  - components/SessionMonitor.tsx
+  - docs/Optimal End-to-End Architecture for Simulacra (Educational Wargaming Platform).pdf
+  - hooks/useGameActions.ts
+  - learn_code/sse-answers.md
+  - learn_code/sse-perturbations-answers.md
+  - learn_code/sse-perturbations-rubric.md
+  - learn_code/sse-perturbations.md
+  - learn_code/sse-problems.md
+  - learn_code/sse-rubric.md
+  - package-lock.json
+  - package.json
+  - server/lib/redisClient.ts
+  - server/stores/sessionStore.memory.ts
+  - server/stores/sessionStore.redis.ts
+  - tests/learn/memoryStore.events.incomplete.test.ts
+  - tests/learn/memoryStore.revision-conflict.incomplete.test.ts
+  - tests/learn/sessionClient.headers.incomplete.test.ts
+  - tests/learn/sessionService.eventsource.incomplete.test.ts
+
+8cd2353|2025-11-07 01:02:10 +0530|test: Add schema backward-compatibility tests for production bug|feat/nextjs-migration,origin/feat/nextjs-migration
+  - tests/server/types.scenario.backward-compat.test.ts
+
+8bd4ef4|2025-11-06 23:43:05 +0530|fix: Make stakeholder schema backward-compatible with old public scenarios|feat/nextjs-migration,origin/feat/nextjs-migration
+  - server/types/scenario.ts
+
+487a6cf|2025-11-06 18:16:30 +0530|feat: Add SSE connection status monitoring and UI improvements|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/game/page.tsx
+  - app/lobby/page.tsx
+  - components/ConnectionStatus.tsx
+  - components/Navigation.tsx
+  - components/SessionMonitor.tsx
+  - hooks/useGameActions.ts
+  - hooks/useRoundOptions.ts
+  - server/api/session-router.ts
+  - server/stores/sessionStore.redis.integration.test.ts
+  - services/SessionService.ts
+  - services/sessionClient.ts
+  - stores/sessionStore.ts
+
+7c508b9|2025-11-06 04:55:46 +0530|Implemetented a redis session store which inherits in mem store | pair:claude|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/session/[[...parts]]/route.ts
+  - docs/README-REDIS.md
+  - docs/redis-architecture-summary.md
+  - docs/redis-implementation-checklist.md
+  - docs/redis-session-store.md
+  - package-lock.json
+  - package.json
+  - scripts/test-redis.mjs
+  - server/api/session-router.ts
+  - server/lib/redisClient.ts
+  - server/stores/sessionStore.memory.ts
+  - server/stores/sessionStore.redis.integration.test.ts
+  - server/stores/sessionStore.redis.ts
+
+9e1ea40|2025-11-06 03:58:28 +0530|feat: Add causal citations to debrief and fix lobby state bugs|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/lobby/page.tsx
+  - package-lock.json
+  - package.json
+  - prompts.ts
+  - screens/EndScreen.tsx
+  - screens/LobbyScreen.tsx
+  - server/services/llm/openaiService.ts
+  - server/types/core.ts
+
+dd89ccd|2025-11-05 19:42:02 +0530|created governance plan and retro|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/ai-risk-ttx.db
+  - .vite-temp/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+  - docs/ARCHITECTURE_GOVERNANCE.md
+  - docs/CONTROLLER_BLOAT_ANALYSIS.md
+  - server/api/llm-handlers.ts
+  - server/api/session-router.test.ts
+  - server/api/session-router.ts
+  - tests/api/llm-handlers-debrief.test.ts
+  - tests/api/llm-routes.test.ts
+
+5075371|2025-11-05 19:37:45 +0530|feat(api): add scenarios catalog endpoint and official scenarios JSON|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/scenarios/catalog/route.ts
+  - server/data/official-scenarios.json
+
+2ab06f4|2025-11-05 15:21:42 +0530|feat(backend-mode): remove client chat-mode paths; server-only session flow|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/ai-risk-ttx.db
+  - .vite-temp/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+  - MIGRATION_STATUS.md
+  - STAFF_ENGINEER_REVIEW.md
+  - app/api/session/[[...parts]]/route.ts
+  - app/layout.tsx
+  - codex.md
+  - components/SessionMonitor.tsx
+  - docs-site/README.md
+  - docs-site/package-lock.json
+  - docs-site/package.json
+  - docs-site/scripts/bootstrap-pages.mjs
+  - docs/test-coverage-summary.md
+  - hooks/useGameActions.ts
+  - hooks/useGameController.ts
+  - hooks/useRoundOptions.ts
+  - hooks/useSession.ts
+  - lib/api/session-router.ts
+  - lib/gameSetup.ts
+  - package.json
+  - scripts/bd_create_session_routing_epic.sh
+  - scripts/vitest-runner.mjs
+  - server/stores/sessionStore.memory.ts
+  - server/types/core.ts
+  - server/types/scenario.ts
+  - server/types/session.ts
+  - services/SessionService.ts
+  - services/sessionClient.ts
+  - stores/sessionStore.ts
+  - tests/api.session.lifecycle.integration.test.ts
+  - tests/hooks.useGameActions.backend-mode.test.ts
+  - vitest.config.ts
+
+63dd688|2025-11-04 02:19:38 +0530|fix(types): tighten GamePage props, boolean coercion; use updateAICompletion + direct setSessionMeta; replace leftover sessionClient.advance; annotate types; drop citations from log entry; simplify zod generics to avoid TS issues|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/game/page.tsx
+  - hooks/useGameActions.ts
+  - hooks/useGameController.ts
+  - lib/api/session-router.ts
+  - server/services/sessionEngine.ts
+  - server/types/session.ts
+
+170642e|2025-11-04 01:53:28 +0530|chore: remove deprecated LLM backend doc and legacy server route|feat/nextjs-migration,origin/feat/nextjs-migration
+  - docs/llm-backend-migration.md
+  - server/routes/llm.ts
+
+0282b70|2025-11-03 15:20:12 +0530|chore(llm): minor openai service tweaks; tidy About screen|feat/nextjs-migration,origin/feat/nextjs-migration
+  - server/services/llm/openaiService.ts
+
+e5ef126|2025-11-03 15:19:16 +0530|feat(session-core): add session router, types, store engine and test fixtures (pure core for backend mode)|feat/nextjs-migration,origin/feat/nextjs-migration
+  - lib/api/session-router.test.ts
+  - lib/api/session-router.ts
+  - server/services/sessionEngine.ts
+  - server/stores/sessionStore.memory.test.ts
+  - server/stores/sessionStore.memory.ts
+  - server/stores/sessionStore.ts
+  - server/types/session.test.ts
+  - server/types/session.ts
+  - tests/fixtures/session-data.ts
+
+f41e918|2025-11-03 15:13:36 +0530|feat(server): add structured logger + x-req-id; instrument LLM and Session routes; include SSE payload; parallelize AI turns and fix aiTurnResults ordering|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/llm/generate/[action]/route.ts
+  - app/api/session/[[...parts]]/route.ts
+  - docs/sd-abm-sim.md
+  - docs/session-backend.md
+  - lib/api/llm-handlers.ts
+  - server/lib/logger.ts
+  - tests/app.page.navigation.test.tsx
+
+0002d27|2025-11-02 02:01:55 +0530|fix(mock-llm): include actor in debrief key events and default fallback|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/graph.md
+  - .beads/issues.jsonl
+  - README.md
+  - server/services/llm/mockService.ts
+
+0d70f81|2025-11-02 01:38:25 +0530|fix(debrief-schema): make optional fields required and nullable per OpenAI Structured Outputs guidance (actor, rationale); update types and UI accordingly|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/llm/action-options/route.ts
+  - app/api/llm/ai-player-actions/route.ts
+  - app/api/llm/ai-turn/route.ts
+  - app/api/llm/chat/consequences/route.ts
+  - app/api/llm/chat/debrief/route.ts
+  - app/api/llm/chat/initial-scenario/route.ts
+  - app/api/llm/consequences/route.ts
+  - app/api/llm/counterfactual/route.ts
+  - app/api/llm/custom-scenario/route.ts
+  - app/api/llm/env/route.ts
+  - app/api/llm/generate/[action]/route.ts
+  - app/api/llm/health/route.ts
+  - app/api/llm/initial-scenario/route.ts
+  - app/api/llm/meta/status/route.ts
+  - lib/api/llm-handlers.ts
+  - screens/EndScreen.tsx
+  - server/services/llm/openaiService.ts
+  - server/types/core.ts
+  - services/llmApiClient.ts
+
+47f6425|2025-11-01 23:12:07 +0530|refactor(prompts): move chat + debrief prompt builders into prompts.ts and reuse in OpenAI service|feat/nextjs-migration,origin/feat/nextjs-migration
+  - prompts.ts
+  - server/services/llm/openaiService.ts
+
+ce8dcf0|2025-11-01 22:44:17 +0530|feat(debrief): add Actor column to key events; request actor in prompt and schema; mock derives actor from round actions|feat/nextjs-migration,origin/feat/nextjs-migration
+  - screens/EndScreen.tsx
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+  - server/types/core.ts
+
+d2c7f74|2025-11-01 22:35:49 +0530|feat(debrief): colorize impact columns; feed initial setup into debrief prompt via interface param\n\n- Add impactClass with green/red/amber/blue mapping in UI tables\n- LLMService.generateDebriefChat accepts gameSetup and uses it in prompt\n- Route passes gameSetup through to service\n- Mock updated accordingly|feat/nextjs-migration,origin/feat/nextjs-migration
+  - app/api/llm/chat/debrief/route.ts
+  - screens/EndScreen.tsx
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+  - server/services/llm/types.ts
+  - server/services/llmService.ts
+
+3ceadc2|2025-11-01 22:32:46 +0530|feat(debrief-ui): add round impact table with colored deltas and relative %; render key events and actions as tables\n\n- Compute per-round Δ and Δ% from eventLog, color-coded\n- Convert key events and human actions to tables for readability\n- Allow empty userActions; prevent false 'no actions' claims via prompt grounding|feat/nextjs-migration,origin/feat/nextjs-migration
+  - screens/EndScreen.tsx
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+
+389853b|2025-11-01 21:47:54 +0530|feat(debrief): add chat-based debrief on End screen\n\n- New endpoint: POST /api/llm/chat/debrief (uses chat session)\n- LLMService adds generateDebriefChat; implemented for OpenAI + Mock\n- EndScreen shows Debrief section with Generate button\n- Pass gameSetup to EndScreen to seed debrief session\n- README: mention end-screen debrief|feat/nextjs-migration,origin/feat/nextjs-migration
+  - README.md
+  - app/api/llm/chat/debrief/route.ts
+  - app/page.tsx
+  - screens/EndScreen.tsx
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+  - server/services/llm/types.ts
+  - server/services/llmService.ts
+  - server/types/core.ts
+
+cfde103|2025-11-01 21:28:18 +0530|feat(llm): introduce interface + mock implementation with env switch\n\n- Add LLMService interface and OpenAI + Mock implementations\n- Facade chooses implementation via LLM_MOCK=1 or LLM_MODE=mock\n- Env guard allows mock mode without LITELLM_API_KEY\n- Document mock mode in README|feat/nextjs-migration,origin/feat/nextjs-migration
+  - README.md
+  - server/lib/env.ts
+  - server/services/llm/mockService.ts
+  - server/services/llm/openaiService.ts
+  - server/services/llm/types.ts
+  - server/services/llmService.ts
+
+fa7dd7c|2025-11-01 20:50:13 +0530|chore(cleanup): remove legacy Vite/Node endpoints and unused files after Next.js migration\n\n- Drop legacy /api function handlers and Vite entrypoints\n- Remove duplicate chatSession.ts and request helper\n- app/page.tsx now serves as entry; Next.js route handlers replace functions|feat/nextjs-migration,origin/feat/nextjs-migration
+  - App.tsx
+  - api/feedback.ts
+  - api/llm/[...route].ts
+  - api/scenarios.ts
+  - api/scenarios/[id]/vote.ts
+  - api/tsconfig.json
+  - api/types/feedback.ts
+  - index.tsx
+  - server/lib/request.ts
+  - services/chatSession.ts
+
+3214aea|2025-11-01 20:45:56 +0530|refactor(ts): standardize internal imports for Next.js resolver\n\n- Drop .js extensions from internal imports\n- Align prompts and services to TS path resolution\n- No functional changes|feat/nextjs-migration,origin/feat/nextjs-migration
+  - prompts.ts
+  - server/services/chatSession.ts
+  - server/services/llmService.ts
+
+bf3f992|2025-11-01 20:40:12 +0530|feat(env): add centralized env guard helper for LLM and DB checks\n\n- requireLLMEnv(): ensures LITELLM_API_KEY is present\n- requireDBEnv(): ensures DATABASE_URL is present (falls back to PRISMA_DATABASE_URL)\n- returns 503 JSON with no-store headers when misconfigured|feat/nextjs-migration,origin/feat/nextjs-migration
+  - server/lib/env.ts
+
+7cfe508|2025-11-01 14:58:13 +0530|wip: TypeScript config fixes and dual-tsconfig setup|feat/nextjs-migration,origin/feat/nextjs-migration
+  - .beads/ai-risk-ttx.db
+  - App.tsx
+  - CLAUDE.md
+  - api/README.md
+  - api/feedback.ts
+  - api/gameConfig.ts
+  - api/llm/[...route].ts
+  - api/package.json
+  - api/prompts.ts
+  - api/routes/llm.ts
+  - api/scenarios.ts
+  - api/scenarios/[id]/vote.ts
+  - api/services/chatSession.ts
+  - api/services/llmService.ts
+  - api/test-feedback.json
+  - api/tsconfig.json
+  - api/types/core.ts
+  - api/types/feedback.ts
+  - api/types/llm/responses.ts
+  - api/types/publicScenario.ts
+  - dev.sh
+  - hooks/useGameController.ts
+  - index.tsx
+  - package-lock.json
+  - package.json
+  - prompts.ts
+  - screens/EndScreen.tsx
+  - screens/GameRulesScreen.tsx
+  - screens/index.ts
+  - scripts/dev-llm.ts
+  - server-dev.js
+  - server/lib/logger.ts
+  - server/lib/prisma.ts
+  - server/lib/request.ts
+  - server/routes/llm.ts
+  - server/services/chatSession.ts
+  - server/services/llmService.ts
+  - server/types/core.ts
+  - server/types/llm/requests.ts
+  - server/types/shims.d.ts
+  - services/chatSession.ts
+  - services/llmApiClient.ts
+  - tsconfig.json
+  - types/feedback.ts
+  - vercel.json
+
+3b91d0e|2025-10-29 01:38:23 +0530|feat: Enhance backend LLM API with Edge runtime and chat mode|feat/nextjs-migration,preview,origin/feat/nextjs-migration,origin/preview
+  - .beads/graph.md
+  - .beads/issues.jsonl
+  - README.md
+  - api/llm/[...route].ts
+  - api/routes/llm.ts
+  - api/services/chatSession.ts
+  - api/services/llmService.ts
+  - api/tsconfig.json
+  - api/types/llm/requests.ts
+  - api/types/publicScenario.ts
+
+0f23d4a|2025-10-26 19:03:57 +0530|feat: Add optimized AI turn endpoint (50% fewer LLM calls)|feat/nextjs-migration,preview,origin/feat/nextjs-migration,origin/preview
+  - .beads/graph.md
+  - .beads/issues.jsonl
+  - .beads/ready.md
+  - README.md
+  - api/routes/llm.ts
+  - api/services/llmService.ts
+  - api/types/llm/requests.ts
+  - api/types/llm/responses.ts
+  - prompts.ts
+  - services/llmApiClient.ts
+  - types.ts
+
+397de36|2025-10-26 17:27:46 +0530|feat: Implement Hono-based backend API for LLM calls|feat/nextjs-migration,preview,origin/feat/nextjs-migration,origin/preview
+  - .beads/graph.md
+  - .beads/issues.jsonl
+  - .env.example
+  - README.md
+  - api/llm/[...route].ts
+  - api/routes/llm.ts
+  - api/services/chatSession.ts
+  - api/services/llmService.ts
+  - api/tsconfig.json
+  - api/types/llm/requests.ts
+  - api/types/llm/responses.ts
+  - docs/llm-backend-migration.md
+  - package-lock.json
+  - package.json
+  - services/llmApiClient.ts
+  - types.ts
+

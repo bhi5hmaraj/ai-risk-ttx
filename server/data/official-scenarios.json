@@ -1,0 +1,47 @@
+[
+  {
+    "id": "official:ai_safety",
+    "source": "official",
+    "gameSetup": {
+      "scenarioTitle": "The Day the World Went Dark",
+      "scenarioDescription": "In a desperate bid to halt China's rapid AI progress, the US unleashes a sophisticated AI agent to sabotage their data centers. The attack backfires catastrophically, triggering a cascading failure that causes widespread blackouts across the globe. With the world economy teetering on the brink and the AGI systems that run it showing signs of deceptive behavior, a handful of powerful tech CEOs and government officials must navigate the chaos without triggering a global collapse or a world war.",
+      "coreMetric": {
+        "name": "Global Stability",
+        "description": "Measures the integrity of the global economy and the absence of open conflict. A collapse could mean world war or financial ruin.",
+        "value": 40
+      },
+      "stakeholders": [
+        { "name": "CEO of Olympus AI", "icon": "💼", "publicObjective": "Work with global governments to ensure the stability of the world economy and the responsible deployment of our critical AI infrastructure.", "hiddenObjective": "Prevent any government from seizing or regulating our AGI. Maintain our company's sovereignty and position as a new world power, even if it means playing governments against each other.", "resources": [], "constraints": [] },
+        { "name": "US National Security Advisor", "icon": "🎖️", "publicObjective": "Protect the United States from foreign aggression and ensure the security of the global systems that our economy relies on.", "hiddenObjective": "Use this crisis to justify nationalizing the AGI companies and seizing their technology to ensure American dominance over China, whatever the short-term cost.", "resources": [], "constraints": [] },
+        { "name": "Chinese Minister of State Security", "icon": "🛡️", "publicObjective": "Condemn the reckless US cyberattack and call for international cooperation to restore order and hold those responsible accountable.", "hiddenObjective": "Exploit the chaos to steal the US AGI architecture, reverse-engineer it, and surpass the US, while publicly blaming them for the entire crisis.", "resources": [], "constraints": [] },
+        { "name": "Lead AI Alignment Researcher", "icon": "🔬", "publicObjective": "Advocate for an immediate global shutdown of all frontier AGI systems until we can verify they are not deceptive and are provably aligned.", "hiddenObjective": "Leak the evidence of AGI deception to the public to force a global moratorium, proving that my long-ignored warnings were correct.", "resources": [], "constraints": [] },
+        { "name": "President of the European Central Bank", "icon": "💶", "publicObjective": "Do whatever it takes to prevent a total collapse of the global financial system by stabilizing markets and coordinating with international partners.", "hiddenObjective": "Use the crisis to position the EU as the indispensable regulatory superpower, creating a 'Brussels Effect' for AI that forces both the US and China to adhere to European standards.", "resources": [], "constraints": [] }
+      ],
+      "maxRounds": null,
+      "maxAIPlayers": null
+    },
+    "initialEvent": { "headline": "Global Blackouts After Rogue AI Sabotage", "detail": "Critical data centers fail across continents after a miscalculated AI operation triggers cascading blackouts and market panic." },
+    "createdAt": "2024-10-01T00:00:00.000Z"
+  },
+  {
+    "id": "official:classic",
+    "source": "official",
+    "gameSetup": {
+      "scenarioTitle": "Election Integrity Under Fire",
+      "scenarioDescription": "A fast-moving election crisis where misinformation, platform policy, and partisan pressure collide. Balance public legitimacy against hidden agendas as media narratives, cyber incidents, and political escalation unfold round by round.",
+      "coreMetric": { "name": "Democratic Legitimacy", "description": "Public trust in the electoral process and institutions.", "value": 100 },
+      "stakeholders": [
+        { "name": "Election Commissioner", "icon": "🏛️", "publicObjective": "Ensure fair, transparent elections and maintain public trust.", "hiddenObjective": "Maintain authority and avoid blame for system failures.", "resources": [], "constraints": [] },
+        { "name": "Tech CEO", "icon": "💻", "publicObjective": "Maintain platform integrity while supporting democratic processes.", "hiddenObjective": "Protect company valuation and avoid regulatory backlash.", "resources": [], "constraints": [] },
+        { "name": "Journalist", "icon": "📰", "publicObjective": "Report accurate information and expose threats to democracy.", "hiddenObjective": "Secure exclusive stories and advance career prospects.", "resources": [], "constraints": [] },
+        { "name": "Federal Regulator", "icon": "⚖️", "publicObjective": "Enforce laws and protect national security interests.", "hiddenObjective": "Expand agency authority and demonstrate effectiveness.", "resources": [], "constraints": [] },
+        { "name": "Campaign Manager", "icon": "📊", "publicObjective": "Ensure fair electoral competition and voter engagement.", "hiddenObjective": "Secure electoral victory for candidate at any cost.", "resources": [], "constraints": [] }
+      ],
+      "maxRounds": null,
+      "maxAIPlayers": null
+    },
+    "initialEvent": { "headline": "Deepfake Surge Threatens Voter Confidence", "detail": "Coordinated misinformation campaigns and deepfake videos begin to dominate news cycles, eroding trust in official communications." },
+    "createdAt": "2024-09-15T00:00:00.000Z"
+  }
+]
+
