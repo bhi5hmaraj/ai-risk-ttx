@@ -153,59 +153,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
           </div>
         </div>
 
-        {/* SECTION 2: Score Δ */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 flex gap-2">
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
-          </div>
-          <div className="flex-1 min-w-0">
-            {hasLastRound && playerActions.length > 0 ? (
-              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-                {playerActions.map((playerAction) => {
-                  const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
-                  const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
-                  return (
-                    <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
-                      <div className="mb-1">
-                        <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <span className="font-semibold text-white text-xs break-words">{playerAction.roleName}</span>
-                          {hiddenUpdate && (
-                            <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
-                            </span>
-                          )}
-                        </div>
-                        {matchingPlayer && (
-                          <span className="text-[10px] text-amber-400 italic block break-words">
-                            {matchingPlayer.role.hiddenObjective}
-                          </span>
-                        )}
-                      </div>
-                      <ul className="space-y-0.5 mt-1">
-                        {playerAction.actions.length > 0 ? (
-                          playerAction.actions.map((action, idx) => (
-                            <li key={idx} className="flex justify-between items-start gap-1 text-[11px]">
-                              <span className="leading-tight flex-1 text-gray-300 break-words">{action.title}</span>
-                              <span className="flex-shrink-0 text-[10px] font-semibold text-blue-300">{action.cost}AP</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="italic text-gray-500 text-[11px]">No action</li>
-                        )}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-blue-950/60 border border-blue-700/30 rounded-md p-3">
-                <p className="text-xs text-blue-100/80 leading-relaxed">Actions and score Δ will appear here after the first round.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* SECTION 3: Your Actions */}
+        {/* SECTION 2: Your Actions (moved above Score Δ) */}
         <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 relative flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
             <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
@@ -304,17 +252,85 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   })}
                 </div>
               )}
-              <button
-                onClick={() => onConfirmActions(selected)}
-                disabled={confirmDisabled}
-                className={`w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm ${
-                  confirmDisabled ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed' : ''
-                }`}
-              >
-                Confirm Actions
-              </button>
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelected([])}
+                  disabled={selected.length === 0 || confirmDisabled}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
+                    selected.length === 0 || confirmDisabled
+                      ? 'border-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'border-gray-600 text-gray-200 hover:border-blue-400'
+                  }`}
+                  title="Clear selected actions"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={() => onConfirmActions(selected)}
+                  disabled={confirmDisabled}
+                  className={`flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm ${
+                    confirmDisabled ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed' : ''
+                  }`}
+                >
+                  Confirm Actions
+                </button>
+              </div>
             </>
           )}
+          </div>
+        </div>
+
+        {/* SECTION 3: Score Δ (moved below actions) */}
+        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 flex gap-2">
+          <div className="flex-shrink-0 flex items-center justify-center">
+            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
+          </div>
+          <div className="flex-1 min-w-0">
+            {hasLastRound && playerActions.length > 0 ? (
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                {playerActions.map((playerAction) => {
+                  const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
+                  const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
+                  return (
+                    <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
+                      <div className="mb-1">
+                        <div className="flex items-start justify-between gap-1 mb-0.5">
+                          <span className="font-semibold text-white text-xs break-words">{playerAction.roleName}</span>
+                          {hiddenUpdate && (
+                            <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
+                            </span>
+                          )}
+                        </div>
+                        {matchingPlayer && (
+                          <span className="text-[10px] text-amber-400 italic block break-words">
+                            {matchingPlayer.role.hiddenObjective}
+                          </span>
+                        )}
+                      </div>
+                      <ul className="space-y-0.5 mt-1">
+                        {playerAction.actions.length > 0 ? (
+                          playerAction.actions.map((action, idx) => (
+                            <li key={idx} className="flex justify-between items-start gap-1 text-[11px]">
+                              <span className="leading-tight flex-1 text-gray-300 break-words">{action.title}</span>
+                              <span className="flex-shrink-0 text-[10px] font-semibold text-blue-300">{action.cost}AP</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="italic text-gray-500 text-[11px]">No action</li>
+                        )}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-blue-950/60 border border-blue-700/30 rounded-md p-3">
+                <p className="text-xs text-blue-100/80 leading-relaxed">Actions and score Δ will appear here after the first round.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
