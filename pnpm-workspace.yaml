@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - '@clerk/shared'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - esbuild
+  - prisma
+  - protobufjs
+  - sharp
+  - unrs-resolver

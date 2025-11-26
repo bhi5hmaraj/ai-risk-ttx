@@ -1,0 +1,585 @@
+﻿standup
+Github repo - https://github.com/bhi5hmaraj/ai-risk-ttx
+
+
+
+
+High level goals for next 3 months
+* Understand TTX 
+   * talk to policy, other researchers, academics 
+   * game mechanics
+      * only small near term changes
+* Improve current app
+   * UI/UX
+   * fix bugs 
+   * multiplayer
+   * clean the mechanics of democracy and personal score, etc. 
+      * We need to breakdown the democracy score (sub components) ?
+* grants and outreach (blog)
+   * for scaling scenarios and models
+   * 
+
+Jul 24, 2025
+Areas of focus
+* Current app 
+   * multiplayer 
+   * UX/UI - alishapathak23@gmail.com working on figma wireframes
+* Grant and talk to policy folks to understand use cases
+* game mechanics 
+* Alisha - should we restrict the action space? 
+   * Bhishma - should we have a hybrid of restricting at a higher level of abstraction (restrict action with certain points)
+* Alisha - TTX experience 
+   * 2 parties, like chess 
+   * how accurate are they modelling? - 
+   * used for devising a strategy
+   * objectives are not fixed sometimes
+* We need to breakdown the democracy score (sub components) 
+* https://transitionsresearch.org/ 
+Jul 17, 2025
+* Task updates
+   * Blog TTx announcement blogdraft
+* Understanding TTX and how it connects to policy
+   * Need to understand which aspects of TTX helps with each outcome. 
+   * This will help us prioritize the tasks
+   * tradeoff between accuracy and simplicity
+   * which areas of the game mechanics are important
+   * what is the theory of change 
+   * Alisha: What does one have an eureka moment about when they do a TTX - current game has the AI generate different actions - perhaps we should fix actions and consequences to have better control on the outcome of game and not letting the hallucinations go wild. An unique experience of doing a TTX in person is how various players have an internal chat and blindside other players - how can we bring that in a game online[a]
+* Blog status
+* Existential hope: https://foresight.org/technologies/foresight-existential-hope/ 
+* CHat history
+   *    * Alisha Pathak
+   * 7:02 PM
+   * https://docs.google.com/document/d/1FUxkibKjncgb99a7wzURixXa66OEFQ8VH0zqRbY1umE/edit?usp=sharing
+   *    * Alisha Pathak
+   * 7:24 PM
+   * https://foresight.org/technologies/foresight-existential-hope/
+   * Alisha Pathak
+   * 7:37 PM
+   * https://onlinelibrary.wiley.com/doi/full/10.1111/1468-5973.12517?utm_source=chatgpt.com
+   * You
+   * 8:09 PM
+   * https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221_sLM4ezA2JF2DhzE6nvV8mJmmXasDt-1%22%5D,%22action%22:%22open%22,%22userId%22:%22108374949776006287698%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing
+   * You
+   * 8:30 PM
+   * https://centerforhealthsecurity.org/our-work/tabletop-exercises
+   * You
+   * 8:39 PM
+   * https://elicit.com/
+   * You
+   * 8:41 PM
+   * https://distill.pub/about/
+
+
+Jul 13, 2025
+
+
+* Next steps
+   * Figure out places to apply or blog posts
+      *    * Figure out MVP
+      *    * Setup calls 
+      * Amritanshu
+      * Chethan 
+   * Our tasks prior to applying:
+   * Make one TTX version for pandemics/real world situation
+   * Make 1-2 prototypes for other TTX simulations/games
+   * Fixing UI/UX for this
+      *    * 1) Blog post 
+      * Deadline - Jul 19, 2025
+      * Skeleton draft - Jul 16, 2025
+   * Feedback form - Bhishmaraj S
+      *    * 2) Base grant application - @alishapathak23@gmail.com 
+   * 3) Contacting relevant people 
+* Alisha - 
+   * Pandemic TTX : Pandemics: Unit 7 
+   * Can be generalized to all x-risks
+   * Consequence to actions 
+   * We need to figure out the scoring mechanism
+      * https://takeoffspeeds.com - Tom Davidson model
+   * Take a easy scenario like Pandemics and show the power of the system
+* Badri
+   * Instead of multiplayer, we can focus on quick wins on expanding scenarios, actions, etc.
+
+
+How to break down our plan/what is the blog post:
+What is the point of our project:
+        1) Help people understand complexity, synergy
+2) Enable researchers to attack systemic problems[b]
+        3) Give ‘regular people’ a sense on how actions and responses. 
+        4) facilitate systems understanding of interrelated actions in a closed living lab model
+        5) Benchmarking of models’ strategic thinking ability
+
+
+Who are our users
+1. EA, policy makers 
+2. casual users
+
+
+What is our tool currently and how does it help?
+
+
+
+Things we want to build right away
+1. Make one TTX version for pandemics/real world situation
+2. Make 1-2 prototypes for other TTX simulations/games
+3. Fixing UI/UX for this 
+
+
+What improvements are under discussion:
+1. Multiplayer
+2. Grounding the score in real-world scenarios.
+3. Making the score make ‘sense’/logical/accessible
+
+
+What is the bigger picture goal?
+
+
+
+
+Feature babble 
+* Human multiplayer
+* Better game mechanics
+
+
+Sections of a Grant Application: 
+Introduction: Why multiplayer agent interactions are important to model to study (existential) risks
+        This we’ve made for one scenario, and want to expand 
+
+
+Gaps in the current state of the world: What is the value add/ what  
+1. Existential hope via counterfactual
+2. Lack of understanding of institutional interplay
+ 
+How to fix gaps:
+  The bigger picture of what we aim to solve with completed project, in 1-2 years  
+
+
+Grant Draft an AI generated version - will polish post our call. Have tried to embed it in research
+ 
+Design of grant (What resources, how it would be used):  What is the cost within the team
+   What is the operational cost of the project
+   What expert resources we would need
+
+  EAG NY: 6000$ + travel
+      10hrs/week-40$/hr
+Alisha: 30K-40K$  till end of 2025
+    Upto 50K
+Give different ranges and tie them to different targets/deliverables.
+
+
+Blog draft: AI generated version - needs scaffolding and 
+   
+Future impacts of the completed project/ 2nd order effects: 
+    
+
+
+
+
+Wednesday meeting @ 8PM 16/7
+
+
+Tasks: 
+Alisha: Scaffolding grant application, design elements advice
+Ani and Bhish: Pandemic scenario added to our game
+
+
+
+
+
+
+3 day blog targets:
+1) Each of us has our base content/idea for the blog. (100 words on what the blog covers, goals/expected outcomes)
+2) 1 section that you're interested in taking ownership of/writing in full
+
+
+
+
+Update: Monday, day 1
+
+
+**Product level argument**
+We have 2 fundamentally different goals and userbases that I think would be a mistake to make a single product catering to both of them
+
+
+Product A) A fun game: the goal is to use the game mechanics to educate/communicate ideas like the interleaving workings of complex systems, why they can fail without ill intent (via Moloch) and that no action is a pretty terrible choice in the face of existential/calamitous tests.
+
+
+The audience who can get value from this is clearly  people who don't know these ideas already (the "general public"), which means not the AI pilled warrens of Less Wrong/ai safety crew.
+
+
+Since we are pitching to members of the latter group, let the other deliverable be more of a playground. 
+
+
+Product 0: Allow for user control over choice of agents, make AI players agentic AND make it easily extensible as a Research Forecasting testbed. 
+
+
+For tech savvy/tech aware users who are interested in forecasting different scenarios.
+[7/14, 04:52] Anirudh: **App level description**
+Product A: Starting April 30, 2020(Difficulty goes up the later you start), play as a nation(also affects difficulty) (technical: data pulled from rag? ); to take measures to prevent spread of Covid. Different score types and resources available each turn, (technical: maintained by state machines?, generated by Eval agent)and see what could have been done. Post hoc analysis, Counterfactuals are 'Meta skills' being 'Unlocked' (pedagogy/UEx: how is it being conveyed?)
+[7/14, 05:10] Anirudh: Prototype complete.🥳
+
+
+Status:  
+Meh, looks impressive at first glance but gameplay and logic need work. Hardcode/Rag/{Upgrade:Generated data made by mathematical models/real world data (grounding: Find the predictions/models presented at each date) best to be implemented for covid cases by date in all these countries.. 
+
+
+Advantages:
+1) Alisha, great idea with a grounded example and Covid.We all went through Covid, so jargon is familiar
+2) So are the policy ideas..  T
+
+
+Disadvantages/Things to be fixed or managed:
+1) Perhaps incendiary: Many lost family to Covid, and until we map out the decision tree, our bot 'blaming the victim'  in terms of policies is not a good look. Even after, LLMs can spew potentially fuck all things (see: Grok)
+[7/14, 05:13] Anirudh: Disadvantage: 2) Perhaps 'dangerous': Covid was a failure of our systems by epic proportions.. Is yelling that in the street waving proof and calling it a game the best idea? Especially to get started, many directions of controversy..
+[7/14, 05:29] Anirudh: Project 0: AI risks from human misuse/disempowerment customisable playground for 1 scenario (Grant is to build the rest), currently: AI Misinformation affecting elections (To discuss: Suggest other specific? in what way and how is that better/more important/<better in X way>?)
+
+
+Status: MVP complete and deployed end to end ai-risk-ttx.vercel.app 
+
+
+We need to have a discussion on score. Alisha I agree that getting into the weeds of accurate scoring systems isn't on the cards now.. Let's give them a few options or let them add their own scoring system, change their hidden objective, change the scenario, change the action space etc. Bhish: technically doable via MCP + API calls?? What are the
+[7/14, 05:32] Anirudh: complications with over-customisability in the architecture.
+[7/14, 06:26] Anirudh: Why Grant?  have built for one usecase, want to let you build your own 'cyborg'(?? Quite far from that)
+  Make studying AI safety something tangible that even non-techy ppl can get involved with, by 'playing with LLMs' (Gamification: set up challenges and contests for finding new policies/action cards)
+
+
+This product is a simulator, not a game..  Simulator of what?Too many things. So my plan: Let's make it really extensible and let the open source community build and experiment with the tooling. 
+
+
+The Big Gaps section from the Grant Template, with various different problems we are looking to solve/usecases.  <Add any other you  
+1) A tool/environment to study multi-agent chaos and experiment with it.
+2) A tool to teach Forecasting in classrooms 
+3) Allow people to set up, study and use their own LLM agents. Presumably they can interact with each other.. (Important, but highly non trivial multidisciplinary problem). We def don't know how to make such interactions constructive, destructive or neutral yet, and needs research
+
+
+Bhish, what functionalities are enabled/made faster with MCP, what are 
+Alisha, assuming a funder is using the simulator.. What would they consider must-have features/changes? Can we ask/early demo to get that 
+
+
+Both, what's your take on this implementation/idea as a whole.. I fleshed it out but this to me is very much a  case of strong/specific opinions,  loosely held.  Do suggest improvements, changes, tangents etc..  Part of why I'm WhatsApp dumping vs updating the doc. (yes have added to doc also, kinda)  Let's discuss/debate even if async on what it is we are building and why..
+
+
+
+
+
+
+People to contact
+* People to reach 
+   * What to ask
+      * Name
+	Org
+	Role
+	Potential Usefulness for Contacting (Re: NOTHG/OAEA/Dialectic)
+	Tom Davidson
+	Forethought
+	Senior Research Fellow
+	Likely deep into the core research questions. Could be interested in the systemic risks NOTHG identifies (gradual disempowerment, power shifts) and the governance architectures you propose (OAEA, Dialectic) as potential navigation strategies. His feedback on the plausibility of your scenarios and solutions would be valuable. Also his work on AI enabled coups.
+	Will MacAskill
+	Forethought
+	Senior Research Fellow
+	A prominent figure in effective altruism and long-term future considerations. Might be interested in how NOTHG's near-term power shift analysis connects to longer-term existential risks, and whether OAEA/Dialectic offer scalable, resilient solutions that align with EA principles of doing the most good.
+	Rose Hadshar
+	Forethought
+	Research Fellow
+	As a Research Fellow, likely engaged in specific research projects. If her work touches on AI governance, societal impacts, or economic transformations, your proposals could be relevant. Identify her specific research areas if possible for a more targeted approach.
+	Fin Moorhouse
+	Forethought
+	Research Fellow
+	Similar to Rose Hadshar, his specific research interests would determine the best angle. If his work involves AI strategy, policy, or risk assessment, there could be overlap.
+	Lizka Vaintrob
+	Forethought
+	Researcher
+	As a Researcher, actively involved in the research process. Could be a good point of contact for sharing detailed technical aspects of OAEA-SenseMaker or Dialectic if her research aligns, or for discussing the underlying assumptions of the NOTHG framework.
+	Max Dalton
+	Forethought
+	Director
+	As Director, he likely has a broader strategic overview. Might be interested in how initiatives like Superposition (housing NOTHG/OAEA/Dialectic) could collaborate with or complement Forethought's mission, or if your platforms offer tangible tools for the "AI think tanks, companies, policy-makers" they aim to engage.
+	Toby Ord
+	Forethought
+	Research Affiliate
+	Author of "The Precipice," a key figure in x-risk. He would be interested in frameworks like NOTHG that analyze novel pathways to catastrophic outcomes (even if gradual) and proposals like Dialectic that aim to improve global coordination and governance for AI safety.
+	Ryan Greenblatt
+	Forethought
+	Research Affiliate
+	Research Affiliates often bring specialized expertise. Understanding his specific focus within AI safety/governance would be key to tailoring any outreach.
+	Lukas Finnveden
+	Forethought
+	Research Affiliate
+	Similar to Ryan Greenblatt, identifying his particular research niche within AI would be important for relevant engagement.
+	
+
+Name
+	Role
+	Potential Usefulness for Contacting (Re: GDR/Dialectic & OAEA)
+	Lisa Thiergart
+	Research Lead
+	As Research Lead and founder of the TGT, she's central. Her focus on "concrete proposals for AI regulation, AI security and Verification Mechanisms" aligns perfectly with Dialectic's aim to be a platform for designing and analyzing such proposals. Your GDR framework (highlighting systemic risks of gradual disempowerment and power shifts) provides a strong rationale for the urgency of her team's work. She'd be a key person to discuss the overall Dialectic vision with.
+	Aaron Scher
+	Researcher
+	His focus on "International Coordination on AI, with an emphasis on Verification Mechanisms" is a direct hit for Dialectic. Your platform could be pitched as a tool to model, simulate, and design robust verification mechanisms for international AI agreements or Halts. The GDR framework can highlight why such coordination is critical to avoid disempowerment spirals.
+	David Abecassis
+	Researcher
+	Researches "strategies to address the dangers posed by frontier AI research" and has a background in strategy game design and social systems architecture. This is highly relevant to Dialectic's simulation capabilities (MCTS-style what-ifs, modeling policy impacts) and potentially to understanding the game-theoretic aspects of AI power shifts inherent in the Gradual Disempowerment risk. His experience in "rapid prototyping" might also make him interested in how Dialectic could accelerate policy experimentation.
+	Peter Barnett
+	Founding Researcher
+	Works on "limitations and uses of AI evaluations and their role in regulation." Dialectic could be a platform to implement and test different evaluation frameworks and regulatory approaches. Your GDR analysis highlights scenarios where current evaluation paradigms might be insufficient to prevent gradual disempowerment, thus underscoring the need for better tools and approaches (which Dialectic aims to provide).
+	
+
+   * Owen Cotton
+
+
+Daniel Kokotajlo, Executive Director: Daniel oversees the AI Futures Project. He previously worked as a governance researcher at OpenAI on scenario planning. In August 2021, Daniel predicted the fine-tuning of language models as chatbots, scaling to >$100 million models, chain-of-thought, reasoning models, and more. See also his Time100 AI 2024 profile.
+
+
+Eli Lifland, Researcher: Eli specializes in forecasting AI capabilities. He also co-founded and advises Sage, which builds interactive AI explainers. He ranks #1 on the RAND Forecasting Initiative leaderboard.
+
+
+Thomas Larsen, Researcher: Thomas specializes in forecasting AIs’ goals and AI policy. He previously founded the Center for AI Policy.
+
+
+Romeo Dean, Researcher: Romeo specializes in forecasting AI chip production and usage.
+
+
+Jonas Vollmer, COO: Jonas focuses on communications and operations. Jonas has 11 years of experience founding and leading AI safety nonprofits.
+
+
+
+
+https://www.forethought.org/research/ai-tools-for-existential-security                 
+
+
+Amritanshu - 4X games benchmarks, working on AI policy and similarities between nuclear risk and AI 
+Resources
+Deep research
+https://claude.ai/public/artifacts/081aea7e-b78c-4e4e-af02-57c163561fa4 
+AI-Driven Tabletop Exercises for AI Risk_ Evidence-Based Design Framework.pdf
+AI-Driven Tabletop Exercise Simulation_ Deep-Dive Research Report.pdf
+Funding opportunities 
+   * Open phil 
+      * https://www.openphilanthropy.org/focus/global-catastrophic-risks-capacity-building/ 
+   * Foresight 
+      * https://foresight.org/request-for-proposals/
+      * https://foresight.org/request-for-proposals/safe-multi-agent-scenarios/
+      * https://foresight.org/request-for-proposals/automating-research-and-forecasting/ 
+      *    * emergent ventures
+   * https://www.metacharityfunders.com/
+   * EAIF 
+   * https://cosmosgrants.org/truth 
+   * Marek
+   * manifund
+      * AI 2027 team - AI forecasting and policy research by the AI 2027 team | Manifund
+      * https://ai-2027.com/about?tab=tabletop-exercise#tab-box-tabletop-exercise . 
+      *   
+
+   * https://ai-2027.com/about?tab=tabletop-exercise#tab-box-tabletop-exercise 
+   *         * https://chatgpt.com/share/687372d2-dc4c-8007-9e8c-ea5f40c3f0ce 
+      * https://spec.tech 
+
+
+Designs
+
+
+Drafts
+
+
+Grant
+
+
+Emails
+Nov 14, 2025
+
+
+Email for AI Futures
+
+
+Dear jonas,
+
+
+Thank you for taking out time from your schedule to meet me the other day. Moreover, I was excited to see the developments made at AI futures end to tackle the problem of interaction with AI2027 and the subsequent plausibilities for takeoff.
+
+
+Bhishma and I were also pleased to know of your interaction with Simulacra, and your feedback on bugs - we have fixed a few of them in the past four days and made some updates to the game. Having received your paper and having been through VTTX.vercel.app, we have some thoughts about how to approach this problem statement.
+
+
+The ask seems to be: How can people use the data and information generated by AI2027 and interact with it. Furthermore, how can there be more predictions like AI2027 that can be made using this model. TTX has been understood as a tangible way to use the model for people to interact and populate thoughts about AI2027. The aim is to not only build a participatory educational tool, but also a prediction tool.
+
+
+To answer briefly: Simulacra is a tool which generates crises scenarios, identifies stakeholders and designs a game play for the said stakeholder. To put it simple - it is generative.
+
+
+AI2027 lies in the realm of Take off speeds, it has assumptions and data which had led to predictions. It is information rich, and have some grounding in terms of real world scenarios and the assumptions are clearly laid out.
+
+
+On going through the paper and the ask, we realise we need to hit the sweet spot between being completely grounded in a mathematical model and being completely speculative. In mathematical expression that may look like using a simple population dynamics model and then slowly populating the 
+
+
+We had taken a go at the AI2027 as a crises scenario in the past in our game engine (trial link here) and we have another version of the tweaked game on the same game engine (try link here).
+
+
+While we do think that simulacra is one way to communicate and explore 
+Nov 12, 2025
+V2
+
+
+Hi Jonas,
+Bhishma here, Alisha's co-founder. It's great to connect. We've been following your team's work on Manifund, so we were happy to see your reply.
+Alisha shared our current MVP (game announcement LW post) . Simulacra was born out of an AI safety retreat that we hosted, a few months ago .Alisha, having played Intelligence Rising and a biosecurity-focused TTX, was really struck by how these games reveal the complex (and often conflicting) dynamics between stakeholders in a crisis. And I find active learning environments to be a much better way to understand a nuanced topic like AI safety. 
+Building on that, we started experimenting with an AI gamemaster for a voting crisis scenario. We're now focused on how the real learning happens in the post-game debrief, and our MVP is built to test that loop.  
+Since you're deep in this space, we'd be grateful for your perspective on the big design trade-offs we're wrestling with. We're currently debating our audience focus. Whether it's realistic to serve both the public and expert policymakers in one tool, or if we should pick a lane. This choice directly impacts our scope; should we be a general framework for any crisis, or stay hyper-focused on AI? It also shapes the design itself, like how closely to replicate the in-person TTX feel versus leaning into what a digital, AI-driven gamemaster does best.  
+We've run this MVP with over 20 users now and have some early takeaways and feedback on building Simulcra, and would like to share our own learnings from a tech and game design perspective. 
+Ultimately, it all comes back to the learning: Hence we want to find  the best way to connect the gameplay experience to real-world preparedness, and we'd value any insights on what your theory of change looks like. We are especially curious to know what kind of feedback your participants gave. [c][d]
+For our next iteration, we're building a mode to allow players (human and AI) to communicate with each other between rounds before they make a decision. We believe this would make the gameplay more realistic and engaging. The current version of Simulacra is built using a much smaller model (Gemini 2.5 Flash Lite), but we are hoping to increase groundedness and fidelity and improve the game design. We are looking to raise funds to facilitate this to a wider audience and develop this further.
+If an in-person meeting tomorrow is not feasible on such short notice, we could schedule a 30-minute virtual call with you or anyone from the AI Futures team at a later date.
+We'd be keen to find ways our work might be complementary with AI Future’s work. Looking forward to collaborating with you!
+
+
+
+
+V1
+Hi Jonas,
+Bhishma here, Alisha's co-founder. It's great to connect. We've been following your team's work on Manifund, so we were happy to see your reply.
+Alisha shared our current MVP. That project was born out of an AI safety retreat a few months ago. Alisha, having played Intelligence Rising and a biosecurity-focused TTX, was really struck by how these games reveal the complex (and often conflicting) dynamics between stakeholders in a crisis.
+Building on that, we started experimenting with an AI gamemaster for a voting crisis scenario (check our LW post). We're now focused on how the real learning happens in the post-game debrief, and our MVP is built to test that loop. 
+Since you're deep in this space, we'd be grateful for your perspective on the big design trade-offs we're wrestling with. We're currently debating our audience focus—whether it's realistic to serve both the public and expert policymakers in one tool, or if we should pick a lane (as we see enough value in both). This choice directly impacts our scope; should we be a general framework for any crisis, or stay hyper-focused on AI? It also shapes the design itself, like how closely to replicate the in-person TTX feel versus leaning into what a digital, AI-driven gamemaster does best.
+Ultimately, it all comes back to the learning: We're passionate about finding the best way to connect the gameplay experience to real-world preparedness, and we'd value any insights you have on that.
+Currently within Simulacra: For our next iteration we are building a mode where we allow the players (humans and AI) to communicate with others between rounds before they make a decision. Also, the current version of Simulacra is built using a much smaller model (gemini 2.5 flash lite) but are hoping to increase groundedness, fidelity and improve game design - and are looking to raise funds to facilitate this to a wider audience and develop this further. We've run this MVP with over 20 users now and have some early takeaways and feedback on building Simulcra, and would like to share our own learnings from a tech and game design perspective.
+If an in-person meeting tomorrow is not feasible on such short notice, we would be just as thrilled to schedule a 30-minute virtual call with you or anyone from the AI Futures team at a later date.
+We'd be keen to find ways our work might be complementary with AI Future’s work. We're also happy to share our own learnings from a tech and game design perspective—we've run this MVP with over 20 users now and have some early takeaways on building Simulcra Looking forward to collaborating with you! 
+Best,
+Bhishma
+
+
+
+
+Blog
+
+
+Brain Dump
+Brain
+14/11/25_bhishma
+The challenge of artificial general intelligence (AGI) demands more than abstract theory or wishful thinking; it requires concrete tools that address the fundamental problem of concentrated power. That is the main motion driving Simulacra. My high-level vision isn't just to fix AI, but to confront the central risk that these models will gradually take over and run our economy, resulting in a systemic gradual disempowerment [1]. People will welcome it because they are local optimizers, and the economy rewards that optimization, but unchecked power leads to autocracy, whether political or technological [2]. We are already deep into a technofeudalist society, and AGI risks making that worse, dictated by a few shareholders [3].
+
+
+History gives us a clear lesson: stable governance requires balancing power, drawing the best from monarchy (executive), oligarchy (aristocracy/shareholders), and democracy (the people) [3]. We need to disseminate a nuanced understanding of these systemic risks to all these sections—the monarchs, the oligarchs, and the democracy—or we risk failure [3, 4].
+Why Static Education Fails
+Reading a policy paper or watching a documentary is insufficient. Static education struggles with customization and audience biases [4]. My core belief is that to understand complex, non-linear systems, you need to experience them [5]. This isn't theoretical for me. I realized the supremacy of a strong economy over raw military might, not from some economist's brief, but from playing Age of Empires (AoE). The consequence of neglecting my economy was vivid, immediate, and burnt into my brain because I faced the hardship of losing [6-8].
+
+
+Simulacra is built to provide that exact form of experiential learning. It functions as a "living lab" where players can try things and see the consequences, making mistakes in a safe environment and learning the true causal connections between actions and outcomes [5, 9, 10]. This connects directly to the contemporary concepts of AI safety, where large language models (LLMs) are viewed as simulators that instantiate complex, goal-driven simulacra (the agent personas) based on the input prompt [6].
+Current Mechanics and Potential
+Currently, our Minimum Viable Product (MVP) uses a very light LLM (Gemini 2.5 Flash Lite) to prototype predicting behaviors in multi-stakeholder scenarios [5, 11]. The game is a sequential multi-agent scenario constrained to a finite number of rounds [12]. The strategic tension relies on a system of Dual Objectives [13, 14]:
+
+
+      1. Shared Objective (Public Score): A metric like Democratic Legitimacy or Environmental Safety that everyone must maintain above zero, or the entire group suffers catastrophic failure [13, 15].
+      2. Hidden Objective (Private Score): A win condition specific to that role (e.g., maximizing profit, passing a specific bill), often conflicting with the public good [13, 14].
+
+
+This structure immediately forces players into a principal-agent dilemma, navigating the collective good against conflicting individual incentives [14]. We constrain human decision-making—players receive a limited number of Action Points (AP) per round and select from a finite set of options generated by the AI Game Master [16, 17]. The fact that the LLM, given a scenario prompt, can identify complex stakeholders and generate non-obvious options—such as securing intellectual property or controlling the supply chain for a pharmaceutical conglomerate—is already fascinating and proves its potential [16, 18]. It exposes players to possibilities that didn't exist in their initial purview [19, 20]. This ability to see options outside your own training or biases is what fundamentally challenges your world model [21].
+
+
+A critical learning tool we built in is the Counterfactual Analysis: after each round, we explicitly show the outcome that would have occurred had no agents acted [17, 22]. This gives players an immediate benchmark for assessing the value (or cost) of their intervention [17].
+The Need for Rigorous Architecture and Scale
+While the LLM is powerful for narrative and context, relying entirely on implicit probabilistic definitions for the state transition function makes the system hard to control and less rigorous [11, 23, 24]. To achieve the level of complexity and exploitability required for sustained learning—what I call skill progression—we must formalize the engine [25].
+
+
+This requires transitioning to a Hybrid Simulation Architecture [26] that marries the LLM’s creativity with deterministic modeling components:
+
+
+      1. System Dynamics: Mapping the system using stocks (things that accumulate, like money, trust, or population) and flows (things that increase or decrease those stocks) [27, 28]. This allows us to model classic evolutionary dynamics and the positive and negative feedback loops that define complex systems [29, 30]. This structure gives the game a predictable, rich foundation that players can learn and exploit, transitioning the game from a random event generator to a system where players can genuinely improve their skill [25, 31].
+      2. Agent-Based Modeling (ABM): Formalizing the AI stakeholders as autonomous agents seeking to maximize their dual utility (public and hidden score) [32, 33]. We are exploring methods where the LLM itself could write the necessary Python or JavaScript code for these models based on domain knowledge and library documentation [34].
+
+
+Crucially, this architectural refactoring is about making Simulacra a generalized Toolbox and Workbench, not a single product like "Intelligence Rising" (which I view as a product, not a tool) [35, 36]. The core structure—the mechanics of turns, action points, and dual objectives—must remain fixed, but the scenario content—roles, specific metrics like "CO2 ppm," narrative events—must be entirely configurable [37, 38]. This allows anyone to design a new scenario, applying the engine to technology, climate, public health, or geopolitical crises [37, 39].
+Priorities: Aesthetics, Agents, and Experience
+We need to flip the priority structure from the standard engineering approach of Mechanics-Dynamics-Aesthetics (MDA). My view is that we must focus on Aesthetics, Dynamics, then Mechanics (ADM) [40]. Aesthetics—how the game makes the user feel—is the key lever for engagement and learning [40, 41]. The UI/UX design must be clean and remove clutter, offering tailored views for different roles (a Tech CEO sees stock price, a Regulator sees a complaint index) [41, 42].
+
+
+For immediate high-impact iterations, our focus is on two key areas:
+
+
+      1. True Agentic Behavior: Our AI opponents need to move beyond simple LLM calls and become agents that can call tools, talk to other agents, debate, negotiate, and simulate complex human behaviors like deception and lying [43, 44]. We should aim to cross a Turing test where players cannot distinguish between AI opponents and human opponents [44].
+      2. Multiplayer Implementation: The deepest learning—the true messiness of politics—comes from human-to-human interaction, not just human-to-AI [45, 46]. We are designing for asynchronous multiplayer, including in-game communication channels, such as email threads between rounds, where players can negotiate, form alliances, or deceive each other [45, 47].
+
+
+Finally, we need feedback. Simply writing blog posts hasn't worked [5]. We need capital to facilitate in-person trials where we can get live feedback, push edits, and truly understand what direction the prototype should take to maximize impact—be it education, strategy, or policy simulation [5]. We need to confirm that the game is indeed causing people to change their views or generate new ideas, such as moving past a simplistic "China bad" view because they played the role of China and realized the complexity [21, 48]. This qualitative and quantitative feedback is essential to capitalize on the substantial headroom this platform offers [49-51].
+
+
+14/11/25_Alisha
+Where we started…
+
+
+AI safety retreat - wanted to make a table top exercise, hopefully emulate the ones done at Biosafety or something to that effect. Used LLM to generate ttx - the Badri used that to make a version of election crises - a version easy to emulate.
+Our then concerns: how can we use an LLm as it can hallucinate and give us random idea. What do we stabilize the scores with. Also, is there research we can back this with? We were hoping to make the ttx as grounded in reality as possible
+Also as this was single player - there is no clarity on how in each round the actions evolve
+
+
+This version had a preproposed Ai election crises
+We had aimed to add more exercises as Biosafety crises, and other specialised. This was based on the fact that we had some exercises like this already available. It was easy to back it with the actions which were taken during COVID and to see if this can help us make sense how the scoring is going
+
+
+We wrote a blog post to announce this, hoping people would try and then give us feedback on next steps. This went out in September, 3 months after the first try of TTX. We have been at it more as getting this out motivated us to keep trying.
+
+
+I, alisha, tried the live version of intelligence rising (realising i had played it in year 2023 in SF), the game has been about 5 players playing US, China, tencent, Open AI, google. So the stake holders were primarily govs and tech. Though the actions were mostly done after making conversations and trading points (they had soft power, tech power, money, talent) - multiple currencies and the actions were dependent on what currencies you had. The action were divided in tech action and policy action. Then one could also have a secret move. The game was quite detailed - I found it confusing with no clear score and the LLM playing the role of gamemaster(maybe). Since 2023 the game had moved from being a human only gamemaster to a digital interface and humans still watching the game online. Also, there was a bias in action proposed for different roles. The game heavily depended on the interaction between different players.
+
+
+We also heard of AI futures, from the AI2027 fame, doing tabletop exercises where they used the narrative of AI2027 to fuel how they want to play the scene from year 2028. We didnt know how that worked.
+
+
+I shared this game at EAG2025 in NY - by this time we had added the ability to generate a prompt and come up with a scenario. With infinite possibilities of a game - the scoring became ambiguous for us.
+The game now had the participant put in a prompt which created a crises scenario for that prompt and then the player chose one role, the role was given a secret objective. Then a player had a few action point with which they could ration to chose one or many actions.
+Once actions were chosen, the other players (AI agents playing various roles) would also choose actions.
+Then the gamemaster would evaluate various actions and then lead people to a new scenario where the cumulative effect of various actions was announced. 
+Then the players again used action points to choose actions. And the same process would repeat.
+
+
+Used this game with MAPLE and saw that the AI is anxious. Because it is trained on a way of thinking, it can make a crises out of any prompt, something as random as using the letter A. As fascinating this is, we get insight into how perhaps we can make the machine smarter at being able to look at generating scenarios which are more reasonable and perhaps have a criticising agent looking into the prompt and rechecking with the player and see if the player and the prompt they want to generate aligns.
+What this engine was also giving us a clue of was the way the machines looked at crises - we dont know yet exactly but there is something happening there worth diving deeper into. Moreover the way the engine generates the stakeholders is something to pay attention to - is it signalling something or is it arbitrary, we dont know yet
+
+
+What we are thinking now…
+
+
+Previously we defined the game score on global stability. The players would have to take actions to work towards stability (that seemed arbitrary as we dont really know how that is being calculated)
+Also, not all stakeholders are aiming for global stability.
+Also, we noticed the game was not very sticky (it would crash, the UI was not intuitive(though better on a laptop), also the visuals weren't intuitive)
+
+
+We then started using the metric of personal secret agenda achievement as a way to measure (that too wasn't universal to all scenes - as that does not clarify the aim of game)
+
+
+The funny bit about games is that we try to “game” it, what I mean by that is the game is designed for us to optimise for an action where as through table top exercises we want people to realise, and to be able to come up with truly emergent phenomena. And to get emergence we need to figure a way to communicate something, je ne sais quoi….
+
+
+Well, currently the game works. But it can be better.
+It is is stuck between no clear scoring mechanism, players tending to gamify/losing interest, no grounded in research (or how to do that), no communication between players, 
+We are thinking of:
+      * Nudges mid game to get players thinking (as actions can change mid round as the universal scenario changes as not all actions are coordinated or at the same time)
+      * Making a chatroom where we can see players interacting
+      * Have a window where we can see how the game master is thinking and evaluating scores. And how different players actions are impacting each player actions
+      * Have a slider on personal agenda and global stability which can impact the action items one has 
+(and this slider can change per round)
+      * Use mathematical models to ground the scoring mechanism (the gamemaster can retrofit various models and see what model best suits a specific scenario) HAVE TO TEST
+      * Have a game where if n is number of players and there are human players (x) and AI players as (y), following scenarios where (x+y=n)
+         * x=n, y=0 (only humans)
+         * x=0, y=n (only AI)
+         * x=x’ and y=y’, and some AI and some humans playing
+The second scenario can help us simulate how in a crises only AI thinks and resolves. It would be a simulator of X risks.
+
+
+AI2027/AI futures
+         * Make a special scenario where we look at data embedded in Ai 2027 and simulate that.
+         * See how the AI runs with various stakeholders and see how it acts like a gamemaster, and if we add new information how does the gameplay and simulation change
+         * Keen on seeing how this simulator is going to respond as we change the boundary conditions
+
+
+vision doc
+
+
+Funding
+
+
+[a]This can be added to the grant proposal
+[b]The others are kinda self explanatory but I think there needs to be a deep dive here.. what kind of problems are we helping researchers tackle, what tools are we providing etc
+[c]replace this with learning curve of the audience?
+[d]chek

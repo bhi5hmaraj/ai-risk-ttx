@@ -1,0 +1,9 @@
+import { useEffect } from 'react'
+
+export default function Diagram({ code }: { code: string }) {
+  // Placeholder component if you want to do custom mermaid rendering later.
+  // Nextra uses remark-mermaidjs to compile diagrams at build time.
+  useEffect(() => {}, [])
+  return <pre>{code}</pre>
+}
+

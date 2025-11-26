@@ -1,0 +1,23 @@
+{
+  "name": "ai-risk-ttx-docs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/bootstrap-pages.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/bootstrap-pages.mjs",
+    "build": "next build",
+    "start": "next start",
+    "preexport": "node scripts/bootstrap-pages.mjs",
+    "export": "next export"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "nextra": "^3.2.0",
+    "nextra-theme-docs": "^3.2.0",
+    "remark-mermaidjs": "^7.0.0"
+  }
+}

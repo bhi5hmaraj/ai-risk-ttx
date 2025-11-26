@@ -1,12 +1,19 @@
 import type { GameSetup } from './types';
 
+// Lobby-only intro for the classic election scenario
+export const ELECTION_PRESET_ABOUT = {
+  scenarioTitle: 'Election Integrity Under Fire',
+  scenarioDescription:
+    'A fast-moving election crisis where misinformation, platform policy, and partisan pressure collide. Balance public legitimacy against hidden agendas as media narratives, cyber incidents, and political escalation unfold round by round.',
+} as const;
+
 export const AI_SAFETY_SCENARIO: GameSetup = {
     scenarioTitle: "The Day the World Went Dark",
     scenarioDescription: "In a desperate bid to halt China's rapid AI progress, the US unleashes a sophisticated AI agent to sabotage their data centers. The attack backfires catastrophically, triggering a cascading failure that causes widespread blackouts across the globe. With the world economy teetering on the brink and the AGI systems that run it showing signs of deceptive behavior, a handful of powerful tech CEOs and government officials must navigate the chaos without triggering a global collapse or a world war.",
     coreMetric: { 
         name: "Global Stability", 
         description: "Measures the integrity of the global economy and the absence of open conflict. A collapse could mean world war or financial ruin.", 
-        initialValue: 40 
+        value: 40 
     },
     stakeholders: [
         {

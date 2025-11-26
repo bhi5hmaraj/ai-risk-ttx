@@ -18,29 +18,31 @@ datasource db {
 // ============================================================================
 
 model Feedback {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Version tracking
   schemaVersion String @default("1.0.0")
 
   // Full data as JSON (flexible)
-  data        Json
+  data Json
 
   // Denormalized fields for fast querying
-  model       String?
-  scenarioType String?
-  rolePlayed  String?
+  model         String?
+  scenarioType  String?
+  rolePlayed    String?
   gameCompleted Boolean @default(false)
-  avgRating   Float?
-  customPrompt String? @db.Text // Custom scenario prompt if gamePath = "custom"
+  avgRating     Float?
+  reviewed      Boolean @default(false)
+  customPrompt  String? @db.Text // Custom scenario prompt if gamePath = "custom"
 
   @@index([schemaVersion])
   @@index([createdAt])
   @@index([model])
   @@index([scenarioType])
   @@index([gameCompleted])
+  @@index([reviewed])
 }
 
 // ============================================================================
@@ -48,30 +50,30 @@ model Feedback {
 // ============================================================================
 
 model PublicScenario {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // User input
-  customPrompt String   @db.Text // Original user prompt
+  customPrompt String @db.Text // Original user prompt
 
   // AI-generated scenario content (stored for consistent replay)
-  gameSetup    Json     // GameSetup type: scenarioTitle, scenarioDescription, coreMetric, stakeholders
-  initialEvent Json     // GameEvent type: headline, detail
+  gameSetup    Json // GameSetup type: scenarioTitle, scenarioDescription, coreMetric, stakeholders
+  initialEvent Json // GameEvent type: headline, detail
 
   // Moderation workflow
-  status           String   @default("pending") // "pending" | "approved" | "rejected"
-  submitterName    String?  // null = anonymous
-  submittedAt      DateTime @default(now())
-  reviewedAt       DateTime?
-  reviewedBy       String?
-  rejectionReason  String?  @db.Text
+  status          String    @default("pending") // "pending" | "approved" | "rejected"
+  submitterName   String? // null = anonymous
+  submittedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  rejectionReason String?   @db.Text
 
   // Engagement
-  voteCount   Int      @default(0)
+  voteCount Int @default(0)
 
   // Relations
-  votes       ScenarioVote[]
+  votes ScenarioVote[]
 
   @@index([status])
   @@index([voteCount(sort: Desc)])
@@ -80,8 +82,8 @@ model PublicScenario {
 }
 
 model ScenarioVote {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
   scenarioId String
   scenario   PublicScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
@@ -91,4 +93,47 @@ model ScenarioVote {
 
   @@unique([scenarioId, userFingerprint])
   @@index([scenarioId])
+}
+
+// ============================================================================
+// BUSINESS METRICS (LOW-FIDELITY)
+// ============================================================================
+
+model SessionMetrics {
+  /// Uses the server authoritative session id
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Mode: classic | ai_safety | custom (free-form string for now)
+  mode String
+
+  /// Total rounds played so far (updated on initialize/advance)
+  rounds Int @default(0)
+
+  /// Planned maximum rounds for this session (from setup.maxRounds)
+  maxRounds Int?
+
+  /// Completion marker and timestamp
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  /// Game actually started (initialize) timestamp
+  startedAt   DateTime?
+  /// Start timestamp of the current round (used to compute durations on advance)
+  currentRoundStartedAt DateTime?
+
+  /// Duration (in seconds) for each completed round, in order
+  roundDurations Int[] @default([])
+
+  /// Scenario title captured at session create (for breakdowns)
+  scenarioTitle String?
+
+  @@index([createdAt])
+  @@index([mode])
+  @@index([completed])
+  @@index([startedAt])
+  @@index([maxRounds])
+  @@index([scenarioTitle])
+  @@index([rounds])
 }
