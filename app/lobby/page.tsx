@@ -11,7 +11,9 @@ import { GamePhase } from '@/types';
 import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions } from '@/hooks/useGameActions';
+// COLYSEUS MIGRATION: Replaced useGameActions with useGameActionsColyseus
+// import { useGameActions } from '@/hooks/useGameActions';
+import { useGameActionsColyseus } from '@/hooks/useGameActionsColyseus';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useActionStore } from '@/stores/actionStore';
 import { generateCustomScenario } from '@/services/llmApiClient';
@@ -23,7 +25,7 @@ function LobbyPageContent() {
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, isFromPublicCatalog, setIsFromPublicCatalog, reset: resetLobby } = useLobby();
   const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
-  const { handleStartGame } = useGameActions();
+  const { handleStartGame } = useGameActionsColyseus();
   const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
 
