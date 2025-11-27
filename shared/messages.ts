@@ -1,4 +1,4 @@
-import { z, type infer as ZodInfer } from 'zod';
+import { z } from 'zod';
 
 // --- Message Schemas ---
 
@@ -16,9 +16,18 @@ export const StartGameSchema = z.object({});
 
 export const AdvanceRoundSchema = z.object({});
 
-// --- Inferred Types (Codegen) ---
+// --- Inferred Types (Manual - z.infer doesn't work in shared files) ---
 
-export type SetRoleMessage = ZodInfer<typeof SetRoleSchema>;
-export type SubmitActionMessage = ZodInfer<typeof SubmitActionSchema>;
-export type StartGameMessage = ZodInfer<typeof StartGameSchema>;
-export type AdvanceRoundMessage = ZodInfer<typeof AdvanceRoundSchema>;
+export type SetRoleMessage = {
+    role: string;
+    name?: string;
+};
+
+export type SubmitActionMessage = {
+    actionId: string;
+    cost: number;
+};
+
+export type StartGameMessage = Record<string, never>;
+
+export type AdvanceRoundMessage = Record<string, never>;

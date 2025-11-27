@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:colyseus": "tsx server/index.ts",
+    "dev:colyseus": "node scripts/dev-colyseus.mjs",
     "build:analyze": "ANALYZE=true next build",
     "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "dev:mock": "node scripts/dev.mjs --mock-llm",
