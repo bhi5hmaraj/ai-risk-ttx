@@ -76,6 +76,11 @@ export class GameRoom extends Room<GameState> {
         const traceId = options.traceId || 'no-trace';
         this.logger.info(this.rid, "Room created", { traceId, options });
 
+        // Configure seat reservation timeout
+        // Default is 3 seconds which is too short for Next.js dev mode + HMR
+        // Increase to 30 seconds to allow time for client to establish connection
+        this.seatReservationTime = 30;
+
         // Initialize handlers with dependencies
         this.initializeHandlers();
 

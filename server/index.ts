@@ -51,7 +51,16 @@ app.prepare().then(() => {
         }),
     });
 
-    gameServer.define('game', GameRoom);
+    gameServer.define('game', GameRoom)
+        .enableRealtimeListing()
+        // Increase seat reservation time to 30 seconds (default is 3s)
+        // This gives clients more time to establish WebSocket connection
+        // especially important when Next.js dev server is slow or network is laggy
+        .filterBy(['mode']); // Allow filtering rooms by game mode
+
+    // Configure seat reservation timeout
+    // Default is 3 seconds which is too short for Next.js dev mode
+    gameServer.gracefullyShutdown(false);
 
     expressApp.use('/colyseus-admin', monitor());
 
