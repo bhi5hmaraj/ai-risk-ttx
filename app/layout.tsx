@@ -6,6 +6,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { RouteOrchestrator } from '@/components/RouteOrchestrator';
 import { FocusBoundary } from '@/components/FocusBoundary';
 import { StartProgress } from '@/components/StartProgress';
+import { ColyseusProvider } from '@/providers/ColyseusProvider';
 
 export const metadata: Metadata = {
   title: 'Simulacra - AI Risk Tabletop Exercise',
@@ -27,14 +28,17 @@ export default function RootLayout({
     >
       <html lang="en">
         <body className="antialiased">
-          {/* Client-side orchestrator for route decisions */}
-          <RouteOrchestrator />
-          <FocusBoundary>
-            <StartProgress />
-            {children}
-            {/* Vercel Web Analytics */}
-            <Analytics />
-          </FocusBoundary>
+          {/* Colyseus Provider wraps everything to persist connection across routes */}
+          <ColyseusProvider>
+            {/* Client-side orchestrator for route decisions */}
+            <RouteOrchestrator />
+            <FocusBoundary>
+              <StartProgress />
+              {children}
+              {/* Vercel Web Analytics */}
+              <Analytics />
+            </FocusBoundary>
+          </ColyseusProvider>
         </body>
       </html>
     </ClerkProvider>
