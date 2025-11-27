@@ -17,12 +17,12 @@
 **Goal:** Set up infrastructure for safe migration
 
 **Tasks:**
-- [ ] Create feature flag system (`COLYSEUS_ENABLED=true/false`)
-- [ ] Document all multiplayer edge cases to handle
-- [ ] Set up structured logging (JSON logs with roomId)
-- [ ] Create migration checklist document
+- [ ] Freeze SSE feature work and retire the dual-protocol code paths
+- [ ] Document all multiplayer edge cases to handle (ordered by user impact)
+- [ ] Set up structured logging + metrics (roomId, tableId) and tracing hooks
+- [ ] Create migration checklist document + reliability SLOs for Colyseus
 
-**Deliverable:** Can toggle between SSE and Colyseus with env var
+**Deliverable:** Single-protocol plan with observability and edge-case list in place
 
 **Time:** 4 hours
 
@@ -56,7 +56,7 @@
 - ✅ State synchronization working?
 - ✅ Reconnection feels better than SSE?
 
-**If NO to any:** Stop, reassess. Timebox debugging to 2 hours. If still failing, pivot to "fix SSE for IRL event, Colyseus later."
+**If NO to any:** Stop, reassess. Timebox debugging to 2 hours. If still failing, escalate to dedicated swarm + bring forward ops/observability tasks; do not split focus back to SSE.
 
 **Deliverables:**
 - Custom server running locally
@@ -253,38 +253,35 @@ Room: K7M2P9 | Round 3 | Phase: Action | Players: 6/6
 
 ### Phase 5: Production Deployment (Days 12-13)
 
-**Goal:** Deploy to staging, then production with feature flag
+**Goal:** Deploy to staging, then production with a controlled Colyseus-only ramp and an operational kill-switch for new rooms.
 
 **Day 12: Staging Deployment**
 - [ ] Update Dockerfile for Express-first server (Colyseus + Next handler)
 - [ ] Deploy to Cloud Run (staging environment)
-- [ ] Configure env vars (Colyseus port, feature flag)
+- [ ] Configure env vars (Colyseus port, admin creds, log destinations)
 - [ ] Test: Can access from external network
 - [ ] Test: Multiple devices, different networks
 
 **Day 13: Production Rollout (Gradual)**
-- [ ] Deploy to production with `COLYSEUS_ROLLOUT=0%`
-- [ ] Feature flag logic in client:
-  ```typescript
-  const useColyseus = Math.random() * 100 < COLYSEUS_ROLLOUT_PERCENT;
-  ```
-- [ ] Day 13 AM: Set to 10% (test with small user subset)
-- [ ] Day 13 PM: Monitor error rates, if <1% → increase to 50%
+- [ ] Deploy to production with Colyseus default for all rooms
+- [ ] Add allowlist/room-creation throttle to cap active rooms during ramp
+- [ ] Day 13 AM: Run facilitator-led smoke test (one full table)
+- [ ] Day 13 PM: Monitor error rates (<1%) and resource usage; if clean, raise room cap
 
 **Rollout Schedule:**
-- Day 13: 10% users on Colyseus
-- Day 14-15: 50% users (if no issues)
-- Week 4: 100% for IRL event (if confident) OR 0% (SSE backup)
+- Day 13: Prod live with 1-2 concurrent rooms max
+- Day 14-15: Increase to 3-4 rooms (event target) once telemetry is green
+- Week 4: Keep WebSocket-only; use kill-switch to pause new rooms if issues surface
 
 **Decision Gate (End of Day 13):**
 - ✅ Deployed to production successfully?
-- ✅ Feature flag working (can toggle instantly)?
+- ✅ Admin/telemetry dashboards live and used in smoke test?
 - ✅ Error rate <1% for Colyseus users?
 
 **Deliverables:**
 - Production deployment live
-- Feature flag functional
 - Monitoring dashboard set up
+- Kill-switch for pausing/limiting rooms without reverting protocols
 
 **Time:** 2 days (16 hours)
 
@@ -317,7 +314,7 @@ Room: K7M2P9 | Round 3 | Phase: Action | Players: 6/6
 - ✅ Real users completed games without major issues?
 - ✅ Confident for IRL event?
 
-**If NO:** Prepare to use SSE backup for event. Colyseus becomes post-event project.
+**If NO:** Reduce room count for the event or postpone until stability meets SLOs; do not reintroduce SSE.
 
 **Deliverables:**
 - Load test results documented
@@ -340,9 +337,9 @@ Room: K7M2P9 | Round 3 | Phase: Action | Players: 6/6
 - [ ] Prepare tech support runbook
 
 **Day 18-19: Contingency Planning**
-- [ ] Finalize: Colyseus (100%) or SSE (0%) for event
-- [ ] If SSE: Prepare "known issues" guide for facilitators
-- [ ] If Colyseus: Prepare rollback plan (can switch in 5 min)
+- [ ] Finalize WebSocket-only runbook (room caps, kill-switch procedures)
+- [ ] Prepare "known issues" guide for facilitators (reconnect steps, admin actions)
+- [ ] If telemetry is shaky: limit concurrent rooms or add buffer time between sessions
 - [ ] Tech support person assigned and briefed
 
 **Day 20: Dry Run**
