@@ -25,3 +25,9 @@
 2) Implement GameRoom state schema + handlers; add admin `forceAdvance/forceEnd` and basic telemetry (state transitions, joins/leaves).
 3) Ship client join flow by room code and reconnection token persistence; run 2–6 player end-to-end game to validate patches.
 4) Run chaos/reconnect drill and record metrics to decide go/no-go for event.
+
+## Warden Dilemma Integration Notes
+- **What transfers directly:** The `createApp` + HTTP server + `new Server({ server, driver, presence })` boot flow, `/healthz` + basic admin routes, and Redis driver hooks give us a proven scaffolding for Cloud Run; our plan keeps this shape while swapping Warden’s static assets for the Next handler.
+- **What differs for EAGx:** Warden’s lobby/game split, experiment-id filters, and token-gated seat assignments are heavier than our room-code-only IRL sessions. We’ll drop the lobby filter, map codes → rooms in metadata, and keep joins open (with short-lived codes + rate limits) instead of enforcing pre-issued tokens.
+- **Admin & pacing:** Warden relies on experimenter start messages and timer-driven rounds. We need facilitator-first controls (force advance/end, pause new rooms, room caps per instance) and richer telemetry for table support during the event rather than long-running lab experiments.
+- **Resilience expectations:** Warden assumes Redis presence/driver for scale-out and config caching; for the event we start single-instance/in-memory to simplify, but keep the driver interface pluggable so we can add Redis if load tests show reconnect storms or memory pressure.
