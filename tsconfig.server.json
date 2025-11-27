@@ -1,0 +1,25 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "dist",
+        "noEmit": false,
+        "target": "ES2020",
+        "esModuleInterop": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./*"]
+        },
+        "typeRoots": [
+            "./node_modules/@types"
+        ],
+        "rootDir": "."
+    },
+    "include": [
+        "server/index.ts",
+        "server/rooms/**/*",
+        "shared/**/*",
+        "declarations.d.ts"
+    ]
+}
