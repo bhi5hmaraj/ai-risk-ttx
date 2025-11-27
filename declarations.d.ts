@@ -16,3 +16,21 @@ declare module '@copilotkit/react-core' {
 declare module '@copilotkit/react-ui' {
   export const CopilotChat: any;
 }
+
+declare module 'express' {
+  const express: any;
+  export default express;
+  export interface Request {
+    [key: string]: any;
+  }
+  export interface Response {
+    status(code: number): Response;
+    send(body: any): Response;
+    json(body: any): Response;
+    [key: string]: any;
+  }
+}
+
+declare module 'cors' {
+  export default function cors(options?: any): any;
+}
