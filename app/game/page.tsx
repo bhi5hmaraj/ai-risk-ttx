@@ -9,7 +9,7 @@ import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
-import { useGameActions } from '@/hooks/useGameActions';
+import { useGameActionsColyseus as useGameActions } from '@/hooks/useGameActionsColyseus';
 import { useRoundOptions } from '@/hooks/useRoundOptions';
 import { GAME_CONFIG } from '@/gameConfig';
 import { GamePhase } from '@/types';

@@ -1,32 +1,40 @@
 "use client";
 
 /**
- * useGameActionsColyseus - Colyseus-based game actions
+ * useGameActionsColyseus - Colyseus-native game actions hook
  *
- * Simplified version that uses the global ColyseusProvider instead of
- * managing its own connection. This ensures the connection persists
- * across page navigation.
+ * Replaces legacy useGameActions (which used SessionService HTTP/SSE).
+ * This version uses ColyseusProvider for all communication.
+ *
+ * Flow:
+ * 1. handleStartGame: Connect to Colyseus room → send start_game message
+ * 2. Server generates scenario, broadcasts game_started + action_options
+ * 3. handleConfirmActions: Send submit_action messages → send advance_round
+ * 4. Server processes round, broadcasts new_round + action_options
  */
 
 import { useCallback, useRef } from 'react';
-import { GamePhase } from '@/types';
+import type { ActionOption } from '@/types';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
+import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
 import { useColyseus } from '@/providers/ColyseusProvider';
 
 export function useGameActionsColyseus() {
-  const { setGameState, setPlayers } = useGame();
+  const { players, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
-  const { selectedRoleName, gamePath } = useLobby();
-
-  // Use global Colyseus connection
-  const colyseus = useColyseus();
+  const { selectedRoleName } = useLobby();
+  const { setActionOptions, setAICompletionStatus } = useActions();
+  const { room, isConnected, isConnecting, connect, startGame, submitAction, advanceRound } = useColyseus();
 
   const connectionInProgressRef = useRef(false);
 
   /**
-   * Handle game start - Connect to Colyseus and initialize
+   * Start game flow:
+   * 1. Connect to Colyseus room (if not already connected)
+   * 2. Send start_game message
+   * 3. Server handles LLM generation, broadcasts game_started + action_options
    */
   const handleStartGame = useCallback(async () => {
     if (!selectedRoleName) {
@@ -34,8 +42,17 @@ export function useGameActionsColyseus() {
       return;
     }
 
-    if (connectionInProgressRef.current || colyseus.isConnected) {
-      console.log('[useGameActionsColyseus] Already connected or connecting');
+    if (connectionInProgressRef.current) {
+      console.log('[useGameActionsColyseus] Connection already in progress');
+      return;
+    }
+
+    if (isConnected) {
+      console.log('[useGameActionsColyseus] Already connected, just starting game');
+      setLoading(true, 'Starting game...');
+      startGame();
+      // isGeneratingOptions flag (from actionStore) will show loading screen
+      setLoading(false);
       return;
     }
 
@@ -43,28 +60,34 @@ export function useGameActionsColyseus() {
     setLoading(true, 'Connecting to game server...');
 
     try {
-      // Connect to Colyseus room
+      // Step 1: Connect to Colyseus room
       console.log('[useGameActionsColyseus] Connecting to Colyseus...', {
         role: selectedRoleName,
-        path: gamePath,
       });
 
-      await colyseus.connect({
-        name: selectedRoleName,
+      await connect({
+        name: `Player-${selectedRoleName}`,
         role: selectedRoleName,
         isHuman: true,
       });
 
-      console.log('[useGameActionsColyseus] Connected! Setting role and starting game...');
+      console.log('[useGameActionsColyseus] Connected! Starting game...');
 
-      // Set the player's role
-      colyseus.setRole(selectedRoleName, selectedRoleName);
+      // Step 2: Start the game
+      setLoading(true, 'Starting game - AI generating scenario...');
+      startGame();
 
-      // Start the game
-      colyseus.startGame();
+      // Server will:
+      // - Generate initial scenario via LLM (5-30s)
+      // - Broadcast game_started event (triggers isGeneratingOptions = true)
+      // - Generate action options for human players
+      // - Broadcast action_options event (triggers isGeneratingOptions = false)
+      //
+      // ColyseusProvider + actionStore handle all state updates automatically
 
+      // Loading state now managed by isGeneratingOptions flag
       setLoading(false);
-      console.log('[useGameActionsColyseus] Game started successfully!');
+      console.log('[useGameActionsColyseus] Game start message sent');
 
     } catch (error) {
       console.error('[useGameActionsColyseus] Failed to start game:', error);
@@ -73,14 +96,24 @@ export function useGameActionsColyseus() {
     } finally {
       connectionInProgressRef.current = false;
     }
-  }, [selectedRoleName, gamePath, colyseus, setLoading, setError]);
+  }, [selectedRoleName, isConnected, isConnecting, connect, startGame, setLoading, setError]);
 
   /**
-   * Handle action confirmation - Submit actions and advance round
+   * Confirm actions flow:
+   * 1. Submit each selected action to server
+   * 2. Mark human player as submitted (optimistic update)
+   * 3. Send advance_round message
+   * 4. Server processes round, broadcasts new_round + action_options
    */
   const handleConfirmActions = useCallback(
-    async (actions: any[]) => {
-      if (!colyseus.isConnected) {
+    async (actions: ActionOption[]) => {
+      const human = players.find((p) => p.isHuman);
+      if (!human) {
+        console.warn('[useGameActionsColyseus] No human player found');
+        return;
+      }
+
+      if (!isConnected) {
         setError('Not connected to game server');
         return;
       }
@@ -88,37 +121,56 @@ export function useGameActionsColyseus() {
       try {
         setLoading(true, 'Submitting your actions...');
 
-        // Submit first action (simplified - just use first action's cost)
-        if (actions.length > 0) {
-          const firstAction = actions[0];
-          colyseus.submitAction(firstAction.title || 'action_1', firstAction.cost || 1);
+        // Step 1: Submit each action to server
+        console.log('[useGameActionsColyseus] Submitting', actions.length, 'actions');
+        for (const action of actions) {
+          submitAction(action.title, action.cost);
         }
 
-        // Wait a bit for server to process
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Step 2: Mark human as submitted locally (optimistic update)
+        setPlayers((prev) =>
+          prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p))
+        );
 
-        setLoading(true, 'AI players are making decisions...');
+        // Step 3: Advance round (triggers server-side consequence generation)
+        console.log('[useGameActionsColyseus] Advancing round...');
+        setLoading(true, 'Generating next round... AI players are making decisions.');
+        advanceRound();
 
-        // Advance the round
-        colyseus.advanceRound();
+        // Server will:
+        // - Process human actions
+        // - Generate AI player actions
+        // - Generate consequences via LLM (10-60s)
+        // - Update game state (scores, logs, etc.)
+        // - Broadcast new_round event
+        // - Generate new action options
+        // - Broadcast action_options event
+        //
+        // ColyseusProvider handles all these events and updates stores automatically
 
-        // State will update via ColyseusProvider's onStateChange callback
+        // Clear local action options (new ones will arrive via action_options event)
+        setActionOptions([]);
+        setAICompletionStatus({});
 
-      } catch (error) {
-        console.error('[useGameActionsColyseus] Failed to confirm actions:', error);
-        setError(error instanceof Error ? error.message : 'Failed to submit actions');
-      } finally {
+        // Loading state will be managed by phase changes and isGeneratingOptions flag
+        setLoading(false);
+
+        console.log('[useGameActionsColyseus] Actions confirmed - waiting for server...');
+
+      } catch (error: any) {
+        console.error('[useGameActionsColyseus] Confirm actions failed:', error);
+        setError(error?.message || 'Failed to submit actions');
+
+        // Revert optimistic update
+        setPlayers((prev) =>
+          prev.map((p) => (p.isHuman ? { ...p, hasSubmittedActions: false } : p))
+        );
+
         setLoading(false);
       }
     },
-    [colyseus, setLoading, setError]
+    [players, isConnected, submitAction, advanceRound, setPlayers, setLoading, setError, setActionOptions, setAICompletionStatus]
   );
 
-  return {
-    handleStartGame,
-    handleConfirmActions,
-    isConnected: colyseus.isConnected,
-    isConnecting: colyseus.isConnecting,
-    disconnect: colyseus.disconnect,
-  };
+  return { handleStartGame, handleConfirmActions } as const;
 }
