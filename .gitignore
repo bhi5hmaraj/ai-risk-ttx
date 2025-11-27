@@ -74,3 +74,6 @@ graph-*.svg
 .beads/*.db
 .beads/*.db-shm
 .beads/*.db-wal
+
+# clerk configuration (can include secrets)
+/.clerk/
