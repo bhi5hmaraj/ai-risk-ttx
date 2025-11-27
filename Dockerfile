@@ -1,0 +1,79 @@
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm i --frozen-lockfile
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Disable telemetry during the build.
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# Build Next.js
+ARG OPENAI_API_KEY=dummy
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YWNjb3VudC5jbGVyay5kZXYk
+RUN pnpm run build
+
+# Build Custom Server
+RUN pnpm run build:server
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Install production dependencies
+# We do this in a separate stage or just copy from deps if we prune?
+# Since we need to keep image small, let's do a fresh prod install or prune.
+# But pnpm prune in builder modifies node_modules which might be used by next build artifacts?
+# Next build is done.
+# So we can prune in builder or use a separate stage.
+# Separate stage is cleaner.
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+
+# We need node_modules for server/index.js dependencies (express, colyseus, next)
+# We can copy from deps and prune, or install fresh.
+# Installing fresh takes time. Copying from deps is fast.
+# But deps has devDependencies.
+# Let's use a prod-deps stage.
+FROM base AS prod-deps
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm i --prod --frozen-lockfile
+
+FROM runner as final
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/healthz', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+CMD ["node", "dist/server/index.js"]

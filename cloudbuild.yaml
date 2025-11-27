@@ -1,0 +1,65 @@
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build \
+          --build-arg OPENAI_API_KEY=dummy \
+          --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YWNjb3VudC5jbGVyay5kZXYk \
+          -t us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:$COMMIT_SHA \
+          -t us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:latest \
+          .
+    id: 'build-image'
+
+  # Step 2: Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:$COMMIT_SHA'
+    id: 'push-image-sha'
+    waitFor: ['build-image']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:latest'
+    id: 'push-image-latest'
+    waitFor: ['build-image']
+
+  # Step 3: Deploy to Cloud Run (Branch-based)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        SERVICE_NAME="simulacra-preview"
+        APP_URL="https://simulacra-preview-uc.a.run.app"
+        
+        if [ "$BRANCH_NAME" == "main" ]; then
+          SERVICE_NAME="simulacra-prod"
+          APP_URL="https://simulacra.cc"
+        fi
+        
+        echo "Deploying to $SERVICE_NAME with APP_URL=$APP_URL"
+        
+        gcloud run deploy $SERVICE_NAME \
+          --image us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:$COMMIT_SHA \
+          --region us-central1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --timeout 3600 \
+          --session-affinity \
+          --set-env-vars NODE_ENV=production,NEXT_PUBLIC_APP_URL=$APP_URL
+    id: 'deploy-cloud-run'
+    waitFor: ['push-image-sha', 'push-image-latest']
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/simulacra/app:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
