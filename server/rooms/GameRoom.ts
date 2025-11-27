@@ -13,6 +13,10 @@ import { GameController } from "../services/GameController";
 import { StateManager } from "./adapters/stateManager";
 import { schemaToCore, coreToSchema, schemaPlayerToCore, corePlayerToSchema } from "./adapters/stateAdapter";
 import { GamePhase } from "../../types/core";
+import * as llmService from "../services/llmService";
+import { createGameSession } from "../services/chatSession";
+import type { GameChatSession } from "../services/chatSession";
+import { applyConsequences } from "../services/sessionEngine";
 
 export class GameRoom extends Room<GameState> {
     maxClients = 6;
@@ -20,6 +24,7 @@ export class GameRoom extends Room<GameState> {
     private rid!: string;
     private gameController: GameController;
     private stateManager!: StateManager;
+    private chatSession?: GameChatSession;
 
     constructor() {
         super();
@@ -102,14 +107,92 @@ export class GameRoom extends Room<GameState> {
         });
 
         // Start Game Handler
-        this.onMessageZod("start_game", StartGameSchema, (client, data: StartGameMessage) => {
+        this.onMessageZod("start_game", StartGameSchema, async (client, data: StartGameMessage) => {
             // TODO: Add host check
-            if (this.state.phase === "lobby") {
-                this.state.phase = "action";
-                this.state.round = 1;
+            if (this.state.phase !== "lobby") {
+                this.logger.warn(this.rid, "Cannot start game from non-lobby phase", { phase: this.state.phase });
+                return;
+            }
+
+            this.logger.info(this.rid, "Starting game - generating initial scenario...", { initiatedBy: client.sessionId });
+
+            try {
+                // 1. Get current Core state and players from StateManager
+                const coreState = this.stateManager.getCoreState();
+                const corePlayers = this.stateManager.getCorePlayers();
+
+                // 2. Create GameSetup for chat session initialization
+                const gameSetup = {
+                    scenarioTitle: "AI Election Crisis",
+                    scenarioDescription: "A deepfake video threatens democratic legitimacy days before a major election.",
+                    coreMetric: coreState.coreMetric,
+                    stakeholders: corePlayers.map(p => ({
+                        name: p.role.name,
+                        icon: "👤", // Default icon
+                        publicObjective: p.role.publicObjective,
+                        hiddenObjective: p.role.hiddenObjective,
+                        resources: p.role.resources,
+                        constraints: p.role.constraints
+                    }))
+                };
+
+                // 3. Initialize chat session for maintaining context across rounds
+                this.chatSession = createGameSession(gameSetup, corePlayers);
+
+                // 4. Generate initial scenario using chat session
+                const initialScenario = await llmService.generateInitialScenarioChat(this.chatSession);
+
+                if (!initialScenario) {
+                    this.logger.error(this.rid, "Failed to generate initial scenario");
+                    client.send("error", { message: "Failed to generate initial scenario" });
+                    return;
+                }
+
+                // 5. Apply initial scenario to Core state (using sessionEngine logic)
+                // Note: Initial scenario is Round 0, sets up the crisis
+                const { gameState: newState, players: newPlayers } = applyConsequences(
+                    coreState,
+                    initialScenario,
+                    corePlayers,
+                    [], // No AI players in initial scenario
+                    null, // No AI turn results
+                    [], // No human action options yet
+                    1 // One LLM call for initial scenario
+                );
+
+                // Set phase to ACTION and round to 1 for first actual round
+                newState.phase = GamePhase.ACTION;
+                newState.round = 1;
+
+                // 6. Persist updated Core state in StateManager
+                this.stateManager.setCoreState(newState);
+                this.stateManager.setCorePlayers(newPlayers);
+
+                // 7. Project Core → Schema (broadcast to clients)
+                coreToSchema(newState, this.state);
+
+                // Update players in Schema
+                for (const corePlayer of newPlayers) {
+                    const schemaPlayer = this.state.players.get(corePlayer.id);
+                    if (schemaPlayer) {
+                        corePlayerToSchema(corePlayer, schemaPlayer);
+                    }
+                }
+
+                // Reset submissions for first round
                 this.state.resetSubmissions();
+
+                // 8. Broadcast game start
                 this.broadcast("game_started");
-                this.logger.info(this.rid, "Game started", { initiatedBy: client.sessionId });
+                this.logger.info(this.rid, "Game started successfully", {
+                    initiatedBy: client.sessionId,
+                    round: this.state.round,
+                    phase: this.state.phase
+                });
+
+            } catch (error) {
+                this.logger.error(this.rid, "Failed to start game", { error });
+                client.send("error", { message: "Failed to start game" });
             }
         });
 
