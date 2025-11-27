@@ -14,6 +14,19 @@ import { LLM_OPENAI } from './llm/openaiService';
 import { LLM_MOCK } from './llm/mockService';
 import type { GameChatSession } from './chatSession';
 
+export interface LLMFacade {
+  generateInitialScenario: typeof generateInitialScenario;
+  generateConsequences: typeof generateConsequences;
+  generateAIPlayerActions: typeof generateAIPlayerActions;
+  generateActionOptions: typeof generateActionOptions;
+  generateCounterfactualConsequences: typeof generateCounterfactualConsequences;
+  generateCustomScenario: typeof generateCustomScenario;
+  generateInitialScenarioChat: typeof generateInitialScenarioChat;
+  generateConsequencesChat: typeof generateConsequencesChat;
+  generateAITurn: typeof generateAITurn;
+  generateDebriefChat: typeof generateDebriefChat;
+}
+
 function isMockMode(): boolean {
   return process.env.LLM_MOCK === '1' || process.env.LLM_MODE === 'mock';
 }
