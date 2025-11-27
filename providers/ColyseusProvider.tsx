@@ -156,6 +156,10 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
                 console.log('[ColyseusProvider] Game started!');
                 // Set start intent so RouteOrchestrator navigates to /game
                 setStartIntent(true);
+
+                // Set loading flag while waiting for action options from server
+                const { setIsGeneratingOptions } = useActionStore.getState();
+                setIsGeneratingOptions(true);
             });
 
             newRoom.onMessage('action_options', (message: any) => {

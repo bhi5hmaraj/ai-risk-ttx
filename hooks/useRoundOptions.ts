@@ -2,84 +2,49 @@
 
 import { useCallback, useRef } from 'react';
 import { useGame } from '@/hooks/useGame';
-import { useSession } from '@/hooks/useSession';
-import { useUI } from '@/hooks/useUI';
-import { useActions } from '@/hooks/useActions';
-import { SessionService } from '@/services/SessionService';
+import { useColyseus } from '@/providers/ColyseusProvider';
 
+/**
+ * useRoundOptions - Colyseus Migration
+ *
+ * This hook is now a no-op for Colyseus flow. Action options are automatically:
+ * 1. Generated server-side in GameStartHandler
+ * 2. Broadcast via room.send('action_options')
+ * 3. Received in ColyseusProvider.onMessage('action_options')
+ * 4. Stored in actionStore via setActionOptions()
+ *
+ * The loadHumanOptions() function is kept for compatibility but does nothing.
+ * GamePage still calls it, but it's harmless since Colyseus handles everything.
+ */
 export function useRoundOptions() {
   const { gameState, humanPlayer } = (() => {
     const { gameState, players } = useGame();
     const human = players.find((p) => p.isHuman) || null;
     return { gameState, humanPlayer: human } as const;
   })();
-  const { sessionMeta } = useSession();
-  const { setLoading, setError } = useUI();
-  const { setActionOptions } = useActions();
+  const { isConnected } = useColyseus();
   const inFlightRef = useRef(false);
 
   const loadHumanOptions = useCallback(async () => {
-    console.log('[useRoundOptions] 🎯 loadHumanOptions called');
+    console.log('[useRoundOptions] 🎯 loadHumanOptions called (Colyseus mode - no-op)');
     console.log('[useRoundOptions] State:', {
       inFlight: inFlightRef.current,
       hasHumanPlayer: !!humanPlayer,
       humanPlayerRole: humanPlayer?.role?.name,
-      sessionId: sessionMeta?.id,
+      isConnected,
       gamePhase: gameState?.phase,
       round: gameState?.round
     });
 
-    if (inFlightRef.current) {
-      console.log('[useRoundOptions] ⏭️ Skipping - already in flight');
-      return;
+    // Colyseus flow: Action options are automatically sent from server
+    // No need to make HTTP request here
+    console.log('[useRoundOptions] ⏭️ Skipping - Colyseus handles action options automatically');
+
+    // If we're not connected, log a warning
+    if (!isConnected) {
+      console.warn('[useRoundOptions] ⚠️ Not connected to Colyseus - action options may not arrive');
     }
-    if (!humanPlayer) {
-      console.log('[useRoundOptions] ⏭️ Skipping - no human player');
-      return;
-    }
-
-    inFlightRef.current = true;
-    setLoading(true, 'Generating action options...');
-    const startTime = Date.now();
-
-    try {
-      if (!sessionMeta) {
-        console.error('[useRoundOptions] ❌ No session meta');
-        setError('Game session not initialized. Please return to lobby and start again.');
-        return;
-      }
-
-      console.log('[useRoundOptions] 📡 Calling SessionService.getActionOptions...');
-      console.log('[useRoundOptions] Request:', {
-        sessionId: sessionMeta.id,
-        playerId: humanPlayer.id || 'human',
-        role: humanPlayer.role.name
-      });
-
-      const data = await SessionService.getActionOptions(
-        sessionMeta.id,
-        humanPlayer.id || 'human',
-        humanPlayer.role.name
-      );
-
-      const duration = Date.now() - startTime;
-      console.log('[useRoundOptions] ✅ Received options:', {
-        count: data.options.length,
-        duration: `${duration}ms`,
-        options: data.options.map(o => o.title)
-      });
-
-      setActionOptions(data.options);
-    } catch (e) {
-      const duration = Date.now() - startTime;
-      console.error('[useRoundOptions] ❌ Error after', duration, 'ms:', e);
-      setError('Action options request failed. Check console for details.');
-      try { console.error('[useRoundOptions] Full error:', e); } catch {}
-    } finally {
-      inFlightRef.current = false;
-      setLoading(false);
-    }
-  }, [humanPlayer, sessionMeta, setLoading, setError, setActionOptions, gameState]);
+  }, [humanPlayer, isConnected, gameState]);
 
   return { loadHumanOptions } as const;
 }
