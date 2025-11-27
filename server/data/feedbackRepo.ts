@@ -18,11 +18,11 @@ export async function list(args: { filter: 'pending' | 'reviewed' | 'all'; limit
     },
   });
   // Enrich with scenarioTitle derived from nested JSON if present
-  return rows.map((r) => {
+  return rows.map((r: any) => {
     let scenarioTitle: string | null = null;
     try {
       scenarioTitle = (r as any).data?.gameMetadata?.scenarioTitle ?? null;
-    } catch {}
+    } catch { }
     const { data, ...rest } = r as any;
     return { ...rest, scenarioTitle };
   });
