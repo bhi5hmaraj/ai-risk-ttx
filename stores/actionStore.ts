@@ -6,10 +6,12 @@ interface ActionStore {
   aiCompletionStatus: Record<string, boolean>;
   llmCallsThisRound: number;
   chatHistory: any[] | null;
+  isGeneratingOptions: boolean;
   setActionOptions: (opts: ActionOption[]) => void;
   setAICompletionStatus: (s: Record<string, boolean>) => void;
   updateAICompletion: (roleName: string, completed: boolean) => void;
   incrementLLMCalls: () => void;
+  setIsGeneratingOptions: (generating: boolean) => void;
   resetRound: () => void;
 }
 
@@ -18,11 +20,13 @@ export const useActionStore = create<ActionStore>((set) => ({
   aiCompletionStatus: {},
   llmCallsThisRound: 0,
   chatHistory: null,
-  setActionOptions: (opts) => set({ actionOptions: opts }),
+  isGeneratingOptions: false,
+  setActionOptions: (opts) => set({ actionOptions: opts, isGeneratingOptions: false }),
   setAICompletionStatus: (s) => set({ aiCompletionStatus: s }),
   updateAICompletion: (role, done) =>
     set((state) => ({ aiCompletionStatus: { ...state.aiCompletionStatus, [role]: done } })),
   incrementLLMCalls: () => set((s) => ({ llmCallsThisRound: s.llmCallsThisRound + 1 })),
-  resetRound: () => set({ actionOptions: [], aiCompletionStatus: {}, llmCallsThisRound: 0, chatHistory: null }),
+  setIsGeneratingOptions: (generating) => set({ isGeneratingOptions: generating }),
+  resetRound: () => set({ actionOptions: [], aiCompletionStatus: {}, llmCallsThisRound: 0, chatHistory: null, isGeneratingOptions: false }),
 }));
 

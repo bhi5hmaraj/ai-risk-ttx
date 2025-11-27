@@ -20,7 +20,7 @@ export default function GamePage() {
   const router = useRouter();
   const { gameState, players } = useGame();
   const { isLoading, loadingMessage, error, setHistoryOpen } = useUI();
-  const { actionOptions, aiCompletionStatus } = useActions();
+  const { actionOptions, aiCompletionStatus, isGeneratingOptions } = useActions();
   const { gameSetup, customScenario, gamePath, isFromPublicCatalog } = useLobby();
   const { handleConfirmActions } = useGameActions();
   const { loadHumanOptions } = useRoundOptions();
@@ -67,10 +67,14 @@ export default function GamePage() {
 
   const humanReady = Boolean(humanPlayer);
 
-  // Avoid covering the screen during action-options fetches; show inline spinner instead.
-  const suppressOverlayForOptions = (loadingMessage || '').toLowerCase().includes('action option');
+  // Show loading overlay when:
+  // 1. Generating action options from server (Colyseus flow)
+  // 2. Loading during non-ACTION phases
+  // 3. Human player not ready yet
   const showLoadingOverlay =
-    ((isLoading && gameState.phase !== GamePhase.ACTION && !suppressOverlayForOptions) || !humanReady);
+    isGeneratingOptions ||
+    (isLoading && gameState.phase !== GamePhase.ACTION) ||
+    !humanReady;
   const showMakePublic =
     !!gameSetup &&
     gameState.phase === GamePhase.ACTION &&
@@ -147,7 +151,13 @@ export default function GamePage() {
       {actionTree}
       {showLoadingOverlay ? (
         <LoadingScreen
-          message={humanReady ? loadingMessage : 'Preparing your role...'}
+          message={
+            isGeneratingOptions
+              ? 'Generating action options...'
+              : humanReady
+              ? loadingMessage
+              : 'Preparing your role...'
+          }
           error={error}
         />
       ) : (
