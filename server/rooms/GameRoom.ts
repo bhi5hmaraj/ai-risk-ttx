@@ -1,7 +1,6 @@
 import { Room, Client } from "colyseus";
 import { GameState } from "./schema/GameState";
-import { createLogger } from "../lib/logger";
-import { createReqId } from "../lib/logger";
+import { createLogger, createReqId } from "../lib/logger";
 import {
     SetRoleSchema, SetRoleMessage,
     SubmitActionSchema, SubmitActionMessage,
@@ -11,37 +10,46 @@ import {
 
 import { GameController } from "../services/GameController";
 import { StateManager } from "./adapters/stateManager";
-import { schemaToCore, coreToSchema, schemaPlayerToCore, corePlayerToSchema } from "./adapters/stateAdapter";
-import { GamePhase } from "../../types/core";
-import * as llmService from "../services/llmService";
-import { createGameSession } from "../services/chatSession";
-import type { GameChatSession } from "../services/chatSession";
-import { applyConsequences } from "../services/sessionEngine";
+import { coreToSchema } from "./adapters/stateAdapter";
 
+// Import handlers
+import { GameStartHandler } from "./handlers/GameStartHandler";
+import { RoundAdvanceHandler } from "./handlers/RoundAdvanceHandler";
+import { ActionSubmissionHandler } from "./handlers/ActionSubmissionHandler";
+import { PlayerManagementHandler } from "./handlers/PlayerManagementHandler";
+
+/**
+ * GameRoom - Colyseus multiplayer room for Simulacra game
+ *
+ * Architecture:
+ * - Uses handler pattern for separation of concerns
+ * - StateManager holds authoritative Core state
+ * - Handlers orchestrate business logic
+ * - Schema provides network synchronization
+ *
+ * Responsibilities:
+ * - Message routing (delegates to handlers)
+ * - Lifecycle management (onCreate, onJoin, onLeave)
+ * - Dependency injection (handlers, services)
+ */
 export class GameRoom extends Room<GameState> {
     maxClients = 6;
     private logger!: ReturnType<typeof createLogger>;
     private rid!: string;
+
+    // Services
     private gameController: GameController;
     private stateManager!: StateManager;
-    private chatSession?: GameChatSession;
+
+    // Handlers
+    private gameStartHandler!: GameStartHandler;
+    private roundAdvanceHandler!: RoundAdvanceHandler;
+    private actionSubmissionHandler!: ActionSubmissionHandler;
+    private playerManagementHandler!: PlayerManagementHandler;
 
     constructor() {
         super();
         this.gameController = new GameController();
-    }
-
-    // Helper for Zod-validated messages
-    private onMessageZod<T>(type: string, schema: any, callback: (client: Client, data: T) => void) {
-        this.onMessage(type, (client, message) => {
-            const result = schema.safeParse(message);
-            if (!result.success) {
-                this.logger.warn(this.rid, `Invalid message ${type}`, { error: result.error, clientId: client.sessionId });
-                client.send("error", { message: "Invalid message format" });
-                return;
-            }
-            callback(client, result.data);
-        });
     }
 
     onCreate(options: any) {
@@ -68,185 +76,84 @@ export class GameRoom extends Room<GameState> {
         const traceId = options.traceId || 'no-trace';
         this.logger.info(this.rid, "Room created", { traceId, options });
 
-        // --- Message Handlers ---
+        // Initialize handlers with dependencies
+        this.initializeHandlers();
 
+        // Register message handlers
+        this.registerMessageHandlers();
+    }
+
+    /**
+     * Initialize all handler instances with their dependencies
+     * Follows Dependency Injection pattern for testability
+     */
+    private initializeHandlers() {
+        const baseDeps = {
+            state: this.state,
+            stateManager: this.stateManager,
+            logger: this.logger,
+            rid: this.rid,
+            broadcast: this.broadcast.bind(this)
+        };
+
+        this.gameStartHandler = new GameStartHandler(baseDeps);
+
+        this.roundAdvanceHandler = new RoundAdvanceHandler({
+            ...baseDeps,
+            gameController: this.gameController,
+            roomId: this.roomId
+        });
+
+        this.actionSubmissionHandler = new ActionSubmissionHandler(baseDeps);
+
+        this.playerManagementHandler = new PlayerManagementHandler(baseDeps);
+    }
+
+    /**
+     * Register all message handlers
+     * Each handler delegates to appropriate handler class
+     */
+    private registerMessageHandlers() {
+        // Ping handler (for connection testing)
         this.onMessage("ping", (client, message) => {
             this.logger.info(this.rid, "Ping received", { clientId: client.sessionId, message });
             client.send("pong", { message: "pong" });
         });
 
         // Set Role Handler
-        console.log(`[${this.rid}] Registering set_role handler`);
         this.onMessageZod("set_role", SetRoleSchema, (client, data: SetRoleMessage) => {
-            const player = this.state.players.get(client.sessionId);
-            if (player) {
-                player.role = data.role;
-                if (data.name) player.name = data.name;
-                this.logger.info(this.rid, "Role set", { playerId: client.sessionId, role: data.role });
-            }
+            this.playerManagementHandler.handleSetRole(client, data.role, data.name);
         });
 
         // Submit Action Handler
         this.onMessageZod("submit_action", SubmitActionSchema, (client, data: SubmitActionMessage) => {
-            const player = this.state.players.get(client.sessionId);
-            if (player && !player.hasSubmitted) {
-                // Check action points (simple check for now)
-                if (player.actionPoints >= data.cost) {
-                    player.actionPoints -= data.cost;
-                    player.hasSubmitted = true;
-                    this.logger.info(this.rid, "Action submitted", { playerId: client.sessionId, action: data.actionId });
-
-                    // Check if all submitted (optional auto-advance logic could go here)
-                    if (this.state.allSubmitted()) {
-                        this.broadcast("all_submitted");
-                    }
-                } else {
-                    client.send("error", { message: "Not enough action points" });
-                }
-            }
+            this.actionSubmissionHandler.handleSubmitAction(client, data);
         });
 
         // Start Game Handler
         this.onMessageZod("start_game", StartGameSchema, async (client, data: StartGameMessage) => {
-            // TODO: Add host check
-            if (this.state.phase !== "lobby") {
-                this.logger.warn(this.rid, "Cannot start game from non-lobby phase", { phase: this.state.phase });
-                return;
-            }
-
-            this.logger.info(this.rid, "Starting game - generating initial scenario...", { initiatedBy: client.sessionId });
-
-            try {
-                // 1. Get current Core state and players from StateManager
-                const coreState = this.stateManager.getCoreState();
-                const corePlayers = this.stateManager.getCorePlayers();
-
-                // 2. Create GameSetup for chat session initialization
-                const gameSetup = {
-                    scenarioTitle: "AI Election Crisis",
-                    scenarioDescription: "A deepfake video threatens democratic legitimacy days before a major election.",
-                    coreMetric: coreState.coreMetric,
-                    stakeholders: corePlayers.map(p => ({
-                        name: p.role.name,
-                        icon: "👤", // Default icon
-                        publicObjective: p.role.publicObjective,
-                        hiddenObjective: p.role.hiddenObjective,
-                        resources: p.role.resources,
-                        constraints: p.role.constraints
-                    }))
-                };
-
-                // 3. Initialize chat session for maintaining context across rounds
-                this.chatSession = createGameSession(gameSetup, corePlayers);
-
-                // 4. Generate initial scenario using chat session
-                const initialScenario = await llmService.generateInitialScenarioChat(this.chatSession);
-
-                if (!initialScenario) {
-                    this.logger.error(this.rid, "Failed to generate initial scenario");
-                    client.send("error", { message: "Failed to generate initial scenario" });
-                    return;
-                }
-
-                // 5. Apply initial scenario to Core state (using sessionEngine logic)
-                // Note: Initial scenario is Round 0, sets up the crisis
-                const { gameState: newState, players: newPlayers } = applyConsequences(
-                    coreState,
-                    initialScenario,
-                    corePlayers,
-                    [], // No AI players in initial scenario
-                    null, // No AI turn results
-                    [], // No human action options yet
-                    1 // One LLM call for initial scenario
-                );
-
-                // Set phase to ACTION and round to 1 for first actual round
-                newState.phase = GamePhase.ACTION;
-                newState.round = 1;
-
-                // 6. Persist updated Core state in StateManager
-                this.stateManager.setCoreState(newState);
-                this.stateManager.setCorePlayers(newPlayers);
-
-                // 7. Project Core → Schema (broadcast to clients)
-                coreToSchema(newState, this.state);
-
-                // Update players in Schema
-                for (const corePlayer of newPlayers) {
-                    const schemaPlayer = this.state.players.get(corePlayer.id);
-                    if (schemaPlayer) {
-                        corePlayerToSchema(corePlayer, schemaPlayer);
-                    }
-                }
-
-                // Reset submissions for first round
-                this.state.resetSubmissions();
-
-                // 8. Broadcast game start
-                this.broadcast("game_started");
-                this.logger.info(this.rid, "Game started successfully", {
-                    initiatedBy: client.sessionId,
-                    round: this.state.round,
-                    phase: this.state.phase
-                });
-
-            } catch (error) {
-                this.logger.error(this.rid, "Failed to start game", { error });
-                client.send("error", { message: "Failed to start game" });
-            }
+            await this.gameStartHandler.handleStartGame(client);
         });
 
         // Advance Round Handler
         this.onMessageZod("advance_round", AdvanceRoundSchema, async (client, data: AdvanceRoundMessage) => {
-            console.log(`[${this.rid}] advance_round message received`);
-            // TODO: Add host check
-            if (this.state.phase === "action" || this.state.phase === "consequence") {
-                console.log(`[${this.rid}] Phase is valid: ${this.state.phase}`);
+            await this.roundAdvanceHandler.handleAdvanceRound(client);
+        });
+    }
 
-                this.logger.info(this.rid, "Advancing round via GameController + StateManager...");
-
-                try {
-                    // 1. Enrich: Get full Core state from StateManager
-                    const coreState = this.stateManager.getCoreState();
-                    const corePlayers = this.stateManager.getCorePlayers();
-
-                    this.logger.info(this.rid, "Core state retrieved", {
-                        phase: coreState.phase,
-                        round: coreState.round,
-                        playerCount: corePlayers.length
-                    });
-
-                    // 2. Call GameController with full Core state
-                    const { newState, newPlayers } = await this.gameController.advanceRound(
-                        this.roomId,
-                        coreState,
-                        corePlayers,
-                        [] // humanAvailableOptions - empty for now
-                    );
-
-                    // 3. Persist updated Core state in StateManager
-                    this.stateManager.setCoreState(newState);
-                    this.stateManager.setCorePlayers(newPlayers);
-
-                    // 4. Project: Core → Schema (broadcast to clients)
-                    coreToSchema(newState, this.state);
-
-                    // Also update players
-                    for (const corePlayer of newPlayers) {
-                        const schemaPlayer = this.state.players.get(corePlayer.id);
-                        if (schemaPlayer) {
-                            corePlayerToSchema(corePlayer, schemaPlayer);
-                        }
-                    }
-
-                    this.broadcast("new_round", { round: this.state.round });
-                    this.logger.info(this.rid, "Round advanced successfully", { round: newState.round });
-
-                } catch (error) {
-                    this.logger.error(this.rid, "Failed to advance round", { error });
-                    client.send("error", { message: "Failed to advance round" });
-                }
+    /**
+     * Helper for Zod-validated messages
+     * Validates message schema before passing to handler
+     */
+    private onMessageZod<T>(type: string, schema: any, callback: (client: Client, data: T) => void) {
+        this.onMessage(type, (client, message) => {
+            const result = schema.safeParse(message);
+            if (!result.success) {
+                this.logger.warn(this.rid, `Invalid message ${type}`, { error: result.error, clientId: client.sessionId });
+                client.send("error", { message: "Invalid message format" });
+                return;
             }
+            callback(client, result.data);
         });
     }
 
@@ -254,55 +161,11 @@ export class GameRoom extends Room<GameState> {
         // Store traceId in client for logging correlation
         (client as any).traceId = options.traceId || createReqId('trace');
 
-        this.logger.info(this.rid, "Client joined", {
-            sessionId: client.sessionId,
-            traceId: (client as any).traceId,
-            name: options.name,
-            role: options.role,
-        });
-
-        const playerName = options.name || `Guest-${client.sessionId.slice(0, 4)}`;
-        const roleName = options.role || "";
-
-        // Create player in Schema (for network sync)
-        this.state.createPlayer(client.sessionId, {
-            name: playerName,
-            role: roleName,
-            isHuman: options.isHuman ?? true,
-        });
-
-        // Also create player in StateManager (for Core state)
-        // TODO: This needs full role object with objectives/resources/constraints
-        // For now, we create a minimal role structure
-        this.stateManager.addPlayer({
-            id: client.sessionId,
-            role: {
-                name: roleName,
-                publicObjective: "",
-                hiddenObjective: "",
-                resources: [],
-                constraints: []
-            },
-            isHuman: options.isHuman ?? true,
-            actionPoints: 3,
-            actions: [],
-            hasSubmittedActions: false,
-            hiddenScore: 0
-        });
+        this.playerManagementHandler.handlePlayerJoin(client, options);
     }
 
     onLeave(client: Client, consented: boolean) {
-        this.logger.info(this.rid, "Client left", {
-            sessionId: client.sessionId,
-            traceId: (client as any).traceId,
-            consented,
-        });
-
-        // Remove from Schema (network sync)
-        this.state.removePlayer(client.sessionId);
-
-        // Remove from StateManager (Core state)
-        this.stateManager.removePlayer(client.sessionId);
+        this.playerManagementHandler.handlePlayerLeave(client, consented);
     }
 
     onDispose() {
