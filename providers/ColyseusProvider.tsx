@@ -21,6 +21,7 @@ import { joinGameRoom, leaveRoom as colyseusLeaveRoom } from '@/services/colyseu
 import { MapSchema } from '@colyseus/schema';
 import { useGameStore } from '@/stores/gameStore';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useActionStore } from '@/stores/actionStore';
 import { schemaToCore, schemaPlayersToCore } from '@/server/rooms/adapters/stateAdapter';
 
 export interface ColyseusContextValue {
@@ -155,6 +156,22 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
                 console.log('[ColyseusProvider] Game started!');
                 // Set start intent so RouteOrchestrator navigates to /game
                 setStartIntent(true);
+            });
+
+            newRoom.onMessage('action_options', (message: any) => {
+                console.log('[ColyseusProvider] Received action options:', {
+                    playerId: message.playerId,
+                    round: message.round,
+                    optionCount: message.options?.length || 0
+                });
+
+                // Only process if this is for the current client
+                if (message.playerId === newRoom.sessionId) {
+                    // Update Zustand action store with new options
+                    const { setActionOptions } = useActionStore.getState();
+                    setActionOptions(message.options || []);
+                    console.log('[ColyseusProvider] Updated action options in store');
+                }
             });
 
             // Error handling

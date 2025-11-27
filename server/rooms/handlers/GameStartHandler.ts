@@ -96,7 +96,46 @@ export class GameStartHandler {
             // Reset submissions for first round
             state.resetSubmissions();
 
-            // 8. Broadcast game start
+            // 8. Generate action options for human players
+            const humanPlayers = newPlayers.filter(p => p.isHuman);
+            if (humanPlayers.length > 0) {
+                logger.info(rid, "Generating action options for human players", {
+                    count: humanPlayers.length
+                });
+
+                // Generate options for each human player in parallel
+                const optionsPromises = humanPlayers.map(async (player) => {
+                    const options = await llmService.generateActionOptions(
+                        player,
+                        newState,
+                        null // No previous round actions for first round
+                    );
+                    return { playerId: player.id, options: options?.options || [] };
+                });
+
+                const allOptions = await Promise.all(optionsPromises);
+
+                // Broadcast action options to each player
+                for (const { playerId, options } of allOptions) {
+                    const playerClient = state.players.get(playerId);
+                    if (playerClient) {
+                        // Send directly to the specific player's client
+                        // Note: We'll need to use room.clients to get the actual Client object
+                        // For now, broadcast to all (clients will filter by their own ID)
+                        broadcast("action_options", {
+                            playerId,
+                            options,
+                            round: newState.round
+                        });
+                        logger.info(rid, "Sent action options to player", {
+                            playerId,
+                            optionCount: options.length
+                        });
+                    }
+                }
+            }
+
+            // 9. Broadcast game start
             broadcast("game_started");
             logger.info(rid, "Game started successfully", {
                 initiatedBy: client.sessionId,
