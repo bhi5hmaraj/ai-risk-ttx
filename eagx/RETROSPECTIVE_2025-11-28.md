@@ -115,24 +115,25 @@ All Phase 5-8 tasks are completely untouched:
 
 **Current Status**: Navigation works, but end screen renders blank (new issue)
 
-### 2. End Screen Blank Issue (ACTIVE)
+### 2. End Screen Blank Issue (NOW FIXED)
 **Discovered**: Nov 28 (today)
 **Symptoms**:
 - Browser logs show navigation to /end succeeds
 - RouteOrchestrator detects GamePhase.END correctly
 - No visible content on end screen
 
-**Possible Causes**:
-- EndPage phase check failing silently
-- eventLog empty (no data to display)
-- players array empty (no scores to show)
-- Debrief API call failing
+**Root Cause**:
+- RoundAdvanceHandler had "preflight end check" that detected game end BEFORE processing final round
+- Returned early without calling announceRoundTransition(), skipping final round_result broadcast
+- Clients never received final round's eventLog entry, leaving eventLog incomplete
+- EndScreen depends on finalLogEntry (last item in eventLog) for rendering most sections
 
-**Next Steps**:
-- Check browser console logs with the new debugging output
-- Verify eventLog has entries
-- Verify players array is populated
-- Check if debrief API call is failing
+**Fix Applied**: (server/rooms/handlers/RoundAdvanceHandler.ts)
+- Removed preflight end check (lines 49-59 deleted)
+- Let GameController.advanceRound() complete normally for final round
+- GameController processes consequences, sets phase to END, then returns
+- announceRoundTransition() broadcasts final round_result BEFORE game_ended
+- Clients now receive complete eventLog with all rounds including final round
 
 ### 3. Private Objectives Not Showing (NOW FIXED)
 **Discovered**: Earlier session
@@ -194,6 +195,7 @@ All Phase 5-8 tasks are completely untouched:
 - Phase enum mapping (string ↔ numeric)
 - Enriched player data preservation
 - State architecture documentation (eagx/STATE_ARCHITECTURE.md)
+- Final round result broadcasting fix (removed preflight end check)
 
 **Removed/Deferred (was in plan)**:
 - Room code generation system → Not implemented
