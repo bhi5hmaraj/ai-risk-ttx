@@ -152,7 +152,8 @@ const RoleSelection: React.FC<{
   onSelect: (role: string) => void;
   onStart: () => void;
   cta: string;
-}> = ({ roles, selectedRoleName, onSelect, onStart, cta }) => (
+  isStarting?: boolean;
+}> = ({ roles, selectedRoleName, onSelect, onStart, cta, isStarting = false }) => (
   <div className="max-w-7xl mx-auto">
     <div className="text-center mb-10">
       <h2 className="text-3xl font-bold">Choose Your Role</h2>
@@ -170,10 +171,10 @@ const RoleSelection: React.FC<{
     <div className="text-center mt-10">
       <button
         onClick={onStart}
-        disabled={!selectedRoleName}
+        disabled={!selectedRoleName || isStarting}
         className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
       >
-        {cta}
+        {isStarting ? 'Starting…' : cta}
       </button>
     </div>
   </div>
@@ -492,6 +493,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           maxRounds={maxRounds}
           setMaxRounds={setMaxRounds}
           minAiPlayers={0}
+          isStarting={isLoading}
         />
         <MakePublicModal
           isOpen={isMakePublicModalOpen}

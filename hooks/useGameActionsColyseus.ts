@@ -25,7 +25,7 @@ export function useGameActionsColyseus() {
   const { players, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
   const { selectedRoleName } = useLobby();
-  const { setActionOptions, setAICompletionStatus } = useActions();
+  const { setActionOptions, setAICompletionStatus, setIsGeneratingOptions } = useActions();
   const { room, isConnected, isConnecting, connect, startGame, submitAction, advanceRound } = useColyseus();
 
   const connectionInProgressRef = useRef(false);
@@ -50,6 +50,7 @@ export function useGameActionsColyseus() {
     if (isConnected) {
       console.log('[useGameActionsColyseus] Already connected, just starting game');
       setLoading(true, 'Starting game...');
+      setIsGeneratingOptions(true); // ensure loading until options arrive
       startGame();
       // isGeneratingOptions flag (from actionStore) will show loading screen
       setLoading(false);
@@ -75,6 +76,7 @@ export function useGameActionsColyseus() {
 
       // Step 2: Start the game
       setLoading(true, 'Starting game - AI generating scenario...');
+      setIsGeneratingOptions(true); // show loading immediately upon start click
       startGame();
 
       // Server will:
@@ -120,6 +122,13 @@ export function useGameActionsColyseus() {
 
       try {
         setLoading(true, 'Submitting your actions...');
+        // Frontend enforcement: ensure total cost within available AP
+        const totalCost = actions.reduce((sum, a) => sum + (a?.cost || 0), 0);
+        if (totalCost > (human.actionPoints || 0)) {
+          setError(`You only have ${human.actionPoints} AP but selected ${totalCost} AP worth of actions.`);
+          setLoading(false);
+          return;
+        }
 
         // Step 1: Submit each action to server
         console.log('[useGameActionsColyseus] Submitting', actions.length, 'actions');
@@ -135,6 +144,7 @@ export function useGameActionsColyseus() {
         // Step 3: Advance round (triggers server-side consequence generation)
         console.log('[useGameActionsColyseus] Advancing round...');
         setLoading(true, 'Generating next round... AI players are making decisions.');
+        setIsGeneratingOptions(true); // lock UI until next-round options arrive
         advanceRound();
 
         // Server will:
