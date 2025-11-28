@@ -36,7 +36,6 @@ export function schemaToCore(
     return {
         phase: schema.phase as GamePhase,
         round: schema.round,
-        maxRounds: schema.maxRounds,
         coreMetric: {
             name: schema.coreMetricName,
             value: schema.publicScore,
@@ -88,9 +87,6 @@ export function coreToSchema(
 ): void {
     schema.phase = core.phase ?? 'lobby';
     schema.round = core.round;
-    if (core.maxRounds !== undefined) {
-        schema.maxRounds = core.maxRounds;
-    }
     schema.publicScore = core.coreMetric.value;
     schema.coreMetricName = core.coreMetric.name;
 }
