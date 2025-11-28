@@ -217,7 +217,8 @@ const PresetRoleSelection: React.FC<{
   maxRounds?: number;
   setMaxRounds?: (n: number) => void;
   minAiPlayers?: number;
-}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0 }) => (
+  isStarting?: boolean;
+}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0, isStarting = false }) => (
   <div className="max-w-7xl mx-auto">
     <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
       <h2 className="text-3xl font-bold text-purple-300 mb-2">{scenarioTitle}</h2>

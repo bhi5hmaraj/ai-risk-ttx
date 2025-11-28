@@ -42,12 +42,12 @@ export class GameController {
         // 2. Start Counterfactual & AI Turns (Parallel)
         this.logger.info(rid, "Starting AI turns and counterfactual generation");
 
-        const counterfactualPromise = this.deps.llm.generateCounterfactualConsequences(gameState);
+        const counterfactualPromise = this.deps.llm!.generateCounterfactualConsequences(gameState);
 
         const aiTurnPromises = aiPlayers.map(async (aiPlayer) => {
             this.logger.info(rid, "ai-turn:start", { role: aiPlayer.role.name });
             try {
-                const result = await this.deps.llm.generateAITurn(aiPlayer, gameState, prevActions);
+                const result = await this.deps.llm!.generateAITurn(aiPlayer, gameState, prevActions);
                 if (!result) throw new Error("AI turn generation failed");
 
                 this.logger.info(rid, "ai-turn:done", {
@@ -98,7 +98,7 @@ export class GameController {
         }
 
         this.logger.info(rid, "Generating consequences");
-        const consequence = await this.deps.llm.generateConsequences(
+        const consequence = await this.deps.llm!.generateConsequences(
             gameState,
             playersWithActions,
             counterfactual.publicScoreUpdate

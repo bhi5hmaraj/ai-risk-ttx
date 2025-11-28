@@ -55,7 +55,7 @@ describe('Schema Synchronization: Field Coverage', () => {
     test('all Schema GameState fields handled by coreToSchema', () => {
         // Create Core state with all fields
         const core: CoreGameState = {
-            phase: 2, // ACTION
+            phase: 'action' as any, // ACTION
             round: 7,
             coreMetric: {
                 name: 'Security',
@@ -362,7 +362,7 @@ describe('Schema Synchronization: Integration Smoke Tests', () => {
     test('full round-trip preserves all essential fields', () => {
         // Create maximal Core state
         const originalCore: CoreGameState = {
-            phase: 2,
+            phase: 'action' as any,
             round: 5,
             coreMetric: {
                 name: 'Innovation',

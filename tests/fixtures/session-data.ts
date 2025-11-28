@@ -31,7 +31,7 @@ export function createValidPlayers(): Player[] {
 
 export function createValidGameState(overrides: Partial<GameState> = {}): GameState {
   return {
-    phase: 2, // ACTION
+    phase: 'action' as any, // ACTION
     round: 1,
     coreMetric: { name: 'Trust', description: 'Public trust', value: 75 },
     eventLog: [
