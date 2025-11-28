@@ -39,6 +39,7 @@ export interface JoinRoomOptions {
   name: string;
   role: string;
   isHuman?: boolean;
+  gameId?: string; // Room code for joining existing games or creating with specific ID
   traceId?: string;
   gameSetup?: any | null;
   maxRounds?: number;
@@ -47,22 +48,37 @@ export interface JoinRoomOptions {
 /**
  * Join or create a game room
  *
- * @param options - Player info (name, role, etc.)
+ * Uses gameId-based matchmaking: clients with the same gameId will join the same room.
+ * - If gameId is provided: joins existing room or creates new one with that gameId
+ * - If no gameId: server generates a new unique room code
+ *
+ * @param options - Player info (name, role, gameId, etc.)
  * @returns Connected Colyseus room instance
  */
 export async function joinGameRoom(options: JoinRoomOptions): Promise<Room<ColyseusGameState>> {
   const client = getColyseusClient();
   const traceId = options.traceId || generateTraceId();
 
-  console.log(`[${traceId}] Joining game room...`, options);
+  console.log(`[${traceId}] Joining game room...`, {
+    ...options,
+    gameSetup: options.gameSetup ? '(present)' : '(none)',
+  });
 
   try {
+    // joinOrCreate with gameId filter:
+    // - Server uses filterBy(['gameId'])
+    // - Clients with same gameId land in same room instance
+    // - If no gameId, server generates new room code
     const room = await client.joinOrCreate('game', {
       ...options,
       traceId,
     });
 
-    console.log(`[${traceId}] Joined room successfully!`, room.sessionId);
+    console.log(`[${traceId}] Joined room successfully!`, {
+      roomId: room.roomId,
+      sessionId: room.sessionId,
+      gameId: (room.state as any)?.roomCode || '(waiting for sync)',
+    });
     return room as Room<ColyseusGameState>;
   } catch (error) {
     console.error(`[${traceId}] Failed to join room:`, error);

@@ -33,7 +33,7 @@ export interface ColyseusContextValue {
     isConnected: boolean;
     isConnecting: boolean;
     error: Error | null;
-    connect: (options: { name: string; role: string; isHuman?: boolean }) => Promise<void>;
+    connect: (options: { name: string; role: string; isHuman?: boolean; gameId?: string }) => Promise<void>;
     disconnect: () => Promise<void>;
     setRole: (role: string, name?: string) => void;
     submitAction: (actionId: string, cost: number) => void;
@@ -118,7 +118,7 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
         });
     }, [setGameState, setGamePlayers]);
 
-    const connect = useCallback(async (options: { name: string; role: string; isHuman?: boolean }) => {
+    const connect = useCallback(async (options: { name: string; role: string; isHuman?: boolean; gameId?: string }) => {
         if (roomRef.current || isConnecting) {
             console.log('[ColyseusProvider] Already connected or connecting');
             return;
@@ -134,6 +134,7 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
                 name: options.name,
                 role: options.role,
                 isHuman: options.isHuman ?? true,
+                gameId: options.gameId, // Room code for multiplayer joining
                 // Pass scenario-derived setup so server can seed roles/players
                 gameSetup: lobby.gameSetup || null,
                 maxRounds: lobby.maxRounds,

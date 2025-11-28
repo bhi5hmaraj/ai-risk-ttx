@@ -62,7 +62,7 @@ const gameServer = new Server({
 
 gameServer.define('game', GameRoom)
     .enableRealtimeListing()
-    .filterBy(['mode']); // Allow filtering rooms by game mode
+    .filterBy(['gameId']); // Allow filtering rooms by gameId - clients with same gameId join same room
 
 expressApp.use('/colyseus-admin', monitor());
 

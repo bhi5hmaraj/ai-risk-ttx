@@ -25,8 +25,8 @@ Date: 2025‑11‑28
 ---
 
 ## TL;DR Architecture
-- Identity: Mint `gameId` at create; map to Colyseus `roomId` via a registry (presence/Redis). Issue per‑seat `joinToken` bound to `{ gameId, playerId }`.
-- URL: `/game/[gameId]` renders via Next (App Router). Next SSR fetches a public snapshot from the Colyseus Express server; client connects to Colyseus (WS) with `joinToken` to subscribe.
+- Identity: Use Colyseus matchmaker with `filterBy(['gameId'])` so `joinOrCreate('game', { gameId })` deterministically resolves to the same room. Alternatively, set `roomId = gameId` on create (Presence‑guarded). Rely on built‑in seat reservation and `reconnectionToken` for rejoin.
+- URL: `/game/[gameId]` renders via Next (App Router). Next SSR fetches a public snapshot from the Colyseus Express server; client connects to Colyseus (WS) with its `reconnectionToken`/seat reservation to subscribe.
 - State: Canonical `GameState` (schema) with `phase: 'lobby'|'starting'|'action'|'consequence'|'end'`, `round`, `maxRounds`, `players[]`, `publicScores`, `pendingChoices`, `actionOptions`, `eventSeq`, `stateVersion`.
 - Intents (from client): `start_game`, `submit_action { actionId }`. No client `advance_round`.
 - Broadcasts (from server): `game_started`, `round_started`, `action_options`, `round_result`, `game_ended` + schema patches. Clients render based on `phase` only.
@@ -51,10 +51,9 @@ Date: 2025‑11‑28
     - `end` → EndScreen
 - No client transition logic; buttons only dispatch intents. Loading states are derived from the presence/absence of required server data (e.g., disable Confirm until `actionOptions[currentPlayer]` exist).
 
-## Server Responsibilities
-- Registry: `gameId → roomId` mapping (Colyseus presence or Redis).
+- No bespoke registry: resolve rooms via `filterBy(['gameId'])` (or `roomId = gameId`). Colyseus Presence backs discovery across processes.
 - Seating & Rejoin
-  - Issue `joinToken` per seat (JWT or opaque). Validate on join, rebind seat if reconnecting.
+  - Use seat reservation and `allowReconnection`/`reconnectionToken`. Validate on join, rebind seat on reconnect.
   - Maintain stable `playerId` across sessions; `sessionId` is ephemeral.
 - Game Loop
   - Start on `start_game` from host/mod, or auto when all required players are ready.
@@ -152,8 +151,8 @@ Already in place
 - Dev orchestration with port prompts and env‑driven URLs (`scripts/dev.mjs`, `scripts/dev-colyseus.mjs`).
 
 Delta work for Phase 2 (what’s left)
-- GameId URLs + Join Tokens (8 SP)
-  - Registry: `gameId → roomId` + seat `joinToken`; FE join via `{ gameId, joinToken }`.
+- GameId URLs via matchmaker (3 SP)
+  - Use `filterBy(['gameId'])` (or `roomId = gameId`); FE joins with `{ gameId }`. Rejoin uses `reconnectionToken`.
 - Snapshot endpoint + SSR page (10–13 SP)
   - `GET /games/:gameId/snapshot` in Colyseus Express; Next `app/game/[gameId]` SSR + hydrate.
 - Server‑driven advance (3–5 SP)
@@ -167,7 +166,7 @@ Delta work for Phase 2 (what’s left)
 - (Optional this phase) Minimal persistence (5 SP)
   - Snapshot at round boundaries; reload on restart.
 
-Delta total: ~47–52 SP (vs. original 82 SP)
+Delta total: ~42–47 SP (vs. original 82 SP)
 
 ---
 
@@ -176,7 +175,7 @@ Delta total: ~47–52 SP (vs. original 82 SP)
 Objective: Server‑driven UX with stable URLs and resilience to disconnects, without overhauling persistence.
 
 Included (≈ 22–26 SP)
-- Stable links: Issue `gameId` and map to `roomId` in memory (3 SP).
+- Stable links: Use `filterBy(['gameId'])` in matchmaker (3 SP).
 - Snapshot + SSR: `GET /games/:gameId/snapshot` (Express) and `app/game/[gameId]` SSR page (9–11 SP total).
 - Server auto‑advance: Remove client `advance_round`; advance when all submitted (3 SP).
 - Timers + NoOp: Server‑side deadline with default “no action” (5 SP).
@@ -324,11 +323,94 @@ Stock app analogy: Snapshot = “opening positions/order book”; WebSocket = �
 6) Add `stateVersion`/`eventSeq` and reconciliation path.
 7) Persist snapshots at round boundaries; implement restart recovery.
 
+## Lobby & Matchmaking Flow (Option A: Direct Invite - MVP)
+
+**Decision**: Implement direct invite pattern for MVP (Dec 12 event). Public lobby browsing deferred to post-event.
+
+### User Flow
+
+**Create Game:**
+1. User lands on lobby screen
+2. Selects scenario from dropdown (Classic, AI Safety, Custom)
+3. Sets max players (2-6, default 6)
+4. Clicks "Create Game"
+5. → Room created with unique gameId (e.g., "ABC123")
+6. → Enters waiting room state
+
+**Waiting Room:**
+- Displays room code prominently (large font)
+- Copy link button (`simulacra.cc/game/ABC123`)
+- QR code for easy mobile sharing
+- Shows joined players in real-time:
+  - ✓ You (Tech CEO) - Host
+  - ✓ Alice (Journalist)
+  - ⏳ Waiting...
+  - ⏳ Waiting...
+- Host sees "Start Game" button (always enabled)
+- Non-host players see "Waiting for host to start..."
+
+**Join Game:**
+1. User receives room code/link from friend
+2. Opens link → lands on `/game/ABC123`
+3. SSR renders current room state (waiting room)
+4. User selects available role
+5. Clicks "Join Game"
+6. → `client.joinOrCreate('game', { gameId: 'ABC123', role: 'Journalist', ... })`
+7. Colyseus matchmaker routes to existing room with same gameId
+
+**Start Game:**
+1. Host clicks "Start Game"
+2. Remaining empty slots → auto-filled with AI players
+3. All clients receive `game_started` event
+4. Navigate to `/game` (action phase)
+
+### Technical Implementation
+
+**Room Creation:**
+- `GameRoom.onCreate()` generates 6-char gameId (ABC123 format)
+- Stored in `state.roomCode` for client sync
+- Server uses `filterBy(['gameId'])` - ensures `joinOrCreate({ gameId })` lands in same room
+
+**Joining:**
+- Client calls `joinOrCreate('game', { gameId, role, name, ... })`
+- Colyseus matchmaker checks for existing room with matching gameId
+- If exists → join that room
+- If not → create new room with that gameId (host)
+
+**Room Code Format:**
+- 3 uppercase letters + 3 numbers (e.g., ABC123)
+- Excludes ambiguous chars (0/O, 1/I/L)
+- Namespace: 15.8 million codes
+- Generated by `server/lib/roomCodeGenerator.ts`
+
+**Reconnection:**
+- `allowReconnection(client, 60)` on disconnect
+- 60-second window to rejoin
+- Preserves seat and game state
+- Disabled after game ends (phase = 'end')
+
+### Deferred Features (Post-MVP)
+
+- **Public lobby browsing**: List of joinable games
+- **Ready/not-ready status**: Player readiness indicators
+- **Auto-start timer**: Force start after X minutes
+- **Host migration**: Transfer host if original leaves
+- **Spectator mode**: Join as observer (no role)
+
+### Edge Cases Handled
+
+**Room full:** Colyseus enforces `maxClients = 6`, rejects join attempts
+**Host leaves during waiting:** First remaining player becomes host (Colyseus default behavior)
+**Late join after start:** Rejected (phase !== 'lobby')
+**Invalid room code:** 404 page or "Room not found" message
+
+---
+
 ## Open Questions
-- Late joins: spectator vs claim empty seat?
-- Moderator controls: pause/force advance?
-- Public spectator link with redactions?
-- Maximum event log tail length in snapshot responses?
+- ~~Late joins: spectator vs claim empty seat?~~ → Resolved: No late joins post-start (MVP)
+- ~~Moderator controls: pause/force advance?~~ → Deferred to post-MVP
+- Public spectator link with redactions? → Deferred to post-MVP
+- Maximum event log tail length in snapshot responses? → TBD during implementation
 
 ---
 
@@ -364,10 +446,9 @@ export interface GameStatePublic {
 ## Backlog & Estimates (Story Points)
 Scale: 1, 2, 3, 5, 8, 13 (≈ 1 SP = 0.5–1 eng‑day depending on familiarity).
 
-### Epic A — GameId Registry & Join Tokens (8 SP)
-- Issue `gameId` and map to `roomId` via presence/Redis (3)
-- Persist mapping + TTL and rehydrate on restart (2)
-- Per‑seat `joinToken` (issue/validate; JWT/opaque) (3)
+### Epic A — GameId via Matchmaker + Reconnect (3 SP)
+- `filterBy(['gameId'])` or `roomId = gameId`; no bespoke registry (2)
+- Reconnect via `allowReconnection`/`reconnectionToken` (1)
 
 Acceptance: Joining with `{ gameId, joinToken }` rebinds seat across reconnects/devices.
 
@@ -436,8 +517,8 @@ Acceptance: Green test run; manual QA script documented.
 Acceptance: New dev can run SSR + WS locally with one command.
 
 ### Total
-- Sum = 8 + 13 + 8 + 8 + 8 + 13 + 5 + 3 + 5 + 8 + 3 = 82 SP
-- Rough time: Solo dev ≈ 8–12 weeks; 2 devs ≈ 4–6 weeks. Team familiarity can pull lower end.
+- Sum = 3 + 13 + 8 + 8 + 8 + 13 + 5 + 3 + 5 + 8 + 3 = 77 SP
+- Rough time: Solo dev ≈ 7–10 weeks; 2 devs ≈ 4–5 weeks. Team familiarity can pull lower end.
 
 ## Risks & Unknowns
 - LLM latency variability may necessitate background workers; sized out of this phase (would add 8–13 SP).

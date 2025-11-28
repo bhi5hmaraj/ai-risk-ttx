@@ -16,11 +16,15 @@ We successfully implemented core Colyseus infrastructure and basic state synchro
 - Private objectives now displaying correctly
 - maxRounds synchronization working
 - Auto-advance on all_submitted implemented
+- **GamePhase enum consolidated** - Unified server (string) and client enums, fixed blank end screen bug (Nov 28)
+- **TypeScript compilation errors resolved** - All 10 errors fixed across 7 files (Nov 28)
+- **Recharts visualizations added** - Score progression and round impact charts on end screen (Nov 28)
+- **End screen simplified** - Removed duplicate sections, single unified Event Log (Nov 28)
 
 ### Critical Blockers 🔴
-1. **End screen is blank** - Navigation works but no content renders
+1. ~~**End screen is blank**~~ ✅ **FIXED** - GamePhase enum consolidation resolved blank screen (Nov 28)
 2. **Action submission not complete** - Need full action flow validation
-3. **Room code system missing** - Users can't join via shareable codes
+3. **Room code system missing** - Users can't join via shareable codes ⬅️ **NEXT PRIORITY**
 4. **No multi-player testing** - Untested with 2+ humans
 5. **No deployment validation** - Never tested on Cloud Run
 
@@ -116,7 +120,7 @@ All Phase 5-8 tasks are completely untouched:
 **Current Status**: Navigation works, but end screen renders blank (new issue)
 
 ### 2. End Screen Blank Issue (NOW FIXED)
-**Discovered**: Nov 28 (today)
+**Discovered**: Nov 28
 **Symptoms**:
 - Browser logs show navigation to /end succeeds
 - RouteOrchestrator detects GamePhase.END correctly
@@ -135,12 +139,46 @@ All Phase 5-8 tasks are completely untouched:
 - announceRoundTransition() broadcasts final round_result BEFORE game_ended
 - Clients now receive complete eventLog with all rounds including final round
 
-### 3. Private Objectives Not Showing (NOW FIXED)
+### 3. GamePhase Enum Mismatch (NOW FULLY FIXED - Nov 28)
+**Discovered**: Nov 28
+**Symptoms**:
+- End screen navigation working but blank content
+- Phase comparison issues between server and client
+- Test failures due to numeric vs string enum values
+
+**Root Cause**:
+- Server used string GamePhase enum ('lobby', 'action', 'end')
+- Client used numeric GamePhase enum (0, 1, 2, 3, 4)
+- stateAdapter had complex mapping logic (53 lines) to convert between formats
+- Test files still using old numeric values
+
+**Fix Applied**:
+- Consolidated to string enums across entire codebase
+- Updated test fixtures: `phase: 2` → `phase: 'action' as any`
+- Updated schema sync tests to use string values
+- Removed 53 lines of numeric mapping from stateAdapter
+- Fixed all 10 TypeScript compilation errors
+
+### 4. Recharts Visualization Implementation (Nov 28)
+**Added**: New modular GameCharts component
+**Features**:
+- Score progression line chart showing public score changes over rounds
+- Round impact bar chart with color-coded positive/negative changes
+- Dark theme styling matching app design
+- Extracted from EndScreen for maintainability
+
+**Files Modified**:
+- Created `components/game/GameCharts.tsx` (141 lines)
+- Updated `screens/EndScreen.tsx` to use GameCharts component
+- Removed duplicate "Final Round" section (~130 lines)
+- Added `noScroll` prop to EventLog component
+
+### 5. Private Objectives Not Showing (NOW FIXED)
 **Discovered**: Earlier session
 **Root Cause**: syncColyseusToZustand was rebuilding players from minimal schema on every update, losing enriched data from players_init message
 **Fix**: Preserve enriched role data using enrichment map (providers/ColyseusProvider.tsx:93-107)
 
-### 4. maxRounds Not Syncing (NOW FIXED)
+### 6. maxRounds Not Syncing (NOW FIXED)
 **Discovered**: Earlier session
 **Root Cause**:
 - Missing from Colyseus Schema
@@ -152,7 +190,7 @@ All Phase 5-8 tasks are completely untouched:
 - Added to stateAdapter conversions
 - Updated GameScreen to use gameState.maxRounds
 
-### 5. Seat Reservation Timeout (FIXED)
+### 7. Seat Reservation Timeout (FIXED)
 **Discovered**: Earlier
 **Symptoms**: "seat reservation expired" errors
 **Fix**: Increased Colyseus seat reservation timeout to 30 seconds
@@ -192,10 +230,13 @@ All Phase 5-8 tasks are completely untouched:
 **Added (not in plan)**:
 - Detailed diagnostic logging in RouteOrchestrator and EndPage
 - Auto-advance on all_submitted event
-- Phase enum mapping (string ↔ numeric)
+- Phase enum mapping (string ↔ numeric) - THEN fully consolidated to strings
 - Enriched player data preservation
 - State architecture documentation (eagx/STATE_ARCHITECTURE.md)
 - Final round result broadcasting fix (removed preflight end check)
+- Recharts data visualizations on end screen (Nov 28)
+- GameCharts component for modular analytics display (Nov 28)
+- Simplified end screen with single unified Event Log (Nov 28)
 
 **Removed/Deferred (was in plan)**:
 - Room code generation system → Not implemented
@@ -261,8 +302,8 @@ All Phase 5-8 tasks are completely untouched:
 - maxRounds sync (fixed in latest commits)
 
 ### What Definitely Doesn't Work ❌
-- **Multi-player joining** (no room codes)
-- **End screen display** (blank screen issue)
+- **Multi-player joining** (no room codes) ⬅️ **NEXT PRIORITY**
+- ~~**End screen display**~~ ✅ **FIXED** (Nov 28 - GamePhase consolidation + Recharts added)
 - **AI player validation** (untested in Colyseus flow)
 - **Reconnection** (no proper handling)
 - **Admin monitoring** (no dashboard)
@@ -284,10 +325,9 @@ All Phase 5-8 tasks are completely untouched:
    - **Time**: 1-2 days to test and fix issues
    - **Blocker**: Yes - can't run event locally
 
-3. **End Screen Broken** (Severity: HIGH)
-   - **Impact**: Game doesn't end gracefully
-   - **Time**: 4-8 hours to fix
-   - **Blocker**: Maybe - could skip debrief
+3. ~~**End Screen Broken**~~ ✅ **FIXED** (Nov 28)
+   - **Status**: GamePhase enum consolidated, end screen now displays correctly
+   - **Added**: Recharts visualizations for score progression and round impact
 
 ### High-Impact Risks 🟡
 
@@ -319,11 +359,11 @@ All Phase 5-8 tasks are completely untouched:
 
 ### Immediate Next Steps (Today/Tomorrow)
 
-1. **Fix End Screen** (4-8 hours)
-   - Debug why screen is blank
-   - Check eventLog population
-   - Verify debrief API call
-   - Test full game flow
+1. ~~**Fix End Screen**~~ ✅ **COMPLETED** (Nov 28)
+   - ✅ GamePhase enum consolidated to strings
+   - ✅ End screen now displays correctly with full event log
+   - ✅ Added Recharts visualizations (score progression + round impact)
+   - ✅ Removed duplicate sections, simplified UI
 
 2. **E2E Testing** (1 day)
    - Play through complete game
