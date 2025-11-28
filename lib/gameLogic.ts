@@ -24,7 +24,7 @@ export function createInitialGameStateFromScenario(
   const newScoreValue = clampScore(prev.coreMetric.value + scenario.publicScoreUpdate);
   return {
     ...prev,
-    phase: 2, // GamePhase.ACTION, but keep enum-free to avoid import cycles
+    phase: 'action' as any, // GamePhase.ACTION
     round: 1,
     coreMetric: { ...prev.coreMetric, value: newScoreValue },
     currentEvent: scenario.nextEvent?.headline ? { id: `evt_${Date.now()}_1`, ...scenario.nextEvent } as any : scenario.nextEvent,
@@ -81,7 +81,7 @@ export function applyConsequences(
 
   const nextState: GameState = {
     ...currentGameState,
-    phase: 2, // GamePhase.ACTION
+    phase: 'action' as any, // GamePhase.ACTION
     round: currentGameState.round + 1,
     coreMetric: { ...currentGameState.coreMetric, value: newScoreValue },
     eventLog: [
