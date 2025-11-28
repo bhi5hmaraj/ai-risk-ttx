@@ -59,11 +59,11 @@ export interface Player {
 }
 
 export enum GamePhase {
-  LOBBY,
-  STARTING,
-  ACTION,
-  CONSEQUENCE,
-  END,
+  LOBBY = 'lobby',
+  STARTING = 'starting',
+  ACTION = 'action',
+  CONSEQUENCE = 'consequence',
+  END = 'end',
 }
 
 export interface GameEvent { headline: string; detail: string; }

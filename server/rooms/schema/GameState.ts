@@ -32,6 +32,7 @@ export class GameState extends Schema {
     // Game flow
     @type("string") phase: string = "lobby"; // lobby | action | consequence | end
     @type("number") round: number = 0;
+    @type("number") maxRounds: number = 5;
 
     // Metrics
     @type("number") publicScore: number = 75;

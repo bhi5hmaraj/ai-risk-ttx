@@ -137,6 +137,7 @@ export interface GameLogEntry {
 export interface GameState {
   phase: GamePhase;
   round: number;
+  maxRounds?: number; // Optional for backwards compatibility
   coreMetric: CoreMetric;
   eventLog: GameLogEntry[];
   currentEvent: GameEvent | null;
