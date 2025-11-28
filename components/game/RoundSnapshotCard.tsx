@@ -293,11 +293,26 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 {playerActions.map((playerAction) => {
                   const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
                   const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
+                  const isYou = humanPlayer && playerAction.roleName === humanPlayer.role.name;
                   return (
-                    <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
+                    <div
+                      key={`action_${playerAction.roleName}`}
+                      className={`rounded p-2 bg-gray-950/60 border transition-shadow ${
+                        isYou
+                          ? 'border-emerald-500 ring-1 ring-emerald-400/40 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
+                          : 'border-amber-800/30'
+                      }`}
+                    >
                       <div className="mb-1">
                         <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <span className="font-semibold text-white text-xs break-words">{playerAction.roleName}</span>
+                          <span className={`font-semibold text-xs break-words ${isYou ? 'text-emerald-200' : 'text-white'}`}>
+                            {playerAction.roleName}
+                            {isYou && (
+                              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full border border-emerald-600 bg-emerald-900/40 text-[10px] text-emerald-200 align-middle">
+                                You
+                              </span>
+                            )}
+                          </span>
                           {hiddenUpdate && (
                             <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
@@ -306,7 +321,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         </div>
                         {matchingPlayer && (
                           <span className="text-[10px] text-amber-400 italic block break-words">
-                            {matchingPlayer.role.hiddenObjective}
+                            {matchingPlayer.role.hiddenObjective || '—'}
                           </span>
                         )}
                       </div>

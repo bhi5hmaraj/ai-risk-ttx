@@ -190,7 +190,8 @@ export default function GamePage() {
             humanPlayer={humanPlayer!}
             timer={timer}
             isPaused={isPaused}
-            isLoading={isLoading}
+            // Disable confirm until options arrive in ACTION phase
+            isLoading={isGeneratingOptions || (gameState.phase === GamePhase.ACTION && actionOptions.length === 0)}
             actionOptions={actionOptions}
             aiCompletionStatus={aiCompletionStatus}
             isHistoryOpen={isHistoryOpen}
@@ -206,7 +207,7 @@ export default function GamePage() {
             isCustomScenario={showMakePublic}
             onMakePublic={() => setShowMakePublicModal(true)}
             onOpenFeedback={() => setShowFeedbackModal(true)}
-            maxRounds={gameSetup?.maxRounds ?? undefined}
+            maxRounds={gameState.maxRounds ?? gameSetup?.maxRounds ?? undefined}
             scenarioAlreadyPublic={scenarioSubmitted || isFromPublicCatalog}
           />
         </>

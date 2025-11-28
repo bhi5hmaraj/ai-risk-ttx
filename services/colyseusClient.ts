@@ -8,13 +8,11 @@
 import { Client, Room } from 'colyseus.js';
 import type { GameState as ColyseusGameState } from '@/server/rooms/schema/GameState';
 
-// Get Colyseus server URL from environment or default to localhost
-const COLYSEUS_URL =
-  process.env.NEXT_PUBLIC_COLYSEUS_URL ||
-  (typeof window !== 'undefined'
-    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
-    : 'ws://localhost:3000'
-  );
+// Require explicit Colyseus URL from env; no hardcoded or same-origin fallback
+const COLYSEUS_URL = process.env.NEXT_PUBLIC_COLYSEUS_URL as string | undefined;
+if (!COLYSEUS_URL) {
+  throw new Error('[ColyseusClient] NEXT_PUBLIC_COLYSEUS_URL is not set. Define it in .env.local (dev) or deployment env.');
+}
 
 console.log('[ColyseusClient] Server URL:', COLYSEUS_URL);
 
@@ -42,6 +40,8 @@ export interface JoinRoomOptions {
   role: string;
   isHuman?: boolean;
   traceId?: string;
+  gameSetup?: any | null;
+  maxRounds?: number;
 }
 
 /**
