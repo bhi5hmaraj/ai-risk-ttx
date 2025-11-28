@@ -1,8 +1,10 @@
 # Phase 2: Colyseus Migration - Frontend Integration
 
-**Status**: 🟡 In Progress
-**Last Updated**: 2025-11-27
-**Related**: `eagx/colyseus-migration-tasks.md`, `eagx/STATE_ARCHITECTURE.md`
+**Status**: 🟡 In Progress (40% Complete)
+**Last Updated**: 2025-11-28
+**Related**: `eagx/colyseus-migration-tasks.md`, `eagx/STATE_ARCHITECTURE.md`, `eagx/RETROSPECTIVE_2025-11-28.md`
+
+**⚠️ CRITICAL GAPS**: Room code system, Cloud Run validation, multi-player testing
 
 ## Overview
 
@@ -80,54 +82,62 @@ room.send("advance_round") → RoundAdvanceHandler
 
 ## Migration Tasks
 
-### ✅ Completed (Phase 1)
+### ✅ Completed (Phase 1 + Recent Fixes)
 
 1. **Server Infrastructure**
    - [x] Colyseus server setup (`server/index.ts`)
    - [x] GameRoom with StateManager + Schema sync
-   - [x] Handler pattern (SOLID refactoring)
+   - [x] Handler pattern (SOLID refactoring) - 8 handlers
    - [x] LLM integration in GameStartHandler
    - [x] Action option generation server-side
+   - [x] **NEW**: maxRounds field in schema and adapters
+   - [x] **NEW**: State adapter with phase enum mapping
+   - [x] **NEW**: Auto-advance on all_submitted
 
 2. **Client Infrastructure**
    - [x] ColyseusProvider with global connection
    - [x] State sync (Colyseus → Zustand)
    - [x] useGameActionsColyseus hook
    - [x] Navigation on game_started event
+   - [x] **NEW**: Enriched player data preservation
+   - [x] **NEW**: hasStartIntent clearing on game_ended
+   - [x] **NEW**: Diagnostic logging for navigation
 
-### 🟡 In Progress (Phase 2)
+### 🟡 In Progress (Phase 2) - **Updated Nov 28**
 
-3. **Replace useGameActions.ts**
-   - [ ] Remove `SessionService.create()` → Use `colyseus.connect()`
-   - [ ] Remove `SessionService.start()` → Use `colyseus.startGame()`
-   - [ ] Remove `SessionService.submitActions()` → Use `colyseus.submitAction()`
-   - [ ] Remove `SessionService.advance()` → Use `colyseus.advanceRound()`
-   - [ ] Update handleConfirmActions to use Colyseus messages
-   - [ ] Remove sessionCreationInFlightRef (no longer needed)
+3. **Replace useGameActions.ts** ✅ **DONE**
+   - [x] Remove `SessionService.create()` → Use `colyseus.connect()`
+   - [x] Remove `SessionService.start()` → Use `colyseus.startGame()`
+   - [x] Remove `SessionService.submitActions()` → Use `colyseus.submitAction()`
+   - [x] Remove `SessionService.advance()` → Use `colyseus.advanceRound()`
+   - [x] Update handleConfirmActions to use Colyseus messages
+   - [x] Remove sessionCreationInFlightRef (no longer needed)
 
-4. **Fix useRoundOptions.ts**
+4. **Fix useRoundOptions.ts** ✅ **DONE**
    - [x] Add Colyseus message listener in ColyseusProvider
-   - [ ] Remove SessionService.getActionOptions() call
-   - [ ] Remove sessionMeta check (use Colyseus connection state instead)
-   - [ ] Show loading state while waiting for action_options message
-   - [ ] Handle action options arriving asynchronously
+   - [x] Remove SessionService.getActionOptions() call
+   - [x] Remove sessionMeta check (use Colyseus connection state instead)
+   - [x] Show loading state while waiting for action_options message
+   - [x] Handle action options arriving asynchronously
 
-5. **Refactor sessionStore**
-   - [ ] Remove `sessionMeta` (replace with Colyseus roomId/sessionId)
-   - [ ] Remove `sseStatus` (no longer using SSE)
-   - [ ] Keep `hasStartIntent` (used by RouteOrchestrator)
+5. **Refactor sessionStore** ⚠️ **PARTIAL**
+   - [ ] Remove `sessionMeta` (still exists, not used in Colyseus flow)
+   - [ ] Remove `sseStatus` (still exists, not used)
+   - [x] Keep `hasStartIntent` (used by RouteOrchestrator) - **NOW CLEARED ON GAME END**
    - [ ] Add `colyseusSessionId` for player identification
-   - [ ] Add `isGeneratingOptions` loading flag
+   - [x] Add `isGeneratingOptions` loading flag - **DONE**
 
-6. **Remove SessionMonitor component**
+6. **Remove SessionMonitor component** ❌ **NOT DONE**
    - [ ] Remove `components/SessionMonitor.tsx`
    - [ ] Remove mount in `app/layout.tsx`
    - [ ] SSE handling now done by Colyseus onMessage
+   - **Note**: Can be deferred, doesn't break anything
 
-7. **Update RouteOrchestrator**
-   - [ ] Remove `sessionMeta` check
+7. **Update RouteOrchestrator** ✅ **MOSTLY DONE**
+   - [x] Add detailed diagnostic logging
+   - [x] Fix navigation to /end (phase check working)
+   - [ ] Remove `sessionMeta` check (still present but not critical)
    - [ ] Use Colyseus connection state instead
-   - [ ] Check `room.state.phase` instead of HTTP session
 
 ### 🔴 Blocked / Not Started
 
@@ -144,41 +154,59 @@ room.send("advance_round") → RoundAdvanceHandler
    - [ ] Update documentation
    - [ ] Remove legacy API routes (after confirming not used)
 
-## Current Issues
+## Current Issues - **Updated Nov 28**
 
-### 🔴 Critical
+### 🔴 Critical - **ACTIVE**
 
-1. **"seat reservation expired" error**
-   - **Symptom**: WebSocket connection fails with seat reservation timeout
-   - **Root cause**: Colyseus reserves seats temporarily during join, expires if client doesn't connect fast enough
-   - **Impact**: Players can't reconnect, connection unstable
-   - **Fix needed**: Adjust Colyseus `reserveTime` or fix connection timing
+1. ~~**"seat reservation expired" error**~~ ✅ **FIXED Nov 27**
+   - ~~**Symptom**: WebSocket connection fails with seat reservation timeout~~
+   - **Fix Applied**: Increased Colyseus `reserveTime` to 30 seconds
 
-2. **Missing loading state for action options**
-   - **Symptom**: Client shows "Game session not initialized" immediately
-   - **Root cause**: Trying to check sessionMeta (doesn't exist in Colyseus)
-   - **Impact**: Poor UX, confusing error message
-   - **Fix needed**: Show LoadingScreen while waiting for action_options message
+2. ~~**Missing loading state for action options**~~ ✅ **FIXED Nov 27**
+   - ~~**Symptom**: Client shows "Game session not initialized" immediately~~
+   - **Fix Applied**: Added isGeneratingOptions flag and LoadingScreen
 
-3. **useRoundOptions still calling legacy HTTP**
-   - **Symptom**: SessionService.getActionOptions() call fails with "no sessionMeta"
-   - **Root cause**: Hook not updated to use Colyseus messages
-   - **Impact**: Action options never load
-   - **Fix needed**: Remove SessionService call, rely on Colyseus broadcast
+3. ~~**useRoundOptions still calling legacy HTTP**~~ ✅ **FIXED Nov 27**
+   - ~~**Symptom**: SessionService.getActionOptions() call fails with "no sessionMeta"~~
+   - **Fix Applied**: Removed SessionService call, using Colyseus messages
+
+4. ~~**Game stuck at end state**~~ ✅ **FIXED Nov 28**
+   - ~~**Symptom**: Navigation to /end but stuck showing "waiting for opponents"~~
+   - **Fix Applied**: Clear hasStartIntent on game_ended, add auto-advance on all_submitted
+
+5. **End screen is blank** 🔴 **NEW ISSUE - Nov 28**
+   - **Symptom**: Navigation to /end works, but screen renders blank/white
+   - **Root cause**: Unknown - EndPage phase check might be failing, or data missing
+   - **Impact**: Game can't complete, users see blank screen
+   - **Fix needed**: Debug eventLog, players array, debrief API call
+   - **Diagnostic logs added**: RouteOrchestrator and EndPage have detailed logging
 
 ### 🟡 Medium Priority
 
-4. **RouteOrchestrator sessionMeta dependency**
-   - **Symptom**: Navigation logic checks sessionMeta existence
-   - **Root cause**: Legacy HTTP session checking
-   - **Impact**: Navigation might fail without sessionMeta
-   - **Fix needed**: Check Colyseus connection state instead
+6. ~~**RouteOrchestrator sessionMeta dependency**~~ ⚠️ **PARTIALLY FIXED**
+   - **Status**: Navigation works, but sessionMeta checks still present (harmless)
+   - **Impact**: Dead code, should clean up post-event
 
-5. **SessionStore schema mismatch**
-   - **Symptom**: sessionMeta stored but never set in Colyseus flow
-   - **Root cause**: Store designed for HTTP sessions
-   - **Impact**: Dead code, potential bugs
-   - **Fix needed**: Refactor to Colyseus-native schema
+7. ~~**SessionStore schema mismatch**~~ ⚠️ **PARTIALLY FIXED**
+   - **Status**: sessionMeta/sseStatus still in store but unused
+   - **Impact**: Dead code, no functional impact
+
+### 🔴 Critical - **BLOCKING EVENT**
+
+8. **Room code system missing** ❌ **NOT IMPLEMENTED**
+   - **Impact**: Can't do multi-player - users have no way to join
+   - **Severity**: SHOW-STOPPER
+   - **Time needed**: 3-5 days
+
+9. **Cloud Run deployment never tested** ❌ **NOT VALIDATED**
+   - **Impact**: Don't know if production deployment works
+   - **Severity**: SHOW-STOPPER
+   - **Time needed**: 1-2 days
+
+10. **No multi-player testing** ❌ **NOT DONE**
+    - **Impact**: Unknown bugs with 2+ humans
+    - **Severity**: HIGH
+    - **Time needed**: 2-3 days
 
 ## Implementation Strategy
 
@@ -286,15 +314,59 @@ git push origin feat/stein-multiplayer --force
 - **sessionMeta is dead weight** - It's checked in multiple places but never set in Colyseus flow
 - **SSE code can be removed** - Colyseus handles all real-time communication
 - **Loading states are critical** - LLM calls take 5-60s, users need feedback
-- **Seat reservation is a Colyseus anti-pattern** - Need to understand their best practices
+- ~~**Seat reservation is a Colyseus anti-pattern**~~ → **FIXED** with 30s timeout
 - **Tests need updating** - Most tests assume HTTP/SSE architecture
 
-## Next Steps
+## Next Steps - **Updated Nov 28**
 
-1. ✅ Complete audit (this document)
-2. → Implement loading states for action options
-3. → Replace useGameActions with Colyseus messages
-4. → Fix seat reservation timeout
-5. → Refactor sessionStore
-6. → End-to-end testing
-7. → Remove legacy code
+1. ✅ ~~Complete audit (this document)~~
+2. ✅ ~~Implement loading states for action options~~
+3. ✅ ~~Replace useGameActions with Colyseus messages~~
+4. ✅ ~~Fix seat reservation timeout~~
+5. ⚠️ Refactor sessionStore (partial, non-critical)
+6. ❌ **End-to-end testing** - CRITICAL, NOT DONE
+7. ⚠️ Remove legacy code (partial cleanup done)
+
+## Immediate Priorities (Next 7 Days)
+
+**SHOW-STOPPERS** (Must be done for Dec 12 event):
+1. **Fix end screen blank issue** (1 day) - Game can't complete
+2. **Room code system** (3-5 days) - Can't do multi-player without this
+3. **Cloud Run deployment test** (1-2 days) - Never validated
+4. **Multi-player testing** (2-3 days) - Unknown bugs
+5. **Dry run with 18-24 people** (1 day + fixes) - Validation
+
+**TIMELINE**: Extremely tight. Need to complete items 1-4 by Dec 9 for GO/NO-GO decision.
+
+## Updated Success Metrics
+
+### Completed ✅
+- [x] Core Colyseus infrastructure
+- [x] State synchronization (Colyseus → Zustand)
+- [x] Server-side action generation
+- [x] Auto-advance on all submissions
+- [x] Navigation to end screen
+- [x] maxRounds synchronization
+- [x] Private objectives display
+
+### In Progress ⚠️
+- [ ] End screen rendering (navigation works, content missing)
+- [ ] SessionStore cleanup (non-critical)
+- [ ] Legacy code removal (non-critical)
+
+### Blocked ❌
+- [ ] Room code joining
+- [ ] Cloud Run deployment
+- [ ] Multi-player validation
+- [ ] Admin dashboard
+- [ ] Disconnection handling
+- [ ] Load testing
+- [ ] Dry run
+
+## Decision Point
+
+**GO/NO-GO Criteria for Dec 9**:
+- **GO if**: Room codes work, Cloud Run tested, dry run successful (>95% success rate)
+- **NO-GO if**: Any show-stopper incomplete → Fallback to SSE (proven to work)
+
+**See**: `eagx/RETROSPECTIVE_2025-11-28.md` for detailed analysis and recommendations.
