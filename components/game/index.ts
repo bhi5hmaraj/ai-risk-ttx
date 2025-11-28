@@ -9,3 +9,4 @@ export { ActionTreePortal } from './ActionTreePortal';
 export { FeedbackBanner } from './FeedbackBanner';
 export { FeedbackModal } from './FeedbackModal';
 export { MakePublicModal } from './MakePublicModal';
+export { GameCharts } from './GameCharts';

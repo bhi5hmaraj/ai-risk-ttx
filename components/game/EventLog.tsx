@@ -11,6 +11,8 @@ interface EventLogProps {
   setExpandedRound: (round: number | null) => void;
   /** Order of rounds: 'desc' (latest-first, default) or 'asc' (oldest-first). */
   order?: 'asc' | 'desc';
+  /** Disable internal scrolling (for end screen where we want full page scroll) */
+  noScroll?: boolean;
 }
 
 export const EventLog: React.FC<EventLogProps> = ({
@@ -21,6 +23,7 @@ export const EventLog: React.FC<EventLogProps> = ({
   expandedRound,
   setExpandedRound,
   order = 'desc',
+  noScroll = false,
 }) => {
   const metricName = gameState.coreMetric.name;
   const orderedLog = useMemo(() => {
@@ -29,7 +32,7 @@ export const EventLog: React.FC<EventLogProps> = ({
   }, [gameState.eventLog, order]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 max-h-[50vh] overflow-y-auto">
+    <div className={`${noScroll ? '' : 'bg-gray-800 rounded-lg p-6 max-h-[50vh] overflow-y-auto'}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-blue-300">Event Log</h3>
         <button
