@@ -166,3 +166,12 @@ export const Cog6ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <circle cx="12" cy="12" r="3" />
   </svg>
 );
+
+export const ShareIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} {...props}>
+    <path d="M8.7 13.3a3.5 3.5 0 1 0 0-2.6l6.6-3.4a3.5 3.5 0 1 0-.8-1.5l-6.6 3.4a3.5 3.5 0 0 0 0 4.2l6.6 3.4a3.5 3.5 0 1 0 .8-1.5l-6.6-3.4Z" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="6" cy="12" r="2" />
+    <circle cx="18" cy="6" r="2" />
+    <circle cx="18" cy="18" r="2" />
+  </svg>
+);

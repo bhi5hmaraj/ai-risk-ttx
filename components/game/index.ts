@@ -10,3 +10,4 @@ export { FeedbackBanner } from './FeedbackBanner';
 export { FeedbackModal } from './FeedbackModal';
 export { MakePublicModal } from './MakePublicModal';
 export { GameCharts } from './GameCharts';
+export { WaitingRoom } from './WaitingRoom';

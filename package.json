@@ -60,6 +60,7 @@
     "react-cytoscapejs": "2.0.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.65.0",
+    "react-qr-code": "^2.0.18",
     "reactflow": "^11.11.4",
     "recharts": "^2.12.7",
     "zod": "^3.25.6",

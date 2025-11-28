@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
-import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
+import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal, WaitingRoom } from '@/components/game';
 import { GameScreen, LoadingScreen } from '@/screens';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
@@ -135,6 +135,25 @@ export default function GamePage() {
       loadHumanOptions().catch(() => {});
     }
   }, [gameState.phase, humanPlayer, actionOptions.length, loadHumanOptions]);
+
+  // Phase-based rendering: Show WaitingRoom during lobby phase
+  if (gameState.phase === GamePhase.LOBBY) {
+    return (
+      <>
+        <Navigation
+          onNavigateHome={() => {
+            router.push('/');
+          }}
+          onOpenFeedback={() => setShowFeedbackModal(true)}
+          onOpenAbout={() => router.push('/about')}
+          onOpenUpdates={() => router.push('/updates')}
+          showFeedback
+          autoCollapse
+        />
+        <WaitingRoom />
+      </>
+    );
+  }
 
   return (
     <>
