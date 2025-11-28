@@ -20,9 +20,11 @@ import type { GameState as ColyseusGameState, Player as ColyseusPlayer } from '@
 import { joinGameRoom, leaveRoom as colyseusLeaveRoom } from '@/services/colyseusClient';
 import { MapSchema } from '@colyseus/schema';
 import { useGameStore } from '@/stores/gameStore';
+import { useLobbyStore } from '@/stores/lobbyStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useActionStore } from '@/stores/actionStore';
 import { schemaToCore, schemaPlayersToCore } from '@/server/rooms/adapters/stateAdapter';
+import { GamePhase } from '@/types';
 
 export interface ColyseusContextValue {
     room: Room<ColyseusGameState> | null;
@@ -80,13 +82,30 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
 
     // Sync Colyseus state to Zustand stores (Architecture: room.state.onChange → Zustand updates)
     const syncColyseusToZustand = useCallback((colyseusState: ColyseusGameState) => {
-        // Use existing server adapters to convert Schema → Core
+        // Preserve rich fields managed outside Schema (eventLog/currentEvent)
+        const prevGameState = useGameStore.getState().gameState;
+        const prevPlayers = useGameStore.getState().players;
+
         const coreGameState = schemaToCore(colyseusState, {
-            eventLog: [], // eventLog is not synced via Colyseus (lives in StateManager)
-            currentEvent: null, // currentEvent is not synced via Colyseus
+            eventLog: prevGameState.eventLog,
+            currentEvent: prevGameState.currentEvent,
         });
 
-        const corePlayers = schemaPlayersToCore(colyseusState.players);
+        // Build enrichment map to preserve role data (hiddenObjective, etc.) from previous state
+        // This prevents losing enriched data from players_init message
+        const enrichment = new Map<string, { fullRole?: any; actions?: any; hiddenScore?: number }>();
+        prevPlayers.forEach((prevPlayer) => {
+            // Preserve the enriched role data if it exists
+            if (prevPlayer.role.hiddenObjective || prevPlayer.role.publicObjective) {
+                enrichment.set(prevPlayer.id, {
+                    fullRole: prevPlayer.role,
+                    actions: prevPlayer.actions,
+                    hiddenScore: prevPlayer.hiddenScore,
+                });
+            }
+        });
+
+        const corePlayers = schemaPlayersToCore(colyseusState.players, enrichment);
 
         // Update Zustand stores (cast to client types - client Player has icon field in RoleData)
         setGameState(coreGameState as any);
@@ -109,10 +128,15 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
         setError(null);
 
         try {
+            // Pull latest lobby state at call time (not at component mount)
+            const lobby = useLobbyStore.getState();
             const newRoom = await joinGameRoom({
                 name: options.name,
                 role: options.role,
                 isHuman: options.isHuman ?? true,
+                // Pass scenario-derived setup so server can seed roles/players
+                gameSetup: lobby.gameSetup || null,
+                maxRounds: lobby.maxRounds,
             });
 
             roomRef.current = newRoom;
@@ -146,10 +170,82 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
             // Set up message listeners
             newRoom.onMessage('new_round', (message: any) => {
                 console.log('[ColyseusProvider] New round:', message);
+                // Show loading while server generates next-round action options
+                const { setIsGeneratingOptions, setActionOptions } = useActionStore.getState();
+                setIsGeneratingOptions(true);
+                setActionOptions([]);
+            });
+
+            // Receive round_result: append to local eventLog so UI can display Key Moments / Score Δ
+            newRoom.onMessage('round_result', (logEntry: any) => {
+                console.log('[ColyseusProvider] Round result received:', {
+                    round: logEntry?.round,
+                    delta: logEntry?.publicScoreChange,
+                    timeline: logEntry?.outcomeTimeline?.length,
+                });
+                // Append into game store's eventLog without disturbing other fields
+                useGameStore.setState((prev) => ({
+                    gameState: {
+                        ...prev.gameState,
+                        eventLog: [...prev.gameState.eventLog, logEntry],
+                    },
+                }));
+            });
+
+            // Receive current_event: set currentEvent in store for "Current Event" panel
+            newRoom.onMessage('current_event', (event: any) => {
+                console.log('[ColyseusProvider] Current event received:', event);
+                useGameStore.setState((prev) => ({
+                    gameState: {
+                        ...prev.gameState,
+                        currentEvent: event || null,
+                    },
+                }));
+            });
+
+            // Receive game_ended: set phase to END so RouteOrchestrator navigates to /end
+            newRoom.onMessage('game_ended', (_payload: any) => {
+                console.log('[ColyseusProvider] Game ended');
+                useGameStore.setState((prev) => ({
+                    gameState: {
+                        ...prev.gameState,
+                        phase: GamePhase.END,
+                    },
+                }));
+                // Clear start intent so RouteOrchestrator doesn't try to navigate back to /game
+                setStartIntent(false);
+            });
+
+            // Receive players_init: enrich client-side roles with objectives from scenario
+            newRoom.onMessage('players_init', (payload: any) => {
+                try {
+                    const mapById = new Map<string, any>((payload?.players || []).map((p: any) => [p.id, p]));
+                    useGameStore.setState((prev) => ({
+                        players: prev.players.map((p) => {
+                            const info = mapById.get((p as any).id) || mapById.get(p.role.name);
+                            if (!info) return p;
+                            return {
+                                ...p,
+                                role: {
+                                    ...p.role,
+                                    publicObjective: info.role?.publicObjective ?? p.role.publicObjective,
+                                    hiddenObjective: info.role?.hiddenObjective ?? p.role.hiddenObjective,
+                                    resources: info.role?.resources ?? p.role.resources,
+                                    constraints: info.role?.constraints ?? p.role.constraints,
+                                },
+                            } as any;
+                        }),
+                    }));
+                    console.log('[ColyseusProvider] players_init applied');
+                } catch (e) {
+                    console.warn('[ColyseusProvider] players_init failed:', e);
+                }
             });
 
             newRoom.onMessage('all_submitted', () => {
-                console.log('[ColyseusProvider] All players submitted actions');
+                console.log('[ColyseusProvider] All players submitted actions - auto-advancing round');
+                // Auto-advance to next round when all players have submitted
+                newRoom.send('advance_round', {});
             });
 
             newRoom.onMessage('game_started', () => {
@@ -204,6 +300,7 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
             setError(error);
             onError?.(error);
             setIsConnected(false);
+            throw error;
         } finally {
             setIsConnecting(false);
         }
