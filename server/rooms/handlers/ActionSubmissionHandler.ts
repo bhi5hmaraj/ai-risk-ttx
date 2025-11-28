@@ -1,10 +1,12 @@
 import { Client } from "colyseus";
 import type { GameState } from "../schema/GameState";
 import type { createLogger } from "../../lib/logger";
+import type { StateManager } from "../adapters/stateManager";
 import type { SubmitActionMessage } from "../../../shared/messages";
 
 export interface ActionSubmissionHandlerDeps {
     state: GameState;
+    stateManager: StateManager;
     logger: ReturnType<typeof createLogger>;
     rid: string;
     broadcast: (type: string, message?: any) => void;
@@ -20,7 +22,7 @@ export class ActionSubmissionHandler {
     constructor(private deps: ActionSubmissionHandlerDeps) {}
 
     handleSubmitAction(client: Client, data: SubmitActionMessage): void {
-        const { state, logger, rid, broadcast } = this.deps;
+        const { state, stateManager, logger, rid, broadcast } = this.deps;
 
         const player = state.players.get(client.sessionId);
         if (!player) {
@@ -42,6 +44,20 @@ export class ActionSubmissionHandler {
                 action: data.actionId,
                 cost: data.cost
             });
+
+            // Also persist in Core players so GameController can include human actions in logs
+            try {
+                const existing = stateManager.getCorePlayer(client.sessionId) as any;
+                const prevActions = Array.isArray(existing?.actions) ? existing.actions : [];
+                const nextActions = [...prevActions];
+                if (!nextActions.some((a: any) => a?.title === data.actionId)) {
+                    nextActions.push({ title: data.actionId, description: '', cost: data.cost } as any);
+                }
+                stateManager.updateCorePlayer(client.sessionId, {
+                    hasSubmittedActions: true,
+                    actions: nextActions,
+                } as any);
+            } catch {}
 
             // Check if all submitted (optional auto-advance logic could go here)
             if (state.allSubmitted()) {

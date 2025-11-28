@@ -39,24 +39,30 @@ export class PlayerManagementHandler {
             isHuman: options.isHuman ?? true,
         });
 
-        // Also create player in StateManager (for Core state)
-        // TODO: This needs full role object with objectives/resources/constraints
-        // For now, we create a minimal role structure
-        stateManager.addPlayer({
-            id: client.sessionId,
-            role: {
-                name: roleName,
-                publicObjective: "",
-                hiddenObjective: "",
-                resources: [],
-                constraints: []
-            },
-            isHuman: options.isHuman ?? true,
-            actionPoints: 3,
-            actions: [],
-            hasSubmittedActions: false,
-            hiddenScore: 0
-        });
+        // If StateManager already seeded a 'human_player', remap it to this session id.
+        try {
+            const seeded = stateManager.getCorePlayer('human_player');
+            if (seeded) {
+                (stateManager as any).remapPlayerId?.('human_player', client.sessionId);
+            } else {
+                // Fallback: add minimal player if not seeded from setup
+                stateManager.addPlayer({
+                    id: client.sessionId,
+                    role: {
+                        name: roleName,
+                        publicObjective: "",
+                        hiddenObjective: "",
+                        resources: [],
+                        constraints: []
+                    },
+                    isHuman: options.isHuman ?? true,
+                    actionPoints: 3,
+                    actions: [],
+                    hasSubmittedActions: false,
+                    hiddenScore: 0
+                });
+            }
+        } catch {}
     }
 
     handlePlayerLeave(client: Client, consented: boolean): void {
