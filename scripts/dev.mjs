@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { config as loadEnv } from 'dotenv';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -53,5 +54,64 @@ if (backendIdx !== -1) {
   // Server-authoritative mode is always on now; no flag needed.
 }
 
-const child = spawn('next', ['dev', ...forward], { stdio: 'inherit', env });
-child.on('exit', (code) => process.exit(code ?? 0));
+// Derive browser WS URL from COLYSEUS_PORT if not explicitly provided
+if (!env.NEXT_PUBLIC_COLYSEUS_URL && env.COLYSEUS_PORT) {
+  env.NEXT_PUBLIC_COLYSEUS_URL = `ws://localhost:${env.COLYSEUS_PORT}`;
+  console.log(`[dev] Colyseus URL: ${env.NEXT_PUBLIC_COLYSEUS_URL}`);
+}
+
+// Validate required ports from env (no hardcoded defaults)
+const nextDevPort = env.NEXT_DEV_PORT;
+const colyseusPort = env.COLYSEUS_PORT || env.PORT;
+
+if (!nextDevPort) {
+  console.error('[dev] NEXT_DEV_PORT is not set. Add it to .env.local');
+  process.exit(1);
+}
+if (!colyseusPort) {
+  console.error('[dev] COLYSEUS_PORT (or PORT) is not set. Add it to .env.local');
+  process.exit(1);
+}
+
+// Spawn Next dev server
+const nextArgs = ['dev', '-p', nextDevPort, ...forward];
+console.log(`[dev] Starting Next (UI) on :${nextDevPort} ...`);
+const nextProc = spawn('next', nextArgs, { stdio: 'inherit', env });
+
+// Spawn Colyseus server via helper (handles port-in-use prompt)
+console.log(`[dev] Starting Colyseus on :${colyseusPort} ...`);
+const colyseusProc = spawn('node', ['scripts/dev-colyseus.mjs'], { stdio: 'inherit', env });
+
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`[dev] Caught ${signal}. Shutting down...`);
+  if (colyseusProc && !colyseusProc.killed) colyseusProc.kill('SIGINT');
+  if (nextProc && !nextProc.killed) nextProc.kill('SIGINT');
+};
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// If either child exits, exit this orchestrator
+nextProc.on('exit', (code) => {
+  console.log(`[dev] Next exited with code ${code}`);
+  if (colyseusProc && !colyseusProc.killed) colyseusProc.kill('SIGINT');
+  process.exit(code ?? 0);
+});
+colyseusProc.on('exit', (code) => {
+  console.log(`[dev] Colyseus exited with code ${code}`);
+  if (nextProc && !nextProc.killed) nextProc.kill('SIGINT');
+  process.exit(code ?? 0);
+});
+
+// Print ready URLs (best-effort; services will log their own readiness)
+(async () => {
+  await sleep(500);
+  const frontendUrl = `http://localhost:${nextDevPort}`;
+  const adminUrl = `http://localhost:${colyseusPort}/colyseus-admin`;
+  const healthUrl = `http://localhost:${colyseusPort}/healthz`;
+  console.log('\n[dev] --------------------------------------------------');
+  console.log(`[dev] Frontend:        ${frontendUrl}`);
+  console.log(`[dev] Colyseus Admin:  ${adminUrl}`);
+  console.log(`[dev] Colyseus Health: ${healthUrl}`);
+  console.log('[dev] --------------------------------------------------\n');
+})();

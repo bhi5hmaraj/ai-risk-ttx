@@ -10,7 +10,10 @@
 
 import { Client } from 'colyseus.js';
 
-const COLYSEUS_URL = 'ws://localhost:3004';
+const COLYSEUS_URL = process.env.TEST_COLYSEUS_URL || process.env.NEXT_PUBLIC_COLYSEUS_URL;
+if (!COLYSEUS_URL) {
+  throw new Error('Set TEST_COLYSEUS_URL or NEXT_PUBLIC_COLYSEUS_URL to run scripts/test-loading-states.ts');
+}
 
 async function testLoadingStates() {
   console.log('🧪 Testing Phase 2 Loading States Feature\n');
