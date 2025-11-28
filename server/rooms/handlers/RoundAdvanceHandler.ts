@@ -4,6 +4,7 @@ import type { StateManager } from "../adapters/stateManager";
 import type { GameController } from "../../services/GameController";
 import type { createLogger } from "../../lib/logger";
 import { coreToSchema, corePlayerToSchema } from "../adapters/stateAdapter";
+import { announceRoundTransition } from "./RoundAnnouncer";
 
 export interface RoundAdvanceHandlerDeps {
     state: GameState;
@@ -45,7 +46,19 @@ export class RoundAdvanceHandler {
                 playerCount: corePlayers.length
             });
 
-            // 2. Call GameController with full Core state
+            // 2. Preflight end-of-game check BEFORE any LLM calls
+            const maxRounds = stateManager.getMaxRounds?.() ?? 8;
+            const endNow = (coreState.round >= maxRounds) || (coreState.coreMetric.value <= 0);
+            if (endNow) {
+                logger.info(rid, "Preflight end detected. Skipping LLM and ending game.", { round: coreState.round, maxRounds, score: coreState.coreMetric.value });
+                coreState.phase = 'end' as any;
+                stateManager.setCoreState(coreState);
+                coreToSchema(coreState, state);
+                broadcast('game_ended', { round: coreState.round });
+                return;
+            }
+
+            // 3. Call GameController with full Core state
             const { newState, newPlayers } = await gameController.advanceRound(
                 roomId,
                 coreState,
@@ -53,11 +66,11 @@ export class RoundAdvanceHandler {
                 [] // humanAvailableOptions - empty for now
             );
 
-            // 3. Persist updated Core state in StateManager
+            // 4. Persist updated Core state in StateManager
             stateManager.setCoreState(newState);
             stateManager.setCorePlayers(newPlayers);
 
-            // 4. Project: Core → Schema (broadcast to clients)
+            // 5. Project: Core → Schema (broadcast to clients)
             coreToSchema(newState, state);
 
             // Also update players
@@ -68,8 +81,18 @@ export class RoundAdvanceHandler {
                 }
             }
 
-            broadcast("new_round", { round: state.round });
-            logger.info(rid, "Round advanced successfully", { round: newState.round });
+            // 6. Unified announcement and next-step options
+            await announceRoundTransition({
+                schemaState: state,
+                coreState: newState,
+                players: newPlayers,
+                broadcast,
+                logger,
+                initial: false,
+            });
+
+            // Final log
+            this.deps.logger.info(this.deps.rid, 'Round advanced successfully', { round: newState.round });
 
         } catch (error) {
             logger.error(rid, "Failed to advance round", { error });

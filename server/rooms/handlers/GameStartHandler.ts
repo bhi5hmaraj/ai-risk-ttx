@@ -2,12 +2,13 @@ import { Client } from "colyseus";
 import type { GameState } from "../schema/GameState";
 import type { StateManager } from "../adapters/stateManager";
 import type { createLogger } from "../../lib/logger";
-import { GamePhase } from "../../../types/core";
+import { GamePhase } from "../../types/core";
 import * as llmService from "../../services/llmService";
 import { createGameSession } from "../../services/chatSession";
 import type { GameChatSession } from "../../services/chatSession";
 import { applyConsequences } from "../../services/sessionEngine";
 import { coreToSchema, corePlayerToSchema } from "../adapters/stateAdapter";
+import { announceRoundTransition } from "./RoundAnnouncer";
 
 export interface GameStartHandlerDeps {
     state: GameState;
@@ -96,47 +97,17 @@ export class GameStartHandler {
             // Reset submissions for first round
             state.resetSubmissions();
 
-            // 8. Generate action options for human players
-            const humanPlayers = newPlayers.filter(p => p.isHuman);
-            if (humanPlayers.length > 0) {
-                logger.info(rid, "Generating action options for human players", {
-                    count: humanPlayers.length
-                });
+            // Unified round announcement for initial round
+            await announceRoundTransition({
+                schemaState: state,
+                coreState: newState,
+                players: newPlayers,
+                broadcast,
+                logger,
+                initial: true,
+            });
 
-                // Generate options for each human player in parallel
-                const optionsPromises = humanPlayers.map(async (player) => {
-                    const options = await llmService.generateActionOptions(
-                        player,
-                        newState,
-                        null // No previous round actions for first round
-                    );
-                    return { playerId: player.id, options: options?.options || [] };
-                });
-
-                const allOptions = await Promise.all(optionsPromises);
-
-                // Broadcast action options to each player
-                for (const { playerId, options } of allOptions) {
-                    const playerClient = state.players.get(playerId);
-                    if (playerClient) {
-                        // Send directly to the specific player's client
-                        // Note: We'll need to use room.clients to get the actual Client object
-                        // For now, broadcast to all (clients will filter by their own ID)
-                        broadcast("action_options", {
-                            playerId,
-                            options,
-                            round: newState.round
-                        });
-                        logger.info(rid, "Sent action options to player", {
-                            playerId,
-                            optionCount: options.length
-                        });
-                    }
-                }
-            }
-
-            // 9. Broadcast game start
-            broadcast("game_started");
+            // Final log confirmation
             logger.info(rid, "Game started successfully", {
                 initiatedBy: client.sessionId,
                 round: state.round,
@@ -144,8 +115,14 @@ export class GameStartHandler {
             });
 
         } catch (error) {
-            logger.error(rid, "Failed to start game", { error });
-            client.send("error", { message: "Failed to start game" });
+            logger.error(rid, "Failed to start game", {
+                error,
+                errorMessage: error instanceof Error ? error.message : String(error),
+                errorStack: error instanceof Error ? error.stack : undefined,
+                errorType: error?.constructor?.name
+            });
+            const errorMessage = error instanceof Error ? error.message : "Failed to start game";
+            client.send("error", { message: errorMessage });
         }
     }
 

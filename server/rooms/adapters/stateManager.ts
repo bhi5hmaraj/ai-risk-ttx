@@ -75,6 +75,16 @@ export class StateManager {
         }
     }
 
+    // Remap a player's id key while preserving the rest of the data
+    remapPlayerId(oldId: string, newId: string): void {
+        if (oldId === newId) return;
+        const player = this.corePlayers.get(oldId);
+        if (!player) return;
+        const updated = { ...player, id: newId } as CorePlayer;
+        this.corePlayers.delete(oldId);
+        this.corePlayers.set(newId, updated);
+    }
+
     // --- Player Management ---
 
     addPlayer(player: CorePlayer): void {
