@@ -1,6 +1,9 @@
 import { Client } from "colyseus.js";
 
-const COLYSEUS_URL = process.env.TEST_COLYSEUS_URL || "ws://localhost:3000";
+const COLYSEUS_URL = process.env.TEST_COLYSEUS_URL || process.env.NEXT_PUBLIC_COLYSEUS_URL;
+if (!COLYSEUS_URL) {
+  throw new Error('Set TEST_COLYSEUS_URL or NEXT_PUBLIC_COLYSEUS_URL to run scripts/test-colyseus.ts');
+}
 
 // Generate unique traceId for this test session
 function generateTraceId() {

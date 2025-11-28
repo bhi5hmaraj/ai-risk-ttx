@@ -46,7 +46,7 @@ Test the feedback API endpoint locally or in production.
 
 **Requirements:**
 - For local testing: Run `npm run dev` first (uses Vercel CLI)
-- Local server must be running at http://localhost:3000
+- Local UI server URL is controlled by `NEXT_DEV_PORT` (if set), otherwise Next.js default (3000)
 
 **Usage:**
 ```bash

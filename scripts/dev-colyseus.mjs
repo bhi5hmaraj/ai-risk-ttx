@@ -23,8 +23,13 @@ try {
   // Silently continue - cloud environments don't need .env.local
 }
 
-// Command line PORT takes precedence over .env.local
-const port = commandLinePort || process.env.PORT || '3000';
+// Resolve port strictly from env (no hardcoded defaults)
+// Precedence: CLI PORT -> COLYSEUS_PORT -> PORT
+const port = commandLinePort || process.env.COLYSEUS_PORT || process.env.PORT;
+if (!port) {
+  console.error('[dev-colyseus] No port configured. Set COLYSEUS_PORT or PORT in .env.local, or pass PORT=xxxx');
+  process.exit(1);
+}
 console.log(`[dev-colyseus] Using port: ${port}`);
 
 async function checkPortInUse(port) {
@@ -82,7 +87,12 @@ async function main() {
 
   console.log(`[dev-colyseus] Starting Colyseus server on port ${port}...`);
 
-  const env = { ...process.env, PORT: port };
+  // Enable Colyseus debugging
+  const env = {
+    ...process.env,
+    PORT: port,
+    DEBUG: 'colyseus:*'
+  };
   const child = spawn('tsx', ['server/index.ts'], { stdio: 'inherit', env });
 
   child.on('exit', (code) => process.exit(code ?? 0));

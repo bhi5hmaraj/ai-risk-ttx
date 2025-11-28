@@ -7,13 +7,17 @@ import { createLogger, createReqId } from "../lib/logger";
 // Define the interface locally if not exported, or import it
 // For now, mirroring the structure used in route.ts but cleaner
 export interface GameControllerDeps {
-    llm: typeof llmService;
+    llm?: typeof llmService;
+    getMaxRounds?: () => number;
 }
 
 export class GameController {
     private logger = createLogger({ service: "GameController" });
 
-    constructor(private deps: GameControllerDeps = { llm: llmService }) { }
+    constructor(private deps: GameControllerDeps = { llm: llmService, getMaxRounds: () => 8 }) {
+        if (!this.deps.llm) this.deps.llm = llmService;
+        if (!this.deps.getMaxRounds) this.deps.getMaxRounds = () => 8;
+    }
 
     /**
      * Advances the game round, handling AI turns and consequence generation.
@@ -30,6 +34,7 @@ export class GameController {
         // 1. Identify Players
         const aiPlayers = players.filter(p => !p.isHuman);
         const humanPlayers = players.filter(p => p.isHuman);
+        this.logger.info(rid, "roster", { total: players.length, ai: aiPlayers.length, human: humanPlayers.length });
 
         // Prepare previous actions for context
         const prevActions = this.getPreviousRoundActions(gameState);
@@ -45,7 +50,11 @@ export class GameController {
                 const result = await this.deps.llm.generateAITurn(aiPlayer, gameState, prevActions);
                 if (!result) throw new Error("AI turn generation failed");
 
-                this.logger.info(rid, "ai-turn:done", { role: aiPlayer.role.name });
+                this.logger.info(rid, "ai-turn:done", {
+                    role: aiPlayer.role.name,
+                    chosenCount: result.chosenActions?.length || 0,
+                    chosenTitles: (result.chosenActions || []).map(a => a.title),
+                });
                 return { playerId: aiPlayer.id, result };
             } catch (error) {
                 this.logger.error(rid, "ai-turn:failed", { role: aiPlayer.role.name, error });
@@ -70,6 +79,9 @@ export class GameController {
                 actions: result?.chosenActions || [],
                 hasSubmittedActions: true
             };
+        });
+        this.logger.info(rid, "roster:withActions", {
+            players: playersWithActions.map(p => ({ role: p.role.name, isHuman: p.isHuman, actionCount: p.actions.length, actions: p.actions.map(a => a.title) }))
         });
 
         // Prepare AI results array for applyConsequences (legacy format expectation)
@@ -112,19 +124,10 @@ export class GameController {
         );
 
         // 6. Check End Conditions
-        // TODO: Get maxRounds from config or state
-        const maxRounds = 8;
+        const maxRounds = this.deps.getMaxRounds!();
         const shouldEnd = nextState.round > maxRounds || nextState.coreMetric.value <= 0;
 
         // Update phase based on end condition
-        // If not ending, we stay in 'consequence' phase (or move to 'action' depending on game flow design)
-        // The previous logic set it to ACTION immediately for the next round, 
-        // but typically we want to show consequences first.
-        // For now, let's follow the previous logic:
-        // "The finalPhase = shouldEnd ? GamePhase.END : GamePhase.ACTION;"
-        // But wait, applyConsequences sets phase to currentGameState.phase (caller controls).
-        // Let's set it to ACTION for the next round, or END.
-
         nextState.phase = shouldEnd ? GamePhase.END : GamePhase.ACTION;
 
         this.logger.info(rid, "advanceRound:done", {
