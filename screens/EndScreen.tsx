@@ -3,6 +3,7 @@ import { ChatBubbleLeftIcon, LoadingSpinner } from '../components/Icons';
 import type { GameState, Player } from '../types';
 import { CauseTag } from '../components/game/CauseTag';
 import { EventLog } from '../components/game';
+import { GameCharts } from '../components/game/GameCharts';
 import type { AIDebriefResponse } from '../server/types/core';
 import { useRotatingJoke } from '@/lib/loadingJokes';
 
@@ -248,6 +249,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
         </div>
         )}
 
+        {/* Performance Analytics Charts */}
+        <GameCharts gameState={gameState} />
+
         <div className="bg-gray-800 rounded-lg p-6 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">Final Scores</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -279,141 +283,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
           </div>
         </div>
 
-        {finalLogEntry && (
-          <div className="bg-gray-800 rounded-lg p-6 md:p-8 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.3em] text-blue-200">Final Round · Round {finalLogEntry.round}</p>
-                <h3 className="text-2xl font-semibold text-white">
-                  {finalLogEntry.event?.headline ?? 'Outcome Summary'}
-                </h3>
-                {finalLogEntry.event?.detail && (
-                  <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {finalLogEntry.event.detail}
-                  </p>
-                )}
-                {finalLogEntry.citations && finalLogEntry.citations.length > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
-                    {finalLogEntry.citations.slice(0, 8).map((c, i) => (
-                      <CauseTag key={`end_hdr_c_${i}`} cause={c as any} logs={gameState.eventLog} />
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Public Score After Round</p>
-                <p className="text-3xl font-bold text-blue-300">{finalLogEntry.publicScoreAfter}%</p>
-                {finalScoreChange !== null && (
-                  <p className={`text-sm font-semibold ${finalScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {finalScoreChange >= 0 ? '+' : ''}
-                    {finalScoreChange}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {finalLogEntry.roundSummary && (
-              <div className="bg-gray-900/60 border border-gray-700 rounded-md p-4 space-y-2">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Round Summary</p>
-                <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">{finalLogEntry.roundSummary}</p>
-              </div>
-            )}
-
-            {/* Final Round Key Moments with contextual citations */}
-            {finalLogEntry?.outcomeTimeline?.length ? (
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Key Moments (Final Round)</p>
-                <ol className="space-y-3">
-                  {finalLogEntry.outcomeTimeline.map((item, index) => (
-                    <li key={`end_km_${index}`} className="flex gap-3">
-                      <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-sm flex items-center justify-center">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 bg-gray-900/60 border border-gray-800 rounded-md p-3 space-y-1">
-                        <p className="text-sm font-semibold text-white">{item.title}</p>
-                        <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
-                        <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
-                        {Array.isArray((item as any).causes) && (item as any).causes.length > 0 && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
-                            {(item as any).causes.map((c: any, i: number) => (
-                              <CauseTag key={`end_km_${index}_c_${i}`} cause={c} logs={gameState.eventLog} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
-
-            {/* Removed duplicate Key Moments block without causes to avoid duplication */}
-
-            {finalLogEntry.counterfactualNote && (
-              <div className="bg-gray-900/40 border border-blue-800/40 rounded-md p-4 text-sm text-blue-100/90">
-                <span className="font-semibold uppercase tracking-wide text-blue-200">If No One Acted</span>
-                <p className="mt-1 leading-relaxed">{finalLogEntry.counterfactualNote}</p>
-              </div>
-            )}
-
-            {finalLogEntry.playerActions.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Actions Taken</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {finalLogEntry.playerActions.map((playerRound) => {
-                    const matchingPlayer = players.find((p) => p.role.name === playerRound.roleName);
-                    const roleIcon = matchingPlayer?.role.icon ?? ((props: React.SVGProps<SVGSVGElement>) => (
-                      <span className="text-2xl" role="img" aria-label="role icon">❓</span>
-                    ));
-                    const hiddenUpdate = finalLogEntry.hiddenScoreChanges[playerRound.roleName];
-
-                    return (
-                      <div key={`${playerRound.roleName}_${finalLogEntry.round}`} className="bg-gray-900/70 border border-gray-700 rounded-md p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {roleIcon({ className: 'h-6 w-6 text-blue-300' })}
-                            <span className="font-semibold text-white">{playerRound.roleName}</span>
-                          </div>
-                          {hiddenUpdate && (
-                            <span className={`text-sm font-semibold ${hiddenUpdate.update >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                              {hiddenUpdate.update >= 0 ? '+' : ''}
-                              {hiddenUpdate.update}
-                            </span>
-                          )}
-                        </div>
-                        <ul className="space-y-1 text-sm text-gray-300">
-                          {playerRound.actions.length > 0 ? (
-                            playerRound.actions.map((action, index) => (
-                              <li key={`${playerRound.roleName}_${index}`} className="flex justify-between items-start gap-2">
-                                <span className="leading-snug flex-1">{action.title}</span>
-                                <span className="flex-shrink-0 inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full">
-                                  {action.cost} AP
-                                </span>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="italic text-gray-500">No action submitted.</li>
-                          )}
-                        </ul>
-                        {hiddenUpdate?.justification && (
-                          <p className="text-xs text-amber-200/80 italic whitespace-pre-wrap">
-                            {hiddenUpdate.justification}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Full Event Log across all rounds */}
         <div className="bg-gray-800 rounded-lg p-4 md:p-6">
-          <h2 className="text-xl md:text-2xl font-bold mb-3">All Rounds — Event Log</h2>
+          <h2 className="text-xl md:text-2xl font-bold mb-4">Event Log</h2>
           <EventLog
             gameState={gameState}
             players={players}
@@ -422,6 +294,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             expandedRound={expandedRound}
             setExpandedRound={setExpandedRound}
             order="asc"
+            noScroll={true}
           />
         </div>
 
