@@ -21,9 +21,23 @@ export default function EndPage() {
   const [isFeedbackOpen, setIsFeedbackOpen] = React.useState(false);
   const selectedLogEntry = latestLogEntry;
 
+  console.log('[EndPage] Rendering with:', {
+    'gameState.phase': gameState.phase,
+    'GamePhase.END': GamePhase.END,
+    'phase === END': gameState.phase === GamePhase.END,
+    'typeof phase': typeof gameState.phase,
+    playerCount: players.length,
+    eventLogLength: gameState.eventLog.length,
+  });
+
   // Route decisions are owned by RouteOrchestrator. If not END, render nothing
   // and let the orchestrator navigate.
-  if (gameState.phase !== GamePhase.END) return null;
+  if (gameState.phase !== GamePhase.END) {
+    console.log('[EndPage] Phase is not END, returning null');
+    return null;
+  }
+
+  console.log('[EndPage] Phase check passed, rendering EndScreen');
 
   const actionTree = (
     <ActionTreePortal
