@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
-import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
+import { ConnectionStatusPill } from '@/components/ConnectionStatus';
+import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal, WaitingRoom } from '@/components/game';
 import { GameScreen, LoadingScreen } from '@/screens';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
 import { useGameActionsColyseus as useGameActions } from '@/hooks/useGameActionsColyseus';
+import { useColyseus } from '@/providers/ColyseusProvider';
 import { useRoundOptions } from '@/hooks/useRoundOptions';
 import { GAME_CONFIG } from '@/gameConfig';
 import { GamePhase } from '@/types';
@@ -18,7 +20,10 @@ import type { GameMetadata } from '@/types/feedback';
 
 export default function GamePage() {
   const router = useRouter();
+  const params = useParams();
+  const roomCode = params?.roomCode as string;
   const { gameState, players } = useGame();
+  const { isConnected, state: colyseusState } = useColyseus();
   const { isLoading, loadingMessage, error, setHistoryOpen } = useUI();
   const { actionOptions, aiCompletionStatus, isGeneratingOptions } = useActions();
   const { gameSetup, customScenario, gamePath, isFromPublicCatalog } = useLobby();
@@ -136,13 +141,29 @@ export default function GamePage() {
     }
   }, [gameState.phase, humanPlayer, actionOptions.length, loadHumanOptions]);
 
-  // Lobby phase should be handled by /lobby page, not /game
-  // If we're in lobby phase here, redirect to lobby
-  if (gameState.phase === GamePhase.LOBBY) {
-    router.push('/lobby');
-    return null;
+  // Phase-based rendering: Show WaitingRoom when in lobby phase, GameScreen otherwise
+  if (isConnected && colyseusState?.phase === 'lobby') {
+    return (
+      <>
+        <Navigation
+          onNavigateHome={() => {
+            router.push('/');
+          }}
+          onOpenFeedback={() => {}}
+          onOpenAbout={() => router.push('/about')}
+          onOpenUpdates={() => router.push('/updates')}
+          showFeedback={false}
+          autoCollapse
+        />
+        <div className="fixed top-4 right-4 z-50">
+          <ConnectionStatusPill />
+        </div>
+        <WaitingRoom />
+      </>
+    );
   }
 
+  // Active game rendering (ACTION, CONSEQUENCE, END phases)
   return (
     <>
       <Navigation

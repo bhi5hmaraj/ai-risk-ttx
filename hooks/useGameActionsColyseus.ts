@@ -31,10 +31,11 @@ export function useGameActionsColyseus() {
   const connectionInProgressRef = useRef(false);
 
   /**
-   * Start game flow:
+   * Start game flow (MULTIPLAYER):
    * 1. Connect to Colyseus room (if not already connected)
-   * 2. Send start_game message
-   * 3. Server handles LLM generation, broadcasts game_started + action_options
+   * 2. Stay in lobby phase - waiting room will be shown
+   * 3. Host clicks "Start Game" in WaitingRoom → sends start_game message
+   * 4. Server handles LLM generation, broadcasts game_started + action_options
    */
   const handleStartGame = useCallback(async () => {
     if (!selectedRoleName) {
@@ -48,12 +49,8 @@ export function useGameActionsColyseus() {
     }
 
     if (isConnected) {
-      console.log('[useGameActionsColyseus] Already connected, just starting game');
-      setLoading(true, 'Starting game...');
-      setIsGeneratingOptions(true); // ensure loading until options arrive
-      startGame();
-      // isGeneratingOptions flag (from actionStore) will show loading screen
-      setLoading(false);
+      console.log('[useGameActionsColyseus] Already connected to lobby');
+      // Don't start the game - waiting room will handle that
       return;
     }
 
@@ -72,33 +69,23 @@ export function useGameActionsColyseus() {
         isHuman: true,
       });
 
-      console.log('[useGameActionsColyseus] Connected! Starting game...');
+      console.log('[useGameActionsColyseus] Connected! Now in waiting room (lobby phase)');
 
-      // Step 2: Start the game
-      setLoading(true, 'Starting game - AI generating scenario...');
-      setIsGeneratingOptions(true); // show loading immediately upon start click
-      startGame();
+      // Step 2: Stay in lobby phase - don't call startGame() yet
+      // The WaitingRoom component's "Start Game" button will send start_game message
+      // when the host is ready
 
-      // Server will:
-      // - Generate initial scenario via LLM (5-30s)
-      // - Broadcast game_started event (triggers isGeneratingOptions = true)
-      // - Generate action options for human players
-      // - Broadcast action_options event (triggers isGeneratingOptions = false)
-      //
-      // ColyseusProvider + actionStore handle all state updates automatically
-
-      // Loading state now managed by isGeneratingOptions flag
       setLoading(false);
-      console.log('[useGameActionsColyseus] Game start message sent');
+      console.log('[useGameActionsColyseus] Lobby connection complete');
 
     } catch (error) {
-      console.error('[useGameActionsColyseus] Failed to start game:', error);
+      console.error('[useGameActionsColyseus] Failed to connect:', error);
       setError(error instanceof Error ? error.message : 'Failed to connect to game server');
       setLoading(false);
     } finally {
       connectionInProgressRef.current = false;
     }
-  }, [selectedRoleName, isConnected, isConnecting, connect, startGame, setLoading, setError]);
+  }, [selectedRoleName, isConnected, connect, setLoading, setError]);
 
   /**
    * Confirm actions flow:

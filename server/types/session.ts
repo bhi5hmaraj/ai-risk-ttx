@@ -94,7 +94,7 @@ export const GameLogEntrySchema = z.object({
 });
 
 export const GameStateSchema = z.object({
-  phase: z.number().int().min(0).max(10), // GamePhase enum numeric
+  phase: z.enum(['lobby', 'starting', 'action', 'consequence', 'end']), // GamePhase string enum
   round: z.number().int().min(0),
   coreMetric: CoreMetricSchema,
   eventLog: z.array(GameLogEntrySchema),

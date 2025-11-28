@@ -327,7 +327,7 @@ describe('Schema Synchronization: Regression Tests', () => {
 
         if ('maxRounds' in schema) {
             const coreState = {
-                phase: 2,
+                phase: 'action',
                 round: 0,
                 coreMetric: { name: 'Test', value: 50, description: 'Test' },
                 eventLog: [],

@@ -89,6 +89,11 @@ export function coreToSchema(
     schema.round = core.round;
     schema.publicScore = core.coreMetric.value;
     schema.coreMetricName = core.coreMetric.name;
+
+    // Sync maxRounds if present in core state
+    if ('maxRounds' in core && typeof (core as any).maxRounds === 'number') {
+        schema.maxRounds = (core as any).maxRounds;
+    }
 }
 
 /**

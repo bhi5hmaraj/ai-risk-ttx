@@ -44,7 +44,7 @@ describe('gameLogic helpers', () => {
 
   it('createInitialGameStateFromScenario builds round 0 log and advances to ACTION', () => {
     const next = createInitialGameStateFromScenario(baseState, scenario, 3);
-    expect(next.phase).toBe(2); // ACTION
+    expect(next.phase).toBe('action'); // ACTION
     expect(next.round).toBe(1);
     expect(next.coreMetric.value).toBe(55);
     expect(next.eventLog).toHaveLength(1);

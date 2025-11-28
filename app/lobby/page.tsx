@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { LobbyScreen, LoadingScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal } from '@/components/game';
-import { ConnectionStatusPill } from '@/components/ConnectionStatus';
 import { GamePhase } from '@/types';
 import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
 import { useGame } from '@/hooks/useGame';
+import { useColyseus } from '@/providers/ColyseusProvider';
 // COLYSEUS MIGRATION: Replaced useGameActions with useGameActionsColyseus
 // import { useGameActions } from '@/hooks/useGameActions';
 import { useGameActionsColyseus } from '@/hooks/useGameActionsColyseus';
@@ -26,6 +26,7 @@ function LobbyPageContent() {
   const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
   const { handleStartGame } = useGameActionsColyseus();
+  const { isConnected, state: colyseusState, room } = useColyseus();
   const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
 
@@ -40,6 +41,14 @@ function LobbyPageContent() {
     resetLobby();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
+
+  // Navigate to game when phase changes from lobby to active game
+  useEffect(() => {
+    if (isConnected && colyseusState?.phase && colyseusState.phase !== 'lobby' && room?.roomId) {
+      console.log('[LobbyPage] Game started, navigating to /game/' + room.roomId);
+      router.push(`/game/${room.roomId}`);
+    }
+  }, [isConnected, colyseusState?.phase, room?.roomId, router]);
 
   // Handler for custom scenario generation
   const handleCustomGameStart = async () => {
@@ -91,6 +100,7 @@ function LobbyPageContent() {
     (loadingMessage || '').toLowerCase().includes(msg)
   );
 
+  // Lobby setup screen
   return (
     <>
       <Navigation
@@ -107,9 +117,6 @@ function LobbyPageContent() {
         onOpenUpdates={() => router.push('/updates')}
         showFeedback={false}
       />
-      <div className="fixed top-4 right-4 z-50">
-        <ConnectionStatusPill />
-      </div>
       {actionTree}
       {showLoadingOverlay ? (
         <LoadingScreen
