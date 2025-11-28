@@ -32,17 +32,9 @@ export function schemaToCore(
         currentEvent?: CoreGameState['currentEvent'];
     } = {}
 ): CoreGameState {
-    // Map string phase from server to numeric enum for frontend
-    const phaseMap: Record<string, GamePhase> = {
-        'lobby': GamePhase.LOBBY,
-        'starting': GamePhase.STARTING,
-        'action': GamePhase.ACTION,
-        'consequence': GamePhase.CONSEQUENCE,
-        'end': GamePhase.END,
-    };
-
+    // Direct string-to-string mapping - both server and client now use string enums
     return {
-        phase: phaseMap[schema.phase] ?? GamePhase.LOBBY,
+        phase: schema.phase as GamePhase,
         round: schema.round,
         maxRounds: schema.maxRounds,
         coreMetric: {
@@ -94,7 +86,7 @@ export function coreToSchema(
     core: CoreGameState,
     schema: ColyseusGameState
 ): void {
-    schema.phase = (core.phase as unknown as string) ?? 'lobby';
+    schema.phase = core.phase ?? 'lobby';
     schema.round = core.round;
     if (core.maxRounds !== undefined) {
         schema.maxRounds = core.maxRounds;

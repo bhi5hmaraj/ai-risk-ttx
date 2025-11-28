@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { GamePhase } from '@/types';
 
-export function useTimer(params: { phase: number; humanHasSubmitted: boolean; onTimeout: () => void; initial?: number; paused?: boolean }) {
+export function useTimer(params: { phase: GamePhase; humanHasSubmitted: boolean; onTimeout: () => void; initial?: number; paused?: boolean }) {
   const { phase, humanHasSubmitted, onTimeout, initial = 300, paused = false } = params;
   const [timer, setTimer] = useState(initial);
   const [isPaused, setIsPaused] = useState(paused);
