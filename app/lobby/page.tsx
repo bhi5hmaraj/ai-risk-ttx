@@ -42,13 +42,13 @@ function LobbyPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  // Navigate to game when phase changes from lobby to active game
+  // Navigate to game page when connected (shows WaitingRoom in lobby phase, GameScreen in other phases)
   useEffect(() => {
-    if (isConnected && colyseusState?.phase && colyseusState.phase !== 'lobby' && room?.roomId) {
-      console.log('[LobbyPage] Game started, navigating to /game/' + room.roomId);
+    if (isConnected && room?.roomId) {
+      console.log('[LobbyPage] Connected to room, navigating to /game/' + room.roomId);
       router.push(`/game/${room.roomId}`);
     }
-  }, [isConnected, colyseusState?.phase, room?.roomId, router]);
+  }, [isConnected, room?.roomId, router]);
 
   // Handler for custom scenario generation
   const handleCustomGameStart = async () => {
