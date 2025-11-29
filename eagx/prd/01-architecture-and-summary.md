@@ -11,11 +11,11 @@ We're migrating from Server-Sent Events (SSE) to Colyseus WebSocket framework to
 **Architecture Decision:**
 - **Approach:** Express-first single service on Cloud Run: Express + Colyseus (WS + custom routes) with Next.js mounted as the request handler
 - **Auth Strategy:** Room codes (no login required - optimized for IRL event)
-- **Risk Mitigation:** Feature flag to keep SSE as backup until event succeeds
+- **Risk Mitigation:** Commit fully to WebSocket/Colyseus; retire SSE to avoid split focus, and instead invest in observability (structured logs/metrics/traces) plus strong admin controls for live recovery.
 
 **Expected Outcomes:**
-- Week 3: Colyseus deployed, stable multiplayer tested with 50+ games
-- Week 4 (Event): Confident rollout or SSE backup based on data
+- Week 3: Colyseus deployed, stable multiplayer tested with 50+ games, with observability and admin tooling exercised
+- Week 4 (Event): Confident, single-protocol (WebSocket) rollout with rehearsed admin controls for fast mitigation
 - Post-Event: 90% dev time on gameplay features vs. 40% currently
 
 ---

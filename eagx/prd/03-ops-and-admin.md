@@ -10,19 +10,19 @@
 **Mitigation:**
 - **Timeboxing:** Each phase has hard deadline. If overrunning, escalate decision.
 - **Circuit Breakers:**
-  - End of Day 6: If core game not working, extend 2 days OR pause
-  - End of Day 13: If production errors >5%, halt rollout
-  - Day 18 (T-3 days): Go/No-Go decision. If not confident, use SSE backup.
-- **Feature Flag:** Can switch to SSE in <5 minutes if needed
+  - End of Day 6: If core game not working, extend 2 days OR pause scope-creep features
+  - End of Day 13: If production errors >5%, halt rollout and swarm reliability
+  - Day 18 (T-3 days): Go/No-Go decision. If not confident, limit tables or delay rather than re-open SSE.
+- **Single Protocol:** SSE is frozen; operational kill-switch pauses room creation if instability resurfaces.
 
 **Backup Plan:**
-- Use SSE for IRL event (accept 85% reliability)
-- Have tech support on-site for quick troubleshooting
-- Colyseus becomes post-event priority
+- If Colyseus stability is insufficient, cap concurrent rooms and lengthen breaks between sessions
+- Have tech support on-site for quick troubleshooting and admin interventions
+- If still risky, delay event schedule instead of splitting focus with SSE
 
 **Decision Framework:**
-- Day 18: If <90% confident in Colyseus → use SSE for event
-- Better to succeed with flaky SSE than fail with buggy Colyseus
+- Day 18: If <90% confident in Colyseus → narrow scope (fewer rooms, longer buffers) or reschedule; keep WebSocket-only
+- Better to reduce volume than to carry dual protocols that dilute testing
 
 ---
 
@@ -35,13 +35,13 @@
 
 **Mitigation:**
 - **Day 2 Checkpoint:** Explicit validation "Does this feel clearer?"
-- **Escape Hatch:** Feature flag means we can revert instantly
+- **No Dual Stack:** Avoid the cognitive overhead of maintaining SSE as an escape hatch; swarm on fixes instead
 - **Learning Resources:** Colyseus docs + community for questions
 
 **If This Happens:**
 - Be honest with ourselves
-- Revert to SSE, fix specific pain points
-- Defer Colyseus to post-event
+- Re-focus scope (fewer admin features, simpler AI) and fix specific pain points in Colyseus
+- If blocked, consider delaying the event rather than reintroducing SSE
 
 ---
 
@@ -85,10 +85,10 @@
 - Cold starts kill active games
 
 **Mitigation:**
-- **Early Production Deploy:** Day 12 (staging), Day 13 (prod at 10%)
-- **Gradual Rollout:** 10% → 50% → 100% over 1 week
+- **Early Production Deploy:** Day 12 (staging), Day 13 (prod with tight room caps)
+- **Gradual Rollout:** Increase room caps only when telemetry is green
 - **Monitoring:** Structured logs, admin dashboard, error tracking
-- **Feature Flag:** Can revert to SSE if production issues arise
+- **Kill-Switch:** Pause new room creation and drain existing rooms if production issues arise
 
 **Specific Safeguards:**
 - Set Cloud Run `min-instances=1` (prevent cold starts)
@@ -128,14 +128,14 @@
 **Mitigation:**
 - **Dry Run (Day 20):** Full rehearsal with 18-24 people
 - **On-Site Tech Support:** Designated person with admin access
-- **Rollback Plan:** Can switch to SSE feature flag in 5 min if disaster
+- **Rollback Plan:** Pause new rooms and drain gracefully if major issues; prioritize fewer concurrent tables over protocol swap
 - **Fallback Activity:** If all tech fails, have paper-based backup exercise
 
 **Decision Tree (Event Day):**
 ```
 Issues affecting <10% of players → Tech support fixes, event continues
-Issues affecting 10-50% of players → Pause, assess, decide in 5 min
-Issues affecting >50% of players → Switch to SSE backup OR paper fallback
+Issues affecting 10-50% of players → Pause, assess, lower room cap, decide in 5 min
+Issues affecting >50% of players → Pause new rooms, consider delaying/condensing sessions, OR move to paper fallback
 ```
 
 **Worst Case Acceptance:**
@@ -172,7 +172,7 @@ Issues affecting >50% of players → Switch to SSE backup OR paper fallback
 - [ ] ✅ Load test passed (4 concurrent games, 2 hours, stable)
 - [ ] ✅ Real users tested (12+ people, 4+/5 star rating)
 - [ ] ✅ Error rate <1% for Colyseus users
-- [ ] ✅ Feature flag tested (can switch SSE ↔ Colyseus in <5 min)
+- [ ] ✅ Kill-switch tested (can pause new rooms + drain safely in <5 min)
 
 **Decision:** GO or NO-GO for using Colyseus at IRL event
 
@@ -205,7 +205,7 @@ Issues affecting >50% of players → Switch to SSE backup OR paper fallback
 **Phase 1 (Weeks 1-3): Minimal & Effective**
 
 1. **Sentry** - Error tracking & performance monitoring
-2. **Environment Variables** - Feature flag control
+2. **Operational Toggles** - Room caps + kill-switch via env vars
 3. **Cloud Run Logs** - Structured logging (JSON)
 
 **Phase 2 (Post-Event): Enhanced Analytics**
@@ -342,81 +342,34 @@ export class GameRoom extends Room<GameState> {
 
 ---
 
-### Feature Flag Strategy (Environment Variables)
+### Operational Toggles (Environment Variables)
 
-**Why NOT PostHog/LaunchDarkly for MVP:**
-- PostHog: Adds 100KB to client bundle, API latency on page load
-- LaunchDarkly: $50/month minimum, overkill for binary rollout
-- Env vars: Instant, free, sufficient for Colyseus 0% → 50% → 100%
+Use lightweight env vars instead of full feature-flag stacks to manage operational levers for the rollout (caps and pausing new rooms) while staying WebSocket-only.
 
-**Implementation:**
+**Operational Toggles (Room Caps + Kill Switch):**
 
 ```typescript
-// lib/featureFlags.ts
-export const FeatureFlags = {
-  COLYSEUS_ENABLED: {
-    get rolloutPercent(): number {
-      return parseInt(process.env.COLYSEUS_ROLLOUT_PERCENT || '0', 10);
-    },
+// services/config.ts
+export const ROOM_CAP = parseInt(process.env.ROOM_CAP ?? '4', 10);
+export const ACCEPT_NEW_ROOMS = process.env.ACCEPT_NEW_ROOMS !== 'false';
 
-    // Consistent hashing (same user always sees same variant)
-    isEnabledForUser(userId: string): boolean {
-      const hash = this.simpleHash(userId);
-      return (hash % 100) < this.rolloutPercent;
-    },
-
-    simpleHash(str: string): number {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0; // Convert to 32bit integer
-      }
-      return Math.abs(hash);
-    },
-  },
-};
-
-// Usage in component
-export default function GamePage() {
-  const userId = useUserId(); // From cookie/session
-  const useColyseus = FeatureFlags.COLYSEUS_ENABLED.isEnabledForUser(userId);
-
-  return useColyseus ? <ColyseusGameScreen /> : <SSEGameScreen />;
+// server/routes/createRoom.ts
+if (!ACCEPT_NEW_ROOMS) {
+  return res.status(503).json({ error: 'Room creation paused' });
 }
+
+if (activeRoomCount >= ROOM_CAP) {
+  return res.status(429).json({ error: 'Room cap reached; try again soon' });
+}
+
+// proceed to create room
 ```
 
-**Rollout Process:**
+**Ramp Process:**
 
-```bash
-# Week 3, Day 13: 10% of users
-gcloud run services update simulacra \
-  --update-env-vars COLYSEUS_ROLLOUT_PERCENT=10
-
-# Monitor in Sentry for 4 hours:
-# - Error rate: <1%? ✅ Proceed
-# - Performance: No regressions? ✅ Proceed
-
-# Week 3, Day 14: 50% of users
-gcloud run services update simulacra \
-  --update-env-vars COLYSEUS_ROLLOUT_PERCENT=50
-
-# Week 4, Day 18 (Pre-event decision):
-# - Confident? Set to 100
-# - Nervous? Set to 0 (SSE backup)
-gcloud run services update simulacra \
-  --update-env-vars COLYSEUS_ROLLOUT_PERCENT=100
-```
-
-**Emergency Rollback (< 2 minutes):**
-
-```bash
-# From anywhere (phone, laptop)
-gcloud run services update simulacra \
-  --update-env-vars COLYSEUS_ROLLOUT_PERCENT=0
-
-# All new connections use SSE
-# Existing Colyseus rooms finish naturally
-```
+- Day 13: `ROOM_CAP=2`, `ACCEPT_NEW_ROOMS=true` (facilitator smoke test)
+- Day 14-15: Increase `ROOM_CAP` to 4 (event target) once telemetry is green
+- Emergency: Set `ACCEPT_NEW_ROOMS=false` to drain; lower `ROOM_CAP` after fix
 
 **Post-Event: Migrate to PostHog (Optional)**
 
