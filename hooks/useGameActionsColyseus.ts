@@ -20,13 +20,18 @@ import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
 import { useLobby } from '@/hooks/useLobby';
 import { useColyseus } from '@/providers/ColyseusProvider';
+import { useGameSenders } from '@/hooks/useGameSenders';
 
 export function useGameActionsColyseus() {
   const { players, setPlayers } = useGame();
   const { setLoading, setError } = useUI();
   const { selectedRoleName } = useLobby();
   const { setActionOptions, setAICompletionStatus, setIsGeneratingOptions } = useActions();
-  const { room, isConnected, isConnecting, connect, startGame, submitAction, advanceRound } = useColyseus();
+  const { isConnected, isConnecting, connect } = useColyseus();
+  const { setRole: sendSetRole, submitAction: sendSubmitAction } = useGameSenders();
+  const selectRole = useCallback((role: string, name: string) => {
+    sendSetRole(role, name);
+  }, [sendSetRole]);
 
   const connectionInProgressRef = useRef(false);
 
@@ -91,8 +96,7 @@ export function useGameActionsColyseus() {
    * Confirm actions flow:
    * 1. Submit each selected action to server
    * 2. Mark human player as submitted (optimistic update)
-   * 3. Send advance_round message
-   * 4. Server processes round, broadcasts new_round + action_options
+   * 3. Server detects all-submitted and advances the round; broadcasts new_round + action_options
    */
   const handleConfirmActions = useCallback(
     async (actions: ActionOption[]) => {
@@ -120,7 +124,7 @@ export function useGameActionsColyseus() {
         // Step 1: Submit each action to server
         console.log('[useGameActionsColyseus] Submitting', actions.length, 'actions');
         for (const action of actions) {
-          submitAction(action.title, action.cost);
+          sendSubmitAction(action.title, action.cost);
         }
 
         // Step 2: Mark human as submitted locally (optimistic update)
@@ -129,10 +133,9 @@ export function useGameActionsColyseus() {
         );
 
         // Step 3: Advance round (triggers server-side consequence generation)
-        console.log('[useGameActionsColyseus] Advancing round...');
+        console.log('[useGameActionsColyseus] Waiting for server to advance...');
         setLoading(true, 'Generating next round... AI players are making decisions.');
         setIsGeneratingOptions(true); // lock UI until next-round options arrive
-        advanceRound();
 
         // Server will:
         // - Process human actions
@@ -166,8 +169,8 @@ export function useGameActionsColyseus() {
         setLoading(false);
       }
     },
-    [players, isConnected, submitAction, advanceRound, setPlayers, setLoading, setError, setActionOptions, setAICompletionStatus]
+    [players, isConnected, sendSubmitAction, setPlayers, setLoading, setError, setActionOptions, setAICompletionStatus]
   );
 
-  return { handleStartGame, handleConfirmActions } as const;
+  return { handleStartGame, handleConfirmActions, selectRole } as const;
 }

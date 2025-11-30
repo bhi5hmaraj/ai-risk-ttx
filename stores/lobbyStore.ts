@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameSetup } from '@/types';
+import type { GameSetup, RoleData } from '@/types';
 
 interface LobbyStore {
   selectedRoleName: string | null;
@@ -9,6 +9,7 @@ interface LobbyStore {
   maxAIPlayers: number; // 0..MAX (custom scenarios allow more AI)
   maxRounds: number;    // 1..10
   isFromPublicCatalog: boolean; // True if scenario was loaded from public catalog
+  availableRoles: RoleData[]; // Server-projected roles with taken flag
   setSelectedRoleName: (name: string | null) => void;
   setGamePath: (path: LobbyStore['gamePath']) => void;
   setGameSetup: (setup: GameSetup | null) => void;
@@ -16,6 +17,7 @@ interface LobbyStore {
   setMaxAIPlayers: (n: number) => void;
   setMaxRounds: (n: number) => void;
   setIsFromPublicCatalog: (value: boolean) => void;
+  setAvailableRoles: (roles: RoleData[]) => void;
   reset: () => void;
 }
 
@@ -27,6 +29,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
    maxAIPlayers: 5,
    maxRounds: 5,
   isFromPublicCatalog: false,
+  availableRoles: [],
   setSelectedRoleName: (name) => set({ selectedRoleName: name }),
   setGamePath: (path) => set({ gamePath: path }),
   setGameSetup: (setup) => set({ gameSetup: setup }),
@@ -35,6 +38,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   setMaxAIPlayers: (n) => set({ maxAIPlayers: Math.max(0, Math.min(GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM, Math.floor(n))) }),
   setMaxRounds: (n) => set({ maxRounds: Math.max(1, Math.min(10, Math.floor(n))) }),
   setIsFromPublicCatalog: (value) => set({ isFromPublicCatalog: value }),
-  reset: () => set({ selectedRoleName: null, gamePath: null, gameSetup: null, customScenario: '', maxAIPlayers: 5, maxRounds: 5, isFromPublicCatalog: false }),
+  setAvailableRoles: (roles) => set({ availableRoles: roles }),
+  reset: () => set({ selectedRoleName: null, gamePath: null, gameSetup: null, customScenario: '', maxAIPlayers: 5, maxRounds: 5, isFromPublicCatalog: false, availableRoles: [] }),
 }));
 import { GAME_CONFIG } from '@/gameConfig';

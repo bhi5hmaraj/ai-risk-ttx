@@ -1,8 +1,14 @@
 /**
- * useColyseusRoom Hook
+ * useColyseusRoom Hook (deprecated)
  *
- * Manages Colyseus room connection and state synchronization.
- * Replaces the old HTTP polling/SSE approach with WebSocket real-time sync.
+ * Legacy, all‑in‑one hook that connects to a Colyseus room and wires listeners.
+ * Not used by the current architecture:
+ *  - Provider is transport‑only
+ *  - providers/colyseusRoomListeners.ts handles event→store projection
+ *  - hooks/useLobbyListing.ts handles built‑in lobby discovery
+ *  - hooks/useGameSenders.ts provides small, typed senders
+ *
+ * Keep for reference during migration; do not use in new code.
  */
 
 'use client';
@@ -37,7 +43,6 @@ export interface UseColyseusRoomResult {
   setRole: (role: string, name?: string) => void;
   submitAction: (actionId: string, cost: number) => void;
   startGame: () => void;
-  advanceRound: () => void;
 }
 
 export function useColyseusRoom(options: UseColyseusRoomOptions): UseColyseusRoomResult {
@@ -204,9 +209,7 @@ export function useColyseusRoom(options: UseColyseusRoomOptions): UseColyseusRoo
     sendMessage('start_game', {});
   }, [sendMessage]);
 
-  const advanceRound = useCallback(() => {
-    sendMessage('advance_round', {});
-  }, [sendMessage]);
+  // No client-side advance: server advances when all submissions are in or timer expires.
 
   // Cleanup on unmount
   useEffect(() => {
@@ -231,6 +234,5 @@ export function useColyseusRoom(options: UseColyseusRoomOptions): UseColyseusRoo
     setRole,
     submitAction,
     startGame,
-    advanceRound,
   };
 }
