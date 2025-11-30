@@ -18,15 +18,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Disable telemetry during the build.
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Build Next.js
+# Build Colyseus/Server only
 ARG OPENAI_API_KEY=dummy
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YWNjb3VudC5jbGVyay5kZXYk
-RUN pnpm run build
-
-# Build Custom Server
 RUN pnpm run build:server
 
 # Production image, copy all the files and run next
@@ -34,7 +27,6 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -47,8 +39,7 @@ RUN adduser --system --uid 1001 nextjs
 # So we can prune in builder or use a separate stage.
 # Separate stage is cleaner.
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+# Server build artifacts (Colyseus only - no Next.js public assets)
 COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 
