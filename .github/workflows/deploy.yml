@@ -1,4 +1,9 @@
-name: Deploy to Cloud Run
+# GitHub Actions workflow for deploying Colyseus to Google Cloud Run
+# Next.js stays on Vercel (progressive migration approach)
+# Each branch gets its own Colyseus deployment (e.g., feat/xyz -> simulacra-colyseus-feat-xyz)
+# Main branch deploys to production with custom domain (game.simulacra.cc)
+
+name: Deploy Colyseus to Cloud Run
 
 on:
   push:
