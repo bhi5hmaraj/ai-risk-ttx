@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen, LoadingScreen } from '@/screens';
@@ -11,13 +11,11 @@ import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
 import { useGame } from '@/hooks/useGame';
 import { useColyseus } from '@/providers/ColyseusProvider';
-// COLYSEUS MIGRATION: Replaced useGameActions with useGameActionsColyseus
-// import { useGameActions } from '@/hooks/useGameActions';
-import { useGameActionsColyseus } from '@/hooks/useGameActionsColyseus';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useActionStore } from '@/stores/actionStore';
 import { generateCustomScenario } from '@/services/llmApiClient';
 import { GAME_CONFIG } from '@/gameConfig';
+import { generateRoomCode } from '@/server/lib/roomCodeGenerator';
 
 function LobbyPageContent() {
   const router = useRouter();
@@ -25,7 +23,6 @@ function LobbyPageContent() {
   const { selectedRoleName, setSelectedRoleName, gamePath, setGamePath, customScenario, setCustomScenario, gameSetup, setGameSetup, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, isFromPublicCatalog, setIsFromPublicCatalog, reset: resetLobby } = useLobby();
   const { isLoading, loadingMessage, error, setLoading, setError } = useUI();
   const { gameState, resetGame } = useGame();
-  const { handleStartGame } = useGameActionsColyseus();
   const { isConnected, state: colyseusState, room } = useColyseus();
   const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
@@ -42,13 +39,14 @@ function LobbyPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  // Navigate to game page when connected (shows WaitingRoom in lobby phase, GameScreen in other phases)
+  // Navigate to game/:code after a successful connection (SPA flow)
   useEffect(() => {
-    if (isConnected && room?.roomId) {
-      console.log('[LobbyPage] Connected to room, navigating to /game/' + room.roomId);
-      router.push(`/game/${room.roomId}`);
+    if (isConnected && room?.state?.roomCode) {
+      const code = room.state.roomCode;
+      console.log('[LobbyPage] Connected to room, routing to /game/' + code);
+      router.push(`/game/${code}`);
     }
-  }, [isConnected, room?.roomId, router]);
+  }, [isConnected, room?.state?.roomCode, router]);
 
   // Handler for custom scenario generation
   const handleCustomGameStart = async () => {
@@ -100,6 +98,40 @@ function LobbyPageContent() {
     (loadingMessage || '').toLowerCase().includes(msg)
   );
 
+  // --- SPA-style quick join (role chosen after joining) ---
+  const [joinName, setJoinName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const { connect } = useColyseus();
+
+  const handleJoinByCode = useCallback(async () => {
+    const name = (joinName || 'Guest').trim();
+    const code = (joinCode || '').trim().toUpperCase();
+    if (!code) return;
+    try {
+      setLoading(true, 'Joining room...');
+      await connect({ name, role: '', isHuman: true, gameId: code });
+      // Routing happens in the isConnected effect above
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to join room');
+    } finally {
+      setLoading(false);
+    }
+  }, [joinName, joinCode, connect, setLoading, setError]);
+
+  // Host creates a game (no role yet; roles are chosen inside waiting room)
+  const handleCreateGame = useCallback(async () => {
+    try {
+      setLoading(true, 'Creating game...');
+      const code = generateRoomCode();
+      await connect({ name: 'Host', role: '', isHuman: true, isHost: true, gameId: code });
+      // Routing happens in the isConnected effect above
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create game');
+    } finally {
+      setLoading(false);
+    }
+  }, [connect, setLoading, setError]);
+
   // Lobby setup screen
   return (
     <>
@@ -141,7 +173,12 @@ function LobbyPageContent() {
           setIsFromPublicCatalog={setIsFromPublicCatalog}
           isLoading={isLoading}
           handleCustomGameStart={handleCustomGameStart}
-          handleStartGame={handleStartGame}
+          onCreateGame={handleCreateGame}
+          onJoinByCode={(name, code) => {
+            setJoinName(name);
+            setJoinCode(code);
+            handleJoinByCode();
+          }}
           onNavigateToCustomScenario={() => router.push('/custom-scenario')}
         />
       )}

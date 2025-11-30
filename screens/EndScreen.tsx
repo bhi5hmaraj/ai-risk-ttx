@@ -10,12 +10,13 @@ import { useRotatingJoke } from '@/lib/loadingJokes';
 interface EndScreenProps {
   gameState: GameState;
   players: Player[];
+  humanPlayer: Player | null;
   onReset: () => void;
   onOpenFeedback?: () => void;
   gameSetup?: any;
 }
 
-export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onReset, onOpenFeedback, gameSetup }) => {
+export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, humanPlayer, onReset, onOpenFeedback, gameSetup }) => {
   const finalLogEntry = gameState.eventLog[gameState.eventLog.length - 1] ?? null;
   const finalScoreChange = finalLogEntry?.publicScoreChange ?? null;
   const [debrief, setDebrief] = useState<AIDebriefResponse | null>(null);
@@ -258,10 +259,12 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             {players
               .slice()
               .sort((a, b) => b.hiddenScore - a.hiddenScore)
-              .map((p) => (
+              .map((p) => {
+                const isYou = humanPlayer && (p as any).id === (humanPlayer as any).id;
+                return (
                 <div
                   key={p.id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${p.isHuman ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700/80'}`}
+                  className={`flex items-center justify-between p-4 rounded-lg ${isYou ? 'bg-blue-900/50 border border-blue-500' : 'bg-gray-700/80'}`}
                 >
                   <div className="flex items-center flex-1 min-w-0 mr-4">
                     {typeof p.role.icon === 'function'
@@ -270,7 +273,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                     }
                     <div className="flex-1 min-w-0">
                       <span className="font-bold block">{p.role.name}</span>
-                      <span className="text-xs uppercase tracking-wide text-gray-400 block">{p.isHuman ? 'You' : 'AI Stakeholder'}</span>
+                      <span className="text-xs uppercase tracking-wide text-gray-400 block">{isYou ? 'You' : p.isHuman ? 'Human Player' : 'AI Stakeholder'}</span>
                       <span className="text-xs italic text-amber-300 block mt-1 break-words">{p.role.hiddenObjective}</span>
                     </div>
                   </div>
@@ -279,7 +282,8 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                     {p.hiddenScore}
                   </span>
                 </div>
-              ))}
+              );
+              })}
           </div>
         </div>
 

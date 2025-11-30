@@ -2,9 +2,10 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { logger } from '@/lib/clientLogger';
 import { Navigation } from '@/components/Navigation';
 import { ConnectionStatusPill } from '@/components/ConnectionStatus';
-import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal, WaitingRoom } from '@/components/game';
+import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal, WaitingRoom, RoleSelector } from '@/components/game';
 import { GameScreen, LoadingScreen } from '@/screens';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
@@ -23,17 +24,22 @@ export default function GamePage() {
   const params = useParams();
   const roomCode = params?.roomCode as string;
   const { gameState, players } = useGame();
-  const { isConnected, state: colyseusState } = useColyseus();
+  const { isConnected, state: colyseusState, connect: colyseusConnect, isConnecting, sessionId } = useColyseus();
+  const { availableRoles } = useLobby();
   const { isLoading, loadingMessage, error, setHistoryOpen } = useUI();
   const { actionOptions, aiCompletionStatus, isGeneratingOptions } = useActions();
   const { gameSetup, customScenario, gamePath, isFromPublicCatalog } = useLobby();
-  const { handleConfirmActions } = useGameActions();
+  const { handleConfirmActions, selectRole } = useGameActions();
   const { loadHumanOptions } = useRoundOptions();
   const [isActionTreeOpen, setIsActionTreeOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   // Keep UI store in sync when toggling history from GameScreen
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
-  const humanPlayer = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
+  // Find current player by sessionId (not just isHuman, since multiplayer has multiple human players)
+  const humanPlayer = useMemo(() => {
+    if (!sessionId) return players.find((p) => p.isHuman) || null;
+    return players.find((p) => (p as any).id === sessionId) || null;
+  }, [players, sessionId]);
   const latestLogEntry = useMemo(
     () => (gameState.eventLog.length > 0 ? gameState.eventLog[gameState.eventLog.length - 1] : null),
     [gameState.eventLog]
@@ -117,6 +123,55 @@ export default function GamePage() {
     setHistoryOpen(next);
   };
 
+  // Role selection state for joining game
+  const [selectedRole, setSelectedRole] = React.useState<string | null>(null);
+  const [playerName, setPlayerName] = React.useState<string>('');
+
+  // Filter available roles to exclude those already taken by human players
+  const availableUntakenRoles = useMemo(() => {
+    if (!availableRoles.length) return [];
+
+    // Get roles already taken by human players
+    const takenRoleNames = players
+      .filter(p => p.isHuman)
+      .map(p => p.role.name);
+
+    // Return only untaken roles
+    return availableRoles.filter(role => !takenRoleNames.includes(role.name));
+  }, [availableRoles, players]);
+
+  // Check if current player has selected a role
+  const hasSelectedRole = useMemo(() => {
+    if (!sessionId || !players || players.length === 0) return false;
+    const currentPlayer = players.find(p => (p as any).id === sessionId);
+    return Boolean(currentPlayer?.role?.name);
+  }, [sessionId, players]);
+
+  // SPA flow: if a guest lands directly on /game/:code via a shared link,
+  // auto-connect to the room without a role so we can receive players_init
+  // and show the role selector.
+  const autoConnectDoneRef = React.useRef(false);
+  useEffect(() => {
+    if (autoConnectDoneRef.current) return;
+    if (!isConnected && !isConnecting && roomCode) {
+      autoConnectDoneRef.current = true;
+      colyseusConnect({ name: 'Guest', role: '', isHuman: true, gameId: roomCode }).catch(() => {
+        autoConnectDoneRef.current = false; // allow retry if it failed
+      });
+    }
+  }, [isConnected, isConnecting, roomCode, colyseusConnect]);
+
+  // Handle role selection
+  const handleConfirmRole = React.useCallback(async () => {
+    if (!selectedRole || !playerName.trim()) return;
+
+    console.log('[GamePage] Setting role:', selectedRole, 'name:', playerName);
+
+    if (!isConnected) return; // wait until auto-connect finishes
+    // Update role on server
+    selectRole(selectedRole, playerName.trim());
+  }, [selectedRole, playerName, roomCode, isConnected, colyseusConnect, selectRole]);
+
   // Trigger human action options load when entering ACTION phase and none are present
   // CRITICAL FIX: Removed !isLoading condition to fix race condition
   // The loadHumanOptions function has its own inFlightRef guard to prevent duplicate calls
@@ -141,8 +196,85 @@ export default function GamePage() {
     }
   }, [gameState.phase, humanPlayer, actionOptions.length, loadHumanOptions]);
 
-  // Phase-based rendering: Show WaitingRoom when in lobby phase, GameScreen otherwise
-  if (isConnected && colyseusState?.phase === 'lobby') {
+  // Convert availableRoles (RoleData with React component icons) to simple Role format for RoleSelector
+  const rolesToShow = React.useMemo(() => {
+    logger.info('[GamePage] rolesToShow recalculating', {
+      hasGameSetup: !!gameSetup,
+      availableRolesCount: availableRoles.length,
+      availableRoles: availableRoles.map(r => r.name),
+    });
+
+    // First try gameSetup stakeholders (first player from lobby)
+    if (gameSetup?.stakeholders) {
+      const takenByName = new Map(availableRoles.map(r => [r.name, Boolean((r as any).taken)]));
+      return gameSetup.stakeholders
+        .filter(s => s.name && s.name.trim())
+        .map((stakeholder) => ({
+          name: stakeholder.name,
+          description: stakeholder.publicObjective || '',
+          icon: stakeholder.icon || '👤',
+          isTaken: takenByName.get(stakeholder.name) || false,
+        }));
+    }
+    // Fallback to availableRoles from server (second player joining via URL)
+    return availableRoles
+      .filter(role => role.name && role.name.trim()) // Filter out empty names
+      .map(role => ({
+        name: role.name,
+        description: role.publicObjective || '',
+        icon: '👤',
+        isTaken: Boolean((role as any).taken),
+      }));
+  }, [gameSetup, availableRoles]);
+
+  // Do not request roles manually; server pushes players_init and provider/hook hydrate lobbyStore.
+
+  // Phase-based rendering (lobby-first guard)
+  if (!colyseusState || colyseusState?.phase === 'lobby') {
+    // While connecting, show loading
+    if (!isConnected) {
+      return (
+        <LoadingScreen
+          message={isConnecting ? 'Joining game...' : 'Connecting...'}
+          error={error}
+        />
+      );
+    }
+
+    // No role yet → RoleSelector (even if roles are not yet loaded)
+    if (!hasSelectedRole) {
+      return (
+        <>
+          <Navigation
+            onNavigateHome={() => {
+              router.push('/');
+            }}
+            onOpenFeedback={() => {}}
+            onOpenAbout={() => router.push('/about')}
+            onOpenUpdates={() => router.push('/updates')}
+            showFeedback={false}
+            autoCollapse
+          />
+          <div className="fixed top-4 right-4 z-50">
+            <ConnectionStatusPill />
+          </div>
+          {rolesToShow.length === 0 && (
+            <div className="text-center text-gray-400 mb-4">Waiting for available roles from host...</div>
+          )}
+          <RoleSelector
+            availableRoles={rolesToShow}
+            selectedRole={selectedRole}
+            onSelectRole={setSelectedRole}
+            playerName={playerName}
+            onNameChange={setPlayerName}
+            onConfirm={handleConfirmRole}
+            disabled={!isConnected || isConnecting}
+          />
+        </>
+      );
+    }
+
+    // Role selected → WaitingRoom
     return (
       <>
         <Navigation
@@ -243,3 +375,5 @@ export default function GamePage() {
     </>
   );
 }
+  // SPA flow: do not redirect to /lobby; guests should use the Lobby to join by code,
+  // and shared links now point directly to /game/:code.

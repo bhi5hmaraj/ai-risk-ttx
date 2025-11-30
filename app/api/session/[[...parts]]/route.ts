@@ -1,3 +1,14 @@
+/**
+ * TODO[deprecate]: Legacy Session/SSE API (Not used in Colyseus flow)
+ * - Status: DEPRECATED — kept temporarily for reference during Phase 2 rollout.
+ * - Action: Remove this route and the related session store/router once Colyseus is stable in prod.
+ * - Scope to delete together:
+ *   - app/api/session/[[...parts]]/route.ts (this file)
+ *   - server/api/session-router.ts
+ *   - server/stores/sessionStore.* (memory/redis/tests)
+ *   - hooks/useGameActions.ts and any SSE/EventSource code paths
+ * - Tracking: docs/multiplayer/colyseus-migration-tasks.md → “Remove legacy session SSE APIs”.
+ */
 import { NextRequest } from 'next/server';
 import { handleSessionRequest, type LLMFacade } from '@/server/api/session-router';
 import { MemorySessionStore } from '@/server/stores/sessionStore.memory';

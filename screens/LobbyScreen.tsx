@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { GameSetup, RoleData } from '../types';
 import { RoleCard, MakePublicModal } from '../components/game';
 
@@ -41,7 +42,9 @@ interface LobbyScreenProps {
   setIsFromPublicCatalog: (value: boolean) => void;
   isLoading: boolean;
   handleCustomGameStart: () => void;
-  handleStartGame: () => void;
+  // SPA flow handlers
+  onCreateGame: () => void; // host creates a room (role chosen later)
+  onJoinByCode: (name: string, code: string) => void; // guests join existing room
   onNavigateToCustomScenario?: () => void;
 }
 
@@ -206,8 +209,8 @@ const PresetRoleSelection: React.FC<{
   scenarioTitle: string;
   scenarioDescription: string;
   roles: RoleData[];
-  selectedRoleName: string | null;
-  onSelect: (role: string) => void;
+  selectedRoleName?: string | null;
+  onSelect?: (role: string) => void;
   onStart: () => void;
   cta: string;
   onMakePublic?: () => void;
@@ -218,7 +221,9 @@ const PresetRoleSelection: React.FC<{
   setMaxRounds?: (n: number) => void;
   minAiPlayers?: number;
   isStarting?: boolean;
-}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0, isStarting = false }) => (
+  // When true, hide role grid; roles will be chosen after joining
+  rolelessStart?: boolean;
+}> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0, isStarting = false, rolelessStart = false }) => (
   <div className="max-w-7xl mx-auto">
     <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
       <h2 className="text-3xl font-bold text-purple-300 mb-2">{scenarioTitle}</h2>
@@ -278,7 +283,20 @@ const PresetRoleSelection: React.FC<{
         </div>
       </div>
     </div>
-    <RoleSelection roles={roles} selectedRoleName={selectedRoleName} onSelect={onSelect} onStart={onStart} cta={cta} />
+    {rolelessStart ? (
+      <div className="text-center mt-8">
+        <p className="text-gray-400 mb-4">Roles are selected after joining the room.</p>
+        <button
+          onClick={onStart}
+          disabled={isStarting}
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+        >
+          {isStarting ? 'Starting…' : cta}
+        </button>
+      </div>
+    ) : (
+      <RoleSelection roles={roles} selectedRoleName={selectedRoleName || null} onSelect={onSelect!} onStart={onStart} cta={cta} isStarting={isStarting} />
+    )}
   </div>
 );
 
@@ -299,9 +317,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   setIsFromPublicCatalog,
   isLoading,
   handleCustomGameStart,
-  handleStartGame,
+  onCreateGame,
+  onJoinByCode,
   onNavigateToCustomScenario,
 }) => {
+  const router = useRouter();
   const [isMakePublicModalOpen, setIsMakePublicModalOpen] = useState(false);
   const [publicScenarios, setPublicScenarios] = useState<ScenarioCatalogItem[]>([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
@@ -368,10 +388,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   }, []);
 
   const handleSelectPublicScenario = (scenario: ScenarioCatalogItem) => {
-    // Set the gameSetup and gamePath so the game controller can use it
+    // Set gameSetup in lobby store - this will trigger PresetRoleSelection to show
     setGameSetup(scenario.gameSetup);
     setGamePath('custom'); // Mark as custom to use preset scenario initialization
     setIsFromPublicCatalog(true); // Mark this scenario as from the public catalog
+
+    console.log('[LobbyScreen] Scenario selected:', scenario.gameSetup.scenarioTitle);
+    console.log('[LobbyScreen] User will now select role and click "Start Custom Simulation"');
+    // Navigation will happen when user clicks start button in PresetRoleSelection
   };
 
   const handleVote = async (scenarioId: string) => {
@@ -439,6 +463,29 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
     {!gamePath ? (
       <>
+        {/* Quick Join card */}
+        <div className="max-w-3xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-6 border border-gray-700">
+          <h3 className="text-xl font-bold text-blue-300 mb-3">Join a Room</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input
+              placeholder="Your name"
+              onChange={(e) => (window as any).__lobbyJoinName = e.target.value}
+              className="bg-gray-900 border border-gray-700 rounded-md p-3 text-white"
+            />
+            <input
+              placeholder="Room code (e.g. ABC123)"
+              onChange={(e) => (window as any).__lobbyJoinCode = e.target.value}
+              className="bg-gray-900 border border-gray-700 rounded-md p-3 text-white uppercase"
+            />
+            <button
+              onClick={() => onJoinByCode(((window as any).__lobbyJoinName || '').toString(), ((window as any).__lobbyJoinCode || '').toString())}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+
         {scenariosLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
@@ -484,10 +531,9 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           scenarioTitle={gameSetup.scenarioTitle}
           scenarioDescription={gameSetup.scenarioDescription}
           roles={mapStakeholdersToRoles(gameSetup.stakeholders)}
-          selectedRoleName={selectedRoleName}
-          onSelect={setSelectedRoleName}
-          onStart={handleStartGame}
-          cta="Start Custom Simulation"
+          onStart={onCreateGame}
+          cta="Create Game"
+          rolelessStart
           onMakePublic={!isFromPublicCatalog ? () => setIsMakePublicModalOpen(true) : undefined}
           maxAIPlayers={maxAIPlayers}
           setMaxAIPlayers={setMaxAIPlayers}

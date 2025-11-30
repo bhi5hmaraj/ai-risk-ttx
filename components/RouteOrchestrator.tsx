@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useGameStore } from '@/stores/gameStore';
 import { GamePhase } from '@/types';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useColyseus } from '@/providers/ColyseusProvider';
 
 export function RouteOrchestrator() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export function RouteOrchestrator() {
   const gameState = useGameStore((state) => state.gameState);
   const players = useGameStore((state) => state.players);
   const { hasStartIntent, sessionMeta } = useSessionStore();
+  const { state: colyseusState } = useColyseus();
+  const roomCode = colyseusState?.roomCode || '';
 
   useEffect(() => {
     // Always allow visiting Home explicitly
@@ -26,7 +29,7 @@ export function RouteOrchestrator() {
       return;
     }
 
-    const isGamePath = pathname === '/game';
+    const isGamePath = pathname.startsWith('/game');
     const startIntentValid = hasStartIntent && (players.length > 0 || !!sessionMeta);
     const shouldBeInGame =
       startIntentValid ||
@@ -35,18 +38,21 @@ export function RouteOrchestrator() {
       gameState.phase === GamePhase.CONSEQUENCE;
 
     if (shouldBeInGame && !isGamePath) {
-      router.replace('/game');
+      if (roomCode) {
+        router.replace(`/game/${roomCode}`);
+      } else {
+        router.replace('/game');
+      }
       return;
     }
 
-    if (
-      pathname === '/game' &&
-      gameState.phase === GamePhase.LOBBY &&
-      !hasStartIntent &&
-      players.length === 0
-    ) {
-      router.replace('/lobby');
+    // Normalize base /game to /game/:code when available
+    if (pathname === '/game' && roomCode) {
+      router.replace(`/game/${roomCode}`);
+      return;
     }
+
+    // SPA flow: allow staying on /game even during lobby phase. No redirect to /lobby here.
   }, [router, pathname, hasStartIntent, players.length, gameState.phase, sessionMeta]);
 
   return null;

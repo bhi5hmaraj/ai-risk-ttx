@@ -53,7 +53,7 @@ export const EventLog: React.FC<EventLogProps> = ({
         const isLastRound = index === orderedLog.length - 1;
 
         return (
-          <React.Fragment key={log.round}>
+          <React.Fragment key={`${log.round}-${index}`}>
             <div className="space-y-3">
               {/* Round Header */}
               <div className="flex items-center justify-between">
