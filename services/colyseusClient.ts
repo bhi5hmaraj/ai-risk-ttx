@@ -43,6 +43,7 @@ export interface JoinRoomOptions {
   traceId?: string;
   gameSetup?: any | null;
   maxRounds?: number;
+  isHost?: boolean;
 }
 
 /**
@@ -109,6 +110,25 @@ export async function joinRoomById(roomId: string, options: JoinRoomOptions): Pr
     return room as Room<ColyseusGameState>;
   } catch (error) {
     console.error(`[${traceId}] Failed to join room:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Join the built-in Colyseus LobbyRoom with optional filter.
+ * Use filter: { name: 'game', metadata: { gameId } } to discover a specific game.
+ */
+export async function joinLobby(filter?: { name?: string; metadata?: Record<string, any> }) {
+  const client = getColyseusClient();
+  const traceId = generateTraceId();
+  try {
+    console.log(`[${traceId}] Joining lobby with filter:`, filter);
+    // @ts-ignore – filters are accepted by LobbyRoom
+    const room = await client.joinOrCreate('lobby', filter ? { filter } : undefined);
+    console.log(`[${traceId}] Joined lobby successfully!`, { roomId: room.roomId });
+    return room;
+  } catch (error) {
+    console.error(`[${traceId}] Failed to join lobby:`, error);
     throw error;
   }
 }

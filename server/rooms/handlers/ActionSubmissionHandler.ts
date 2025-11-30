@@ -10,6 +10,7 @@ export interface ActionSubmissionHandlerDeps {
     logger: ReturnType<typeof createLogger>;
     rid: string;
     broadcast: (type: string, message?: any) => void;
+    onAllSubmitted: (client: Client) => Promise<void> | void;
 }
 
 /**
@@ -21,7 +22,7 @@ export interface ActionSubmissionHandlerDeps {
 export class ActionSubmissionHandler {
     constructor(private deps: ActionSubmissionHandlerDeps) {}
 
-    handleSubmitAction(client: Client, data: SubmitActionMessage): void {
+    async handleSubmitAction(client: Client, data: SubmitActionMessage): Promise<void> {
         const { state, stateManager, logger, rid, broadcast } = this.deps;
 
         const player = state.players.get(client.sessionId);
@@ -59,10 +60,14 @@ export class ActionSubmissionHandler {
                 } as any);
             } catch {}
 
-            // Check if all submitted (optional auto-advance logic could go here)
+            // Server-authoritative advance: if all submitted, immediately advance the round on server
             if (state.allSubmitted()) {
-                broadcast("all_submitted");
-                logger.info(rid, "All players submitted actions");
+                logger.info(rid, "All players submitted actions - advancing round on server");
+                try {
+                    await this.deps.onAllSubmitted(client);
+                } catch (e) {
+                    logger.error(rid, "onAllSubmitted failed", { error: e });
+                }
             }
         } else {
             client.send("error", { message: "Not enough action points" });

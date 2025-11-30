@@ -7,17 +7,24 @@ import { createServer } from 'http';
 import cors from 'cors';
 import { monitor } from '@colyseus/monitor';
 import { GameRoom } from './rooms/GameRoom';
+import { LobbyRoom } from 'colyseus';
 import * as Sentry from './instrument';
+import { slog, serr, swarn, createReqId } from './lib/logger';
+import { loadSecrets } from '../lib/infisical';
 
-console.log('[DEBUG] All imports complete');
+// Load secrets from Infisical before starting server
+(async () => {
+  await loadSecrets();
 
+  startServer();
+})();
+
+function startServer() {
 const portEnv = process.env.PORT;
 if (!portEnv) {
   throw new Error('[server] PORT env var is required. Set PORT (or run via scripts/dev-colyseus.mjs which injects it).');
 }
 const port = parseInt(portEnv, 10);
-const dev = process.env.NODE_ENV !== 'production';
-console.log(`[DEBUG] Port: ${port}, Dev: ${dev}`);
 
 const expressApp = express();
 
@@ -32,7 +39,7 @@ expressApp.use(cors({
             process.env.NEXT_PUBLIC_APP_URL
         ].filter(Boolean) as string[];
 
-        if (origin.includes('localhost') || origin.endsWith('.a.run.app')) {
+        if (origin.includes('localhost') || origin.endsWith('.a.run.app') || origin.endsWith('.vercel.app')) {
             return callback(null, true);
         }
 
@@ -47,7 +54,7 @@ expressApp.use(express.json());
 
 const server = createServer(expressApp);
 const gameServer = new Server({
-    server,  // Pass server directly to Server constructor
+    server,
 });
 
 // Proper CORS for Colyseus matchmaker (per docs)
@@ -60,9 +67,11 @@ const gameServer = new Server({
     };
 };
 
-gameServer.define('game', GameRoom)
-    .enableRealtimeListing()
-    .filterBy(['gameId']); // Allow filtering rooms by gameId - clients with same gameId join same room
+  gameServer.define('lobby', LobbyRoom);
+
+  gameServer.define('game', GameRoom)
+      .enableRealtimeListing()
+      .filterBy(['gameId']); // Allow filtering rooms by gameId - clients with same gameId join same room
 
 expressApp.use('/colyseus-admin', monitor());
 
@@ -70,33 +79,44 @@ expressApp.get('/healthz', (req: ExpressRequest, res: ExpressResponse) => {
     res.status(200).send('OK');
 });
 
-// Debug endpoint to test Sentry (remove in production or protect with auth)
-if (dev) {
-    expressApp.get('/debug-sentry', (req: ExpressRequest, res: ExpressResponse) => {
-        throw new Error('Sentry test error from /debug-sentry');
-    });
-}
+// SSR snapshot route (SSR-only): returns a sanitized snapshot of the live room state
+expressApp.get('/games/:gameId/snapshot', async (req: ExpressRequest, res: ExpressResponse) => {
+    const { gameId } = req.params as { gameId: string };
+    try {
+        // Find the room with this gameId via matchmaker query
+        const rooms = await matchMaker.query({ name: 'game', gameId });
+        if (!rooms || rooms.length === 0) {
+            return res.status(404).json({ error: 'game_not_found' });
+        }
+        const roomId = rooms[0].roomId;
+        const snapshot = await (matchMaker as any).remoteRoomCall(roomId, 'getSnapshot');
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json(snapshot || {});
+    } catch (err) {
+        console.error('[snapshot] error', err);
+        return res.status(500).json({ error: 'snapshot_failed' });
+    }
+});
 
 // Sentry error handler (safe no-op if not configured)
 if ((Sentry as any)?.Handlers?.errorHandler) {
     expressApp.use((Sentry as any).Handlers.errorHandler());
 }
 
-// When passing server directly to Server constructor, use gameServer.listen()
-console.log(`[DEBUG] About to call gameServer.listen(${port})`);
 gameServer.listen(port);
-console.log('[DEBUG] gameServer.listen() returned');
 
 // Graceful shutdown on signals
 process.on('SIGINT', () => {
-    console.log('[DEBUG] SIGINT received. Shutting down Colyseus...');
+    console.log('[server] SIGINT received. Shutting down Colyseus...');
     gameServer.gracefullyShutdown();
 });
 process.on('SIGTERM', () => {
-    console.log('[DEBUG] SIGTERM received. Shutting down Colyseus...');
+    console.log('[server] SIGTERM received. Shutting down Colyseus...');
     gameServer.gracefullyShutdown();
 });
 
-console.log(`🎮 Colyseus server ready on http://localhost:${port}`);
-console.log(`📊 Monitor: http://localhost:${port}/colyseus-admin`);
-console.log(`🏥 Health: http://localhost:${port}/healthz`);
+console.log(`\n🚀 Colyseus server listening on port ${port}`);
+console.log(`   🎮 WebSocket (Game): ws://localhost:${port}`);
+console.log(`   📊 Colyseus Monitor: http://localhost:${port}/colyseus-admin`);
+console.log(`   🏥 Health Check:     http://localhost:${port}/healthz\n`);
+}

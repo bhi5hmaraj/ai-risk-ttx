@@ -7,7 +7,11 @@ import type {
   PlayerRoundActions,
   AIHiddenScoreUpdate,
   GameSetup,
+  StakeholderData,
 } from '@/server/types/core';
+import type { MapSchema } from '@colyseus/schema';
+import type { Player as SchemaPlayer } from '@/server/rooms/schema/GameState';
+import { schemaPlayersToCore } from '@/server/rooms/adapters/stateAdapter';
 
 export const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
@@ -43,6 +47,13 @@ export function buildPlayersFromSetup(
     } satisfies Player;
   });
 }
+
+/**
+ * Build full roster from stakeholders and current Schema players.
+ * - Any role currently selected by a connected Schema player (non-empty role) becomes a Human seat (id=sessionId).
+ * - All remaining roles are filled with AI (ids ai_0..N).
+ */
+// buildRosterFromStakeholders moved to adapters/stateAdapter.ts
 
 function computeAvailableOptionsForPlayers(
   players: Player[],

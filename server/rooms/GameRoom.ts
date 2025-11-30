@@ -10,8 +10,8 @@ import {
 
 import { GameController } from "../services/GameController";
 import { StateManager } from "./adapters/stateManager";
-import { coreToSchema } from "./adapters/stateAdapter";
-import { buildPlayersFromSetup } from "../services/sessionEngine";
+import { coreToSchema, buildPlayersInitPayload, buildRolesInitPayloadFromStakeholders } from "./adapters/stateAdapter";
+import { RoleName, type StakeholderData } from "../types/core";
 import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from "../lib/roomCodeGenerator";
 
 // Import handlers
@@ -19,6 +19,7 @@ import { GameStartHandler } from "./handlers/GameStartHandler";
 import { RoundAdvanceHandler } from "./handlers/RoundAdvanceHandler";
 import { ActionSubmissionHandler } from "./handlers/ActionSubmissionHandler";
 import { PlayerManagementHandler } from "./handlers/PlayerManagementHandler";
+import { SeatRegistry } from "./services/SeatRegistry";
 
 /**
  * GameRoom - Colyseus multiplayer room for Simulacra game
@@ -38,10 +39,12 @@ export class GameRoom extends Room<GameState> {
     maxClients = 6;
     private logger!: ReturnType<typeof createLogger>;
     private rid!: string;
+    private initialStakeholders: StakeholderData[] | null = null;
 
     // Services
     private gameController: GameController;
     private stateManager!: StateManager;
+    private seats = new SeatRegistry();
 
     // Handlers
     private gameStartHandler!: GameStartHandler;
@@ -82,6 +85,10 @@ export class GameRoom extends Room<GameState> {
         // Store gameId in schema for client synchronization
         this.state.roomCode = gameId;
 
+        // Set room metadata for Colyseus matchmaker filtering
+        // This allows filterBy(['gameId']) to work correctly
+        this.setMetadata({ gameId });
+
         // Initialize StateManager with defaults and optional maxRounds from options
         this.stateManager = new StateManager({
             initialCoreMetricName: "Democratic Legitimacy",
@@ -89,28 +96,47 @@ export class GameRoom extends Room<GameState> {
             maxRounds: typeof options?.maxRounds === 'number' ? options.maxRounds : undefined,
         });
 
-        // If a GameSetup was provided (from lobby), seed full roster from scenario
+        // Create logger with roomId and gameId context, including service/env labels for unified logging
+        const envLabel = process.env.DEPLOY_ENV || (process.env.NODE_ENV === 'production' ? 'prod' : 'dev');
+        this.logger = createLogger({ service: 'game-server', env: envLabel, roomId: this.roomId, gameId: this.state.roomCode });
+
+        // Extract traceId from options if provided by client
+        const traceId = options.traceId || 'no-trace';
+        this.logger.info(this.rid, "Room created", { traceId, hasSetup: !!options?.gameSetup, stakeholders: options?.gameSetup?.stakeholders?.length || 0, role: options?.role, options: { name: options?.name, isHuman: options?.isHuman, traceId: options?.traceId } });
+
+        // If a GameSetup was provided, seed roster; otherwise fall back to a default roster
         try {
-            if (options?.gameSetup) {
-                const humanRoleName = options?.role || options?.humanRoleName;
-                const players = buildPlayersFromSetup(options.gameSetup, humanRoleName);
-                this.stateManager.setCorePlayers(players);
-                // Seed AI players into Schema with stable ids (keep human for onJoin)
-                players.filter(p => !p.isHuman).forEach((p) => {
-                    this.state.createPlayer(p.id, { name: p.role.name, role: p.role.name, isHuman: false });
-                });
-                this.logger.info(this.rid, "Seeded players from setup", { aiCount: players.filter(p => !p.isHuman).length, human: players.find(p => p.isHuman)?.role.name });
-                // Update core metric name/value from setup
-                const core = this.stateManager.getCoreState();
-                core.coreMetric = options.gameSetup.coreMetric || core.coreMetric;
-                // Initial projection to Schema
-                coreToSchema(core, this.state);
-            } else {
-                const coreState = this.stateManager.getCoreState();
-                coreToSchema(coreState, this.state);
+            const humanRoleName = options?.role || options?.humanRoleName;
+            let setup = options?.gameSetup;
+            if (!setup) {
+                const fallbackRoleNames = Object.values(RoleName) as string[];
+                setup = {
+                    scenarioTitle: "AI Election Crisis",
+                    scenarioDescription: "A fast-moving election scenario requiring coordination across stakeholders.",
+                    coreMetric: this.stateManager.getCoreState().coreMetric,
+                    stakeholders: fallbackRoleNames.map((name) => ({
+                        name,
+                        icon: "👤",
+                        publicObjective: "",
+                        hiddenObjective: "",
+                        resources: [],
+                        constraints: [],
+                    })),
+                    maxRounds: this.stateManager.getMaxRounds(),
+                } as any;
+                this.logger.info(this.rid, "Using fallback setup for roles (no gameSetup provided)", { count: fallbackRoleNames.length });
             }
+
+            // Store initial stakeholders for lobby projections; do NOT create AI players yet.
+            this.initialStakeholders = (setup?.stakeholders || []) as StakeholderData[];
+
+            // Sync initial projection to Schema (phase/round/metric/maxRounds)
+            const core = this.stateManager.getCoreState();
+            if (setup?.coreMetric) core.coreMetric = setup.coreMetric;
+            if (typeof setup?.maxRounds === 'number') (core as any).maxRounds = setup.maxRounds;
+            coreToSchema(core, this.state);
         } catch (e) {
-            this.logger?.warn?.(this.rid, 'Failed to seed players from setup', { error: e });
+            this.logger?.warn?.(this.rid, 'Failed to init from setup', { error: e });
             const coreState = this.stateManager.getCoreState();
             coreToSchema(coreState, this.state);
         }
@@ -118,12 +144,7 @@ export class GameRoom extends Room<GameState> {
         // Set maxRounds in schema from StateManager
         this.state.maxRounds = this.stateManager.getMaxRounds();
 
-        // Create logger with roomId and gameId context
-        this.logger = createLogger({ roomId: this.roomId, gameId: this.state.roomCode });
-
-        // Extract traceId from options if provided by client
-        const traceId = options.traceId || 'no-trace';
-        this.logger.info(this.rid, "Room created", { traceId, hasSetup: !!options?.gameSetup, stakeholders: options?.gameSetup?.stakeholders?.length || 0, role: options?.role, options: { name: options?.name, isHuman: options?.isHuman, traceId: options?.traceId } });
+        // (logger was created earlier)
 
         // Configure seat reservation timeout
         // Default is 3 seconds which is too short for Next.js dev mode + HMR
@@ -150,7 +171,13 @@ export class GameRoom extends Room<GameState> {
             broadcast: this.broadcast.bind(this)
         };
 
-        this.gameStartHandler = new GameStartHandler(baseDeps);
+        this.gameStartHandler = new GameStartHandler({
+            ...baseDeps,
+            getInitialStakeholders: () => this.initialStakeholders,
+            lockRoom: () => {
+                try { this.lock(); } catch {}
+            }
+        });
 
         this.roundAdvanceHandler = new RoundAdvanceHandler({
             ...baseDeps,
@@ -158,9 +185,22 @@ export class GameRoom extends Room<GameState> {
             roomId: this.roomId
         });
 
-        this.actionSubmissionHandler = new ActionSubmissionHandler(baseDeps as any);
+        this.actionSubmissionHandler = new ActionSubmissionHandler({
+            ...(baseDeps as any),
+            onAllSubmitted: async (client: Client) => {
+                try {
+                    await this.roundAdvanceHandler.handleAdvanceRound(client);
+                } catch (e) {
+                    this.logger.error(this.rid, 'Auto-advance on all-submitted failed', { error: e });
+                }
+            },
+        });
 
-        this.playerManagementHandler = new PlayerManagementHandler(baseDeps as any);
+        this.playerManagementHandler = new PlayerManagementHandler({
+            ...(baseDeps as any),
+            emitPlayersInit: () => this.broadcastAvailableRoles(),
+            seats: this.seats,
+        } as any);
     }
 
     /**
@@ -193,6 +233,16 @@ export class GameRoom extends Room<GameState> {
         this.onMessageZod("advance_round", AdvanceRoundSchema, async (client, data: AdvanceRoundMessage) => {
             await this.roundAdvanceHandler.handleAdvanceRound(client);
         });
+
+        // Request re-broadcast of available roles
+        this.onMessage("request_roles", (client) => {
+            this.logger.info(this.rid, "request_roles received", { clientId: client.sessionId });
+            try {
+                this.broadcastAvailableRoles(client);
+            } catch (e) {
+                this.logger.warn(this.rid, "request_roles failed", { error: e });
+            }
+        });
     }
 
     /**
@@ -217,23 +267,16 @@ export class GameRoom extends Room<GameState> {
 
         this.playerManagementHandler.handlePlayerJoin(client, options);
 
-        // After first player joins, send players_init with role objectives to all clients
-        try {
-            const corePlayers = this.stateManager.getCorePlayers();
-            const payload = {
-                players: corePlayers.map(p => ({
-                    id: p.id,
-                    role: {
-                        name: p.role.name,
-                        publicObjective: p.role.publicObjective,
-                        hiddenObjective: p.role.hiddenObjective,
-                        resources: p.role.resources,
-                        constraints: p.role.constraints,
-                    }
-                }))
-            };
-            this.broadcast('players_init', payload);
-        } catch {}
+        // Host assignment logic:
+        // - Prefer explicit host intent (SPA Create Game flow)
+        // - Fallback: if join carried a GameSetup (old lobby flow)
+        if (!this.state.hostId && (options?.isHost === true || options?.gameSetup)) {
+            this.state.hostId = client.sessionId;
+            this.logger.info(this.rid, "Assigned hostId", { clientId: client.sessionId, reason: options?.isHost ? 'host_intent' : 'game_setup' });
+        }
+
+        // After join, send available roles to all clients
+        this.broadcastAvailableRoles(client);
     }
 
     async onLeave(client: Client, consented: boolean) {
@@ -273,5 +316,53 @@ export class GameRoom extends Room<GameState> {
         this.logger.info(this.rid, "Room disposing", {
             roomId: this.roomId,
         });
+    }
+
+    // Read-only snapshot for SSR/admin. Do not mutate state here.
+    // Returns a sanitized view of the current game state.
+    getSnapshot() {
+        try {
+            const core = this.stateManager.getCoreState();
+            const corePlayers = this.stateManager.getCorePlayers();
+            const players = corePlayers.map(p => ({
+                id: p.id,
+                role: p.role?.name || '',
+                isHuman: !!p.isHuman,
+            }));
+            return {
+                gameId: this.state.roomCode || this.roomId,
+                stateVersion: core.eventLog?.length ?? 0,
+                phase: core.phase,
+                round: core.round,
+                coreMetric: core.coreMetric,
+                players,
+                deadlineAt: undefined,
+            };
+        } catch (e) {
+            this.logger?.error?.(this.rid, 'getSnapshot failed', { error: e });
+            return { gameId: this.state.roomCode || this.roomId, phase: this.state.phase, round: this.state.round };
+        }
+    }
+
+    // Helper: compute and broadcast available roles (players_init payload)
+    private broadcastAvailableRoles(client?: Client) {
+        try {
+            const isLobby = this.state.phase === 'lobby';
+            let payload: any;
+            if (isLobby && this.initialStakeholders && this.initialStakeholders.length > 0) {
+                payload = buildRolesInitPayloadFromStakeholders(this.state, this.initialStakeholders);
+            } else {
+                const corePlayers = this.stateManager.getCorePlayers();
+                payload = buildPlayersInitPayload(this.state, corePlayers);
+            }
+            this.logger.info(this.rid, "Broadcasting players_init", {
+                clientId: client?.sessionId,
+                playerCount: payload.players.length,
+                roles: payload.players.map((p: any) => `${p.role.name}${p.isTaken ? ' (taken)' : ''}`)
+            });
+            this.broadcast('players_init', payload);
+        } catch (e) {
+            this.logger.warn(this.rid, "Failed to broadcast players_init", { error: e });
+        }
     }
 }

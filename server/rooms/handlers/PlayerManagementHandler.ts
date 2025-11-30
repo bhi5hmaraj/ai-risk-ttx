@@ -2,12 +2,17 @@ import { Client } from "colyseus";
 import type { GameState } from "../schema/GameState";
 import type { StateManager } from "../adapters/stateManager";
 import type { createLogger } from "../../lib/logger";
+import { buildPlayersInitPayload } from "../adapters/stateAdapter";
+import type { SeatRegistry } from "../../rooms/services/SeatRegistry";
 
 export interface PlayerManagementHandlerDeps {
     state: GameState;
     stateManager: StateManager;
     logger: ReturnType<typeof createLogger>;
     rid: string;
+    broadcast: (type: string, message?: any) => void;
+    emitPlayersInit: () => void; // delegate to GameRoom to broadcast roster
+    seats: SeatRegistry;
 }
 
 /**
@@ -20,7 +25,7 @@ export class PlayerManagementHandler {
     constructor(private deps: PlayerManagementHandlerDeps) {}
 
     handlePlayerJoin(client: Client, options: any): void {
-        const { state, stateManager, logger, rid } = this.deps;
+        const { state, stateManager, logger, rid, seats } = this.deps;
 
         logger.info(rid, "Client joined", {
             sessionId: client.sessionId,
@@ -38,6 +43,16 @@ export class PlayerManagementHandler {
             role: roleName,
             isHuman: options.isHuman ?? true,
         });
+
+        // Reserve seat if role provided; if seat is taken by another, clear role in Schema.
+        if (roleName && roleName.trim()) {
+            const res = seats.reserve(roleName, client.sessionId);
+            if (!res.ok) {
+                const schemaPlayer = state.players.get(client.sessionId);
+                if (schemaPlayer) schemaPlayer.role = '';
+                this.deps.broadcast('error', { message: 'role_taken', role: roleName });
+            }
+        }
 
         // If StateManager already seeded a 'human_player', remap it to this session id.
         try {
@@ -66,7 +81,7 @@ export class PlayerManagementHandler {
     }
 
     handlePlayerLeave(client: Client, consented: boolean): void {
-        const { state, stateManager, logger, rid } = this.deps;
+        const { state, stateManager, logger, rid, seats } = this.deps;
 
         logger.info(rid, "Client left", {
             sessionId: client.sessionId,
@@ -74,7 +89,8 @@ export class PlayerManagementHandler {
             consented,
         });
 
-        // Remove from Schema (network sync)
+        // Release seat and remove from Schema (network sync)
+        try { seats.releaseBySession(client.sessionId); } catch {}
         state.removePlayer(client.sessionId);
 
         // Remove from StateManager (Core state)
@@ -82,13 +98,38 @@ export class PlayerManagementHandler {
     }
 
     handleSetRole(client: Client, role: string, name?: string): void {
-        const { state, logger, rid } = this.deps;
+        const { state, stateManager, logger, rid, broadcast, seats } = this.deps;
 
         const player = state.players.get(client.sessionId);
         if (player) {
+            // Release previous seat if any (for this session)
+            const prev = seats.getRoleBySession(client.sessionId);
+            if (prev && prev !== role) {
+                seats.releaseBySession(client.sessionId);
+            }
+            // Try reserve new seat
+            const res = seats.reserve(role, client.sessionId);
+            if (!res.ok) {
+                logger.warn(rid, 'Role claim denied (taken)', { playerId: client.sessionId, role });
+                client.send('error', { message: 'role_taken', role });
+                return;
+            }
+
             player.role = role;
             if (name) player.name = name;
             logger.info(rid, "Role set", { playerId: client.sessionId, role });
+            try {
+                const snapshot = seats.snapshot();
+                logger.info(rid, 'Seats snapshot', snapshot as any);
+            } catch {}
+
+            // After setting role, rebroadcast available roles via GameRoom helper (single source of truth)
+            try {
+                this.deps.emitPlayersInit();
+                logger.info(rid, "Rebroadcasted players_init after role set");
+            } catch (e) {
+                logger.warn(rid, "Failed to rebroadcast players_init after role set", { error: e });
+            }
         }
     }
 }

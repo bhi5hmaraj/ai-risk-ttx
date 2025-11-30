@@ -33,6 +33,8 @@ export class GameState extends Schema {
     @type("string") phase: string = "lobby"; // lobby | action | consequence | end
     @type("number") round: number = 0;
     @type("number") maxRounds: number = 5;
+    // Host control
+    @type("string") hostId: string = ""; // sessionId of host (empty until assigned)
 
     // Metrics
     @type("number") publicScore: number = 75;
@@ -62,9 +64,10 @@ export class GameState extends Schema {
         });
     }
 
-    // NEW: Check if all connected players have submitted
+    // NEW: Check if all connected HUMAN players have submitted
+    // AI players are generated server-side and should not block auto-advance.
     allSubmitted(): boolean {
-        const activePlayers = Array.from(this.players.values()).filter(p => p.connected);
+        const activePlayers = Array.from(this.players.values()).filter(p => p.connected && p.isHuman);
         if (activePlayers.length === 0) return false;
         return activePlayers.every(p => p.hasSubmitted);
     }

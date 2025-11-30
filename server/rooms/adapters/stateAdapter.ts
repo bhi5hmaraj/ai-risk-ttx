@@ -17,8 +17,9 @@
  */
 
 import { GameState as ColyseusGameState, Player as ColyseusPlayer } from "../schema/GameState";
-import { GameState as CoreGameState, Player as CorePlayer, GamePhase } from "../../types/core";
+import { GameState as CoreGameState, Player as CorePlayer, GamePhase, type StakeholderData } from "../../types/core";
 import { MapSchema } from "@colyseus/schema";
+import { GAME_CONFIG } from "@/gameConfig";
 
 /**
  * Convert Colyseus Schema → Core GameState
@@ -43,6 +44,7 @@ export function schemaToCore(
         },
         eventLog: options.eventLog ?? [],
         currentEvent: options.currentEvent ?? null,
+        hostId: (schema as any).hostId || undefined,
     };
 }
 
@@ -59,14 +61,17 @@ export function schemaPlayerToCore(
         hiddenScore?: number;
     } = {}
 ): CorePlayer {
+    const roleName = player.role || '';
+    // Always trust schema for the role name; only merge details when names match
+    const roleFromEnrichment = (options.fullRole && options.fullRole.name === roleName) ? options.fullRole : undefined;
     return {
         id: player.sessionId,
-        role: options.fullRole ?? {
-            name: player.role,
-            publicObjective: '',
-            hiddenObjective: '',
-            resources: [],
-            constraints: [],
+        role: {
+            name: roleName,
+            publicObjective: roleFromEnrichment?.publicObjective ?? '',
+            hiddenObjective: roleFromEnrichment?.hiddenObjective ?? '',
+            resources: roleFromEnrichment?.resources ?? [],
+            constraints: roleFromEnrichment?.constraints ?? [],
         },
         isHuman: player.isHuman,
         actionPoints: player.actionPoints,
@@ -89,6 +94,7 @@ export function coreToSchema(
     schema.round = core.round;
     schema.publicScore = core.coreMetric.value;
     schema.coreMetricName = core.coreMetric.name;
+    if ((core as any).hostId) (schema as any).hostId = (core as any).hostId as any;
 
     // Sync maxRounds if present in core state
     if ('maxRounds' in core && typeof (core as any).maxRounds === 'number') {
@@ -139,6 +145,77 @@ export function schemaPlayersToCore(
 }
 
 /**
+ * Build full roster at game start from stakeholders + current Schema players.
+ * - Human seats: any Schema player with a non-empty role becomes a human seat (id=sessionId).
+ * - AI seats: all remaining roles become AI players (ai_0..N).
+ */
+export function buildRosterFromStakeholders(
+  stakeholders: StakeholderData[],
+  schemaPlayers: MapSchema<ColyseusPlayer>
+): CorePlayer[] {
+  const stakeholderByName = new Map(stakeholders.map((s) => [s.name, s]));
+
+  // Enrich Schema players with full role info from stakeholders
+  const enrichment = new Map<string, { fullRole?: CorePlayer['role'] }>();
+  schemaPlayers.forEach((sp) => {
+    if (sp?.role && sp.role.trim()) {
+      const s = stakeholderByName.get(sp.role);
+      if (s) {
+        enrichment.set(sp.sessionId, {
+          fullRole: {
+            name: s.name,
+            publicObjective: s.publicObjective,
+            hiddenObjective: s.hiddenObjective,
+            resources: s.resources ?? [],
+            constraints: s.constraints ?? [],
+          },
+        });
+      }
+    }
+  });
+
+  const coreFromSchema = schemaPlayersToCore(schemaPlayers, enrichment as any);
+  const humanTaken = new Set(
+    coreFromSchema
+      .filter((p) => p.isHuman && p.role?.name)
+      .map((p) => p.role.name)
+  );
+
+  // Normalize human players (initial AP, clear actions/flags)
+  const humans: CorePlayer[] = coreFromSchema
+    .filter((p) => p.isHuman && p.role?.name)
+    .map((p) => ({
+      ...p,
+      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
+      actions: [],
+      hasSubmittedActions: false,
+      hiddenScore: p.hiddenScore ?? 0,
+    }));
+
+  // Fill remaining roles with AI players
+  let aiIndex = 0;
+  const aiSeats: CorePlayer[] = stakeholders
+    .filter((s) => !humanTaken.has(s.name))
+    .map((s) => ({
+      id: `ai_${aiIndex++}`,
+      role: {
+        name: s.name,
+        publicObjective: s.publicObjective,
+        hiddenObjective: s.hiddenObjective,
+        resources: s.resources ?? [],
+        constraints: s.constraints ?? [],
+      },
+      isHuman: false,
+      hiddenScore: 0,
+      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
+      actions: [],
+      hasSubmittedActions: false,
+    } as CorePlayer));
+
+  return [...humans, ...aiSeats];
+}
+
+/**
  * Round-trip verification (for testing)
  */
 export function verifyRoundTrip(
@@ -159,4 +236,61 @@ export function verifyRoundTrip(
     }
 
     return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Build players_init payload from Core players + Schema connections.
+ * Marks `isTaken` for roles that are already assigned in the Schema player map.
+ */
+export function buildPlayersInitPayload(
+  schema: ColyseusGameState,
+  corePlayers: CorePlayer[]
+): { players: { id: string; role: { name: string; publicObjective: string; hiddenObjective: string; resources: string[]; constraints: string[] }; isTaken: boolean }[] } {
+  const taken = new Set<string>();
+  schema.players.forEach((sp) => {
+    if (sp.role && sp.role.trim()) taken.add(sp.role);
+  });
+  return {
+    players: corePlayers.map((p) => ({
+      id: p.id,
+      role: {
+        name: p.role.name,
+        publicObjective: p.role.publicObjective,
+        hiddenObjective: p.role.hiddenObjective,
+        resources: p.role.resources,
+        constraints: p.role.constraints,
+      },
+      isTaken: taken.has(p.role.name),
+    })),
+  };
+}
+
+/**
+ * Build players_init payload from a stakeholders list (roles catalog) without creating Core players.
+ * Used during lobby before AI/human roster is materialized.
+ */
+
+export function buildRolesInitPayloadFromStakeholders(
+  schema: ColyseusGameState,
+  stakeholders: StakeholderData[]
+): { players: { id: string; role: { name: string; publicObjective: string; hiddenObjective: string; resources: string[]; constraints: string[] }; isTaken: boolean }[] } {
+  const taken = new Set<string>();
+  schema.players.forEach((sp) => {
+    if (sp.role && sp.role.trim()) taken.add(sp.role);
+  });
+  return {
+    players: stakeholders
+      .filter((s) => s?.name && s.name.trim())
+      .map((s, idx) => ({
+        id: `role_${idx}`,
+        role: {
+          name: s.name,
+          publicObjective: s.publicObjective || '',
+          hiddenObjective: s.hiddenObjective || '',
+          resources: s.resources || [],
+          constraints: s.constraints || [],
+        },
+        isTaken: taken.has(s.name),
+      })),
+  };
 }

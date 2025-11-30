@@ -2,7 +2,7 @@ import { Client } from "colyseus";
 import type { GameState } from "../schema/GameState";
 import type { StateManager } from "../adapters/stateManager";
 import type { createLogger } from "../../lib/logger";
-import { GamePhase } from "../../types/core";
+import { GamePhase, type StakeholderData } from "../../types/core";
 import * as llmService from "../../services/llmService";
 import { createGameSession } from "../../services/chatSession";
 import type { GameChatSession } from "../../services/chatSession";
@@ -16,6 +16,8 @@ export interface GameStartHandlerDeps {
     logger: ReturnType<typeof createLogger>;
     rid: string;
     broadcast: (type: string, message?: any) => void;
+    getInitialStakeholders?: () => StakeholderData[] | null;
+    lockRoom?: () => void;
 }
 
 /**
@@ -42,11 +44,41 @@ export class GameStartHandler {
             return;
         }
 
+        // Enforce host-only start
+        const hostId = (state as any).hostId || '';
+        if (!hostId || client.sessionId !== hostId) {
+            logger.warn(rid, "start_game denied: not host", { clientId: client.sessionId, hostId });
+            client.send("error", { message: "Only the host can start the game" });
+            return;
+        }
+
+        // Preflight: ensure ALL connected human players have selected a role
+        const players = Array.from(state.players.values());
+        const connectedHumans = players.filter(p => p.connected && p.isHuman);
+        const readyHumans = connectedHumans.filter(p => p.role && p.role.trim());
+        logger.info(rid, "start_preflight", {
+            connectedHumans: connectedHumans.length,
+            readyHumans: readyHumans.length,
+            awaiting: connectedHumans.filter(p => !p.role || !p.role.trim()).map(p => ({ id: p.sessionId, name: p.name }))
+        });
+        if (connectedHumans.length > 0 && readyHumans.length !== connectedHumans.length) {
+            client.send("error", { message: "All connected players must choose a role before starting" });
+            return;
+        }
+
         logger.info(rid, "Starting game - generating initial scenario...", { initiatedBy: client.sessionId });
 
         try {
             // 1. Get current Core state and players from StateManager
             const coreState = stateManager.getCoreState();
+
+            // Seed roster from initial stakeholders now (AI created on start only)
+            const stakeholders = this.deps.getInitialStakeholders?.() || [];
+            if (stakeholders && stakeholders.length > 0) {
+                const { buildRosterFromStakeholders } = await import('../adapters/stateAdapter');
+                const roster = buildRosterFromStakeholders(stakeholders, this.deps.state.players as any);
+                stateManager.setCorePlayers(roster);
+            }
             const corePlayers = stateManager.getCorePlayers();
 
             // 2. Create GameSetup for chat session initialization
@@ -83,14 +115,37 @@ export class GameStartHandler {
             stateManager.setCoreState(newState);
             stateManager.setCorePlayers(newPlayers);
 
+            // Roster summary for quick diagnostics
+            try {
+                const humanCount = newPlayers.filter(p => p.isHuman).length;
+                const aiCount = newPlayers.length - humanCount;
+                const roles = newPlayers.map(p => `${p.role.name}${p.isHuman ? ' (H)' : ' (AI)'}`);
+                logger.info(rid, 'Roster summary after start', {
+                    total: newPlayers.length,
+                    humans: humanCount,
+                    ai: aiCount,
+                    roles,
+                });
+            } catch {}
+
             // 7. Project Core → Schema (broadcast to clients)
             coreToSchema(newState, state);
 
-            // Update players in Schema
+            // Add all players to Schema (AI players + human)
+            // Human players are already in Schema from lobby, AI players need to be created
             for (const corePlayer of newPlayers) {
                 const schemaPlayer = state.players.get(corePlayer.id);
                 if (schemaPlayer) {
+                    // Update existing player (human player from lobby)
                     corePlayerToSchema(corePlayer, schemaPlayer);
+                } else {
+                    // Create new player (AI players that weren't in Schema during lobby)
+                    state.createPlayer(corePlayer.id, {
+                        name: corePlayer.role.name,
+                        role: corePlayer.role.name,
+                        isHuman: corePlayer.isHuman,
+                    });
+                    logger.info(rid, "Added AI player to Schema", { playerId: corePlayer.id, role: corePlayer.role.name });
                 }
             }
 
@@ -113,6 +168,9 @@ export class GameStartHandler {
                 round: state.round,
                 phase: state.phase
             });
+
+            // Lock room to prevent late joins (Warden-style)
+            try { this.deps.lockRoom?.(); } catch {}
 
         } catch (error) {
             logger.error(rid, "Failed to start game", {

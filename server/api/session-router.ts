@@ -1,3 +1,7 @@
+/**
+ * TODO[deprecate]: Legacy Session/SSE router used by app/api/session/[[...parts]].
+ * Not used by Colyseus multiplayer; scheduled for removal once Colyseus is stable in prod.
+ */
 import { z } from 'zod';
 import {
   PatchSessionRequestSchema,

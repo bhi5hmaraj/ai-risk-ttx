@@ -99,6 +99,7 @@ export interface GameState {
   coreMetric: CoreMetric;
   eventLog: GameLogEntry[];
   currentEvent: GameEvent | null;
+  hostId?: string; // sessionId of host; projection from Schema
 }
 
 export interface AIConsequenceResponse {

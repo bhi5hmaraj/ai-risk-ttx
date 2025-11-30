@@ -12,7 +12,7 @@ export interface GameControllerDeps {
 }
 
 export class GameController {
-    private logger = createLogger({ service: "GameController" });
+    private logger = createLogger({ service: "game-server", component: "GameController", env: (process.env.DEPLOY_ENV || (process.env.NODE_ENV === 'production' ? 'prod' : 'dev')) });
 
     constructor(private deps: GameControllerDeps = { llm: llmService, getMaxRounds: () => 8 }) {
         if (!this.deps.llm) this.deps.llm = llmService;
