@@ -1,0 +1,73 @@
+# Promtail configuration for unified logging
+# Reads from Docker container logs (stdout) and ships to Loki
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  # Dev: local Loki instance
+  - url: http://loki:3100/loki/api/v1/push
+
+  # Prod example (uncomment and update for production):
+  # - url: https://your-loki-instance.com/loki/api/v1/push
+  #   basic_auth:
+  #     username: <loki-username>
+  #     password: <loki-password>
+
+scrape_configs:
+  # Scrape Docker container logs
+  - job_name: containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+
+    relabel_configs:
+      # Extract container name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+
+      # Extract compose service name (if using docker-compose)
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
+      # Extract env label (dev/staging/prod)
+      - source_labels: ['__meta_docker_container_label_app_env']
+        target_label: 'env'
+
+      # Extract app label
+      - source_labels: ['__meta_docker_container_label_app_name']
+        target_label: 'app'
+
+    # Parse JSON logs
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            timestamp: time
+            rid: rid
+            traceId: traceId
+            gameId: gameId
+            roomId: roomId
+            round: round
+            phase: phase
+
+      # Use log's timestamp if available
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+      # Add level as a label for easy filtering
+      - labels:
+          level:
+          gameId:
+          roomId:
+          phase:

@@ -1,0 +1,63 @@
+# Docker Compose for unified logging stack
+# Usage: docker-compose -f docker-compose.logging.yml up -d
+#
+# This sets up:
+# - Loki: log aggregation storage
+# - Promtail: log shipper (reads from Docker containers)
+# - Grafana: log visualization UI
+#
+# Your application containers should have labels:
+#   logging: promtail
+#   app.env: dev
+#   app.name: simulacra
+
+version: '3.8'
+
+services:
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - logging
+
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: promtail
+    volumes:
+      # Mount Docker socket to read container logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount promtail config
+      - ./promtail-config.yaml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - logging
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: grafana
+    ports:
+      - "3500:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      # Provision Loki as datasource
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    depends_on:
+      - loki
+    networks:
+      - logging
+
+networks:
+  logging:
+    driver: bridge
+
+volumes:
+  grafana-storage:
