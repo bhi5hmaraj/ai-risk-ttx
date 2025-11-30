@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { spawn, exec } from 'node:child_process';
 import { config as loadEnv } from 'dotenv';
-import { existsSync } from 'node:fs';
+import { existsSync, createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import readline from 'node:readline';
 
 const execAsync = promisify(exec);
+
+// Check for --logs flag
+const enableLogs = process.argv.includes('--logs');
 
 // Save the PORT from command line BEFORE loading .env.local
 const commandLinePort = process.env.PORT;
@@ -93,7 +96,35 @@ async function main() {
     PORT: port,
     DEBUG: 'colyseus:*'
   };
-  const child = spawn('tsx', ['server/index.ts'], { stdio: 'inherit', env });
+
+  // Configure stdio and logging based on --logs flag
+  let child;
+  if (enableLogs) {
+    // Create timestamped log file
+    const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+    const logFile = join('/tmp', `colyseus-${timestamp}.log`);
+    const logStream = createWriteStream(logFile, { flags: 'a' });
+
+    console.log(`[dev-colyseus] Logging to: ${logFile}`);
+
+    // Spawn with piped stdout/stderr
+    child = spawn('tsx', ['server/index.ts'], {
+      stdio: ['inherit', 'pipe', 'pipe'],
+      env
+    });
+
+    // Pipe output to both console and log file
+    child.stdout.pipe(process.stdout);
+    child.stdout.pipe(logStream);
+    child.stderr.pipe(process.stderr);
+    child.stderr.pipe(logStream);
+  } else {
+    // Normal mode - output to console only
+    child = spawn('tsx', ['server/index.ts'], {
+      stdio: 'inherit',
+      env
+    });
+  }
 
   child.on('exit', (code) => process.exit(code ?? 0));
 }

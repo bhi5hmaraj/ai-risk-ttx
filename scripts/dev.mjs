@@ -2,18 +2,25 @@
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { config as loadEnv } from 'dotenv';
-import { existsSync } from 'node:fs';
+import { existsSync, createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 
 const args = process.argv.slice(2);
 const isMock = args.includes('--mock-llm') || args.includes('--mock') || args.includes('--llm-mode=mock');
+const enableLogs = args.includes('--logs');
 const roundsIdx = args.findIndex((a) => a === '--rounds');
 const aiIdx = args.findIndex((a) => a === '--ai' || a === '--ai-players');
 const backendIdx = args.findIndex((a) => a === '--backend' || a === '--backend-state');
+const tagIdx = args.findIndex((a) => a === '--tag' || a === '-t');
+
+// Extract log tag if provided
+const logTag = tagIdx !== -1 && args[tagIdx + 1] ? args[tagIdx + 1] : null;
 
 // Strip our custom flags before forwarding to Next.js
 const forward = args.filter((a, i) => {
   if (a === '--mock-llm' || a === '--mock' || a === '--llm-mode=mock') return false;
+  if (a === '--logs') return false;
+  if (i === tagIdx || i === tagIdx + 1) return false;
   if (i === roundsIdx || i === roundsIdx + 1) return false;
   if (i === aiIdx || i === aiIdx + 1) return false;
   if (i === backendIdx) return false;
@@ -34,6 +41,27 @@ if (isMock) {
   env.LLM_MOCK = '1';
   env.LLM_MODE = 'mock';
   console.log('[dev] Mock LLM mode enabled');
+}
+
+if (enableLogs) {
+  env.LOG_TO_FILE = 'true';
+  env.NEXT_PUBLIC_LOG_TO_FILE = 'true';
+
+  // Pass log tag to loggers
+  if (logTag) {
+    env.LOG_TAG = logTag;
+    env.NEXT_PUBLIC_LOG_TAG = logTag;
+    console.log(`[dev] File logging enabled with tag: ${logTag}`);
+  } else {
+    // Generate default timestamp-based tag in IST
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istDate = new Date(now.getTime() + istOffset);
+    const timestamp = istDate.toISOString().replace(/:/g, '-').split('.')[0]; // YYYY-MM-DDTHH-MM-SS
+    env.LOG_TAG = timestamp;
+    env.NEXT_PUBLIC_LOG_TAG = timestamp;
+    console.log(`[dev] File logging enabled with auto-tag (IST): ${timestamp}`);
+  }
 }
 
 if (roundsIdx !== -1 && args[roundsIdx + 1]) {
