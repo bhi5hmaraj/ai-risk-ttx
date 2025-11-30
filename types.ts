@@ -16,6 +16,7 @@ export interface RoleData {
   resources: string[];
   constraints: string[];
   icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactNode;
+  taken?: boolean; // UI hint: dynamically freeze roles selected by others
 }
 
 // Re-export Player with React-aware RoleData

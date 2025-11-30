@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:colyseus": "node scripts/dev-colyseus.mjs",
+    "dev:monolith": "node scripts/dev-monolith.mjs",
     "build:analyze": "ANALYZE=true next build",
     "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "dev:mock": "node scripts/dev.mjs --mock-llm",
@@ -31,7 +31,9 @@
     "test:redis": "node scripts/test-redis.mjs",
     "type-check": "tsc --noEmit",
     "coverage:readme": "node scripts/update-coverage-readme.mjs",
-    "metrics": "pnpm run test:coverage && pnpm run type-check && pnpm run coverage:readme"
+    "metrics": "pnpm run test:coverage && pnpm run type-check && pnpm run coverage:readme",
+    "logs:view": "node scripts/view-logs.mjs",
+    "logs:follow": "node scripts/view-logs.mjs --follow"
   },
   "dependencies": {
     "@ag-ui/core": "^0.0.41",
@@ -43,6 +45,7 @@
     "@copilotkit/react-ui": "^1.10.6",
     "@copilotkit/runtime": "^1.10.6",
     "@copilotkit/shared": "^1.10.6",
+    "@infisical/sdk": "^4.0.6",
     "@prisma/client": "^6.17.1",
     "@sentry/node": "^10.27.0",
     "@upstash/redis": "^1.35.6",
@@ -56,6 +59,8 @@
     "hono": "^4.10.3",
     "next": "^15.5.6",
     "openai": "^4.76.0",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
     "react": "^19.1.0",
     "react-cytoscapejs": "2.0.0",
     "react-dom": "^19.1.0",
