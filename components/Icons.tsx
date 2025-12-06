@@ -2,12 +2,16 @@ import React from 'react';
 
 const stroke = 'currentColor';
 
-export const LoadingSpinner = () => (
-  <svg className="h-6 w-6 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="9" stroke={stroke} strokeWidth="4" strokeOpacity="0.2" />
-    <path d="M21 12a9 9 0 0 0-9-9" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
-  </svg>
-);
+export const LoadingSpinner = (props: React.SVGProps<SVGSVGElement>) => {
+  const { className, ...rest } = props;
+  const cls = `${className ?? 'h-6 w-6'} animate-spin text-blue-400`;
+  return (
+    <svg className={cls} viewBox="0 0 24 24" fill="none" {...rest}>
+      <circle cx="12" cy="12" r="9" stroke={stroke} strokeWidth="4" strokeOpacity="0.2" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+};
 
 export const CheckCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.8} {...props}>

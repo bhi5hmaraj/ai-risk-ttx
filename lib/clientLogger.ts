@@ -18,9 +18,9 @@ interface LogEntry {
  * - Limits arrays to first 5 items
  * - Limits strings to 500 characters
  */
-function truncateData(data: any, depth = 0, maxDepth = 3): any {
-  const MAX_STRING_LENGTH = 500;
-  const MAX_ARRAY_ITEMS = 5;
+function truncateData(data: any, depth = 0, maxDepth = 5): any {
+  const MAX_STRING_LENGTH = 1000;
+  const MAX_ARRAY_ITEMS = 10;
 
   if (data === null || data === undefined) return data;
 

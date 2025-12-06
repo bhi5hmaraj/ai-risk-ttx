@@ -27,6 +27,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { useActionStore } from '@/stores/actionStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { logger } from '@/lib/clientLogger';
+import { useWaitingStore } from '@/stores/waitingStore';
 
 type Utils = {
   setState: (s: ColyseusGameState) => void;
@@ -129,6 +130,16 @@ export function registerGameRoomListeners(room: Room<ColyseusGameState>, utils: 
       logger.info('[Colyseus] players_init applied', { rolesCount: roles.length });
     } catch (e) {
       console.warn('[Colyseus] players_init failed', e);
+    }
+  });
+
+  // Waiting status (server-authoritative)
+  room.onMessage('waiting_status', (payload: any) => {
+    try {
+      useWaitingStore.getState().setStatus(payload);
+      logger.info('[Colyseus] waiting_status applied', { humans: payload?.humans?.length, ai: payload?.ai?.length, allReady: payload?.allReady });
+    } catch (e) {
+      console.warn('[Colyseus] waiting_status failed', e);
     }
   });
 

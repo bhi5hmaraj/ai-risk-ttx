@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { GameState, GameLogEntry, ActionOption, Player } from '../../types';
+import { useWaitingStore } from '@/stores/waitingStore';
 import { CauseTag } from './CauseTag';
 import { LoadingSpinner, CheckCircleIcon } from '../Icons';
 import { useRotatingJoke } from '@/lib/loadingJokes';
@@ -51,8 +52,13 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   // Action selection state and logic
   const [selected, setSelected] = useState<ActionOption[]>([]);
   const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
+  const waiting = useWaitingStore((s) => s.status);
+  // Fallbacks if waiting_status not yet received
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
-  const allAIsDone = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+  const otherHumans = useMemo(() => players.filter((p) => p.isHuman && (p as any).id !== (humanPlayer as any)?.id), [players, humanPlayer]);
+  const allAIsDoneFallback = useMemo(() => aiPlayers.every((p) => aiCompletionStatus[p.role.name]), [aiPlayers, aiCompletionStatus]);
+  const allHumansSubmittedFallback = useMemo(() => otherHumans.every((p: any) => p.hasSubmittedActions), [otherHumans]);
+  const everyoneReadyFallback = allAIsDoneFallback && allHumansSubmittedFallback;
   const confirmDisabled = isLoading || isPaused;
   const joke = useRotatingJoke(4000);
 
@@ -182,26 +188,32 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   </div>
                 </div>
               )}
-              <h3 className="text-sm font-bold mb-2">{allAIsDone ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
-              {!allAIsDone && (
+              <h3 className="text-sm font-bold mb-2">{(waiting?.allReady ?? everyoneReadyFallback) ? 'Generating next scenario...' : 'Waiting for Opponents...'}</h3>
+              {!(waiting?.allReady ?? everyoneReadyFallback) && (
                 <div className="flex flex-wrap gap-2 justify-center mb-2">
-                  {aiPlayers.map((player) => {
-                    const isComplete = aiCompletionStatus[player.role.name];
+                  {/* Humans (other than me) */}
+                  {(waiting?.humans || otherHumans).filter((h: any) => (h.id ?? (h as any).id) !== (humanPlayer as any)?.id).map((player: any) => {
+                    const isComplete = waiting ? !!player.submitted : !!player.hasSubmittedActions;
                     return (
-                      <div
-                        key={player.id}
-                        className={`flex items-center px-2 py-1 rounded-lg transition-all duration-300 ${
-                          isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'
-                        }`}
-                      >
+                      <div key={player.id} className={`flex items-center px-2 py-1 rounded-lg ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
                         {isComplete ? <CheckCircleIcon className="h-4 w-4 text-green-400 mr-1.5" /> : <LoadingSpinner />}
-                        <span className={`text-xs ${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{player.role.name}</span>
+                        <span className={`text-xs ${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{waiting ? player.role : player.role.name}</span>
+                      </div>
+                    );
+                  })}
+                  {/* AIs */}
+                  {(waiting?.ai || aiPlayers).map((player: any) => {
+                    const isComplete = waiting ? !!player.done : aiCompletionStatus[player.role.name];
+                    return (
+                      <div key={player.id} className={`flex items-center px-2 py-1 rounded-lg ${isComplete ? 'bg-green-800/50 border border-green-700' : 'bg-gray-700/50'}`}>
+                        {isComplete ? <CheckCircleIcon className="h-4 w-4 text-green-400 mr-1.5" /> : <LoadingSpinner />}
+                        <span className={`text-xs ${isComplete ? 'text-gray-300' : 'text-gray-400'}`}>{waiting ? player.role : player.role.name}</span>
                       </div>
                     );
                   })}
                 </div>
               )}
-              {allAIsDone && (
+              {(waiting?.allReady ?? everyoneReadyFallback) && (
                 <div className="flex flex-col items-center mb-2">
                   <LoadingSpinner />
                 </div>

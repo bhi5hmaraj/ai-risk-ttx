@@ -9,7 +9,21 @@
  *   await loadSecrets();
  */
 
-import { InfisicalClient, LogLevel } from '@infisical/sdk';
+// Dynamic import to avoid hard type coupling with SDK versions.
+// Falls back gracefully when the package is not available.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let InfisicalClientCtor: any | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let LogLevelEnum: any = { Debug: 'debug', Error: 'error' };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const sdk = require('@infisical/sdk');
+  InfisicalClientCtor = (sdk && (sdk.InfisicalClient || sdk.default)) || null;
+  LogLevelEnum = (sdk && (sdk.LogLevel || LogLevelEnum)) || LogLevelEnum;
+} catch {
+  // optional dependency; continue without SDK
+  InfisicalClientCtor = null;
+}
 
 interface InfisicalConfig {
   token?: string;
@@ -73,10 +87,14 @@ export async function loadSecrets(config?: InfisicalConfig): Promise<void> {
 
   try {
     console.log(`[Infisical] Fetching secrets for environment: ${environment}`);
+    if (!InfisicalClientCtor) {
+      console.warn('[Infisical] SDK not installed/available; skipping remote fetch');
+      return;
+    }
 
-    const client = new InfisicalClient({
+    const client = new InfisicalClientCtor({
       clientSecret: token,
-      logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Error,
+      logLevel: process.env.NODE_ENV === 'development' ? LogLevelEnum.Debug : LogLevelEnum.Error,
     });
 
     // List all secrets for the environment
@@ -88,7 +106,7 @@ export async function loadSecrets(config?: InfisicalConfig): Promise<void> {
 
     // Convert to key-value pairs
     const secretsMap: Record<string, string> = {};
-    secrets.forEach(secret => {
+    secrets.forEach((secret: any) => {
       secretsMap[secret.secretKey] = secret.secretValue;
     });
 

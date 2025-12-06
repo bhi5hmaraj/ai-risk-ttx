@@ -20,6 +20,8 @@ import { RoundAdvanceHandler } from "./handlers/RoundAdvanceHandler";
 import { ActionSubmissionHandler } from "./handlers/ActionSubmissionHandler";
 import { PlayerManagementHandler } from "./handlers/PlayerManagementHandler";
 import { SeatRegistry } from "./services/SeatRegistry";
+import { computeWaitingStatus } from "./utils/waitingStatus";
+import * as llmService from "../services/llmService";
 
 /**
  * GameRoom - Colyseus multiplayer room for Simulacra game
@@ -45,6 +47,8 @@ export class GameRoom extends Room<GameState> {
     private gameController: GameController;
     private stateManager!: StateManager;
     private seats = new SeatRegistry();
+    private debriefInFlight = false;
+    private debriefResult: any | null = null;
 
     // Handlers
     private gameStartHandler!: GameStartHandler;
@@ -182,7 +186,9 @@ export class GameRoom extends Room<GameState> {
         this.roundAdvanceHandler = new RoundAdvanceHandler({
             ...baseDeps,
             gameController: this.gameController,
-            roomId: this.roomId
+            roomId: this.roomId,
+            emitWaitingStatus: () => this.broadcastWaitingStatus(),
+            generateDebriefOnce: () => this.generateDebriefOnce(),
         });
 
         this.actionSubmissionHandler = new ActionSubmissionHandler({
@@ -194,12 +200,14 @@ export class GameRoom extends Room<GameState> {
                     this.logger.error(this.rid, 'Auto-advance on all-submitted failed', { error: e });
                 }
             },
+            emitWaitingStatus: () => this.broadcastWaitingStatus(),
         });
 
         this.playerManagementHandler = new PlayerManagementHandler({
             ...(baseDeps as any),
             emitPlayersInit: () => this.broadcastAvailableRoles(),
             seats: this.seats,
+            emitWaitingStatus: () => this.broadcastWaitingStatus(),
         } as any);
     }
 
@@ -243,6 +251,8 @@ export class GameRoom extends Room<GameState> {
                 this.logger.warn(this.rid, "request_roles failed", { error: e });
             }
         });
+        // Expose debrief to remoteRoomCall
+        (this as any).getDebrief = () => this.debriefResult;
     }
 
     /**
@@ -277,6 +287,9 @@ export class GameRoom extends Room<GameState> {
 
         // After join, send available roles to all clients
         this.broadcastAvailableRoles(client);
+        try { this.broadcastWaitingStatus(); } catch (e) {
+            this.logger.warn(this.rid, 'broadcastWaitingStatus failed onJoin', { error: e });
+        }
     }
 
     async onLeave(client: Client, consented: boolean) {
@@ -310,6 +323,9 @@ export class GameRoom extends Room<GameState> {
 
         // Player left permanently or game ended
         this.playerManagementHandler.handlePlayerLeave(client, consented);
+        try { this.broadcastWaitingStatus(); } catch (e) {
+            this.logger.warn(this.rid, 'broadcastWaitingStatus failed onLeave', { error: e });
+        }
     }
 
     onDispose() {
@@ -363,6 +379,38 @@ export class GameRoom extends Room<GameState> {
             this.broadcast('players_init', payload);
         } catch (e) {
             this.logger.warn(this.rid, "Failed to broadcast players_init", { error: e });
+        }
+    }
+
+    public broadcastWaitingStatus() {
+        try {
+            const payload = computeWaitingStatus(this.state);
+            this.broadcast('waiting_status', payload);
+        } catch (e) {
+            this.logger.warn(this.rid, 'Failed to broadcast waiting_status', { error: e });
+        }
+    }
+
+    public async generateDebriefOnce() {
+        if (this.debriefResult || this.debriefInFlight) return;
+        this.debriefInFlight = true;
+        try {
+            const coreState = this.stateManager.getCoreState();
+            const corePlayers = this.stateManager.getCorePlayers();
+            const human = corePlayers.find(p => p.isHuman)?.role?.name;
+            const session = this.gameStartHandler.getChatSession?.();
+            const result = await llmService.generateDebriefChat(session as any, coreState as any, corePlayers as any, human as any, undefined as any);
+            if (result) {
+                this.debriefResult = result;
+                this.broadcast('debrief_ready', result);
+                this.logger.info(this.rid, 'Debrief generated and broadcast', { round: coreState.round });
+            } else {
+                this.logger.warn(this.rid, 'Debrief generation returned null');
+            }
+        } catch (e) {
+            this.logger.error(this.rid, 'Debrief generation failed', { error: e });
+        } finally {
+            this.debriefInFlight = false;
         }
     }
 }

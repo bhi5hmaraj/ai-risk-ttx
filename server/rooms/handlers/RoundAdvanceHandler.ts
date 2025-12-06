@@ -14,6 +14,8 @@ export interface RoundAdvanceHandlerDeps {
     rid: string;
     roomId: string;
     broadcast: (type: string, message?: any) => void;
+    emitWaitingStatus?: () => void;
+    generateDebriefOnce?: () => Promise<void>;
 }
 
 /**
@@ -84,6 +86,18 @@ export class RoundAdvanceHandler {
 
             // Final log
             this.deps.logger.info(this.deps.rid, 'Round advanced successfully', { round: newState.round });
+
+            // After round transition, broadcast updated waiting status (humans reset submissions)
+            try { (this.deps as any).emitWaitingStatus?.(); } catch (e) {
+                this.deps.logger.warn(this.deps.rid, 'emitWaitingStatus failed after advance', { error: e });
+            }
+
+            // If game ended, generate debrief once and broadcast
+            if (newState.phase === 'end') {
+                try { await (this.deps as any).generateDebriefOnce?.(); } catch (e) {
+                    this.deps.logger.warn(this.deps.rid, 'generateDebriefOnce failed', { error: e });
+                }
+            }
 
         } catch (error) {
             logger.error(rid, "Failed to advance round", { error });

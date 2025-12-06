@@ -21,7 +21,17 @@ Clean migration from Vercel to Infisical with normalized secret names.
 
 **All environments get the SAME keys** - only values differ per environment.
 
-### Authentication & Authorization
+**IMPORTANT**: This step is split into two sections:
+- **MUST add**: Actual secrets (credentials/tokens) - ~10 secrets
+- **OPTIONAL**: Configuration values (URLs/flags) - ~11 values
+
+You can add the configuration values to Infisical for centralized management, OR just put them in `.env.local` / deployment platform environment variables.
+
+### Part A: Actual Secrets (MUST add to Infisical)
+
+These contain sensitive credentials that must be kept private.
+
+#### Authentication & Authorization
 
 Add to **all three environments** (production, staging, development):
 
@@ -29,9 +39,9 @@ Add to **all three environments** (production, staging, development):
 |------------|-----------------|---------------|-------------------|
 | `CLERK_SECRET_KEY` | (from Vercel Production) | (from Vercel Preview) | (from Vercel Production or create dev key) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | (from Vercel Production) | (from Vercel Preview) | (from Vercel Production or create dev key) |
-| `ADMIN_EMAILS` | (from Vercel) | (from Vercel) | Your local email |
+| `ADMIN_EMAILS` | matib275@gmail.com,alishapathak23@gmail.com | matib275@gmail.com,alishapathak23@gmail.com | Your local email |
 
-### Database
+#### Database Credentials
 
 Add to **all three environments**:
 
@@ -44,31 +54,58 @@ Add to **all three environments**:
 
 **Note**: Get Production/Staging values from Vercel dashboard. Remove `PREVIEW_DB_*` prefixes - they're Vercel quirks we don't need.
 
-### Redis (Session Store)
+#### Redis Session Store
 
 Add to **all three environments**:
 
 | Secret Key | Production Value | Staging Value | Development Value |
 |------------|-----------------|---------------|-------------------|
-| `UPSTASH_REDIS_REST_URL` | (from Vercel) | (from Vercel) | (from Vercel or local Redis) |
 | `UPSTASH_REDIS_REST_TOKEN` | (from Vercel) | (from Vercel) | (from Vercel or local Redis token) |
 | `REDIS_URL` | (from Vercel) | (from Vercel) | (from Vercel or local Redis) |
-| `SESSION_STORE_TYPE` | `redis` | `redis` | `redis` |
 
-### LLM Configuration
+#### LLM API Credentials
 
 Add to **all three environments**:
 
 | Secret Key | Production Value | Staging Value | Development Value |
 |------------|-----------------|---------------|-------------------|
 | `LITELLM_API_KEY` | (from Vercel) | (from Vercel) | (from .env.local) |
+
+---
+
+### Part B: Configuration Values (OPTIONAL - can use .env.local instead)
+
+These are URLs, flags, and model names. They're not sensitive, so you can:
+- Add them to Infisical for centralized management, OR
+- Just put them in `.env.local` / deployment platform environment variables
+
+#### Redis Configuration
+
+| Config Key | Production Value | Staging Value | Development Value |
+|------------|-----------------|---------------|-------------------|
+| `UPSTASH_REDIS_REST_URL` | (from Vercel) | (from Vercel) | https://well-goshawk-35908.upstash.io |
+| `SESSION_STORE_TYPE` | `redis` | `redis` | `redis` |
+
+#### LLM Configuration
+
+| Config Key | Production Value | Staging Value | Development Value |
+|------------|-----------------|---------------|-------------------|
 | `LITELLM_BASE_URL` | `https://asgard.bhishmaraj.org` | `https://asgard.bhishmaraj.org` | `https://asgard.bhishmaraj.org` |
 | `LLM_MODEL` | `gemini-2.5-flash-lite` | `gemini-2.5-flash-lite` | `gemini-2.5-flash-lite` |
 | `NEXT_PUBLIC_LLM_MODEL` | `gemini-2.5-flash-lite` | `gemini-2.5-flash-lite` | `gemini-2.5-flash-lite` |
 
-### Legacy Auth (if still needed)
+#### Debug & Feature Flags
 
-Add to **all three environments** (only if still using):
+| Config Key | Production Value | Staging Value | Development Value |
+|------------|-----------------|---------------|-------------------|
+| `DEBUG_API` | `0` | `1` | `1` |
+| `NEXT_PUBLIC_BACKEND_STATE` | `1` | `1` | `1` |
+
+---
+
+### Legacy Auth (Skip if using Clerk)
+
+Add to **all three environments** (only if still using NextAuth):
 
 | Secret Key | Production Value | Staging Value | Development Value |
 |------------|-----------------|---------------|-------------------|
@@ -77,25 +114,7 @@ Add to **all three environments** (only if still using):
 | `NEXTAUTH_URL` | Your production URL | Your staging URL | `http://localhost:3000` |
 | `ADMIN_PASSWORD_1` | (from Vercel Preview if needed) | (from Vercel Preview if needed) | (set local password) |
 
-**Note**: If you've fully migrated to Clerk, you can skip these.
-
-### Debug & Feature Flags
-
-Add to **all three environments**:
-
-| Secret Key | Production Value | Staging Value | Development Value |
-|------------|-----------------|---------------|-------------------|
-| `DEBUG_API` | `0` | `1` | `1` |
-| `NEXT_PUBLIC_BACKEND_STATE` | `1` | `1` | `1` |
-
-### Pusher (if using)
-
-Add to **all three environments** (only if using Pusher):
-
-| Secret Key | Production Value | Staging Value | Development Value |
-|------------|-----------------|---------------|-------------------|
-| `NEXT_PUBLIC_PUSHER_KEY` | (from Vercel) | (from Vercel) | (from Vercel) |
-| `NEXT_PUBLIC_PUSHER_CLUSTER` | `ap2` | `ap2` | `ap2` |
+**Note**: If you've fully migrated to Clerk, skip these entirely.
 
 ## Secrets NOT to Add (Platform-Managed)
 
@@ -320,18 +339,23 @@ Once you've confirmed everything works with Infisical for at least a week:
 
 ## Normalized Secret Summary
 
-Total secrets per environment: **~25 keys** (same across all environments)
+Total variables per environment: **~18 keys** (same across all environments)
 
-### Critical Secrets (Different per environment)
-- Database URLs (3 variants)
-- Auth tokens (Clerk keys)
-- Redis tokens
-- LLM API key
+### Actual Secrets (MUST add to Infisical) - ~10 keys
+**These contain sensitive credentials:**
+- Database connection strings (4 variants with credentials)
+- Auth tokens (Clerk secret keys)
+- Admin emails (ADMIN_EMAILS)
+- Redis tokens (UPSTASH_REDIS_REST_TOKEN, REDIS_URL)
+- LLM API key (LITELLM_API_KEY)
 
-### Configuration (Same across environments)
-- `LITELLM_BASE_URL`, `LLM_MODEL`, etc.
-- `SESSION_STORE_TYPE`
-- Feature flags
+### Configuration Values (OPTIONAL) - ~8 keys
+**These are URLs, flags, and model names (not sensitive):**
+- URLs: `LITELLM_BASE_URL`, `UPSTASH_REDIS_REST_URL`
+- Model names: `LLM_MODEL`, `NEXT_PUBLIC_LLM_MODEL`
+- Feature flags: `SESSION_STORE_TYPE`, `DEBUG_API`, `NEXT_PUBLIC_BACKEND_STATE`
+
+**You can add config values to Infisical for centralized management, OR just use .env.local / deployment platform.**
 
 ### Removed Prefixes
 - ❌ `PREVIEW_DB_*` → ✅ Just use standard names in staging environment

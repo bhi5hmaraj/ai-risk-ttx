@@ -13,6 +13,7 @@ export interface PlayerManagementHandlerDeps {
     broadcast: (type: string, message?: any) => void;
     emitPlayersInit: () => void; // delegate to GameRoom to broadcast roster
     seats: SeatRegistry;
+    emitWaitingStatus?: () => void;
 }
 
 /**
@@ -78,6 +79,10 @@ export class PlayerManagementHandler {
                 });
             }
         } catch {}
+
+        try { this.deps.emitWaitingStatus?.(); } catch (e) {
+            this.deps.logger.warn(this.deps.rid, 'emitWaitingStatus failed on join', { error: e });
+        }
     }
 
     handlePlayerLeave(client: Client, consented: boolean): void {
@@ -95,6 +100,9 @@ export class PlayerManagementHandler {
 
         // Remove from StateManager (Core state)
         stateManager.removePlayer(client.sessionId);
+        try { this.deps.emitWaitingStatus?.(); } catch (e) {
+            this.deps.logger.warn(this.deps.rid, 'emitWaitingStatus failed on leave', { error: e });
+        }
     }
 
     handleSetRole(client: Client, role: string, name?: string): void {
@@ -129,6 +137,10 @@ export class PlayerManagementHandler {
                 logger.info(rid, "Rebroadcasted players_init after role set");
             } catch (e) {
                 logger.warn(rid, "Failed to rebroadcast players_init after role set", { error: e });
+            }
+
+            try { this.deps.emitWaitingStatus?.(); } catch (e) {
+                this.deps.logger.warn(this.deps.rid, 'emitWaitingStatus failed on set_role', { error: e });
             }
         }
     }

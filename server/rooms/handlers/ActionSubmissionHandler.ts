@@ -68,6 +68,10 @@ export class ActionSubmissionHandler {
                 } catch (e) {
                     logger.error(rid, "onAllSubmitted failed", { error: e });
                 }
+            } else {
+                try { (this.deps as any).emitWaitingStatus?.(); } catch (e) {
+                    this.deps.logger.warn(this.deps.rid, 'emitWaitingStatus failed after submit', { error: e });
+                }
             }
         } else {
             client.send("error", { message: "Not enough action points" });

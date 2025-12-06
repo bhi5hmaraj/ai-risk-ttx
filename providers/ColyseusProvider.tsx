@@ -155,6 +155,30 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
             }
         });
 
+        // Fallback enrichment from lobby availableRoles (by role name) if previous players had no details yet
+        try {
+            const lobby = useLobbyStore.getState();
+            const roleByName = new Map<string, any>((lobby.availableRoles || []).map((r: any) => [r.name, r]));
+            colyseusState.players.forEach((schemaPlayer) => {
+                const sid = (schemaPlayer as any).sessionId as string;
+                const roleName = (schemaPlayer as any).role as string;
+                if (!enrichment.has(sid) && roleName && roleByName.has(roleName)) {
+                    const r = roleByName.get(roleName);
+                    enrichment.set(sid, {
+                        fullRole: {
+                            name: r.name,
+                            publicObjective: r.publicObjective || '',
+                            hiddenObjective: r.hiddenObjective || '',
+                            resources: r.resources || [],
+                            constraints: r.constraints || [],
+                        },
+                    });
+                }
+            });
+        } catch (e) {
+            console.warn('[ColyseusProvider] lobby role enrichment failed', e);
+        }
+
         const corePlayers = schemaPlayersToCore(colyseusState.players, enrichment);
 
         // Update Zustand stores (cast to client types - client Player has icon field in RoleData)
@@ -230,7 +254,9 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
             });
 
             // Ensure roles arrive even if initial broadcast was missed
-            try { (newRoom as any).send('request_roles'); } catch {}
+            try { (newRoom as any).send('request_roles'); } catch (e) {
+                console.warn('[ColyseusProvider] request_roles failed', e);
+            }
 
             // Optional: server may broadcast 'game_started'. We no longer navigate here.
             newRoom.onMessage('game_started', () => {
@@ -366,7 +392,9 @@ export function ColyseusProvider({ children, onStateChange, onError }: ColyseusP
                 });
 
                 // Ensure roles arrive after reconnect as well
-                try { (newRoom as any).send('request_roles'); } catch {}
+                try { (newRoom as any).send('request_roles'); } catch (e) {
+                    console.warn('[ColyseusProvider] request_roles failed (reconnect)', e);
+                }
 
                 // Mirror connect() handlers
                 newRoom.onMessage('game_started', () => {

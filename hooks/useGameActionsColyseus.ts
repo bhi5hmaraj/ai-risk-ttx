@@ -27,7 +27,7 @@ export function useGameActionsColyseus() {
   const { setLoading, setError } = useUI();
   const { selectedRoleName } = useLobby();
   const { setActionOptions, setAICompletionStatus, setIsGeneratingOptions } = useActions();
-  const { isConnected, isConnecting, connect } = useColyseus();
+  const { isConnected, isConnecting, connect, sessionId } = useColyseus();
   const { setRole: sendSetRole, submitAction: sendSubmitAction } = useGameSenders();
   const selectRole = useCallback((role: string, name: string) => {
     sendSetRole(role, name);
@@ -100,9 +100,9 @@ export function useGameActionsColyseus() {
    */
   const handleConfirmActions = useCallback(
     async (actions: ActionOption[]) => {
-      const human = players.find((p) => p.isHuman);
-      if (!human) {
-        console.warn('[useGameActionsColyseus] No human player found');
+      const me = players.find((p) => (p as any).id === sessionId);
+      if (!me) {
+        console.warn('[useGameActionsColyseus] No local player found for this session');
         return;
       }
 
@@ -115,8 +115,8 @@ export function useGameActionsColyseus() {
         setLoading(true, 'Submitting your actions...');
         // Frontend enforcement: ensure total cost within available AP
         const totalCost = actions.reduce((sum, a) => sum + (a?.cost || 0), 0);
-        if (totalCost > (human.actionPoints || 0)) {
-          setError(`You only have ${human.actionPoints} AP but selected ${totalCost} AP worth of actions.`);
+        if (totalCost > (me.actionPoints || 0)) {
+          setError(`You only have ${me.actionPoints} AP but selected ${totalCost} AP worth of actions.`);
           setLoading(false);
           return;
         }
@@ -129,7 +129,7 @@ export function useGameActionsColyseus() {
 
         // Step 2: Mark human as submitted locally (optimistic update)
         setPlayers((prev) =>
-          prev.map((p) => (p.isHuman ? { ...p, actions, hasSubmittedActions: true } : p))
+          prev.map((p) => ((p as any).id === sessionId ? { ...p, actions, hasSubmittedActions: true } : p))
         );
 
         // Step 3: Advance round (triggers server-side consequence generation)
@@ -163,13 +163,13 @@ export function useGameActionsColyseus() {
 
         // Revert optimistic update
         setPlayers((prev) =>
-          prev.map((p) => (p.isHuman ? { ...p, hasSubmittedActions: false } : p))
+          prev.map((p) => ((p as any).id === sessionId ? { ...p, hasSubmittedActions: false } : p))
         );
 
         setLoading(false);
       }
     },
-    [players, isConnected, sendSubmitAction, setPlayers, setLoading, setError, setActionOptions, setAICompletionStatus]
+    [players, isConnected, sessionId, sendSubmitAction, setPlayers, setLoading, setError, setActionOptions, setAICompletionStatus]
   );
 
   return { handleStartGame, handleConfirmActions, selectRole } as const;

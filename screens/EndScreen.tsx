@@ -6,6 +6,7 @@ import { EventLog } from '../components/game';
 import { GameCharts } from '../components/game/GameCharts';
 import type { AIDebriefResponse } from '../server/types/core';
 import { useRotatingJoke } from '@/lib/loadingJokes';
+import { useColyseus } from '@/providers/ColyseusProvider';
 
 interface EndScreenProps {
   gameState: GameState;
@@ -53,10 +54,36 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, humanP
     }
   };
 
-  // Auto-generate debrief on mount
+  // Prefer server broadcast: listen for 'debrief_ready'. Fallback to HTTP after 5s if nothing arrives.
+  const { room } = useColyseus();
   useEffect(() => {
-    handleGenerateDebrief();
-  }, []);
+    let fallbackTimer: any;
+    let got = false;
+    if (room) {
+      const onDebrief = (payload: any) => {
+        got = true;
+        setDebrief(payload as AIDebriefResponse);
+        setDebriefLoading(false);
+        setDebriefError(null);
+      };
+      room.onMessage('debrief_ready', onDebrief);
+      // If not received within 5s, fallback to HTTP (temporary until remoteRoomCall endpoint is added)
+      fallbackTimer = setTimeout(() => {
+        if (!got) handleGenerateDebrief();
+      }, 5000);
+      return () => {
+        try {
+          // colyseus.js Room may not expose typed 'off'; use Node-style methods if present
+          (room as any)?.removeListener?.('debrief_ready', onDebrief as any);
+          (room as any)?.off?.('debrief_ready', onDebrief as any);
+        } catch {}
+        if (fallbackTimer) clearTimeout(fallbackTimer);
+      };
+    } else {
+      // No room? fallback immediately
+      handleGenerateDebrief();
+    }
+  }, [room]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6 pt-20 flex flex-col items-center">

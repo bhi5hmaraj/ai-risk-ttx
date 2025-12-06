@@ -20,10 +20,10 @@ type LogFields = Record<string, unknown> | undefined;
 const ENV = {
   PRETTY: process.env.LOG_PRETTY === 'true',
   VERBOSE_JSON: process.env.LOG_VERBOSE_JSON === 'true',
-  MAX_STRING: Number(process.env.LOG_MAX_STRING || 500),
-  MAX_ARRAY: Number(process.env.LOG_MAX_ARRAY_ITEMS || 5),
-  MAX_KEYS: Number(process.env.LOG_MAX_KEYS || 20),
-  MAX_DEPTH: Number(process.env.LOG_MAX_DEPTH || 3),
+  MAX_STRING: Number(process.env.LOG_MAX_STRING || 1000),
+  MAX_ARRAY: Number(process.env.LOG_MAX_ARRAY_ITEMS || 10),
+  MAX_KEYS: Number(process.env.LOG_MAX_KEYS || 50),
+  MAX_DEPTH: Number(process.env.LOG_MAX_DEPTH || 5),
 };
 
 /**

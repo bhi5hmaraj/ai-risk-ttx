@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { UserCircleIcon } from '../Icons';
+// (No direct icon usage here; removed unused import to satisfy type-checks)
 
 interface Role {
   name: string;

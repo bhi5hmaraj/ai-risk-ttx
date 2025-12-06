@@ -9,7 +9,7 @@ import { useColyseus } from '@/providers/ColyseusProvider';
 
 export function RouteOrchestrator() {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '/';
   const gameState = useGameStore((state) => state.gameState);
   const players = useGameStore((state) => state.players);
   const { hasStartIntent, sessionMeta } = useSessionStore();

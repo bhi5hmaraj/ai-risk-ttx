@@ -170,7 +170,9 @@ export class GameStartHandler {
             });
 
             // Lock room to prevent late joins (Warden-style)
-            try { this.deps.lockRoom?.(); } catch {}
+            try { this.deps.lockRoom?.(); } catch (e) {
+                this.deps.logger.warn(this.deps.rid, 'lockRoom failed', { error: e });
+            }
 
         } catch (error) {
             logger.error(rid, "Failed to start game", {
