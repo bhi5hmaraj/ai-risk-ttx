@@ -6,7 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+INFISICAL_SECRETS.txt
+    
 .vite-temp/**
 
 node_modules
@@ -70,10 +71,11 @@ graph-*.svg
 # Claude Code settings (user-specific)
 .claude/
 
-# Beads database binaries (generated from .jsonl)
-.beads/*.db
-.beads/*.db-shm
-.beads/*.db-wal
+# Beads artifacts: ignore everything except .jsonl
+.beads/*
+!.beads/*.jsonl
 
 # clerk configuration (can include secrets)
 /.clerk/
+# Local secrets (never commit)
+INFISICAL_SECRETS.txt
