@@ -124,17 +124,7 @@ const ScenarioCard: React.FC<{
             }`}
             title={hasVoted ? 'Already voted' : isVoting ? 'Voting...' : 'Upvote this scenario'}
           >
-            {isVoting ? (
-              <>
-                <span className="animate-spin">⏳</span>
-                <span className="font-medium">{scenario.voteCount || 0}</span>
-              </>
-            ) : (
-              <>
-                <span>👍</span>
-                <span className="font-medium">{scenario.voteCount || 0}</span>
-              </>
-            )}
+            <span className="font-medium">{isVoting ? 'Voting…' : `Votes: ${scenario.voteCount || 0}`}</span>
           </button>
         )}
       </div>
