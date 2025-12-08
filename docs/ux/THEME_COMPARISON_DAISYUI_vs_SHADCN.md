@@ -5,10 +5,13 @@ Audience: game/frontend
 Last updated: 2025-12-08
 
 ## Executive Summary
-- Use both, intentionally:
-  - daisyUI (theme: "business" or "dim"): fastest way to professionalize forms/lists with minimal JSX churn.
-  - shadcn/ui (Radix + Tailwind): tasteful, minimalist primitives (Button/Input/Dialog/Toast) for core gameplay screens.
-- Keep Tailwind as the base; we own thin wrappers so feature code stays stable.
+Choose a single uniform theme: shadcn/ui (Radix + Tailwind).
+
+Why shadcn/ui for Simulacra:
+- Tasteful, minimalist baseline that reads serious and non-generic.
+- Strong accessibility via Radix primitives; great for policy/enterprise demos.
+- We own the code (copy‑paste components), enabling consistent tokens and long‑term control.
+- Plays nicely with Tailwind and SSR; no heavy runtime, no vendor lock‑in.
 
 ## Our Constraints (game-specific)
 - Serious tone (policy sim), not playful.
@@ -61,26 +64,26 @@ Last updated: 2025-12-08
 | Vendor lock-in | Low | Very low (code in repo) |
 | Perf/Bundle | No extra JS | Minimal; Radix primitives only |
 
-## Recommended Hybrid Plan
-1) Flagged rollout
-   - Env: `NEXT_PUBLIC_THEME=business` or `NEXT_PUBLIC_THEME=shadcn-min`.
-   - Keep local toggle in Dev HUD for quick A/B.
-2) Phase 1 (0.5–1 day): daisyUI pass
-   - Convert: Lobby/Join, WaitingRoom, RoleSelector, EndScreen.
-   - Use classes: `btn btn-primary`, `input input-bordered`, `card`, `badge`, `alert`.
-3) Phase 2 (0.5–1 day): shadcn primitives where it counts
-   - Add: `button`, `input`, `dialog`, `toast`, `badge`.
-   - Replace in core flows: Start Game confirm, Submit Action confirm, toasts, simple menus.
-4) Tokens
-   - Introduce CSS vars for colors/radius/shadows to keep both libs consistent (or use Radix Colors Slate/Gray + one accent).
+## Adoption Plan (Single Theme: shadcn/ui)
+1) Initialize and add core primitives (day 0.5–1)
+   - `npx shadcn@latest init`
+   - `npx shadcn@latest add button input dialog toast badge separator`
+   - Create thin wrappers in `components/ui/` so feature code stays stable.
+2) Define tokens (day 0.2)
+   - Use Radix Colors Slate/Gray + one accent; map to CSS vars and Tailwind theme.extend.
+3) Screen rollout (day 0.5–1)
+   - Convert uniformly: Lobby/Join, WaitingRoom, RoleSelector, EndScreen.
+   - Defer Action Tree/Cytoscape; keep existing styles until graph polish pass.
+4) QA & a11y pass (day 0.2)
+   - Keyboard flows, focus rings, contrast, SSR/hydration checks.
 
 ## Screen-by-Screen Guidance
-- Lobby/Join: daisyUI inputs/cards/buttons.
-- WaitingRoom: daisyUI list + badges; keep role avatars minimal.
-- RoleSelector: daisyUI grid + buttons; no playful imaging.
-- ActionSelection: keep current look for now; swap individual CTAs with shadcn Button when ready.
-- EndScreen: daisyUI containers, shadcn dialog for feedback modal.
-- Action Tree / Cytoscape: out-of-scope for both.
+- Lobby/Join: shadcn Input/Button/Card; neutral palette.
+- WaitingRoom: shadcn Badge/Separator; list styled with Tailwind + tokens.
+- RoleSelector: shadcn Buttons; compact cards; no playful imagery.
+- ActionSelection: keep current layout; swap CTAs to shadcn Button first.
+- EndScreen: shadcn Dialog for feedback; Cards for sections.
+- Action Tree / Cytoscape: out‑of‑scope; keep existing.
 
 ## Risks & Mitigations
 - “Generic kit” feel (daisyUI)
@@ -91,15 +94,6 @@ Last updated: 2025-12-08
   - Centralize tokens; use Tailwind theme.extend mapped to CSS vars.
 
 ## Snippets
-- tailwind.config.ts (daisyUI)
-```ts
-// tailwind.config.ts
-export default {
-  content: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}'],
-  plugins: [require('daisyui')],
-  daisyui: { themes: ['business', 'dim'] },
-};
-```
 - shadcn add commands
 ```sh
 npx shadcn@latest add button input dialog toast badge separator
@@ -115,10 +109,15 @@ export function Button({ className, variant = 'default', ...props }) {
 ```
 
 ## Acceptance Criteria
-- 4 screens converted with daisyUI and pass accessibility checks.
-- shadcn Button/Dialog wired on core actions with keyboard/focus states correct.
+- 4 screens converted to shadcn/ui with cohesive tokens; pass a11y checks.
+- Core actions use shadcn Button/Dialog/Toast with correct focus/keyboard behavior.
 - No regressions in multiplayer flows (join/role/wait/start/submit/end).
 
 ## Decision
-- Proceed with hybrid: daisyUI (forms/lists) + shadcn (primitives on core).
-- Reassess after first playtest; if shadcn look is preferred, increase its coverage gradually.
+Adopt shadcn/ui as the uniform theme across the app.
+
+Why not daisyUI:
+- Faster to start, but higher risk of a “generic kit” look that undercuts the game’s seriousness.
+- Preset spacing/radius can clash with our desired minimalist density; requires overrides anyway.
+
+shadcn/ui gives us tasteful defaults, consistent a11y, and full control over the final look with minimal ongoing cost.
