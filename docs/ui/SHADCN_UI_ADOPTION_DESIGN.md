@@ -165,10 +165,10 @@ Why Recursive
 
 Include via Google Fonts (CSS v2)
 ```html
-<!-- app/layout.tsx <head> or _document -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Recursive:MONO,slnt,wght,CASL,CRSV@0..1,-15..0,300..1000,0..1,0..1&display=swap" rel="stylesheet"/>
+<!-- app/layout.tsx <head> -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Recursive:wght@300..1000&display=swap" rel="stylesheet" />
 ```
 
 Base assignment

@@ -28,7 +28,15 @@ export default function RootLayout({
       telemetry={false}
     >
       <html lang="en">
-        <body className="antialiased">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Recursive:wght@300..1000&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className="antialiased bg-bg text-text font-recursive-sans">
           {/* Client-side orchestrator for route decisions */}
           <RouteOrchestrator />
           <FocusBoundary>
