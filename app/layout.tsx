@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import '@/styles/tokens.css';
+import '@/styles/fonts.css';
 import '@copilotkit/react-ui/styles.css';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';

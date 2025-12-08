@@ -1,0 +1,30 @@
+/* Matrix-inspired, accessible dark theme tokens */
+:root {
+  /* Surfaces */
+  --bg:    #0d1117;
+  --card:  #0f131a;
+  --panel: #0b1016;
+  --border:#1e2633;
+
+  /* Text */
+  --text:  #e2e8f0;
+  --muted: #93a1b2;
+
+  /* Accent (Matrix) */
+  --accent:        #00ff41;
+  --accent-strong: #00b32a;
+  --accent-soft:   rgba(0, 255, 65, 0.12);
+
+  /* Semantic */
+  --success: #16a34a;
+  --danger:  #ef4444;
+  --warning: #f59e0b;
+
+  --radius: 6px;
+}
+
+/* Utility surfaces */
+.surface-bg   { background-color: var(--bg); }
+.surface-card { background-color: var(--card); }
+.surface-panel{ background-color: var(--panel); }
+

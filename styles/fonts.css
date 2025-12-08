@@ -1,0 +1,27 @@
+/* Recursive variable font integration */
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 300 1000;
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Recursive:MONO,slnt,wght,CASL,CRSV@0..1,-15..0,300..1000,0..1,0..1&display=swap');
+}
+
+html, body {
+  font-family: 'Recursive', Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.font-recursive-sans {
+  font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif;
+  font-variation-settings: "MONO" 0, "CASL" 0, "wght" 400, "slnt" 0, "CRSV" 0.5;
+}
+
+.font-recursive-mono {
+  font-family: 'Recursive', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-variation-settings: "MONO" 1, "CASL" 0, "wght" 500, "slnt" 0, "CRSV" 0.5;
+}
+
+.font-recursive-italic {
+  font-variation-settings: "MONO" 0, "CASL" 0.1, "wght" 450, "slnt" -12, "CRSV" 1;
+}
+
