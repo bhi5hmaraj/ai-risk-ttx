@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import type { GameSetup, RoleData } from '../types';
 import { RoleCard, MakePublicModal } from '../components/game';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
+import { Separator } from '@/components/ui/Separator';
 
 interface PublicScenario {
   id: string;
@@ -51,20 +55,17 @@ const LobbyExperienceCard: React.FC<{
   onSelect: () => void;
   cta: string;
   accent?: 'blue' | 'cyan' | 'purple';
-}> = ({ title, description, onSelect, cta, accent = 'blue' }) => {
-  const titleClass = accent === 'purple' ? 'text-purple-300' : accent === 'cyan' ? 'text-cyan-300' : 'text-blue-300';
-  const ctaClass = accent === 'purple' ? 'text-purple-300' : accent === 'cyan' ? 'text-cyan-400' : 'text-blue-400';
-  const hoverBorder = accent === 'purple' ? 'hover:border-purple-500' : accent === 'cyan' ? 'hover:border-cyan-500' : 'hover:border-blue-500';
-  const borderBase = accent === 'purple' ? 'border-purple-700/50' : 'border-gray-700';
-  const bgBase = accent === 'purple' ? 'bg-purple-900/20' : 'bg-gray-800';
+}> = ({ title, description, onSelect, cta }) => {
   return (
     <button
       onClick={onSelect}
-      className={`w-full md:w-auto ${bgBase} border ${borderBase} rounded-lg p-6 text-left ${hoverBorder} transition-colors`}
+      className={
+        'w-full md:w-auto bg-card border border-border rounded-lg p-6 text-left hover:border-accent transition-colors'
+      }
     >
-      <h3 className={`text-xl font-bold ${titleClass} mb-2`}>{title}</h3>
-      <p className="text-sm text-gray-400 mb-4">{description}</p>
-      <span className={`inline-flex items-center ${ctaClass} font-semibold`}>{cta}</span>
+      <h3 className={'text-xl font-bold text-accent mb-2'}>{title}</h3>
+      <p className="text-sm text-muted mb-4">{description}</p>
+      <span className={'inline-flex items-center text-accent font-semibold'}>{cta}</span>
     </button>
   );
 };
@@ -94,37 +95,32 @@ const ScenarioCard: React.FC<{
 
   return (
     <div
-      className="bg-gray-800 border border-gray-700 rounded-lg p-5 hover:border-purple-500 transition-colors group cursor-pointer"
+      className="bg-card border border-border rounded-lg p-5 hover:border-accent transition-colors group cursor-pointer"
       onClick={onSelect}
     >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="text-lg font-bold text-purple-300 group-hover:text-purple-200">
+        <h4 className="text-lg font-bold text-accent group-hover:text-accent-strong">
           {gameSetup.scenarioTitle}
         </h4>
-        <span
-          className={`ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide ${
-            isOfficial ? 'bg-blue-900/40 text-blue-200 border border-blue-700/40' : 'bg-emerald-900/40 text-emerald-200 border border-emerald-700/40'
-          }`}
-          title={isOfficial ? 'Official scenario' : 'Contributed by the community'}
-        >
+        <Badge className="ml-3" tone={isOfficial ? 'accent' : 'success'} title={isOfficial ? 'Official scenario' : 'Contributed by the community'}>
           {isOfficial ? 'Official' : 'Contributed'}
-        </span>
+        </Badge>
       </div>
-      <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+      <p className="text-sm text-muted mb-3 line-clamp-2">
         {gameSetup.scenarioDescription}
       </p>
       <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-500">{isOfficial ? 'Official' : (scenario.submitterName || 'Anonymous')}</span>
+        <span className="text-muted">{isOfficial ? 'Official' : (scenario.submitterName || 'Anonymous')}</span>
         {!isOfficial && (
           <button
             onClick={handleVote}
             disabled={hasVoted || isVoting}
             className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
               hasVoted
-                ? 'text-purple-400 cursor-not-allowed'
+                ? 'text-accent cursor-not-allowed'
                 : isVoting
                 ? 'text-gray-500 cursor-wait'
-                : 'text-gray-400 hover:text-purple-300 hover:bg-gray-700'
+                : 'text-muted hover:text-accent hover:bg-panel'
             }`}
             title={hasVoted ? 'Already voted' : isVoting ? 'Voting...' : 'Upvote this scenario'}
           >
@@ -168,13 +164,9 @@ const RoleSelection: React.FC<{
       ))}
     </div>
     <div className="text-center mt-10">
-      <button
-        onClick={onStart}
-        disabled={!selectedRoleName}
-        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
+      <Button onClick={onStart} disabled={!selectedRoleName} className="text-base h-11 px-8">
         {cta}
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -218,20 +210,19 @@ const PresetRoleSelection: React.FC<{
   minAiPlayers?: number;
 }> = ({ scenarioTitle, scenarioDescription, roles, selectedRoleName, onSelect, onStart, cta, onMakePublic, maxAIPlayers, setMaxAIPlayers, maxRounds, setMaxRounds, minAiPlayers = 0 }) => (
   <div className="max-w-7xl mx-auto">
-    <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700 text-center">
-      <h2 className="text-3xl font-bold text-purple-300 mb-2">{scenarioTitle}</h2>
-      <p className="text-gray-300">{scenarioDescription}</p>
+    <div className="max-w-4xl mx-auto bg-card rounded-lg p-6 mb-10 border border-border text-center">
+      <h2 className="text-3xl font-bold text-accent mb-2">{scenarioTitle}</h2>
+      <p className="text-muted">{scenarioDescription}</p>
       {onMakePublic && (
-        <button
-          onClick={onMakePublic}
-          className="mt-4 px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors"
-        >
-          📢 Make This Scenario Public
-        </button>
+        <div className="mt-4">
+          <Button onClick={onMakePublic} variant="outline" className="text-sm">
+            📢 Make This Scenario Public
+          </Button>
+        </div>
       )}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-          <label className="block text-sm text-gray-400 mb-1">Max AI Players ({minAiPlayers}–{GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM})</label>
+        <div className="bg-panel border border-border rounded-lg p-4">
+          <label className="block text-sm text-muted mb-1">Max AI Players ({minAiPlayers}–{GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM})</label>
           <div className="flex items-center gap-3">
             <input
               type="range"
@@ -241,19 +232,19 @@ const PresetRoleSelection: React.FC<{
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value, 10))}
               className="w-full"
             />
-            <input
+            <Input
               type="number"
               min={minAiPlayers}
               max={GAME_CONFIG.MAX_AI_PLAYERS_CUSTOM}
               value={typeof maxAIPlayers === 'number' ? maxAIPlayers : 5}
               onChange={(e) => setMaxAIPlayers?.(parseInt(e.target.value || '0', 10))}
-              className="w-16 bg-gray-800 border border-gray-700 rounded p-1 text-center"
+              className="w-20 text-center"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">How many AI-controlled roles join you.</p>
+          <p className="text-xs text-muted mt-1">How many AI-controlled roles join you.</p>
         </div>
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-          <label className="block text-sm text-gray-400 mb-1">Max Rounds (1–10)</label>
+        <div className="bg-panel border border-border rounded-lg p-4">
+          <label className="block text-sm text-muted mb-1">Max Rounds (1–10)</label>
           <div className="flex items-center gap-3">
             <input
               type="range"
@@ -263,16 +254,16 @@ const PresetRoleSelection: React.FC<{
               onChange={(e) => setMaxRounds?.(parseInt(e.target.value, 10))}
               className="w-full"
             />
-            <input
+            <Input
               type="number"
               min={1}
               max={10}
               value={typeof maxRounds === 'number' ? maxRounds : 5}
               onChange={(e) => setMaxRounds?.(parseInt(e.target.value || '1', 10))}
-              className="w-16 bg-gray-800 border border-gray-700 rounded p-1 text-center"
+              className="w-20 text-center"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Simulation length before debrief.</p>
+          <p className="text-xs text-muted mt-1">Simulation length before debrief.</p>
         </div>
       </div>
     </div>
@@ -415,17 +406,17 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
+    <div className="min-h-screen bg-bg text-text p-8 pt-24">
     <div className="text-center mb-10">
-      <h1 className="text-5xl font-extrabold text-blue-400">Simulacra</h1>
-      <p className="text-lg text-gray-300 mt-2 max-w-4xl mx-auto">
+      <h1 className="text-5xl font-extrabold text-accent">Simulacra</h1>
+      <p className="text-lg text-muted mt-2 max-w-4xl mx-auto">
         AI-powered tabletop exercise for complex, high-stakes decision making.
       </p>
     </div>
 
-    <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
-      <h2 className="text-2xl font-bold text-blue-300 mb-3">How it works</h2>
-      <div className="text-gray-300 space-y-4 text-left">
+    <div className="max-w-4xl mx-auto bg-card rounded-lg p-6 mb-10 border border-border">
+      <h2 className="text-2xl font-bold text-accent mb-3">How it works</h2>
+      <div className="text-muted space-y-4 text-left">
         <p>
           Step into a live crisis as a key decision-maker. Each round, you weigh limited resources against evolving threats, while hidden objectives keep every stakeholder's motives in play.
         </p>
@@ -439,13 +430,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
       <>
         {scenariosLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
-            <p className="text-gray-400">Loading scenarios...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mb-4"></div>
+            <p className="text-muted">Loading scenarios...</p>
           </div>
         ) : scenariosError ? (
           <div className="text-center py-12">
-            <p className="text-red-500 text-lg mb-2">Failed to load scenarios</p>
-            <p className="text-gray-500 text-sm">{scenariosError}</p>
+            <p className="text-danger text-lg mb-2">Failed to load scenarios</p>
+            <p className="text-muted text-sm">{scenariosError}</p>
           </div>
         ) : (
           <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
@@ -505,16 +496,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         />
       </>
     ) : (
-      <div className="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-6 mb-10 border border-gray-700">
+      <div className="max-w-4xl mx-auto bg-card rounded-lg p-6 mb-10 border border-border">
         <h2 className="text-3xl font-bold text-center mb-4">Describe Your Crisis Scenario</h2>
         <textarea
           value={customScenario}
           onChange={(e) => setCustomScenario(e.target.value)}
           placeholder="e.g., A coordinated drone attack takes down a major power grid..."
-          className="w-full h-32 p-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          className="w-full h-32 p-3 bg-panel border border-border rounded-lg text-text focus:ring-2 focus:ring-accent-strong focus:outline-none"
         />
         <div className="text-center mt-6">
-          <button
+          <Button
             onClick={() => {
               console.log('[LobbyScreen Button] Generate Scenario button clicked');
               console.log('[LobbyScreen Button] customScenario:', customScenario);
@@ -523,10 +514,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               handleCustomGameStart();
             }}
             disabled={!customScenario || isLoading}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+            className="h-11 px-8 text-base disabled:opacity-60"
           >
             {isLoading ? 'Generating...' : 'Generate Scenario & Roles'}
-          </button>
+          </Button>
         </div>
       </div>
     )}

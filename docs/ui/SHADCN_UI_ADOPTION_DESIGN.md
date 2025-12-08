@@ -285,8 +285,9 @@ Status (2025-12-08): In progress → Completed
 - Next: replace usages on target screens (Checkpoint B).
 
 Checkpoint B — Lobby/Join complete
-- `app/lobby/page.tsx` and `screens/LobbyScreen.tsx` use `Input`/`Button`/`Badge`.
-- Copy room code shows a toast; focus states visible on all controls.
+- `app/lobby/page.tsx` and `screens/LobbyScreen.tsx` migrated to `Button`/`Input`/`Badge` and Matrix tokens.
+- Containers use `bg-card`/`border-border`; headings/accent use `text-accent`.
+- Focus states rely on tokenized outlines; verify with keyboard.
 
 Checkpoint C — Waiting + Role select complete
 - Waiting pills replaced with `Badge`; list spacing per tokens.
