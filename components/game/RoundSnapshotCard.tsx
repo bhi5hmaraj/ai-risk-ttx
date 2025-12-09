@@ -253,29 +253,24 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 </div>
               )}
               <div className="flex items-center justify-between gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setSelected([])}
                   disabled={selected.length === 0 || confirmDisabled}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
-                    selected.length === 0 || confirmDisabled
-                      ? 'border-gray-700 text-gray-500 cursor-not-allowed'
-                      : 'border-gray-600 text-gray-200 hover:border-blue-400'
-                  }`}
+                  variant="outline"
+                  className="h-9 text-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   title="Clear selected actions"
                 >
                   Reset
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => onConfirmActions(selected)}
                   disabled={confirmDisabled}
-                  className={`flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm ${
-                    confirmDisabled ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed' : ''
-                  }`}
+                  className="flex-1 h-9 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Confirm Actions
-                </button>
+                </Button>
               </div>
             </>
           )}
