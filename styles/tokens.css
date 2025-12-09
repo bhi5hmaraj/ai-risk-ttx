@@ -10,13 +10,13 @@
   --text:  #e2e8f0;
   --muted: #93a1b2;
 
-  /* Accent (Matrix) */
-  --accent:        #00ff41;
-  --accent-strong: #00b32a;
-  --accent-soft:   rgba(0, 255, 65, 0.12);
+  /* Accent (Matrix) — toned down */
+  --accent:        #39d98a;    /* muted code green */
+  --accent-strong: #2bb673;    /* darker for active states */
+  --accent-soft:   rgba(57, 217, 138, 0.10);
 
-  /* Semantic */
-  --success: #16a34a;
+  /* Semantic (toned) */
+  --success: #2bb673;
   --danger:  #ef4444;
   --warning: #f59e0b;
 
@@ -27,4 +27,3 @@
 .surface-bg   { background-color: var(--bg); }
 .surface-card { background-color: var(--card); }
 .surface-panel{ background-color: var(--panel); }
-

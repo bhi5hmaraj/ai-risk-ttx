@@ -29,18 +29,10 @@ export const EventLog: React.FC<EventLogProps> = ({
   }, [gameState.eventLog, order]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 max-h-[50vh] overflow-y-auto">
+    <div className="bg-card border border-border rounded-lg p-6 max-h-[50vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-blue-300">Event Log</h3>
-        <button
-          onClick={onViewActionTree}
-          disabled={!canViewActionTree}
-          className={`text-sm font-semibold px-3 py-1 rounded-md transition-colors ${
-            canViewActionTree ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          View Action Tree
-        </button>
+        <h3 className="text-lg font-bold text-accent">Event Log</h3>
+        <Button onClick={onViewActionTree} disabled={!canViewActionTree} className="h-8 text-sm disabled:opacity-60">View Action Tree</Button>
       </div>
 
       <div className="space-y-4">
@@ -55,13 +47,13 @@ export const EventLog: React.FC<EventLogProps> = ({
               {/* Round Header */}
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-bold text-white text-sm">
+                  <h4 className="font-bold text-text text-sm">
                     {log.round > 0 ? `ROUND ${log.round}` : 'OPENING SCENARIO'}
                   </h4>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {metricName}: <span className="text-white font-semibold">{log.publicScoreAfter}%</span>
+                  <p className="text-xs text-muted mt-0.5">
+                    {metricName}: <span className="text-text font-semibold">{log.publicScoreAfter}%</span>
                     {deltaLabel && (
-                      <span className={`ml-2 font-semibold ${scoreDelta >= 0 ? 'text-green-400' : 'text-red-400'}`}>({deltaLabel})</span>
+                      <span className={`ml-2 font-semibold ${scoreDelta >= 0 ? 'text-success' : 'text-danger'}`}>({deltaLabel})</span>
                     )}
                   </p>
                 </div>
@@ -70,9 +62,9 @@ export const EventLog: React.FC<EventLogProps> = ({
               {/* Event Details */}
               <div className="space-y-3">
                 {log.event && (
-                  <div className="bg-gray-900/60 p-2.5 rounded border border-gray-800">
-                    <p className="font-bold text-red-400 text-sm">{log.event.headline}</p>
-                    <p className="text-gray-300 text-xs mt-1 whitespace-pre-wrap leading-relaxed">{log.event.detail}</p>
+                  <div className="bg-panel p-2.5 rounded border border-border">
+                    <p className="font-bold text-accent text-sm">{log.event.headline}</p>
+                    <p className="text-muted text-xs mt-1 whitespace-pre-wrap leading-relaxed">{log.event.detail}</p>
                   </div>
                 )}
 
@@ -81,20 +73,20 @@ export const EventLog: React.FC<EventLogProps> = ({
                   <div className="space-y-2">
                     {log.outcomeTimeline?.length ? (
                       <div>
-                        <p className="text-xs uppercase tracking-wide text-blue-200 mb-1.5">Key Moments</p>
+                        <p className="text-xs uppercase tracking-wide text-accent mb-1.5">Key Moments</p>
                         <ol className="space-y-2">
                           {log.outcomeTimeline.map((item, index) => (
                             <li key={`${log.round}_${index}`} className="flex gap-2">
-                              <div className="mt-0.5 h-5 w-5 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-xs flex items-center justify-center">
+                              <div className="mt-0.5 h-5 w-5 flex-shrink-0 rounded-full bg-panel text-accent font-semibold text-xs flex items-center justify-center border border-border">
                                 {index + 1}
                               </div>
-                              <div className="flex-1 bg-gray-900/50 border border-gray-800 rounded p-2 space-y-1">
-                                <p className="text-xs font-semibold text-white">{item.title}</p>
-                                <p className="text-xs text-gray-200 leading-relaxed">{item.description}</p>
-                                <p className="text-[10px] uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
+                              <div className="flex-1 bg-panel border border-border rounded p-2 space-y-1">
+                                <p className="text-xs font-semibold text-text">{item.title}</p>
+                                <p className="text-xs text-muted leading-relaxed">{item.description}</p>
+                                <p className="text-[10px] uppercase tracking-wide text-accent">Impact: <span className="normal-case font-medium text-text">{item.impact}</span></p>
                                 {item.causes && item.causes.length > 0 && (
                                   <div className="mt-2 flex flex-wrap gap-2 items-center">
-                                    <p className="text-[11px] uppercase tracking-wide text-gray-400 mr-1">Because:</p>
+                                    <p className="text-[11px] uppercase tracking-wide text-accent mr-1">Because:</p>
                                     {item.causes.map((c, i) => (
                                       <CauseTag key={`${log.round}_${index}_c_${i}`} cause={c as any} logs={gameState.eventLog} />
                                     ))}
@@ -181,18 +173,18 @@ export const EventLog: React.FC<EventLogProps> = ({
                   {/* Column 3: Score & Notes */}
                   <div className="space-y-2">
                     {log.round > 0 && (
-                      <div className="bg-gray-900/60 border border-gray-800 rounded p-2 text-xs">
-                        <p className="text-[10px] uppercase tracking-wide text-blue-200 mb-1">Score</p>
+                      <div className="bg-panel border border-border rounded p-2 text-xs">
+                        <p className="text-[10px] uppercase tracking-wide text-accent mb-1">Score</p>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-300">{metricName}</span>
-                          <span className="text-white font-semibold">{log.publicScoreAfter}% {deltaLabel && (
-                            <span className={`ml-2 font-bold ${scoreDelta >= 0 ? 'text-green-400' : 'text-red-400'}`}>({deltaLabel})</span>
+                          <span className="text-muted">{metricName}</span>
+                          <span className="text-text font-semibold">{log.publicScoreAfter}% {deltaLabel && (
+                            <span className={`ml-2 font-bold ${scoreDelta >= 0 ? 'text-success' : 'text-danger'}`}>({deltaLabel})</span>
                           )}</span>
                         </div>
                         {log.geminiCalls > 0 && (
-                          <div className="mt-2 flex items-center justify-between text-gray-300">
+                          <div className="mt-2 flex items-center justify-between text-muted">
                             <span>AI Calls</span>
-                            <span className="text-white font-semibold">{log.geminiCalls}</span>
+                            <span className="text-text font-semibold">{log.geminiCalls}</span>
                           </div>
                         )}
                       </div>
@@ -206,9 +198,9 @@ export const EventLog: React.FC<EventLogProps> = ({
                     )}
 
                     {log.counterfactualNote && (
-                      <div className="bg-gray-900/40 border border-blue-800/30 rounded p-2 text-xs text-blue-100/90">
-                        <span className="font-semibold uppercase tracking-wide text-[10px] text-blue-200">If No One Acted</span>
-                        <p className="mt-1 leading-relaxed">{log.counterfactualNote}</p>
+                      <div className="bg-panel border border-border rounded p-2 text-xs text-muted">
+                        <span className="font-semibold uppercase tracking-wide text-[10px] text-accent">If No One Acted</span>
+                        <p className="mt-1 leading-relaxed text-muted">{log.counterfactualNote}</p>
                       </div>
                     )}
                   </div>
