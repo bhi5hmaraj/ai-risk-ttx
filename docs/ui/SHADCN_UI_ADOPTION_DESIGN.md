@@ -289,16 +289,39 @@ Checkpoint B — Lobby/Join complete
 - Containers use `bg-card`/`border-border`; headings/accent use `text-accent`.
 - Focus states rely on tokenized outlines; verify with keyboard.
 
+Checkpoint B.1 — Landing page (Home) complete
+- `app/page.tsx` uses Matrix tokens and shadcn `Button` for primary/secondary CTAs.
+- Subtle `MatrixBackground` applied at low opacity; hero and rules wrapped in tokenized containers.
+
 Checkpoint C — Waiting + Role select complete
 - Waiting pills replaced with `Badge`; list spacing per tokens.
 - Role tiles/cards align to tokens; confirm uses shadcn `Button`.
 
 Checkpoint D — EndScreen complete
-- Section containers use tokenized borders/spacing; feedback uses `Dialog`.
-- Loading indicators match token colors.
+- EndScreen uses tokenized cards/sections and shadcn `Button` for CTAs; emojis removed for a minimalist tone.
+- Tables use `bg-panel`/`border-border`/`text-muted` and accent headings; role icons replaced with subtle accent dots.
 
 Checkpoint E — Core components aligned
-- `RoundSnapshotCard` and `ActionSelection` CTAs are shadcn `Button` variants; no layout regressions.
+Sub‑checkpoints
+- E1 — Token pass (ActionSelection, no structure)
+  - Replace hardcoded grays with tokens (`bg-card`, `border-border`, `bg-panel`, `text-text`, `text-muted`, `text-accent`).
+  - No JSX reshuffle; zero behavior change.
+- E2 — AP chips as Badge style
+  - Adopt Badge-like classes for AP tags (cost, remaining) consistent with tokens.
+- E3 — CTAs to Button (ActionSelection)
+  - Convert primary/secondary actions to `components/ui/Button`; keep disabled/loading states.
+- E4 — Token pass (RoundSnapshotCard)
+  - Tokenize wrapper, headings, deltas (`text-success`/`text-danger`), captions (`text-muted`).
+  - Remove emoji; use subtle accent dots if needed.
+- E5 — Snapshot CTAs/links to Button
+  - Convert inline buttons/links to Button variants; preserve behavior.
+- E6 — A11y/focus polish
+  - Verify tab order and focus rings across ActionSelection + Snapshot; tweak classes only.
+
+Acceptance
+- Visual changes only; no AP math or submit flow changes.
+- No console warnings; keyboard focus visible.
+- Zero layout regressions on desktop and mobile breakpoints.
 
 Checkpoint F — QA/a11y sign‑off
 - Keyboard flows pass; focus rings visible; contrast AA.
