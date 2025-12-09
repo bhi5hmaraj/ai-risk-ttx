@@ -1,5 +1,7 @@
 import React from 'react';
 import { useRotatingJoke } from '@/lib/loadingJokes';
+import MatrixBackground from '@/components/ui/MatrixBackground';
+import { LoadingSpinner } from '@/components/Icons';
 
 interface LoadingScreenProps {
   message: string;
@@ -10,18 +12,21 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ message, error }) 
   const joke = useRotatingJoke(4000); // Change every 4 seconds
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 pt-16">
-      <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-6" />
-      <p className="text-xl text-blue-300 mb-4">{message}</p>
-
-      {/* Rotating Matrix/simulation jokes */}
-      <div className="mt-8 px-8 max-w-md text-center">
-        <p className="text-sm text-gray-400 italic transition-opacity duration-500">
-          "{joke}"
-        </p>
+    <div className="relative min-h-screen bg-bg pt-16 flex flex-col items-center justify-center">
+      {/* Subtle Matrix background */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <MatrixBackground opacity={0.12} />
       </div>
 
-      {error && <p className="text-red-400 mt-6">{error}</p>}
+      <LoadingSpinner className="h-12 w-12 text-accent" />
+      <p className="mt-4 text-xl text-text">{message}</p>
+
+      {/* Rotating Matrix/simulation jokes */}
+      <div className="mt-6 px-8 max-w-md text-center">
+        <p className="text-sm text-muted italic transition-opacity duration-500">"{joke}"</p>
+      </div>
+
+      {error && <p className="text-danger mt-6">{error}</p>}
     </div>
   );
 };
