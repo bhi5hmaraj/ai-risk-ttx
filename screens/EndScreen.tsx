@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChatBubbleLeftIcon, LoadingSpinner } from '../components/Icons';
+import { LoadingSpinner } from '../components/Icons';
+import { Button } from '@/components/ui/Button';
 import type { GameState, Player } from '../types';
 import { CauseTag } from '../components/game/CauseTag';
 import { EventLog } from '../components/game';
@@ -25,10 +26,10 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
 
   const impactClass = (impact: string) => {
     const v = (impact || '').toLowerCase();
-    if (/(pos|green|improve|increase|gain|good)/.test(v)) return 'text-green-300';
-    if (/(neg|red|worse|decrease|loss|bad)/.test(v)) return 'text-red-300';
-    if (/(mix|neutral|balanced)/.test(v)) return 'text-amber-200';
-    return 'text-blue-300';
+    if (/(pos|green|improve|increase|gain|good)/.test(v)) return 'text-success';
+    if (/(neg|red|worse|decrease|loss|bad)/.test(v)) return 'text-danger';
+    if (/(mix|neutral|balanced)/.test(v)) return 'text-muted';
+    return 'text-accent';
   };
 
   const handleGenerateDebrief = async () => {
@@ -57,17 +58,17 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6 pt-20 flex flex-col items-center">
+    <div className="min-h-screen bg-bg text-text p-4 md:p-6 pt-20 flex flex-col items-center">
       <div className="w-full max-w-[1920px] space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-400">Simulation Over</h1>
-          <p className="text-base md:text-lg text-gray-300">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-accent">Simulation Over</h1>
+          <p className="text-base md:text-lg text-muted">
             Final {gameState.coreMetric.name}:{' '}
-            <span className="text-2xl font-bold text-green-400">
+            <span className="text-2xl font-bold text-success">
               {gameState.coreMetric.value}%
             </span>
             {finalScoreChange !== null && (
-              <span className={`ml-2 text-lg font-semibold ${finalScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`ml-2 text-lg font-semibold ${finalScoreChange >= 0 ? 'text-success' : 'text-danger'}`}>
                 ({finalScoreChange >= 0 ? '+' : ''}{finalScoreChange})
               </span>
             )}
@@ -80,20 +81,17 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
           {(() => {
             const humanPlayer = players.find(p => p.isHuman);
             return humanPlayer && (
-              <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-4 md:p-6 h-fit">
+              <div className="bg-panel border border-border rounded-lg p-4 md:p-6 h-fit">
                 <div className="flex items-center gap-3 mb-2">
-                  {typeof humanPlayer.role.icon === 'function'
-                    ? humanPlayer.role.icon({ className: 'h-6 w-6 text-amber-400' })
-                    : <span className="text-2xl">{humanPlayer.role.icon}</span>
-                  }
-                  <h3 className="text-lg md:text-xl font-bold text-amber-300">Your Role: {humanPlayer.role.name}</h3>
+                  <span className="w-2 h-2 rounded-full bg-accent" />
+                  <h3 className="text-lg md:text-xl font-bold text-text">Your Role: {humanPlayer.role.name}</h3>
                 </div>
-                <p className="text-sm md:text-base text-amber-100/90">
+                <p className="text-sm md:text-base text-muted">
                   <span className="font-semibold">Secret Objective:</span> {humanPlayer.role.hiddenObjective}
                 </p>
-                <p className="text-sm md:text-base text-amber-100/90 mt-2">
+                <p className="text-sm md:text-base text-muted mt-2">
                   <span className="font-semibold">Personal Score:</span>{' '}
-                  <span className="text-xl font-mono text-amber-300">
+                  <span className="text-xl font-mono text-accent">
                     {humanPlayer.hiddenScore > 0 ? '+' : ''}{humanPlayer.hiddenScore}
                   </span>
                 </p>
@@ -102,12 +100,12 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
           })()}
 
           {/* AI Debrief Summary */}
-          <div className="bg-gray-800 rounded-lg p-4 md:p-6">
+          <div className="bg-card border border-border rounded-lg p-4 md:p-6">
             <h2 className="text-xl md:text-2xl font-bold mb-3">AI Debrief</h2>
             {debriefLoading && (
               <div className="flex flex-col items-center justify-center py-8">
                 <LoadingSpinner />
-                <p className="mt-4 text-sm text-gray-400 italic text-center">
+                <p className="mt-4 text-sm text-muted italic text-center">
                   "{joke}"
                 </p>
               </div>
@@ -128,17 +126,17 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
 
             {/* Round Impact Table */}
             <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Round Impact (Score Δ)</p>
+                  <p className="text-xs uppercase tracking-wide text-accent">Round Impact (Score Δ)</p>
                 <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
                   <div className="inline-block min-w-full align-middle">
-                    <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                      <thead className="bg-gray-900/70 text-gray-300">
+                    <table className="min-w-full text-sm text-left border border-border rounded-md overflow-hidden">
+                      <thead className="bg-panel text-muted">
                         <tr>
-                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
-                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[150px]">Headline</th>
-                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Δ Score</th>
-                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Δ %</th>
-                          <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">After</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-border whitespace-nowrap">Round</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-border min-w-[150px]">Headline</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-border whitespace-nowrap">Δ Score</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-border whitespace-nowrap">Δ %</th>
+                          <th className="px-2 md:px-3 py-2 border-b border-border whitespace-nowrap">After</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -150,12 +148,12 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                             const rel = prev !== 0 ? (delta / prev) * 100 : 0;
                             const color = delta >= 0 ? 'text-green-300' : 'text-red-300';
                             return (
-                              <tr key={`r_${e.round}`} className="odd:bg-gray-900/40">
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.round}</td>
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.event?.headline || '—'}</td>
-                                <td className={`px-2 md:px-3 py-2 border-b border-gray-800 font-semibold ${color}`}>{delta > 0 ? `+${delta}` : delta}</td>
-                                <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${color}`}>{(rel >= 0 ? '+' : '') + rel.toFixed(1)}%</td>
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{e.publicScoreAfter}%</td>
+                              <tr key={`r_${e.round}`} className="odd:bg-panel">
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-text">{e.round}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-text">{e.event?.headline || '—'}</td>
+                                <td className={`px-2 md:px-3 py-2 border-b border-border font-semibold ${color}`}>{delta > 0 ? `+${delta}` : delta}</td>
+                                <td className={`px-2 md:px-3 py-2 border-b border-border ${color}`}>{(rel >= 0 ? '+' : '') + rel.toFixed(1)}%</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-text">{e.publicScoreAfter}%</td>
                               </tr>
                             );
                           })}
@@ -168,31 +166,31 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             {/* Key Events Table */}
             {debrief.keyEvents?.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-blue-200">Key Decisive Events</p>
+                  <p className="text-xs uppercase tracking-wide text-accent">Key Decisive Events</p>
                   <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
                     <div className="inline-block min-w-full align-middle">
-                      <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                        <thead className="bg-gray-900/70 text-gray-300">
+                      <table className="min-w-full text-sm text-left border border-border rounded-md overflow-hidden">
+                        <thead className="bg-panel text-muted">
                           <tr>
-                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
-                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[100px]">Actor</th>
-                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[120px]">Title</th>
-                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[100px]">Impact</th>
-                            <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[200px]">Description</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-border whitespace-nowrap">Round</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-border min-w-[100px]">Actor</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-border min-w-[120px]">Title</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-border min-w-[100px]">Impact</th>
+                            <th className="px-2 md:px-3 py-2 border-b border-border min-w-[200px]">Description</th>
                           </tr>
                         </thead>
                         <tbody>
                           {debrief.keyEvents.map((ev, idx) => (
-                            <tr key={`ev_${idx}`} className="odd:bg-gray-900/40">
-                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.round}</td>
-                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.actor ?? '—'}</td>
-                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ev.title}</td>
+                            <tr key={`ev_${idx}`} className="odd:bg-panel">
+                              <td className="px-2 md:px-3 py-2 border-b border-border text-text">{ev.round}</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-border text-text">{ev.actor ?? '—'}</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-border text-text">{ev.title}</td>
                               <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${impactClass(ev.impact)}`}>{ev.impact}</td>
-                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-300">
+                              <td className="px-2 md:px-3 py-2 border-b border-border text-muted">
                                 <div className="whitespace-pre-wrap">{ev.description}</div>
                                 {ev.causes && ev.causes.length > 0 && (
                                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                                    <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                                    <span className="text-[11px] uppercase tracking-wide text-accent">Because:</span>
                                     {ev.causes.map((c, i) => (
                                       <CauseTag key={`debrief_ev_${idx}_c_${i}`} cause={c} logs={gameState.eventLog} />
                                     ))}
@@ -214,8 +212,8 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                   <p className="text-xs uppercase tracking-wide text-amber-200">Your Influential Actions</p>
                   <div className="overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
                     <div className="inline-block min-w-full align-middle">
-                      <table className="min-w-full text-sm text-left border border-gray-700 rounded-md overflow-hidden">
-                        <thead className="bg-gray-900/70 text-gray-300">
+                      <table className="min-w-full text-sm text-left border border-border rounded-md overflow-hidden">
+                        <thead className="bg-panel text-muted">
                           <tr>
                             <th className="px-2 md:px-3 py-2 border-b border-gray-700 whitespace-nowrap">Round</th>
                             <th className="px-2 md:px-3 py-2 border-b border-gray-700 min-w-[120px]">Action</th>
@@ -226,16 +224,16 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                         <tbody>
                           {debrief.userActions.length > 0 ? (
                             debrief.userActions.map((ac, idx) => (
-                              <tr key={`act_${idx}`} className="odd:bg-gray-900/40">
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ac.round}</td>
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-200">{ac.title}</td>
+                              <tr key={`act_${idx}`} className="odd:bg-panel">
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-text">{ac.round}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-text">{ac.title}</td>
                                 <td className={`px-2 md:px-3 py-2 border-b border-gray-800 ${impactClass(ac.impact)}`}>{ac.impact}</td>
-                                <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-300">{ac.rationale ?? '—'}</td>
+                                <td className="px-2 md:px-3 py-2 border-b border-border text-muted">{ac.rationale ?? '—'}</td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td className="px-2 md:px-3 py-2 border-b border-gray-800 text-gray-400" colSpan={4}>No recorded human actions.</td>
+                              <td className="px-2 md:px-3 py-2 border-b border-border text-muted" colSpan={4}>No recorded human actions.</td>
                             </tr>
                           )}
                         </tbody>
@@ -302,10 +300,10 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                 )}
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Public Score After Round</p>
-                <p className="text-3xl font-bold text-blue-300">{finalLogEntry.publicScoreAfter}%</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-muted">Public Score After Round</p>
+                <p className="text-3xl font-bold text-accent">{finalLogEntry.publicScoreAfter}%</p>
                 {finalScoreChange !== null && (
-                  <p className={`text-sm font-semibold ${finalScoreChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`text-sm font-semibold ${finalScoreChange >= 0 ? 'text-success' : 'text-danger'}`}>
                     {finalScoreChange >= 0 ? '+' : ''}
                     {finalScoreChange}
                   </p>
@@ -314,29 +312,29 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             </div>
 
             {finalLogEntry.roundSummary && (
-              <div className="bg-gray-900/60 border border-gray-700 rounded-md p-4 space-y-2">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Round Summary</p>
-                <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">{finalLogEntry.roundSummary}</p>
+              <div className="bg-panel border border-border rounded-md p-4 space-y-2">
+                <p className="text-xs uppercase tracking-wide text-accent">Round Summary</p>
+                <p className="text-sm text-text leading-relaxed whitespace-pre-wrap">{finalLogEntry.roundSummary}</p>
               </div>
             )}
 
             {/* Final Round Key Moments with contextual citations */}
             {finalLogEntry?.outcomeTimeline?.length ? (
               <div className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-blue-200">Key Moments (Final Round)</p>
+                <p className="text-xs uppercase tracking-wide text-accent">Key Moments (Final Round)</p>
                 <ol className="space-y-3">
                   {finalLogEntry.outcomeTimeline.map((item, index) => (
                     <li key={`end_km_${index}`} className="flex gap-3">
-                      <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-semibold text-sm flex items-center justify-center">
+                      <div className="mt-1 h-6 w-6 flex-shrink-0 rounded-full bg-panel text-accent font-semibold text-sm flex items-center justify-center border border-border">
                         {index + 1}
                       </div>
-                      <div className="flex-1 bg-gray-900/60 border border-gray-800 rounded-md p-3 space-y-1">
-                        <p className="text-sm font-semibold text-white">{item.title}</p>
-                        <p className="text-sm text-gray-200 leading-relaxed">{item.description}</p>
-                        <p className="text-xs uppercase tracking-wide text-blue-300">Impact: <span className="normal-case font-medium text-blue-100">{item.impact}</span></p>
+                      <div className="flex-1 bg-panel border border-border rounded-md p-3 space-y-1">
+                        <p className="text-sm font-semibold text-text">{item.title}</p>
+                        <p className="text-sm text-muted leading-relaxed">{item.description}</p>
+                        <p className="text-xs uppercase tracking-wide text-accent">Impact: <span className="normal-case font-medium text-text">{item.impact}</span></p>
                         {Array.isArray((item as any).causes) && (item as any).causes.length > 0 && (
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] uppercase tracking-wide text-blue-200">Because:</span>
+                            <span className="text-[11px] uppercase tracking-wide text-accent">Because:</span>
                             {(item as any).causes.map((c: any, i: number) => (
                               <CauseTag key={`end_km_${index}_c_${i}`} cause={c} logs={gameState.eventLog} />
                             ))}
@@ -352,9 +350,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
             {/* Removed duplicate Key Moments block without causes to avoid duplication */}
 
             {finalLogEntry.counterfactualNote && (
-              <div className="bg-gray-900/40 border border-blue-800/40 rounded-md p-4 text-sm text-blue-100/90">
-                <span className="font-semibold uppercase tracking-wide text-blue-200">If No One Acted</span>
-                <p className="mt-1 leading-relaxed">{finalLogEntry.counterfactualNote}</p>
+              <div className="bg-panel border border-border rounded-md p-4 text-sm text-muted">
+                <span className="font-semibold uppercase tracking-wide text-accent">If No One Acted</span>
+                <p className="mt-1 leading-relaxed text-muted">{finalLogEntry.counterfactualNote}</p>
               </div>
             )}
 
@@ -370,35 +368,35 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
                     const hiddenUpdate = finalLogEntry.hiddenScoreChanges[playerRound.roleName];
 
                     return (
-                      <div key={`${playerRound.roleName}_${finalLogEntry.round}`} className="bg-gray-900/70 border border-gray-700 rounded-md p-4 space-y-3">
+                      <div key={`${playerRound.roleName}_${finalLogEntry.round}`} className="bg-panel border border-border rounded-md p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {roleIcon({ className: 'h-6 w-6 text-blue-300' })}
-                            <span className="font-semibold text-white">{playerRound.roleName}</span>
+                            <span className="w-2 h-2 rounded-full bg-accent" />
+                            <span className="font-semibold text-text">{playerRound.roleName}</span>
                           </div>
                           {hiddenUpdate && (
-                            <span className={`text-sm font-semibold ${hiddenUpdate.update >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                            <span className={`text-sm font-semibold ${hiddenUpdate.update >= 0 ? 'text-success' : 'text-danger'}`}>
                               {hiddenUpdate.update >= 0 ? '+' : ''}
                               {hiddenUpdate.update}
                             </span>
                           )}
                         </div>
-                        <ul className="space-y-1 text-sm text-gray-300">
+                        <ul className="space-y-1 text-sm text-muted">
                           {playerRound.actions.length > 0 ? (
                             playerRound.actions.map((action, index) => (
                               <li key={`${playerRound.roleName}_${index}`} className="flex justify-between items-start gap-2">
                                 <span className="leading-snug flex-1">{action.title}</span>
-                                <span className="flex-shrink-0 inline-flex items-center text-xs font-semibold bg-gray-800 text-blue-300 px-2 py-0.5 rounded-full">
+                                <span className="flex-shrink-0 inline-flex items-center text-xs font-semibold bg-panel text-accent px-2 py-0.5 rounded-full border border-border">
                                   {action.cost} AP
                                 </span>
                               </li>
                             ))
                           ) : (
-                            <li className="italic text-gray-500">No action submitted.</li>
+                            <li className="italic text-muted">No action submitted.</li>
                           )}
                         </ul>
                         {hiddenUpdate?.justification && (
-                          <p className="text-xs text-amber-200/80 italic whitespace-pre-wrap">
+                          <p className="text-xs text-muted italic whitespace-pre-wrap">
                             {hiddenUpdate.justification}
                           </p>
                         )}
@@ -412,7 +410,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
         )}
 
         {/* Full Event Log across all rounds */}
-        <div className="bg-gray-800 rounded-lg p-4 md:p-6">
+        <div className="bg-card border border-border rounded-lg p-4 md:p-6">
           <h2 className="text-xl md:text-2xl font-bold mb-3">All Rounds — Event Log</h2>
           <EventLog
             gameState={gameState}
@@ -426,20 +424,9 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={onReset}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg"
-          >
-            Play Again
-          </button>
+          <Button onClick={onReset} className="h-11 px-8 text-base">Play Again</Button>
           {onOpenFeedback && (
-            <button
-              onClick={onOpenFeedback}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg text-lg inline-flex items-center gap-2"
-            >
-              <ChatBubbleLeftIcon className="h-5 w-5" />
-              Share Feedback
-            </button>
+            <Button onClick={onOpenFeedback} variant="outline" className="h-11 px-8 text-base">Share Feedback</Button>
           )}
         </div>
       </div>
