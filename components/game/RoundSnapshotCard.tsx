@@ -72,19 +72,19 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-2">
+    <div className="bg-card border border-border rounded-lg p-2">
       {/* Compact Header */}
-      <div className="bg-blue-900/30 border border-blue-700/40 rounded-md p-2 mb-2">
+      <div className="bg-panel border border-border rounded-md p-2 mb-2">
         {/* Event details - side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <p className={`${fontSizes.body} font-semibold text-blue-200 mb-1.5`}>Current Event:</p>
-            <p className={`${fontSizes.body} text-blue-100/90 leading-relaxed`}>{gameState.currentEvent?.detail ?? gameState.currentEvent?.headline ?? 'Awaiting next event'}</p>
+            <p className={`${fontSizes.body} font-semibold text-accent mb-1.5`}>Current Event:</p>
+            <p className={`${fontSizes.body} text-muted leading-relaxed`}>{gameState.currentEvent?.detail ?? gameState.currentEvent?.headline ?? 'Awaiting next event'}</p>
           </div>
           {hasLastRound && latestLogEntry?.event && (
             <div>
-              <p className={`${fontSizes.body} font-semibold text-blue-200 mb-1.5`}>Last Round:</p>
-              <p className={`${fontSizes.body} text-blue-100/90 leading-relaxed`}>{latestLogEntry.event.detail ?? latestLogEntry.event.headline}</p>
+              <p className={`${fontSizes.body} font-semibold text-accent mb-1.5`}>Last Round:</p>
+              <p className={`${fontSizes.body} text-muted leading-relaxed`}>{latestLogEntry.event.detail ?? latestLogEntry.event.headline}</p>
             </div>
           )}
         </div>
@@ -93,9 +93,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
       {/* 3 Sections Stacked as Rows */}
       <div className="flex flex-col gap-2">
         {/* SECTION 1: Key Moments */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 flex gap-2">
+        <div className="bg-panel border border-border rounded-md p-2 flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Key Moments</p>
+            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Key Moments</p>
           </div>
           <div className="flex-1 min-w-0">
             {hasLastRound && latestLogEntry?.outcomeTimeline?.length ? (
@@ -103,16 +103,16 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 {/* Key Moments Grid */}
                 <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                   {latestLogEntry.outcomeTimeline.map((item, index) => (
-                    <div key={`km_${index}`} className="bg-gray-950/60 border border-blue-800/30 rounded p-3">
+                    <div key={`km_${index}`} className="bg-panel border border-border rounded p-3">
                       <div className="flex items-start gap-2">
-                        <div className="h-6 w-6 flex-shrink-0 rounded-full bg-blue-800 text-blue-200 font-bold text-sm flex items-center justify-center">
+                        <div className="h-6 w-6 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-sm flex items-center justify-center border border-border">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`${fontSizes.title} font-semibold text-white mb-1.5 break-words`}>{item.title}</p>
-                          <p className={`${fontSizes.body} text-gray-300 leading-relaxed break-words`}>{item.description}</p>
-                          <p className={`${fontSizes.body} text-blue-300 mt-1.5 break-words`}>
-                            <span className="text-blue-100">{item.impact}</span>
+                          <p className={`${fontSizes.title} font-semibold text-text mb-1.5 break-words`}>{item.title}</p>
+                          <p className={`${fontSizes.body} text-muted leading-relaxed break-words`}>{item.description}</p>
+                          <p className={`${fontSizes.body} text-accent mt-1.5 break-words`}>
+                            <span className="text-text">{item.impact}</span>
                           </p>
                         </div>
                       </div>
@@ -146,17 +146,17 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 })()}
               </>
             ) : (
-              <div className="bg-blue-950/60 border border-blue-700/30 rounded-md p-4">
-                <p className={`${fontSizes.body} text-blue-100/80 leading-relaxed`}>The AI Game Master will summarize key moments here once actions are submitted.</p>
+              <div className="bg-panel border border-border rounded-md p-4">
+                <p className={`${fontSizes.body} text-muted leading-relaxed`}>The AI Game Master will summarize key moments here once actions are submitted.</p>
               </div>
             )}
           </div>
         </div>
 
         {/* SECTION 2: Your Actions (moved above Score Δ) */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 relative flex gap-2">
+        <div className="bg-panel border border-border rounded-md p-2 relative flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
+            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
           </div>
           <div className="flex-1 min-w-0 relative">
             {isPaused && (
@@ -172,10 +172,10 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   <h4 className="text-xs font-semibold mb-1.5 text-blue-200">Submitted Actions</h4>
                   <div className="grid grid-cols-1 gap-1.5">
                     {humanPlayer.actions.map((a) => (
-                      <div key={a.title} className="bg-gray-700/40 border border-gray-700 rounded p-1.5">
+                      <div key={a.title} className="bg-panel border border-border rounded p-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-200 font-medium text-xs">{a.title}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-800 text-blue-300">{a.cost} AP</span>
+                          <span className="text-text font-medium text-xs">{a.title}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel text-accent border border-border">{a.cost} AP</span>
                         </div>
                       </div>
                     ))}
@@ -206,7 +206,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   <LoadingSpinner />
                 </div>
               )}
-              <p className="text-[10px] text-gray-400 italic text-center">
+              <p className="text-[10px] text-muted italic text-center">
                 "{joke}"
               </p>
             </div>
@@ -283,9 +283,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 3: Score Δ (moved below actions) */}
-        <div className="bg-gray-900/40 border border-gray-800 rounded-md p-2 flex gap-2">
+        <div className="bg-panel border border-border rounded-md p-2 flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-blue-200 font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
+            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
           </div>
           <div className="flex-1 min-w-0">
             {hasLastRound && playerActions.length > 0 ? (
@@ -294,18 +294,18 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   const hiddenUpdate = hiddenScoreChanges[playerAction.roleName];
                   const matchingPlayer = players.find((p) => p.role.name === playerAction.roleName);
                   return (
-                    <div key={`action_${playerAction.roleName}`} className="bg-gray-950/60 border border-amber-800/30 rounded p-2">
+                    <div key={`action_${playerAction.roleName}`} className="bg-panel border border-border rounded p-2">
                       <div className="mb-1">
                         <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <span className="font-semibold text-white text-xs break-words">{playerAction.roleName}</span>
+                          <span className="font-semibold text-text text-xs break-words">{playerAction.roleName}</span>
                           {hiddenUpdate && (
-                            <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className={`text-xs font-bold flex-shrink-0 ${hiddenUpdate.update >= 0 ? 'text-success' : 'text-danger'}`}>
                               {hiddenUpdate.update >= 0 ? '+' : ''}{hiddenUpdate.update}
                             </span>
                           )}
                         </div>
                         {matchingPlayer && (
-                          <span className="text-[10px] text-amber-400 italic block break-words">
+                          <span className="text-[10px] text-muted italic block break-words">
                             {matchingPlayer.role.hiddenObjective}
                           </span>
                         )}
@@ -314,12 +314,12 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         {playerAction.actions.length > 0 ? (
                           playerAction.actions.map((action, idx) => (
                             <li key={idx} className="flex justify-between items-start gap-1 text-[11px]">
-                              <span className="leading-tight flex-1 text-gray-300 break-words">{action.title}</span>
-                              <span className="flex-shrink-0 text-[10px] font-semibold text-blue-300">{action.cost}AP</span>
+                              <span className="leading-tight flex-1 text-muted break-words">{action.title}</span>
+                              <span className="flex-shrink-0 text-[10px] font-semibold text-accent">{action.cost}AP</span>
                             </li>
                           ))
                         ) : (
-                          <li className="italic text-gray-500 text-[11px]">No action</li>
+                          <li className="italic text-muted text-[11px]">No action</li>
                         )}
                       </ul>
                     </div>
@@ -327,8 +327,8 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 })}
               </div>
             ) : (
-              <div className="bg-blue-950/60 border border-blue-700/30 rounded-md p-3">
-                <p className="text-xs text-blue-100/80 leading-relaxed">Actions and score Δ will appear here after the first round.</p>
+              <div className="bg-panel border border-border rounded-md p-3">
+                <p className="text-xs text-muted leading-relaxed">Actions and score Δ will appear here after the first round.</p>
               </div>
             )}
           </div>
