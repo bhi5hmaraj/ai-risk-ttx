@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import type { ActionOption, Player } from '../../types';
 import { GAME_CONFIG } from '../../constants';
 import { LoadingSpinner, CheckCircleIcon, PauseIcon } from '../Icons';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { useRotatingJoke } from '@/lib/loadingJokes';
 
 interface ActionSelectionProps {
@@ -125,16 +127,10 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         </div>
         <div className="text-right">
           <span className="text-xs uppercase tracking-wide text-muted">Points Remaining</span>
-          <div
-            className={`mt-1 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-border bg-panel ${
-              pointsRemaining > 1
-                ? 'text-success'
-                : pointsRemaining === 0
-                ? 'text-danger'
-                : 'text-warning'
-            }`}
-          >
-            {pointsRemaining}
+          <div className="mt-1">
+            <Badge tone={pointsRemaining > 1 ? 'success' : pointsRemaining === 0 ? 'danger' : 'warning'} className="text-sm px-3 py-1">
+              {pointsRemaining}
+            </Badge>
           </div>
         </div>
       </div>
@@ -169,9 +165,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
                     <p className={`font-semibold ${isSelected ? 'text-text' : 'text-text'}`}>{opt.title}</p>
                     <p className={`mt-2 text-sm leading-snug text-muted whitespace-pre-line`}>{opt.description}</p>
                   </div>
-                  <span className="inline-flex items-center text-xs font-semibold bg-panel text-accent px-2 py-0.5 rounded-full shrink-0 border border-border">
-                    {opt.cost} AP
-                  </span>
+                  <Badge tone="accent" className="text-xs px-2 py-0.5 shrink-0">{opt.cost} AP</Badge>
                 </div>
               </button>
             );
@@ -179,15 +173,9 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
         </div>
       )}
       <div className="mt-6 pt-4 border-t border-border">
-        <button
-          onClick={() => onConfirm(selected)}
-          disabled={confirmDisabled}
-          className={`w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center ${
-            confirmDisabled ? 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed' : ''
-          }`}
-        >
+        <Button onClick={() => onConfirm(selected)} disabled={confirmDisabled} className="w-full h-11 text-base">
           Confirm Actions
-        </button>
+        </Button>
       </div>
     </div>
   );
