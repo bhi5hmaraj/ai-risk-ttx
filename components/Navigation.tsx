@@ -48,7 +48,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-      <nav className={`fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 transition-transform duration-300 ${
+      <nav className={`fixed top-0 left-0 right-0 z-40 bg-bg backdrop-blur-sm border-b border-border transition-transform duration-300 ${
         isCollapsed ? '-translate-y-full' : 'translate-y-0'
       }`}>
         <div className="max-w-7xl mx-auto px-4">
@@ -61,13 +61,13 @@ export const Navigation: React.FC<NavigationProps> = ({
                 aria-label="Go to Home"
                 title="Go to Home"
               >
-                <h1 className="text-xl font-bold text-blue-300 hover:text-white transition-colors">Simulacra</h1>
+                <h1 className="text-xl font-bold text-accent hover:text-accent-strong transition-colors">Simulacra</h1>
               </button>
             <div className="hidden lg:flex flex-col">
-              <span className="text-xs text-gray-500">AI Tabletop Exercise</span>
+              <span className="text-xs text-muted">AI Tabletop Exercise</span>
               <ModelInfo />
             </div>
-            <span className="text-xs text-gray-500 hidden sm:inline lg:hidden">AI Tabletop Exercise</span>
+            <span className="text-xs text-muted hidden sm:inline lg:hidden">AI Tabletop Exercise</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -89,7 +89,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     navbar.classList.add('-translate-y-full');
                   }
                 }}
-                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-md text-muted hover:text-text hover:bg-panel transition-colors"
                 aria-label="Hide navigation"
                 title="Hide navigation"
               >
@@ -115,7 +115,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-800 bg-gray-900">
+        <div className="md:hidden border-t border-border bg-panel">
           <div className="px-4 py-3 space-y-2">
             <MobileNavButton onClick={handleNavigateHome} icon={HomeIcon} label="Home" />
             {showFeedback && (
@@ -138,7 +138,7 @@ const NavButton: React.FC<{
 }> = ({ onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-muted hover:text-text hover:bg-panel transition-colors"
   >
     <Icon className="h-5 w-5" />
     <span>{label}</span>
@@ -153,7 +153,7 @@ const MobileNavButton: React.FC<{
 }> = ({ onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-3 w-full px-4 py-3 rounded-md text-left text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+    className="flex items-center gap-3 w-full px-4 py-3 rounded-md text-left text-muted hover:text-text hover:bg-panel transition-colors"
   >
     <Icon className="h-5 w-5" />
     <span className="font-medium">{label}</span>
@@ -166,10 +166,10 @@ const ModelInfo: React.FC = () => {
   const isFlashLite = model.toLowerCase().includes('flash') && model.toLowerCase().includes('lite');
 
   return (
-    <div className="text-xs text-gray-600">
+    <div className="text-xs text-muted">
       <span>Powered by {model}</span>
       {isFlashLite && (
-        <span className="ml-1 text-gray-500" title="Fast responses, moving to Pro models in the future">
+        <span className="ml-1 text-muted" title="Fast responses, moving to Pro models in the future">
           (⚡ fast)
         </span>
       )}
