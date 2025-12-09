@@ -11,12 +11,12 @@
   --muted: #93a1b2;
 
   /* Accent (Matrix) — toned down */
-  --accent:        #39d98a;    /* muted code green */
-  --accent-strong: #2bb673;    /* darker for active states */
-  --accent-soft:   rgba(57, 217, 138, 0.10);
+  --accent:        #2ea043;    /* serious, readable green (GitHub-style) */
+  --accent-strong: #237a36;    /* darker for active/hover */
+  --accent-soft:   rgba(46, 160, 67, 0.12);
 
   /* Semantic (toned) */
-  --success: #2bb673;
+  --success: #2ea043;
   --danger:  #ef4444;
   --warning: #f59e0b;
 
