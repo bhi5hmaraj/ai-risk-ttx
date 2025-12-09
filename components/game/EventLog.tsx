@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Button } from '@/components/ui/Button';
 import type { GameState, Player } from '../../types';
 import { CauseTag } from './CauseTag';
 
