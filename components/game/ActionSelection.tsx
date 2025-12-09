@@ -152,7 +152,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
                 type="button"
                 onClick={() => toggleAction(opt)}
                 disabled={!canSelect && !isSelected}
-                className={`w-full text-left p-3 rounded-md border transition-colors ${
+                className={`w-full text-left p-3 rounded-md border transition-colors focus:outline-none focus-visible:border-accent ${
                   isSelected
                     ? 'border-accent bg-[var(--accent-soft)] shadow-inner'
                     : canSelect

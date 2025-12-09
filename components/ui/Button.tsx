@@ -7,7 +7,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ className, variant = 'primary', size = 'md', ...props }: ButtonProps) {
-  const base = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 rounded-md';
+  const base = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-0 rounded-md';
   const sizes = {
     sm: 'h-9 px-3 text-sm',
     md: 'h-10 px-4 text-sm',
@@ -21,4 +21,3 @@ export function Button({ className, variant = 'primary', size = 'md', ...props }
   } as const;
   return <button className={cn(base, sizes[size], variants[variant], className)} {...props} />;
 }
-

@@ -138,7 +138,7 @@ const NavButton: React.FC<{
 }> = ({ onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-muted hover:text-text hover:bg-panel transition-colors"
+    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-muted hover:text-text hover:bg-panel transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
   >
     <Icon className="h-5 w-5" />
     <span>{label}</span>
@@ -153,7 +153,7 @@ const MobileNavButton: React.FC<{
 }> = ({ onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-3 w-full px-4 py-3 rounded-md text-left text-muted hover:text-text hover:bg-panel transition-colors"
+    className="flex items-center gap-3 w-full px-4 py-3 rounded-md text-left text-muted hover:text-text hover:bg-panel transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
   >
     <Icon className="h-5 w-5" />
     <span className="font-medium">{label}</span>

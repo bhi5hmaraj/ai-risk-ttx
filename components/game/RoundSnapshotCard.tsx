@@ -230,23 +230,21 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         type="button"
                         onClick={() => toggleAction(opt)}
                         disabled={!canSelect && !isSelected}
-                        className={`w-full text-left p-1.5 rounded-md border transition-colors ${
+                        className={`w-full text-left p-1.5 rounded-md border transition-colors focus:outline-none focus-visible:border-accent ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-900/40 shadow-inner'
+                            ? 'border-accent bg-[var(--accent-soft)] shadow-inner'
                             : canSelect
-                            ? 'border-gray-700 bg-gray-900/50 hover:border-blue-400'
-                            : 'border-gray-800 bg-gray-900/20 text-gray-500 cursor-not-allowed'
+                            ? 'border-border bg-panel hover:border-accent'
+                            : 'border-border bg-panel text-muted opacity-60 cursor-not-allowed'
                         }`}
                       >
                         <div className="flex items-start gap-2">
-                          <p className={`font-semibold ${fontSizes.body} break-words flex-1 ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+                          <p className={`font-semibold ${fontSizes.body} break-words flex-1 text-text`}>
                             {opt.title}
-                            <span className={`ml-1.5 inline-flex items-center ${fontSizes.caption} font-semibold bg-gray-800 text-blue-300 px-1.5 py-0.5 rounded-full`}>
-                              {opt.cost} AP
-                            </span>
+                            <span className={`ml-1.5 inline-flex items-center ${fontSizes.caption} font-semibold bg-panel text-accent border border-border px-1.5 py-0.5 rounded-full`}>{opt.cost} AP</span>
                           </p>
                         </div>
-                        <p className={`mt-1 ${fontSizes.body} leading-relaxed text-gray-200 break-words`}>{opt.description}</p>
+                        <p className={`mt-1 ${fontSizes.body} leading-relaxed text-muted break-words`}>{opt.description}</p>
                       </button>
                     );
                   })}
