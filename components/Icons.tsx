@@ -2,8 +2,8 @@ import React from 'react';
 
 const stroke = 'currentColor';
 
-export const LoadingSpinner = () => (
-  <svg className="h-6 w-6 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none">
+export const LoadingSpinner = ({ className = 'h-6 w-6' }: { className?: string }) => (
+  <svg className={`animate-spin text-accent ${className}`} viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="12" r="9" stroke={stroke} strokeWidth="4" strokeOpacity="0.2" />
     <path d="M21 12a9 9 0 0 0-9-9" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
   </svg>
@@ -164,5 +164,38 @@ export const Cog6ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
     <path d="M9.6 3h4.8l.9 2.4a8 8 0 0 1 2 1.2l2.5-.5 2.4 4.2-1.8 1.8c.1.5.1 1 0 1.6l1.8 1.8-2.4 4.2-2.5-.5a8 8 0 0 1-2 1.2l-.9 2.4H9.6l-.9-2.4a8 8 0 0 1-2-1.2l-2.5.5-2.4-4.2 1.8-1.8c-.1-.5-.1-1 0-1.6L1.8 10.3l2.4-4.2 2.5.5a8 8 0 0 1 2-1.2L9.6 3Z" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+// Globe icon for public/global score
+export const GlobeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3.5 9h17M3.5 15h17" strokeLinecap="round" />
+    <path d="M12 3c-2 2.5-3 5.5-3 9s1 6.5 3 9c2-2.5 3-5.5 3-9s-1-6.5-3-9Z" />
+  </svg>
+);
+
+// Star icon for personal score/achievement
+export const StarIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4-6.2-4.5h7.6L12 2Z" strokeLinejoin="round" />
+  </svg>
+);
+
+// Bolt/lightning icon for action points
+export const BoltIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" strokeLinejoin="round" />
+  </svg>
+);
+
+// Cycle/round icon
+export const ArrowPathIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={1.6} {...props}>
+    <path d="M16.5 8h4.5v-4.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3.5 16h-0.5v4.5h4.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 8A9 9 0 0 0 6.2 5.3" strokeLinecap="round" />
+    <path d="M3 16a9 9 0 0 0 14.8 2.7" strokeLinecap="round" />
   </svg>
 );
