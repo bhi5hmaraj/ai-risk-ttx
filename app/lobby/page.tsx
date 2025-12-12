@@ -26,6 +26,7 @@ function LobbyPageContent() {
   const { handleStartGame } = useGameActions();
   const clearSession = useSessionStore ((s) => s.clear);
   const resetActions = useActionStore((s) => s.resetRound);
+  const [isNavigatingToBuilder, setIsNavigatingToBuilder] = React.useState(false);
 
   // Reset lobby state on mount unless arriving from builder with prefilled setup
   useEffect(() => {
@@ -85,9 +86,9 @@ function LobbyPageContent() {
   // Show loading overlay when starting game (backend connection, session creation, scenario generation)
   // Keep inline loading for custom scenario generation from text input
   const startGameLoadingMessages = ['backend', 'setting up game', 'game master', 'generating the initial'];
-  const showLoadingOverlay = isLoading && startGameLoadingMessages.some(msg =>
+  const showLoadingOverlay = isNavigatingToBuilder || (isLoading && startGameLoadingMessages.some(msg =>
     (loadingMessage || '').toLowerCase().includes(msg)
-  );
+  ));
 
   return (
     <>
@@ -111,7 +112,7 @@ function LobbyPageContent() {
       {actionTree}
       {showLoadingOverlay ? (
         <LoadingScreen
-          message={loadingMessage || 'Starting game...'}
+          message={isNavigatingToBuilder ? 'Loading scenario builder...' : (loadingMessage || 'Starting game...')}
           error={error}
         />
       ) : (
@@ -133,7 +134,10 @@ function LobbyPageContent() {
           isLoading={isLoading}
           handleCustomGameStart={handleCustomGameStart}
           handleStartGame={handleStartGame}
-          onNavigateToCustomScenario={() => router.push('/custom-scenario')}
+          onNavigateToCustomScenario={() => {
+            setIsNavigatingToBuilder(true);
+            router.push('/custom-scenario');
+          }}
         />
       )}
     </>

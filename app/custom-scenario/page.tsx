@@ -343,19 +343,19 @@ function CustomScenarioPageContent() {
 
       {/* Sidebar - extends to screen edge, resizable */}
       <aside
-        className="relative hidden lg:flex border-l border-gray-800 flex-shrink-0"
+        className="relative hidden lg:flex border-l border-border flex-shrink-0"
         style={{
           width: `clamp(24rem, var(--rail-pref, 35vw), 60vw)`,
         }}
       >
         {/* Resizer handle - positioned at the left edge of sidebar */}
         <div
-          className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-purple-500/40 active:bg-purple-500/60 transition-colors z-50 flex items-center justify-center"
+          className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-accent/40 active:bg-accent/60 transition-colors z-50 flex items-center justify-center"
           onMouseDown={startResize}
           title="Drag to resize panel"
           aria-label="Resize chat panel"
         >
-          <div className="w-0.5 h-16 bg-gray-600 hover:bg-purple-500 rounded transition-colors" />
+          <div className="w-0.5 h-16 bg-border hover:bg-accent rounded transition-colors" />
         </div>
 
         <div
@@ -423,13 +423,13 @@ function CustomScenarioPageContent() {
       />
     </div>
     {isSubmitting && (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
-        <div className="text-sm text-gray-200">Generating scenario…</div>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg/80 backdrop-blur-sm">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mb-4"></div>
+        <div className="text-sm text-text">Generating scenario...</div>
       </div>
     )}
     {toast && (
-      <div className="fixed right-4 bottom-4 z-50 bg-gray-900/90 border border-gray-700 text-xs text-gray-100 rounded px-3 py-2 shadow">
+      <div className="fixed right-4 bottom-4 z-50 bg-panel border border-border text-xs text-text rounded px-3 py-2 shadow">
         {toast}
       </div>
     )}
@@ -446,9 +446,9 @@ function CustomScenarioPageContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-      <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-6" />
-      <p className="text-xl text-blue-300">Loading scenario builder...</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-bg">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-accent border-t-transparent mb-6" />
+      <p className="text-xl text-accent">Loading scenario builder...</p>
     </div>
   );
 }
