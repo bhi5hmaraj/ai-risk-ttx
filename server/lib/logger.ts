@@ -48,3 +48,23 @@ export function serr(rid: string, msg: string, fields?: LogFields) {
   console.error(line);
 }
 
+/**
+ * Warning-level log helper. Mirrors serr/slog shape.
+ */
+export function swarn(rid: string, msg: string, fields?: LogFields) {
+  const line = `[SVR] rid=${rid} ${msg}${fmt(fields)}`;
+  console.warn(line);
+}
+
+/**
+ * Create a structured logger bound to default fields.
+ * Matches the minimal surface expected by routes: info, warn, error.
+ */
+export function createLogger(defaultFields: Record<string, unknown>) {
+  const merged = (additional?: LogFields) => ({ ...defaultFields, ...(additional || {}) });
+  return {
+    info: (rid: string, msg: string, fields?: LogFields) => slog(rid, msg, merged(fields)),
+    warn: (rid: string, msg: string, fields?: LogFields) => swarn(rid, msg, merged(fields)),
+    error: (rid: string, msg: string, fields?: LogFields) => serr(rid, msg, merged(fields)),
+  };
+}
