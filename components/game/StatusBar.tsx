@@ -1,8 +1,8 @@
 import React from 'react';
-import type { GameState, Player } from '../../types';
+import type { GameState, Player, GameLogEntry } from '../../types';
 import { GamePhase } from '../../types';
 import { GAME_CONFIG } from '../../constants';
-import { PauseIcon, PlayIcon, ClockIcon, ScaleIcon, Bars3Icon, Cog6ToothIcon } from '../Icons';
+import { PauseIcon, PlayIcon, ClockIcon, Bars3Icon, Cog6ToothIcon, GlobeIcon, StarIcon, BoltIcon, ArrowPathIcon } from '../Icons';
 import { SettingsMenu } from './SettingsMenu';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -20,6 +20,7 @@ interface StatusBarProps {
   showMakePublic?: boolean;
   scenarioAlreadyPublic?: boolean;
   availablePoints?: number;
+  latestLogEntry?: GameLogEntry | null;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -36,14 +37,20 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   showMakePublic,
   scenarioAlreadyPublic,
   availablePoints,
+  latestLogEntry,
 }) => {
   const { isSettingsOpen, setSettingsOpen } = useUIStore();
   const metricValue = gameState.coreMetric.value;
-  const metricClass = metricValue > 60 ? 'text-green-400' : metricValue > 30 ? 'text-yellow-400' : 'text-red-400';
+  const metricClass = metricValue > 60 ? 'text-success' : metricValue > 30 ? 'text-warning' : 'text-danger';
   const roundCap = typeof maxRounds === 'number' && maxRounds > 0 ? maxRounds : GAME_CONFIG.MAX_ROUNDS;
 
+  // Calculate deltas from previous round
+  const publicScoreDelta = latestLogEntry?.publicScoreChange ?? null;
+  const hiddenScoreChanges = latestLogEntry?.hiddenScoreChanges ?? {};
+  const personalScoreDelta = hiddenScoreChanges[player.role.name]?.update ?? null;
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-30 bg-gray-900/98 backdrop-blur-sm border-b border-gray-800">
+    <div className="fixed top-0 left-0 right-0 z-30 bg-bg/98 backdrop-blur-sm border-b border-border">
       <div className="max-w-[1920px] mx-auto px-2 py-1.5 flex items-center gap-2 text-xs">
         {/* Simulacra Banner with Expand Nav Button */}
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -58,23 +65,23 @@ export const StatusBar: React.FC<StatusBarProps> = ({
                 }
               }
             }}
-            className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded transition-colors"
+            className="p-1.5 bg-panel hover:bg-card rounded transition-colors border border-border"
             aria-label="Show navigation"
             title="Show navigation menu"
           >
-            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <Bars3Icon className="h-4 w-4 text-muted" />
           </button>
-          <h1 className="text-base font-bold text-blue-300 whitespace-nowrap">Simulacra</h1>
+          <h1 className="text-base font-bold text-accent whitespace-nowrap">Simulacra</h1>
         </div>
 
         {/* Left: Role & Hidden Goal */}
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded flex-shrink-0">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-panel border border-border rounded flex-shrink-0">
             {typeof player.role.icon === 'function'
-              ? player.role.icon({ className: 'h-4 w-4 text-blue-300' })
+              ? player.role.icon({ className: 'h-4 w-4 text-accent' })
               : <span className="text-sm">{player.role.icon}</span>
             }
-            <span className="font-semibold text-white whitespace-nowrap">{player.role.name}</span>
+            <span className="font-semibold text-text whitespace-nowrap">{player.role.name}</span>
           </div>
           <div
             className="px-2 py-1 bg-amber-900/20 border border-amber-700/30 rounded text-amber-400 italic whitespace-nowrap overflow-hidden text-ellipsis"
@@ -86,33 +93,46 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         {/* Center: Metrics */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <Metric label="Round" value={`${gameState.round}/${roundCap}`} accent="text-blue-300" icon={ClockIcon} />
-          <Metric label={gameState.coreMetric.name} value={`${metricValue}%`} accent={metricClass} icon={ScaleIcon} />
-          <Metric label="Personal Score" value={player.hiddenScore.toString()} accent="text-amber-300" />
+          <Metric label="Round" value={`${gameState.round}/${roundCap}`} accent="text-accent" icon={ArrowPathIcon} />
+          <Metric
+            label={gameState.coreMetric.name}
+            value={`${metricValue}%`}
+            accent={metricClass}
+            icon={GlobeIcon}
+            delta={publicScoreDelta}
+          />
+          <Metric
+            label="Personal Score"
+            value={player.hiddenScore.toString()}
+            accent="text-amber-300"
+            icon={StarIcon}
+            delta={personalScoreDelta}
+          />
           {typeof availablePoints === 'number' && gameState.phase === GamePhase.ACTION && (
             <Metric
               label={`Action Points (max ${GAME_CONFIG.MAX_ACTION_POINTS})`}
               value={`${availablePoints} AP`}
-              accent={availablePoints > 1 ? 'text-green-400' : availablePoints === 0 ? 'text-red-400' : 'text-yellow-400'}
+              accent={availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}
+              icon={BoltIcon}
             />
           )}
 
           {/* Timer */}
           {gameState.phase === GamePhase.ACTION && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded">
-              <ClockIcon className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-panel border border-border rounded">
+              <ClockIcon className="h-4 w-4 text-muted" />
               {!isPaused && (
-                <span className={`font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : 'text-blue-300'}`}>
+                <span className={`font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : 'text-accent'}`}>
                   {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
                 </span>
               )}
-              {isPaused && <span className="text-gray-400">Paused</span>}
+              {isPaused && <span className="text-muted">Paused</span>}
               <button
                 onClick={onPauseClick}
-                className="p-0.5 rounded hover:bg-gray-700 transition-colors"
+                className="p-0.5 rounded hover:bg-card transition-colors"
                 aria-label={isPaused ? 'Resume game' : 'Pause game'}
               >
-                {isPaused ? <PlayIcon className="h-3.5 w-3.5 text-white" /> : <PauseIcon className="h-3.5 w-3.5 text-white" />}
+                {isPaused ? <PlayIcon className="h-3.5 w-3.5 text-text" /> : <PauseIcon className="h-3.5 w-3.5 text-text" />}
               </button>
             </div>
           )}
@@ -123,7 +143,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           {onOpenFeedback && (
             <button
               onClick={onOpenFeedback}
-              className="px-2 py-1 rounded text-[10px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors whitespace-nowrap"
+              className="px-2 py-1 rounded text-[10px] font-semibold bg-accent hover:bg-accent-strong text-bg transition-colors whitespace-nowrap"
             >
               💬
             </button>
@@ -134,7 +154,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               disabled={scenarioAlreadyPublic}
               className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors whitespace-nowrap ${
                 scenarioAlreadyPublic
-                  ? 'bg-gray-600 cursor-not-allowed opacity-60 text-gray-400'
+                  ? 'bg-panel cursor-not-allowed opacity-60 text-muted border border-border'
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
               }`}
               title={scenarioAlreadyPublic ? 'Already shared with community' : 'Share scenario with community'}
@@ -144,7 +164,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
           <button
             onClick={() => setSettingsOpen(!isSettingsOpen)}
-            className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white transition-colors flex items-center gap-1"
+            className="px-2 py-1 rounded bg-panel hover:bg-card text-text transition-colors flex items-center gap-1 border border-border"
             aria-label="Settings"
             title="Settings"
           >
@@ -165,14 +185,20 @@ interface MetricProps {
   value: string;
   accent: string;
   icon?: React.ComponentType<{ className?: string }>;
+  delta?: number | null;
 }
 
-const Metric: React.FC<MetricProps> = ({ label, value, accent, icon: Icon }) => (
+const Metric: React.FC<MetricProps> = ({ label, value, accent, icon: Icon, delta }) => (
   <div
-    className="flex items-center gap-1 px-2 py-1 bg-gray-800 rounded min-w-[50px]"
+    className="flex items-center gap-1.5 px-2 py-1 bg-panel border border-border rounded min-w-[50px]"
     title={label}
   >
-    {Icon && <Icon className="h-3.5 w-3.5 text-gray-400" />}
+    {Icon && <Icon className={`h-3.5 w-3.5 ${accent}`} />}
     <span className={`text-sm font-semibold ${accent} leading-none`}>{value}</span>
+    {delta !== null && delta !== undefined && (
+      <span className={`text-xs font-semibold leading-none ${delta >= 0 ? 'text-success' : 'text-danger'}`}>
+        {delta >= 0 ? '+' : ''}{delta}
+      </span>
+    )}
   </div>
 );
