@@ -24,13 +24,8 @@ export const EndScreen: React.FC<EndScreenProps> = ({ gameState, players, onRese
   const joke = useRotatingJoke(4000);
   const [expandedRound, setExpandedRound] = useState<number | null>(null);
 
-  const impactClass = (impact: string) => {
-    const v = (impact || '').toLowerCase();
-    if (/(pos|green|improve|increase|gain|good)/.test(v)) return 'text-success';
-    if (/(neg|red|worse|decrease|loss|bad)/.test(v)) return 'text-danger';
-    if (/(mix|neutral|balanced)/.test(v)) return 'text-muted';
-    return 'text-accent';
-  };
+  // Impact text - just use normal text color, no red/green
+  const impactClass = (_impact: string) => 'text-text';
 
   const handleGenerateDebrief = async () => {
     try {
