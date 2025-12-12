@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { GameState, GameLogEntry, ActionOption, Player } from '../../types';
 import { CauseTag } from './CauseTag';
 import { LoadingSpinner, CheckCircleIcon } from '../Icons';
+import { Button } from '@/components/ui/Button';
 import { useRotatingJoke } from '@/lib/loadingJokes';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -56,6 +57,28 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   const confirmDisabled = isLoading || isPaused;
   const joke = useRotatingJoke(4000);
 
+  // Expand/collapse state for details
+  const [expandedMoments, setExpandedMoments] = useState<Set<number>>(new Set());
+  const [expandedActions, setExpandedActions] = useState<Set<string>>(new Set());
+
+  const toggleMoment = (index: number) => {
+    setExpandedMoments(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const toggleActionExpand = (title: string) => {
+    setExpandedActions(prev => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  };
+
   // Reset selected actions when round changes or when submitted
   useEffect(() => {
     setSelected([]);
@@ -102,22 +125,37 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
               <>
                 {/* Key Moments Grid */}
                 <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                  {latestLogEntry.outcomeTimeline.map((item, index) => (
-                    <div key={`km_${index}`} className="bg-panel border border-border rounded p-3">
-                      <div className="flex items-start gap-2">
-                        <div className="h-6 w-6 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-sm flex items-center justify-center border border-border">
-                          {index + 1}
+                  {latestLogEntry.outcomeTimeline.map((item, index) => {
+                    const isExpanded = expandedMoments.has(index);
+                    return (
+                      <button
+                        key={`km_${index}`}
+                        type="button"
+                        onClick={() => toggleMoment(index)}
+                        className="bg-panel border border-border rounded p-3 text-left w-full hover:border-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="h-6 w-6 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-sm flex items-center justify-center border border-border">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={`${fontSizes.title} font-semibold text-text break-words`}>{item.title}</p>
+                              <span className={`text-muted text-xs flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+                            </div>
+                            {isExpanded && (
+                              <>
+                                <p className={`${fontSizes.body} text-muted leading-relaxed break-words mt-1.5`}>{item.description}</p>
+                                <p className={`${fontSizes.body} mt-1.5 break-words`}>
+                                  <span className="text-text">{item.impact}</span>
+                                </p>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`${fontSizes.title} font-semibold text-text mb-1.5 break-words`}>{item.title}</p>
-                          <p className={`${fontSizes.body} text-muted leading-relaxed break-words`}>{item.description}</p>
-                          <p className={`${fontSizes.body} text-accent mt-1.5 break-words`}>
-                            <span className="text-text">{item.impact}</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Causal Pills Grid - matching key moments columns */}
@@ -224,28 +262,45 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   {actionOptions.map((opt) => {
                     const isSelected = selected.some((s) => s.title === opt.title);
                     const canSelect = (pointsUsed + opt.cost <= availablePoints) || isSelected;
+                    const isExpanded = expandedActions.has(opt.title);
                     return (
-                      <button
+                      <div
                         key={opt.title}
-                        type="button"
-                        onClick={() => toggleAction(opt)}
-                        disabled={!canSelect && !isSelected}
-                        className={`w-full text-left p-1.5 rounded-md border transition-colors focus:outline-none focus-visible:border-accent ${
+                        className={`w-full text-left p-1.5 rounded-md border transition-colors ${
                           isSelected
                             ? 'border-accent bg-[var(--accent-soft)] shadow-inner'
                             : canSelect
-                            ? 'border-border bg-panel hover:border-accent'
-                            : 'border-border bg-panel text-muted opacity-60 cursor-not-allowed'
+                            ? 'border-border bg-panel'
+                            : 'border-border bg-panel text-muted opacity-60'
                         }`}
                       >
-                        <div className="flex items-start gap-2">
-                          <p className={`font-semibold ${fontSizes.body} break-words flex-1 text-text`}>
-                            {opt.title}
-                            <span className={`ml-1.5 inline-flex items-center ${fontSizes.caption} font-semibold bg-panel text-accent border border-border px-1.5 py-0.5 rounded-full`}>{opt.cost} AP</span>
-                          </p>
-                        </div>
-                        <p className={`mt-1 ${fontSizes.body} leading-relaxed text-muted break-words`}>{opt.description}</p>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleAction(opt)}
+                          disabled={!canSelect && !isSelected}
+                          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded disabled:cursor-not-allowed"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={`font-semibold ${fontSizes.body} break-words flex-1 text-text`}>
+                              {opt.title}
+                              <span className={`ml-1.5 inline-flex items-center ${fontSizes.caption} font-semibold bg-panel text-accent border border-border px-1.5 py-0.5 rounded-full`}>{opt.cost} AP</span>
+                            </p>
+                            {isSelected && <span className="text-accent text-xs">✓</span>}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleActionExpand(opt.title); }}
+                          className="w-full text-left mt-1 focus:outline-none"
+                        >
+                          <span className={`${fontSizes.caption} text-muted hover:text-accent transition-colors`}>
+                            {isExpanded ? '▲ Hide details' : '▼ Show details'}
+                          </span>
+                        </button>
+                        {isExpanded && (
+                          <p className={`mt-1 ${fontSizes.body} leading-relaxed text-muted break-words`}>{opt.description}</p>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -297,7 +352,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                             </span>
                           )}
                         </div>
-                        {matchingPlayer && (
+                        {matchingPlayer?.isHuman && (
                           <span className="text-[10px] text-muted italic block break-words">
                             {matchingPlayer.role.hiddenObjective}
                           </span>
