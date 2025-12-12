@@ -94,100 +94,104 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
     }
   };
 
+  // "This Round" = most recent completed round's key moments (latestLogEntry)
+  // "Last Round" = second-to-last completed round's key moments
+  // As rounds progress, current becomes last, and new results come into current
+  const thisRoundMoments = latestLogEntry?.outcomeTimeline ?? null;
+  const lastRoundMoments = gameState.eventLog.length >= 2
+    ? gameState.eventLog[gameState.eventLog.length - 2]?.outcomeTimeline ?? null
+    : null;
+
+  // Render a single key moment card
+  const renderMomentCard = (item: any, index: number, keyPrefix: string) => {
+    const momentKey = `${keyPrefix}_${index}`;
+    const isExpanded = expandedMoments.has(index + (keyPrefix === 'last' ? 1000 : 0)); // Offset for last round
+    const toggleKey = index + (keyPrefix === 'last' ? 1000 : 0);
+
+    return (
+      <div key={momentKey} className="bg-card border border-border rounded p-2">
+        <button
+          type="button"
+          onClick={() => toggleMoment(toggleKey)}
+          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+        >
+          <div className="flex items-start gap-2">
+            <div className="h-5 w-5 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-xs flex items-center justify-center border border-border">
+              {index + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <p className={`${fontSizes.title} font-semibold text-text break-words`}>{item.title}</p>
+                <span className={`text-muted text-xs flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+              </div>
+            </div>
+          </div>
+        </button>
+        {isExpanded && (
+          <div className="mt-2 pl-7">
+            <p className={`${fontSizes.body} text-muted leading-relaxed break-words`}>{item.description}</p>
+            <p className={`${fontSizes.body} mt-1.5 break-words text-text`}>{item.impact}</p>
+          </div>
+        )}
+        {/* Cause tags - always visible */}
+        {item.causes && item.causes.length > 0 && (
+          <div className="mt-2 pl-7 flex flex-wrap gap-1">
+            {item.causes.map((cause: any, causeIdx: number) => (
+              <CauseTag key={`${momentKey}_c_${causeIdx}`} cause={cause} logs={gameState.eventLog} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-2">
-      {/* Compact Header */}
-      <div className="bg-panel border border-border rounded-md p-2 mb-2">
-        {/* Event details - side by side */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className={`${fontSizes.body} font-semibold text-accent mb-1.5`}>Current Event:</p>
-            <p className={`${fontSizes.body} text-muted leading-relaxed`}>{gameState.currentEvent?.detail ?? gameState.currentEvent?.headline ?? 'Awaiting next event'}</p>
-          </div>
-          {hasLastRound && latestLogEntry?.event && (
-            <div>
-              <p className={`${fontSizes.body} font-semibold text-accent mb-1.5`}>Last Round:</p>
-              <p className={`${fontSizes.body} text-muted leading-relaxed`}>{latestLogEntry.event.detail ?? latestLogEntry.event.headline}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 3 Sections Stacked as Rows */}
+      {/* Sections Stacked as Rows */}
       <div className="flex flex-col gap-2">
-        {/* SECTION 1: Key Moments */}
+        {/* SECTION 1: Key Moments - Side by Side */}
         <div className="bg-panel border border-border rounded-md p-2 flex gap-2">
           <div className="flex-shrink-0 flex items-center justify-center">
             <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Key Moments</p>
           </div>
           <div className="flex-1 min-w-0">
-            {hasLastRound && latestLogEntry?.outcomeTimeline?.length ? (
-              <>
-                {/* Key Moments Grid */}
-                <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                  {latestLogEntry.outcomeTimeline.map((item, index) => {
-                    const isExpanded = expandedMoments.has(index);
-                    return (
-                      <button
-                        key={`km_${index}`}
-                        type="button"
-                        onClick={() => toggleMoment(index)}
-                        className="bg-panel border border-border rounded p-3 text-left w-full hover:border-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className="h-6 w-6 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-sm flex items-center justify-center border border-border">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className={`${fontSizes.title} font-semibold text-text break-words`}>{item.title}</p>
-                              <span className={`text-muted text-xs flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
-                            </div>
-                            {isExpanded && (
-                              <>
-                                <p className={`${fontSizes.body} text-muted leading-relaxed break-words mt-1.5`}>{item.description}</p>
-                                <p className={`${fontSizes.body} mt-1.5 break-words`}>
-                                  <span className="text-text">{item.impact}</span>
-                                </p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Causal Pills Grid - matching key moments columns */}
-                {(() => {
-                  const hasCauses = latestLogEntry.outcomeTimeline.some(item => item.causes && item.causes.length > 0);
-                  return hasCauses && (
-                    <div className="border-t border-blue-800/30 bg-gray-950/60 rounded px-2 py-2">
-                      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                        {latestLogEntry.outcomeTimeline.map((item, itemIdx) => {
-                          const causes = (item.causes || []).map((c, causeIdx) => ({ cause: c, key: `km_${itemIdx}_c_${causeIdx}` }));
-                          return (
-                            <div key={`cause_col_${itemIdx}`} className="flex flex-wrap gap-1.5 content-start justify-center">
-                              {causes.length > 0 ? (
-                                causes.map(({ cause, key }) => (
-                                  <CauseTag key={key} cause={cause as any} logs={gameState.eventLog} />
-                                ))
-                              ) : (
-                                <div className="h-6" />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </>
-            ) : (
-              <div className="bg-panel border border-border rounded-md p-4">
-                <p className={`${fontSizes.body} text-muted leading-relaxed`}>The AI Game Master will summarize key moments here once actions are submitted.</p>
+            <div className="grid grid-cols-2 gap-4">
+              {/* LATEST RESULTS Column */}
+              <div className="min-w-0">
+                <h4 className={`${fontSizes.body} font-semibold text-accent mb-2 uppercase tracking-wide`}>
+                  {latestLogEntry ? `Round ${latestLogEntry.round}` : 'Latest'}
+                </h4>
+                {thisRoundMoments && thisRoundMoments.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {thisRoundMoments.map((item, index) => renderMomentCard(item, index, 'this'))}
+                  </div>
+                ) : (
+                  <div className="bg-card border border-border rounded p-3 text-center">
+                    <p className={`${fontSizes.body} text-muted italic`}>
+                      Key moments will appear after first round...
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* PREVIOUS RESULTS Column */}
+              <div className="min-w-0">
+                <h4 className={`${fontSizes.body} font-semibold text-accent mb-2 uppercase tracking-wide`}>
+                  {gameState.eventLog.length >= 2 ? `Round ${gameState.eventLog[gameState.eventLog.length - 2]?.round}` : 'Previous'}
+                </h4>
+                {lastRoundMoments && lastRoundMoments.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {lastRoundMoments.map((item, index) => renderMomentCard(item, index, 'last'))}
+                  </div>
+                ) : (
+                  <div className="bg-card border border-border rounded p-3 text-center">
+                    <p className={`${fontSizes.body} text-muted italic`}>
+                      No previous round yet.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

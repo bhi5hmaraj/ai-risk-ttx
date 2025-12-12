@@ -65,7 +65,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               </button>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs text-muted">AI Tabletop Exercise</span>
-              <ModelInfo />
             </div>
             <span className="text-xs text-muted hidden sm:inline lg:hidden">AI Tabletop Exercise</span>
           </div>
@@ -160,19 +159,3 @@ const MobileNavButton: React.FC<{
   </button>
 );
 
-// Model Information Display
-const ModelInfo: React.FC = () => {
-  const model = process.env.NEXT_PUBLIC_LLM_MODEL || process.env.VITE_LLM_MODEL || 'Unknown';
-  const isFlashLite = model.toLowerCase().includes('flash') && model.toLowerCase().includes('lite');
-
-  return (
-    <div className="text-xs text-muted">
-      <span>Powered by {model}</span>
-      {isFlashLite && (
-        <span className="ml-1 text-muted" title="Fast responses, moving to Pro models in the future">
-          (⚡ fast)
-        </span>
-      )}
-    </div>
-  );
-};
