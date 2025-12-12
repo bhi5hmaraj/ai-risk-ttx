@@ -101,7 +101,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="md:hidden p-2 rounded-md text-muted hover:text-text hover:bg-panel transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
             aria-label="Toggle menu"
           >
             {isMenuOpen ? (
