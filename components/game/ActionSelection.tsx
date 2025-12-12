@@ -28,6 +28,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   availablePoints,
 }) => {
   const [selected, setSelected] = useState<ActionOption[]>([]);
+  const [expandedActions, setExpandedActions] = useState<Set<string>>(new Set());
   const pointsUsed = useMemo(() => selected.reduce((acc, curr) => acc + curr.cost, 0), [selected]);
   const pointsRemaining = availablePoints - pointsUsed;
   const aiPlayers = useMemo(() => players.filter((p) => !p.isHuman), [players]);
@@ -35,6 +36,15 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
   const human = useMemo(() => players.find((p) => p.isHuman) || null, [players]);
   const confirmDisabled = isLoading || isPaused;
   const joke = useRotatingJoke(4000); // Rotate jokes every 4 seconds
+
+  const toggleActionExpand = (title: string) => {
+    setExpandedActions(prev => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  };
 
   console.log('[ActionSelection] Render:', {
     hasSubmitted,
@@ -84,7 +94,7 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
                     key={player.id}
                     className={`flex items-center p-3 rounded-lg transition-all duration-300 bg-panel border border-border`}
                   >
-                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-success mr-3" /> : <LoadingSpinner />}
+                    {isComplete ? <CheckCircleIcon className="h-6 w-6 text-success mr-3" /> : <LoadingSpinner className="h-6 w-6 mr-3" />}
                     <span className={isComplete ? 'text-text' : 'text-muted'}>{player.role.name}</span>
                   </div>
                 );
@@ -146,28 +156,45 @@ export const ActionSelection: React.FC<ActionSelectionProps> = ({
           {options.map((opt) => {
             const isSelected = selected.some((s) => s.title === opt.title);
             const canSelect = pointsRemaining >= opt.cost || isSelected;
+            const isExpanded = expandedActions.has(opt.title);
             return (
-              <button
+              <div
                 key={opt.title}
-                type="button"
-                onClick={() => toggleAction(opt)}
-                disabled={!canSelect && !isSelected}
-                className={`w-full text-left p-3 rounded-md border transition-colors focus:outline-none focus-visible:border-accent ${
+                className={`w-full text-left p-3 rounded-md border transition-colors ${
                   isSelected
                     ? 'border-accent bg-[var(--accent-soft)] shadow-inner'
                     : canSelect
-                    ? 'border-border bg-panel hover:border-accent'
-                    : 'border-border bg-panel text-muted opacity-60 cursor-not-allowed'
+                    ? 'border-border bg-panel'
+                    : 'border-border bg-panel text-muted opacity-60'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className={`font-semibold ${isSelected ? 'text-text' : 'text-text'}`}>{opt.title}</p>
-                    <p className={`mt-2 text-sm leading-snug text-muted whitespace-pre-line`}>{opt.description}</p>
+                <button
+                  type="button"
+                  onClick={() => toggleAction(opt)}
+                  disabled={!canSelect && !isSelected}
+                  className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-text">{opt.title}</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isSelected && <span className="text-accent text-sm">✓</span>}
+                      <Badge tone="accent" className="text-xs px-2 py-0.5">{opt.cost} AP</Badge>
+                    </div>
                   </div>
-                  <Badge tone="accent" className="text-xs px-2 py-0.5 shrink-0">{opt.cost} AP</Badge>
-                </div>
-              </button>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleActionExpand(opt.title); }}
+                  className="w-full text-left mt-2 focus:outline-none"
+                >
+                  <span className="text-xs text-muted hover:text-accent transition-colors">
+                    {isExpanded ? '▲ Hide details' : '▼ Show details'}
+                  </span>
+                </button>
+                {isExpanded && (
+                  <p className="mt-2 text-sm leading-snug text-muted whitespace-pre-line">{opt.description}</p>
+                )}
+              </div>
             );
           })}
         </div>
