@@ -5,7 +5,8 @@ import { RedisSessionStore } from '@/server/stores/sessionStore.redis';
 import type { AdvanceContext, SessionEvent, SessionSnapshot } from '@/server/stores/sessionStore';
 import { applyConsequences, buildPlayersFromSetup } from '@/server/services/sessionEngine';
 import * as llmService from '@/server/services/llmService';
-import { GamePhase, type Player, type PlayerRoundActions, type ActionOption } from '@/server/types/core';
+import { createGameSession } from '@/server/services/chatSession';
+import { GamePhase, type Player, type PlayerRoundActions, type ActionOption, type GameSetup } from '@/server/types/core';
 import { createReqId, getReqIdFromHeaders, slog, serr } from '@/server/lib/logger';
 import { GAME_CONFIG } from '@/gameConfig';
 
@@ -30,6 +31,11 @@ const llm: LLMFacade = {
   },
   async generateConsequences({ gameState, players, counterfactualScoreChange }) {
     return llmService.generateConsequences(gameState as any, players as any, counterfactualScoreChange);
+  },
+  async generateInitialScenario({ setup, players }) {
+    // Create a chat session and generate the initial scenario with outcomeTimeline
+    const session = createGameSession(setup, players);
+    return llmService.generateInitialScenarioChat(session);
   },
 };
 

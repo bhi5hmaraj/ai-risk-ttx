@@ -18,6 +18,7 @@ import { prisma } from '@/server/lib/prisma';
 import { GamePhase } from '@/server/types/core';
 import * as sessionMetricsRepo from '@/server/data/sessionMetricsRepo';
 import type { Player, RoleDataCore, PlayerRoundActions, GameState, ActionOption, AIConsequenceResponse, AITurnResponse, AICounterfactualResponse } from '@/server/types/core';
+import { createInitialGameStateFromScenario, buildPlayersFromSetup } from '@/server/services/sessionEngine';
 
 export interface LLMFacade {
   generateActionOptions: (args: { player: Player; gameState: GameState; previousRoundActions: PlayerRoundActions[] | null }) => Promise<{ options: any[] }>;
@@ -25,6 +26,7 @@ export interface LLMFacade {
   generateAITurn: (args: { player: Player; gameState: GameState; previousRoundActions: PlayerRoundActions[] | null }) => Promise<AITurnResponse | null>;
   generateCounterfactual: (args: { gameState: GameState }) => Promise<AICounterfactualResponse | null>;
   generateConsequences: (args: { gameState: GameState; players: Player[]; counterfactualScoreChange: number }) => Promise<AIConsequenceResponse | null>;
+  generateInitialScenario: (args: { setup: CoreGameSetup; players: Player[] }) => Promise<AIConsequenceResponse | null>;
 }
 
 export interface RouterDeps {
@@ -261,16 +263,50 @@ export async function handleSessionRequest(
       if (!snap) return json(404, { success: false, error: 'Not Found' });
 
       console.log(`[session-router] initialize:${sessionId} starting scenario generation`);
-      // Initialize with basic event from setup - move from LOBBY to ACTION phase
-      const updated = await deps.store.update(sessionId, snap.revision, (state) => ({
-        ...state,
-        phase: 2, // ACTION
-        round: 1,
-        currentEvent: {
-          headline: snap.setup?.scenarioTitle || 'Crisis Develops',
-          detail: snap.setup?.scenarioDescription || 'A situation requires immediate attention.',
-        },
-      } as any));
+
+      // Build players from setup if not already present
+      const players = snap.players && snap.players.length > 0
+        ? snap.players
+        : buildPlayersFromSetup(snap.setup!, undefined, snap.players);
+
+      // Call LLM to generate the initial scenario with outcomeTimeline
+      const scenario = await deps.llm.generateInitialScenario({
+        setup: snap.setup!,
+        players
+      });
+
+      let updated;
+      if (scenario) {
+        // Use LLM-generated scenario to create proper game state with eventLog
+        const newState = createInitialGameStateFromScenario(snap.state, scenario, 1);
+        updated = await deps.store.update(sessionId, snap.revision, () => newState);
+        console.log(`[session-router] initialize:${sessionId} scenario generated with ${scenario.outcomeTimeline?.length || 0} timeline items`);
+      } else {
+        // Fallback: Initialize with basic event from setup if LLM fails
+        console.warn(`[session-router] initialize:${sessionId} LLM failed, using fallback`);
+        updated = await deps.store.update(sessionId, snap.revision, (state) => ({
+          ...state,
+          phase: 2, // ACTION
+          round: 1,
+          currentEvent: {
+            headline: snap.setup?.scenarioTitle || 'Crisis Develops',
+            detail: snap.setup?.scenarioDescription || 'A situation requires immediate attention.',
+          },
+          eventLog: [{
+            round: 0,
+            roundSummary: snap.setup?.scenarioDescription || 'The crisis begins.',
+            outcomeTimeline: [],
+            counterfactualNote: 'If no one acts, the situation will deteriorate.',
+            event: null,
+            playerActions: [],
+            publicScoreChange: 0,
+            publicScoreAfter: state.coreMetric?.value ?? 100,
+            hiddenScoreChanges: {},
+            geminiCalls: 0,
+          }],
+        } as any));
+      }
+
       // Metrics: mark first round started
       try {
         await sessionMetricsRepo.markInitialized(sessionId);
@@ -343,6 +379,20 @@ export function makeTestRouterDeps(): RouterDeps {
         publicScoreUpdate: 0,
         hiddenScoreUpdates: [],
         nextEvent: gameState.currentEvent ?? { headline: 'Next', detail: 'Stub detail' },
+      };
+    },
+    async generateInitialScenario({ setup }) {
+      return {
+        roundSummary: `The ${setup.scenarioTitle} crisis begins.`,
+        outcomeTimeline: [
+          { title: 'Crisis Emerges', description: 'The situation develops.', impact: 'Initial uncertainty spreads.' },
+          { title: 'Stakes Rise', description: 'Key actors take notice.', impact: 'Pressure mounts on all parties.' },
+          { title: 'Decision Point', description: 'Action is required.', impact: 'The next moves will be critical.' },
+        ],
+        counterfactualNote: 'If no one acts, the crisis will escalate rapidly.',
+        publicScoreUpdate: -15,
+        hiddenScoreUpdates: [],
+        nextEvent: { headline: setup.scenarioTitle, detail: setup.scenarioDescription },
       };
     },
   };

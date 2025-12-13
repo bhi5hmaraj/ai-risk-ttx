@@ -119,3 +119,39 @@ export function applyConsequences(
 
   return { gameState: nextState, players: nextPlayers };
 }
+
+/**
+ * Creates the initial game state from the LLM-generated opening scenario.
+ * This populates eventLog with a round 0 entry containing outcomeTimeline.
+ */
+export function createInitialGameStateFromScenario(
+  prevState: GameState,
+  scenario: AIConsequenceResponse,
+  llmCallsThisRound: number
+): GameState {
+  const hiddenScoreUpdatesRecord = convertAiUpdatesToRecord(scenario.hiddenScoreUpdates);
+  const newScoreValue = clampScore(prevState.coreMetric.value + scenario.publicScoreUpdate);
+  return {
+    ...prevState,
+    phase: 2, // GamePhase.ACTION
+    round: 1,
+    coreMetric: { ...prevState.coreMetric, value: newScoreValue },
+    currentEvent: scenario.nextEvent?.headline
+      ? ({ id: `evt_${Date.now()}_1`, ...scenario.nextEvent } as any)
+      : scenario.nextEvent,
+    eventLog: [
+      {
+        round: 0,
+        roundSummary: scenario.roundSummary,
+        outcomeTimeline: scenario.outcomeTimeline ?? [],
+        counterfactualNote: scenario.counterfactualNote ?? '',
+        event: null,
+        playerActions: [],
+        publicScoreChange: scenario.publicScoreUpdate,
+        publicScoreAfter: newScoreValue,
+        hiddenScoreChanges: hiddenScoreUpdatesRecord,
+        geminiCalls: llmCallsThisRound,
+      },
+    ],
+  };
+}
