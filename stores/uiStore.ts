@@ -44,7 +44,7 @@ export const useUIStore = create<UIStore>()(
       loadingMessage: '',
       error: null,
       isActionTreeOpen: false,
-      isHistoryOpen: true,
+      isHistoryOpen: false,
       expandedRound: null,
       startProgress: {
         creatingSession: 'idle',
@@ -72,7 +72,7 @@ export const useUIStore = create<UIStore>()(
         loadingMessage: '',
         error: null,
         isActionTreeOpen: false,
-        isHistoryOpen: true,
+        isHistoryOpen: false,
         expandedRound: null,
         startProgress: {
           creatingSession: 'idle',
