@@ -61,6 +61,18 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   const [expandedMoments, setExpandedMoments] = useState<Set<number>>(new Set());
   const [expandedActions, setExpandedActions] = useState<Set<string>>(new Set());
 
+  // Section collapse state
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
+  };
+
   const toggleMoment = (index: number) => {
     setExpandedMoments(prev => {
       const next = new Set(prev);
@@ -131,14 +143,14 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
           <div className="mt-2 pl-7">
             <p className={`${fontSizes.body} text-muted leading-relaxed break-words`}>{item.description}</p>
             <p className={`${fontSizes.body} mt-1.5 break-words text-text`}>{item.impact}</p>
-          </div>
-        )}
-        {/* Cause tags - always visible */}
-        {item.causes && item.causes.length > 0 && (
-          <div className="mt-2 pl-7 flex flex-wrap gap-1">
-            {item.causes.map((cause: any, causeIdx: number) => (
-              <CauseTag key={`${momentKey}_c_${causeIdx}`} cause={cause} logs={gameState.eventLog} />
-            ))}
+            {/* Cause tags - inside expanded section */}
+            {item.causes && item.causes.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {item.causes.map((cause: any, causeIdx: number) => (
+                  <CauseTag key={`${momentKey}_c_${causeIdx}`} cause={cause} logs={gameState.eventLog} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -148,14 +160,91 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   return (
     <div className="bg-card border border-border rounded-lg p-2">
       {/* Sections Stacked as Rows */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
+        {/* SECTION 0: Your Role */}
+        <div className="bg-panel border border-border rounded-md p-2">
+          {collapsedSections.has('role') ? (
+            <button
+              onClick={() => toggleSection('role')}
+              className="w-full flex items-center gap-2 hover:bg-card rounded p-1 transition-colors"
+              aria-label="Expand Your Role"
+            >
+              <span className="text-accent text-sm">+</span>
+              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Your Role</p>
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                <button
+                  onClick={() => toggleSection('role')}
+                  className="p-1 hover:bg-card rounded transition-colors"
+                  aria-label="Collapse Your Role"
+                >
+                  <span className="text-accent text-xs">−</span>
+                </button>
+                <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Role</p>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="space-y-3">
+                  {/* Role Name with Icon */}
+                  <div className="flex items-center gap-2">
+                    {typeof humanPlayer.role.icon === 'function'
+                      ? humanPlayer.role.icon({ className: 'h-6 w-6 text-accent' })
+                      : <span className="text-2xl">{humanPlayer.role.icon}</span>
+                    }
+                    <h3 className="text-base font-bold text-text">{humanPlayer.role.name}</h3>
+                  </div>
+
+                  {/* Hidden Objective */}
+                  <div className="bg-amber-900/20 border border-amber-700/30 rounded p-2">
+                    <p className="text-xs uppercase tracking-wide text-amber-400 font-semibold mb-1">Secret Objective</p>
+                    <p className="text-sm text-amber-300 italic">{humanPlayer.role.hiddenObjective}</p>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-card border border-border rounded p-2">
+                      <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Personal Score</p>
+                      <p className="text-lg font-bold text-amber-300">{humanPlayer.hiddenScore}</p>
+                    </div>
+                    <div className="bg-card border border-border rounded p-2">
+                      <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Action Points</p>
+                      <p className={`text-lg font-bold ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`}>
+                        {availablePoints} AP
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* SECTION 1: Key Moments - Side by Side */}
-        <div className="bg-panel border border-border rounded-md p-2 flex gap-2">
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Key Moments</p>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="grid grid-cols-2 gap-4">
+        <div className="bg-panel border border-border rounded-md p-2">
+          {collapsedSections.has('moments') ? (
+            <button
+              onClick={() => toggleSection('moments')}
+              className="w-full flex items-center gap-2 hover:bg-card rounded p-1 transition-colors"
+              aria-label="Expand Key Moments"
+            >
+              <span className="text-accent text-sm">+</span>
+              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Key Moments</p>
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                <button
+                  onClick={() => toggleSection('moments')}
+                  className="p-1 hover:bg-card rounded transition-colors"
+                  aria-label="Collapse Key Moments"
+                >
+                  <span className="text-accent text-xs">−</span>
+                </button>
+                <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Key Moments</p>
+              </div>
+              <div className="flex-1 min-w-0">
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-4">
               {/* LATEST RESULTS Column */}
               <div className="min-w-0">
                 <h4 className={`${fontSizes.body} font-semibold text-accent mb-2 uppercase tracking-wide`}>
@@ -173,6 +262,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Vertical Divider */}
+              <div className="w-px bg-border self-stretch" />
 
               {/* PREVIOUS RESULTS Column */}
               <div className="min-w-0">
@@ -192,15 +284,35 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 )}
               </div>
             </div>
-          </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SECTION 2: Your Actions (moved above Score Δ) */}
-        <div className="bg-panel border border-border rounded-md p-2 relative flex gap-2">
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
-          </div>
-          <div className="flex-1 min-w-0 relative">
+        <div className="bg-panel border border-border rounded-md p-2 relative">
+          {collapsedSections.has('actions') ? (
+            <button
+              onClick={() => toggleSection('actions')}
+              className="w-full flex items-center gap-2 hover:bg-card rounded p-1 transition-colors"
+              aria-label="Expand Your Actions"
+            >
+              <span className="text-accent text-sm">+</span>
+              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Your Actions</p>
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                <button
+                  onClick={() => toggleSection('actions')}
+                  className="p-1 hover:bg-card rounded transition-colors"
+                  aria-label="Collapse Your Actions"
+                >
+                  <span className="text-accent text-xs">−</span>
+                </button>
+                <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
+              </div>
+              <div className="flex-1 min-w-0 relative">
             {isPaused && (
               <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
                 <div className="h-12 w-12 text-blue-400 mb-4">⏸️</div>
@@ -331,15 +443,35 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
               </div>
             </>
           )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SECTION 3: Score Δ (moved below actions) */}
-        <div className="bg-panel border border-border rounded-md p-2 flex gap-2">
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
-          </div>
-          <div className="flex-1 min-w-0">
+        <div className="bg-panel border border-border rounded-md p-2">
+          {collapsedSections.has('scores') ? (
+            <button
+              onClick={() => toggleSection('scores')}
+              className="w-full flex items-center gap-2 hover:bg-card rounded p-1 transition-colors"
+              aria-label="Expand Score Δ"
+            >
+              <span className="text-accent text-sm">+</span>
+              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Score Δ</p>
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                <button
+                  onClick={() => toggleSection('scores')}
+                  className="p-1 hover:bg-card rounded transition-colors"
+                  aria-label="Collapse Score Δ"
+                >
+                  <span className="text-accent text-xs">−</span>
+                </button>
+                <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Score Δ</p>
+              </div>
+              <div className="flex-1 min-w-0">
             {hasLastRound && playerActions.length > 0 ? (
               <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 {playerActions.map((playerAction) => {
@@ -383,7 +515,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 <p className="text-xs text-muted leading-relaxed">Actions and score Δ will appear here after the first round.</p>
               </div>
             )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
