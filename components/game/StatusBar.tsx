@@ -117,15 +117,19 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             />
           )}
 
-          {/* Timer */}
+          {/* Timer - Shows elapsed time */}
           {gameState.phase === GamePhase.ACTION && (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-panel border border-border rounded">
               <ClockIcon className="h-4 w-4 text-muted" />
-              {!isPaused && (
-                <span className={`font-mono ${timer <= 30 && timer > 0 ? 'timer-flash' : 'text-accent'}`}>
-                  {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-                </span>
-              )}
+              {!isPaused && (() => {
+                // Calculate elapsed time (timer counts down from GAME_CONFIG.ACTION_PHASE_SECONDS)
+                const elapsed = GAME_CONFIG.ACTION_PHASE_SECONDS - timer;
+                return (
+                  <span className="font-mono text-accent">
+                    {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
+                  </span>
+                );
+              })()}
               {isPaused && <span className="text-muted">Paused</span>}
               <button
                 onClick={onPauseClick}

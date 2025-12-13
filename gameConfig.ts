@@ -14,7 +14,7 @@ export const GAME_CONFIG = {
   MAX_ROUNDS,
   MAX_AI_PLAYERS, // Number of AI stakeholders (in addition to the human)
   MAX_AI_PLAYERS_CUSTOM, // Custom/public scenarios maximum AI players
-  ACTION_PHASE_SECONDS: 300, // 5 minutes
+  ACTION_PHASE_SECONDS: 86400, // 24 hours (effectively unlimited, shows elapsed time)
   ACTION_POINTS_PER_ROUND: 3,
   MAX_ACTION_POINTS: 10,
   INITIAL_ACTION_POINTS: 3,
