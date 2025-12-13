@@ -4,6 +4,7 @@ import React from 'react';
 import type { ActionOption, GameLogEntry, GameState, Player } from '../types';
 import { RoundSnapshotCard, EventLog, ActionSelection, StatusBar } from '../components/game';
 import { useUIStore } from '../stores/uiStore';
+import { ChevronDownIcon } from '../components/Icons';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -56,7 +57,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   maxRounds,
   scenarioAlreadyPublic,
 }) => {
-  const { isHistoryOpen: historyOpen } = useUIStore();
+  const { isHistoryOpen: historyOpen, setHistoryOpen } = useUIStore();
 
   return (
   <div className="min-h-screen bg-bg px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-12">
@@ -94,18 +95,37 @@ const GameScreen: React.FC<GameScreenProps> = ({
         humanPlayer={humanPlayer}
         maxRounds={maxRounds}
       />
-      {historyOpen && (
-        <div className="mt-6" data-testid="event-log">
-          <EventLog
-            gameState={gameState}
-            players={players}
-            onViewActionTree={onOpenActionTree}
-            canViewActionTree={canViewActionTree}
-            expandedRound={expandedRound}
-            setExpandedRound={onSetExpandedRound}
+      {/* Event Log Section - Collapsible */}
+      <div className="mt-6" data-testid="event-log">
+        <button
+          onClick={() => setHistoryOpen(!historyOpen)}
+          className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-panel transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-accent">Event Log</span>
+            {gameState.eventLog.length > 0 && (
+              <span className="text-xs text-muted bg-panel px-2 py-0.5 rounded-full border border-border">
+                {gameState.eventLog.length} {gameState.eventLog.length === 1 ? 'entry' : 'entries'}
+              </span>
+            )}
+          </div>
+          <ChevronDownIcon
+            className={`h-5 w-5 text-muted transition-transform duration-200 ${historyOpen ? 'rotate-180' : ''}`}
           />
-        </div>
-      )}
+        </button>
+        {historyOpen && (
+          <div className="mt-2">
+            <EventLog
+              gameState={gameState}
+              players={players}
+              onViewActionTree={onOpenActionTree}
+              canViewActionTree={canViewActionTree}
+              expandedRound={expandedRound}
+              setExpandedRound={onSetExpandedRound}
+            />
+          </div>
+        )}
+      </div>
     </div>
   </div>
   );
