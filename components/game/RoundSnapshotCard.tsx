@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { GameState, GameLogEntry, ActionOption, Player } from '../../types';
 import { CauseTag } from './CauseTag';
-import { LoadingSpinner, CheckCircleIcon } from '../Icons';
+import { LoadingSpinner, CheckCircleIcon, GlobeIcon, ArrowPathIcon, StarIcon, BoltIcon } from '../Icons';
 import { Button } from '@/components/ui/Button';
 import { useRotatingJoke } from '@/lib/loadingJokes';
 import { useUIStore } from '../../stores/uiStore';
+import { GAME_CONFIG } from '../../constants';
 
 interface RoundSnapshotCardProps {
   gameState: GameState;
@@ -18,6 +19,7 @@ interface RoundSnapshotCardProps {
   aiCompletionStatus: Record<string, boolean>;
   availablePoints: number;
   humanPlayer: Player;
+  maxRounds?: number;
 }
 
 export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
@@ -32,6 +34,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   aiCompletionStatus,
   availablePoints,
   humanPlayer,
+  maxRounds,
 }) => {
   const { fontSize } = useUIStore();
   const metric = gameState.coreMetric;
@@ -161,60 +164,95 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
     <div className="bg-card border border-border rounded-lg p-2">
       {/* Sections Stacked as Rows */}
       <div className="flex flex-col gap-4">
-        {/* SECTION 0: Your Role */}
-        <div className="bg-panel border border-border rounded-md p-2">
-          {collapsedSections.has('role') ? (
+        {/* SECTION 0: Status - Compact 2-row layout, sticky when expanded */}
+        <div className={`bg-panel border border-border rounded-md p-2 ${!collapsedSections.has('status') ? 'sticky top-12 z-20' : ''}`}>
+          {collapsedSections.has('status') ? (
             <button
-              onClick={() => toggleSection('role')}
+              onClick={() => toggleSection('status')}
               className="w-full flex items-center gap-2 hover:bg-card rounded p-1 transition-colors"
-              aria-label="Expand Your Role"
+              aria-label="Expand Status"
             >
               <span className="text-accent text-sm">+</span>
-              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Your Role</p>
+              <p className="text-sm uppercase tracking-wide text-accent font-semibold">Status</p>
+              {/* Show key stats inline when collapsed */}
+              <span className="ml-auto flex items-center gap-3 text-xs">
+                <span className="text-muted">R{gameState.round}/{maxRounds ?? GAME_CONFIG.MAX_ROUNDS}</span>
+                <span className={metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}>{metric.value}%</span>
+                <span className="text-amber-300">{humanPlayer.hiddenScore}pts</span>
+              </span>
             </button>
           ) : (
             <div className="flex gap-2">
-              <div className="flex-shrink-0 flex flex-col items-center gap-2">
-                <button
-                  onClick={() => toggleSection('role')}
-                  className="p-1 hover:bg-card rounded transition-colors"
-                  aria-label="Collapse Your Role"
-                >
-                  <span className="text-accent text-xs">−</span>
-                </button>
-                <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Role</p>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="space-y-3">
-                  {/* Role Name with Icon */}
-                  <div className="flex items-center gap-2">
+              {/* Collapse button on left */}
+              <button
+                onClick={() => toggleSection('status')}
+                className="p-1 hover:bg-card rounded transition-colors flex-shrink-0 self-center"
+                aria-label="Collapse Status"
+                title="Collapse"
+              >
+                <span className="text-accent text-sm">−</span>
+              </button>
+
+              {/* Content area */}
+              <div className="flex-1 space-y-1">
+                {/* Row 1: Role | Secret Objective */}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {typeof humanPlayer.role.icon === 'function'
-                      ? humanPlayer.role.icon({ className: 'h-6 w-6 text-accent' })
-                      : <span className="text-2xl">{humanPlayer.role.icon}</span>
+                      ? humanPlayer.role.icon({ className: 'h-5 w-5 text-accent' })
+                      : <span className="text-lg">{humanPlayer.role.icon}</span>
                     }
-                    <h3 className="text-base font-bold text-text">{humanPlayer.role.name}</h3>
+                    <span className="font-semibold text-text text-sm">{humanPlayer.role.name}</span>
                   </div>
-
-                  {/* Hidden Objective */}
-                  <div className="bg-amber-900/20 border border-amber-700/30 rounded p-2">
-                    <p className="text-xs uppercase tracking-wide text-amber-400 font-semibold mb-1">Secret Objective</p>
-                    <p className="text-sm text-amber-300 italic">{humanPlayer.role.hiddenObjective}</p>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-card border border-border rounded p-2">
-                      <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Personal Score</p>
-                      <p className="text-lg font-bold text-amber-300">{humanPlayer.hiddenScore}</p>
-                    </div>
-                    <div className="bg-card border border-border rounded p-2">
-                      <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Action Points</p>
-                      <p className={`text-lg font-bold ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`}>
-                        {availablePoints} AP
-                      </p>
-                    </div>
-                  </div>
+                  <div className="h-4 w-px bg-border flex-shrink-0" />
+                  <p className="text-sm text-amber-300 italic truncate" title={humanPlayer.role.hiddenObjective}>
+                    {humanPlayer.role.hiddenObjective}
+                  </p>
                 </div>
+
+                {/* Row 2: Round | Personal Score | Core Metric | Action Points */}
+                <div className="flex items-center justify-center flex-wrap gap-2 text-xs">
+                {/* Round */}
+                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
+                  <ArrowPathIcon className="h-3.5 w-3.5 text-accent" />
+                  <span className="text-muted">Round</span>
+                  <span className="font-bold text-accent">{gameState.round}/{maxRounds ?? GAME_CONFIG.MAX_ROUNDS}</span>
+                </div>
+                {/* Personal Score */}
+                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
+                  <StarIcon className="h-3.5 w-3.5 text-amber-300" />
+                  <span className="text-muted">Personal</span>
+                  <span className="font-bold text-amber-300">{humanPlayer.hiddenScore}</span>
+                  {(() => {
+                    const personalDelta = hiddenScoreChanges[humanPlayer.role.name]?.update ?? null;
+                    return personalDelta !== null ? (
+                      <span className={`font-semibold ${personalDelta >= 0 ? 'text-success' : 'text-danger'}`}>
+                        {personalDelta >= 0 ? '+' : ''}{personalDelta}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                {/* Core Metric */}
+                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded min-w-0">
+                  <GlobeIcon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`} />
+                  <span className="text-muted truncate" title={metric.name}>{metric.name}</span>
+                  <span className={`font-bold ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`}>
+                    {metric.value}%
+                  </span>
+                  {lastDelta !== null && (
+                    <span className={`font-semibold ${lastDelta >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {lastDelta >= 0 ? '+' : ''}{lastDelta}
+                    </span>
+                  )}
+                </div>
+                {/* Action Points */}
+                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
+                  <BoltIcon className={`h-3.5 w-3.5 ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`} />
+                  <span className={`font-bold ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`}>
+                    {availablePoints} AP
+                  </span>
+                </div>
+              </div>
               </div>
             </div>
           )}

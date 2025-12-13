@@ -92,6 +92,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
         aiCompletionStatus={aiCompletionStatus}
         availablePoints={humanPlayer.actionPoints}
         humanPlayer={humanPlayer}
+        maxRounds={maxRounds}
       />
       {historyOpen && (
         <div className="mt-6" data-testid="event-log">
