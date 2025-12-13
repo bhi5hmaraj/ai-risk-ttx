@@ -35,15 +35,15 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 -z-10">
           <MatrixBackground opacity={0.14} />
         </div>
-        <section className="px-6 py-16">
+        <section className="px-4 py-6 md:px-6 md:py-16">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-5xl font-extrabold text-accent">Simulacra</h1>
-            <p className="mt-3 text-lg text-muted max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-accent">Simulacra</h1>
+            <p className="mt-2 md:mt-3 text-base md:text-lg text-muted max-w-3xl mx-auto">
               AI-powered tabletop exercise for complex, high-stakes decision making.
             </p>
-            <div className="mt-8 flex items-center justify-center gap-4">
+            <div className="mt-6 md:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
               <Button
-                className="h-11 px-8 text-base"
+                className="h-11 px-8 text-base w-full sm:w-auto"
                 onClick={() => {
                   resetState();
                   try { setStartIntent(false); } catch {}
@@ -54,8 +54,8 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="outline"
-                className="h-11 px-6 text-base"
-                onClick={() => router.push('/updates')}
+                className="h-11 px-6 text-base w-full sm:w-auto"
+                onClick={() => router.push('/about')}
               >
                 Learn More
               </Button>
@@ -63,9 +63,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Existing Rules content, tokenized container */}
-        <section className="px-6 pb-24">
-          <div className="max-w-5xl mx-auto bg-card border border-border rounded-md p-6">
+        {/* Existing Rules content */}
+        <section className="pb-8 md:pb-16">
+          <div className="max-w-4xl mx-auto">
             <GameRulesScreen
               onNavigateToLobby={() => {
                 resetState();

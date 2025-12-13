@@ -91,7 +91,8 @@ export default function MatrixBackground({ className = '', opacity = 0.22, fps =
     <canvas
       ref={canvasRef}
       aria-hidden
-      className={`fixed inset-0 -z-10 pointer-events-none opacity-${Math.round(Math.min(1, Math.max(0, opacity)) * 100)} ${className}`}
+      className={`fixed inset-0 -z-10 pointer-events-none ${className}`}
+      style={{ opacity: Math.min(1, Math.max(0, opacity)) }}
     />
   );
 }

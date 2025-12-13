@@ -14,6 +14,7 @@ import { useScenarioCopilot } from '@/hooks/useScenarioCopilot';
 import { useForm } from 'react-hook-form';
 import { Navigation } from '@/components/Navigation';
 import MatrixBackground from '@/components/ui/MatrixBackground';
+import { LandscapeOnly } from '@/components/ui/LandscapeOnly';
 import ScenarioForm from '@/components/custom-scenario/ScenarioForm';
 import { matrixTheme } from '@/styles/matrixTheme';
 
@@ -302,7 +303,7 @@ function CustomScenarioPageContent() {
   }
 
   const content = (
-    <>
+    <LandscapeOnly>
     <MatrixBackground opacity={0.18} fps={16} />
     <Navigation
       onNavigateHome={() => router.push('/')}
@@ -433,7 +434,7 @@ function CustomScenarioPageContent() {
         {toast}
       </div>
     )}
-    </>
+    </LandscapeOnly>
   );
 
   return (

@@ -1,10 +1,10 @@
 /* Matrix-inspired, accessible dark theme tokens */
 :root {
   /* Surfaces */
-  --bg:    #0d1117;
-  --card:  #0f131a;
-  --panel: #0b1016;
-  --border:#1e2633;
+  --bg:    #1a1d23;
+  --card:  #1e2229;
+  --panel: #15181d;
+  --border:#2a2f38;
 
   /* Text */
   --text:  #e2e8f0;
