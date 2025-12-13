@@ -199,3 +199,10 @@ export const ArrowPathIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M3 16a9 9 0 0 0 14.8 2.7" strokeLinecap="round" />
   </svg>
 );
+
+// Chevron for expand/collapse
+export const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={2} {...props}>
+    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
