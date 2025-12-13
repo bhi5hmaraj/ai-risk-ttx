@@ -162,8 +162,8 @@ export const LLM_OPENAI: LLMService = {
     const prompt = getInitialScenarioChatPrompt();
     return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
   },
-  async generateConsequencesChat(session, gameState, players, counterfactualScoreChange) {
-    const prompt = getChatConsequencesPrompt(gameState, players, counterfactualScoreChange);
+  async generateConsequencesChat(session, gameState, players, counterfactualScoreChange, maxRounds?: number) {
+    const prompt = getChatConsequencesPrompt(gameState, players, counterfactualScoreChange, maxRounds);
 
     return await session.sendMessage<AIConsequenceResponse>(prompt, ConsequenceZ);
   },

@@ -230,8 +230,9 @@ export const getInitialScenarioPromptAndSchema = () => {
  * @param gameState The current state of the game.
  * @param players The list of all players and their chosen actions for the round.
  * @param counterfactualScoreChange The pre-calculated score change if no one had acted.
+ * @param maxRounds The maximum number of rounds in the game (for score normalization).
  */
-export const getConsequencesPromptAndSchema = (gameState: GameState, players: Player[], counterfactualScoreChange: number) => {
+export const getConsequencesPromptAndSchema = (gameState: GameState, players: Player[], counterfactualScoreChange: number, maxRounds: number = GAME_CONFIG.MAX_ROUNDS) => {
     const playerActionsText = players.map(p => {
         const actionTitles = p.actions.length > 0 ? p.actions.map(a => `"${a.title}"`).join(", ") : 'took no action';
         return `  - ${p.role.name} (Secret Goal: ${p.role.hiddenObjective}): ${actionTitles}.`
@@ -296,6 +297,7 @@ ${historyBlocks || '        <!-- no prior rounds -->'}
       3.  **Counterfactual Note:** In the 'counterfactualNote' field, start with "If no one had acted..." and explain that the score would have changed by ${counterfactualScoreChange} points and why.
       4.  **Public Score Update:** Provide an integer change to the public score. This should be a direct result of the summary and timeline.
       5.  **Hidden Score Updates:** For EACH player, provide a hidden score update. The justification MUST be incisive and directly reference how their actions moved them closer to or further from their secret objective.
+          **SCORE NORMALIZATION:** Personal scores are normalized to a maximum of 100 across the entire game (${maxRounds} rounds). Each round's hidden score update should typically range from -${Math.floor(100 / maxRounds)} to +${Math.floor(100 / maxRounds)} (i.e., ±${Math.floor(100 / maxRounds)} per round). Only exceed this range for truly exceptional, game-defining actions that warrant outsized impact.
       6.  **New Crisis:** Generate a new crisis event. This event MUST be an escalation or a logical next step that flows naturally from this round's timeline. Raise the stakes.
 
       Respond ONLY with a valid JSON object matching the provided schema. No commentary.
@@ -409,7 +411,8 @@ Fairness & Neutrality (must follow):
 export const getChatConsequencesPrompt = (
   gameState: GameState,
   players: Player[],
-  counterfactualScoreChange: number
+  counterfactualScoreChange: number,
+  maxRounds: number = GAME_CONFIG.MAX_ROUNDS
 ) => {
   const playerActionsText = players
     .map(p => {
@@ -476,6 +479,9 @@ Fairness & Neutrality (must follow):
 - Do not favor or penalize any role based on nationality, ideology, profession, or institutional identity.
 - Avoid stereotypes or blanket judgments; assign credit/blame only for concrete actions this round.
 - Hidden score updates must be action-justified.
+
+**SCORE NORMALIZATION (must follow):**
+Personal scores are normalized to a maximum of 100 across the entire game (${maxRounds} rounds). Each round's hidden score update should typically range from -${Math.floor(100 / maxRounds)} to +${Math.floor(100 / maxRounds)} (i.e., ±${Math.floor(100 / maxRounds)} per round). Only exceed this range for truly exceptional, game-defining actions that warrant outsized impact.
 
 Long‑horizon dependencies (must consider):
   - When selecting causes, include immediate antecedents and, when relevant, a root‑cause from earlier rounds using the <rounds> XML blocks above.

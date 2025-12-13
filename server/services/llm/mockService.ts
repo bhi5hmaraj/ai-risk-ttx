@@ -125,7 +125,7 @@ export const LLM_MOCK: LLMService = {
   async generateInitialScenarioChat(_session: GameChatSession): Promise<AIConsequenceResponse | null> {
     return this.generateInitialScenario();
   },
-  async generateConsequencesChat(_session: GameChatSession, gameState: GameState, players: Player[], counterfactualScoreChange: number): Promise<AIConsequenceResponse | null> {
+  async generateConsequencesChat(_session: GameChatSession, gameState: GameState, players: Player[], counterfactualScoreChange: number, _maxRounds?: number): Promise<AIConsequenceResponse | null> {
     return this.generateConsequences(gameState, players, counterfactualScoreChange);
   },
   async generateAITurn(player: Player, gameState: GameState, previousRoundActions: PlayerRoundActions[] | null): Promise<AITurnResponse | null> {

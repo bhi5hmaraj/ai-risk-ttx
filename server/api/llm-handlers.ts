@@ -84,11 +84,13 @@ export async function handleGenerateConsequences(body: {
     (session as any).messages.push({ role: msg.role, content: msg.content });
   }
 
+  const maxRounds = body.gameSetup?.maxRounds ?? undefined;
   const result = await generateConsequencesChat(
     session,
     body.gameState,
     body.players,
-    body.counterfactualScoreChange
+    body.counterfactualScoreChange,
+    maxRounds
   );
 
   slog(rid, `[generate/consequences] done`, { ok: !!result, dt: Date.now() - started });

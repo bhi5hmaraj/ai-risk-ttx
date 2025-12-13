@@ -74,9 +74,10 @@ export const generateConsequencesChat = async (
   session: GameChatSession,
   gameState: GameState,
   players: Player[],
-  counterfactualScoreChange: number
+  counterfactualScoreChange: number,
+  maxRounds?: number
 ): Promise<AIConsequenceResponse | null> => {
-  return getService().generateConsequencesChat(session, gameState, players, counterfactualScoreChange);
+  return getService().generateConsequencesChat(session, gameState, players, counterfactualScoreChange, maxRounds);
 };
 
 export const generateAITurn = async (

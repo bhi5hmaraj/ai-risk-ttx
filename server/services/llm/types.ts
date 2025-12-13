@@ -40,7 +40,8 @@ export interface LLMService {
     session: GameChatSession,
     gameState: GameState,
     players: Player[],
-    counterfactualScoreChange: number
+    counterfactualScoreChange: number,
+    maxRounds?: number
   ): Promise<AIConsequenceResponse | null>;
   generateAITurn(
     player: Player,
