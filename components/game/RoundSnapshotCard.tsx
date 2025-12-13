@@ -67,6 +67,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   // Section collapse state
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
+  // Popup state for metric explanations
+  const [activePopup, setActivePopup] = useState<string | null>(null);
+
   const toggleSection = (section: string) => {
     setCollapsedSections(prev => {
       const next = new Set(prev);
@@ -186,7 +189,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
               {/* Collapse button on left */}
               <button
                 onClick={() => toggleSection('status')}
-                className="p-1 hover:bg-card rounded transition-colors flex-shrink-0 self-center"
+                className="p-1 hover:bg-card rounded transition-colors flex-shrink-0 self-start mt-1"
                 aria-label="Collapse Status"
                 title="Collapse"
               >
@@ -194,9 +197,9 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
               </button>
 
               {/* Content area */}
-              <div className="flex-1 space-y-1">
-                {/* Row 1: Role | Secret Objective */}
-                <div className="flex items-center justify-center gap-3">
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Row 1: Role | Secret Objective - stacks on mobile */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {typeof humanPlayer.role.icon === 'function'
                       ? humanPlayer.role.icon({ className: 'h-5 w-5 text-accent' })
@@ -204,55 +207,113 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                     }
                     <span className="font-semibold text-text text-sm">{humanPlayer.role.name}</span>
                   </div>
-                  <div className="h-4 w-px bg-border flex-shrink-0" />
-                  <p className="text-sm text-amber-300 italic truncate" title={humanPlayer.role.hiddenObjective}>
+                  <div className="hidden sm:block h-4 w-px bg-border flex-shrink-0" />
+                  <button
+                    onClick={() => setActivePopup(activePopup === 'objective' ? null : 'objective')}
+                    className="text-left text-xs sm:text-sm text-amber-300 italic line-clamp-2 sm:line-clamp-1 hover:text-amber-200 transition-colors cursor-help"
+                    title="Click to see full objective"
+                  >
                     {humanPlayer.role.hiddenObjective}
-                  </p>
+                  </button>
                 </div>
 
-                {/* Row 2: Round | Personal Score | Core Metric | Action Points */}
-                <div className="flex items-center justify-center flex-wrap gap-2 text-xs">
-                {/* Round */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
-                  <ArrowPathIcon className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-muted">Round</span>
-                  <span className="font-bold text-accent">{gameState.round}/{maxRounds ?? GAME_CONFIG.MAX_ROUNDS}</span>
-                </div>
-                {/* Personal Score */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
-                  <StarIcon className="h-3.5 w-3.5 text-amber-300" />
-                  <span className="text-muted">Personal</span>
-                  <span className="font-bold text-amber-300">{humanPlayer.hiddenScore}</span>
-                  {(() => {
-                    const personalDelta = hiddenScoreChanges[humanPlayer.role.name]?.update ?? null;
-                    return personalDelta !== null ? (
-                      <span className={`font-semibold ${personalDelta >= 0 ? 'text-success' : 'text-danger'}`}>
-                        {personalDelta >= 0 ? '+' : ''}{personalDelta}
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-                {/* Core Metric */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded min-w-0">
-                  <GlobeIcon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`} />
-                  <span className="text-muted truncate" title={metric.name}>{metric.name}</span>
-                  <span className={`font-bold ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`}>
-                    {metric.value}%
-                  </span>
-                  {lastDelta !== null && (
-                    <span className={`font-semibold ${lastDelta >= 0 ? 'text-success' : 'text-danger'}`}>
-                      {lastDelta >= 0 ? '+' : ''}{lastDelta}
+                {/* Row 2: Stats - wraps on mobile */}
+                <div className="flex flex-wrap justify-center gap-1.5 text-xs relative">
+                  {/* Round */}
+                  <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
+                    <ArrowPathIcon className="h-3.5 w-3.5 text-accent" />
+                    <span className="font-bold text-accent">{gameState.round}/{maxRounds ?? GAME_CONFIG.MAX_ROUNDS}</span>
+                  </div>
+
+                  {/* Personal Score - clickable */}
+                  <button
+                    onClick={() => setActivePopup(activePopup === 'personal' ? null : 'personal')}
+                    className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded hover:border-amber-500/50 transition-colors cursor-help"
+                    title="Click for details"
+                  >
+                    <StarIcon className="h-3.5 w-3.5 text-amber-300" />
+                    <span className="font-bold text-amber-300">{humanPlayer.hiddenScore}</span>
+                    {(() => {
+                      const personalDelta = hiddenScoreChanges[humanPlayer.role.name]?.update ?? null;
+                      return personalDelta !== null ? (
+                        <span className={`font-semibold ${personalDelta >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {personalDelta >= 0 ? '+' : ''}{personalDelta}
+                        </span>
+                      ) : null;
+                    })()}
+                  </button>
+
+                  {/* Core Metric - clickable */}
+                  <button
+                    onClick={() => setActivePopup(activePopup === 'metric' ? null : 'metric')}
+                    className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded hover:border-accent/50 transition-colors cursor-help max-w-[180px] sm:max-w-none"
+                    title="Click for details"
+                  >
+                    <GlobeIcon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`} />
+                    <span className="text-muted truncate hidden sm:inline">{metric.name}</span>
+                    <span className={`font-bold flex-shrink-0 ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`}>
+                      {metric.value}%
                     </span>
-                  )}
+                    {lastDelta !== null && (
+                      <span className={`font-semibold flex-shrink-0 ${lastDelta >= 0 ? 'text-success' : 'text-danger'}`}>
+                        {lastDelta >= 0 ? '+' : ''}{lastDelta}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Action Points - clickable */}
+                  <button
+                    onClick={() => setActivePopup(activePopup === 'ap' ? null : 'ap')}
+                    className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded hover:border-accent/50 transition-colors cursor-help"
+                    title="Click for details"
+                  >
+                    <BoltIcon className={`h-3.5 w-3.5 ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`} />
+                    <span className={`font-bold ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`}>
+                      {availablePoints} AP
+                    </span>
+                  </button>
                 </div>
-                {/* Action Points */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded">
-                  <BoltIcon className={`h-3.5 w-3.5 ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`} />
-                  <span className={`font-bold ${availablePoints > 1 ? 'text-success' : availablePoints === 0 ? 'text-danger' : 'text-warning'}`}>
-                    {availablePoints} AP
-                  </span>
-                </div>
-              </div>
+
+                {/* Explanation Popups */}
+                {activePopup && (
+                  <div className="bg-card border border-border rounded-md p-3 text-xs space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-accent">
+                        {activePopup === 'objective' && '🎯 Your Secret Objective'}
+                        {activePopup === 'personal' && '⭐ Personal Score'}
+                        {activePopup === 'metric' && `🌐 ${metric.name}`}
+                        {activePopup === 'ap' && '⚡ Action Points'}
+                      </h4>
+                      <button onClick={() => setActivePopup(null)} className="text-muted hover:text-text">✕</button>
+                    </div>
+                    <p className="text-muted leading-relaxed">
+                      {activePopup === 'objective' && (
+                        <>
+                          <span className="text-amber-300 font-medium block mb-2">{humanPlayer.role.hiddenObjective}</span>
+                          This is your <strong className="text-amber-300">hidden goal</strong> that only you can see.
+                          Your actions should work toward this objective to increase your personal score.
+                          Other players have their own secret objectives that may conflict with yours!
+                        </>
+                      )}
+                      {activePopup === 'personal' && (
+                        <>Your <strong className="text-amber-300">secret score</strong> tracks progress toward your hidden objective.
+                        Only you can see this. At game end, the player with the highest personal score (among survivors) wins individually.
+                        Your actions each round affect this score based on how well they align with your secret goal.</>
+                      )}
+                      {activePopup === 'metric' && (
+                        <>The <strong className="text-accent">{metric.name}</strong> is the shared public score that all players must protect.
+                        {metric.description && <> {metric.description}</>} If this drops to <strong className="text-danger">0%</strong>,
+                        the crisis becomes catastrophic and <strong>everyone loses</strong>, regardless of personal scores.
+                        Balance your secret objectives with keeping this above zero!</>
+                      )}
+                      {activePopup === 'ap' && (
+                        <>You have <strong className="text-accent">{GAME_CONFIG.ACTION_POINTS_PER_ROUND} Action Points</strong> each round to spend on actions.
+                        Actions cost 1-3 AP based on their impact. Unused points carry over to the next round (max {GAME_CONFIG.MAX_ACTION_POINTS}).
+                        Choose wisely - more expensive actions often have bigger effects on both scores!</>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
