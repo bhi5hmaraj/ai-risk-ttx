@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal, FeedbackModal } from '@/components/game';
 import { EndScreen } from '@/screens';
+import { LandscapeOnly } from '@/components/ui/LandscapeOnly';
 import { useGame } from '@/hooks/useGame';
 import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
@@ -35,7 +36,7 @@ export default function EndPage() {
   );
 
   return (
-    <>
+    <LandscapeOnly>
       <Navigation
         onNavigateHome={() => {
           resetGame();
@@ -76,6 +77,6 @@ export default function EndPage() {
         onOpenFeedback={() => setIsFeedbackOpen(true)}
         gameSetup={gameSetup}
       />
-    </>
+    </LandscapeOnly>
   );
 }

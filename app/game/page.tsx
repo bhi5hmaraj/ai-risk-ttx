@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { FeedbackBanner, FeedbackModal, MakePublicModal, ActionTreePortal } from '@/components/game';
 import { GameScreen, LoadingScreen } from '@/screens';
+import { LandscapeOnly } from '@/components/ui/LandscapeOnly';
 import { useGame } from '@/hooks/useGame';
 import { useUI } from '@/hooks/useUI';
 import { useActions } from '@/hooks/useActions';
@@ -133,7 +134,7 @@ export default function GamePage() {
   }, [gameState.phase, humanPlayer, actionOptions.length, loadHumanOptions]);
 
   return (
-    <>
+    <LandscapeOnly>
       <Navigation
         onNavigateHome={() => {
           router.push('/');
@@ -201,6 +202,6 @@ export default function GamePage() {
           />
         </>
       )}
-    </>
+    </LandscapeOnly>
   );
 }

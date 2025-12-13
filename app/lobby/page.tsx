@@ -7,6 +7,7 @@ import { LobbyScreen, LoadingScreen } from '@/screens';
 import { Navigation } from '@/components/Navigation';
 import { ActionTreePortal } from '@/components/game';
 import { ConnectionStatusPill } from '@/components/ConnectionStatus';
+import { LandscapeOnly } from '@/components/ui/LandscapeOnly';
 import { GamePhase } from '@/types';
 import { useLobby } from '@/hooks/useLobby';
 import { useUI } from '@/hooks/useUI';
@@ -91,7 +92,7 @@ function LobbyPageContent() {
   ));
 
   return (
-    <>
+    <LandscapeOnly>
       <Navigation
         onNavigateHome={() => {
           // reset stores for a clean lobby/home transition
@@ -140,7 +141,7 @@ function LobbyPageContent() {
           }}
         />
       )}
-    </>
+    </LandscapeOnly>
   );
 }
 
