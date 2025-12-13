@@ -263,7 +263,7 @@ export const useGameController = () => {
       }
     };
 
-    const initializePresetScenario = (setup: GameSetup) => {
+    const initializePresetScenario = async (setup: GameSetup) => {
       llmCallsThisRoundRef.current = 0;
 
       // Persist canonical setup for AI Safety / predefined scenarios
@@ -272,38 +272,56 @@ export const useGameController = () => {
       // Initialize chat history for preset scenarios (chat mode only)
       chatHistoryRef.current = [];
 
-      const initialGameState: GameState = {
-        ...gameState,
-        phase: GamePhase.ACTION,
-        round: 1,
-        currentEvent: {
-          headline: setup.scenarioTitle,
-          detail: setup.scenarioDescription,
-        },
-        eventLog: [
-          {
-            round: 0,
-            roundSummary: setup.scenarioDescription,
-            outcomeTimeline: [],
-            counterfactualNote:
-              'If no one had acted, the crisis would remain poised to escalate immediately once the simulation begins.',
-            event: null,
-            playerActions: [],
-            publicScoreChange: 0,
-            publicScoreAfter: gameState.coreMetric.value,
-            hiddenScoreChanges: {},
-            geminiCalls: 0,
+      // Call LLM to generate initial scenario with outcomeTimeline
+      const initChat = await callLLMAndCount(() => generateInitialScenarioChat(setup, players));
+      const result = initChat ? initChat.scenario : null;
+      if (initChat) chatHistoryRef.current = initChat.chatHistory;
+
+      if (result) {
+        const initialGameState = createInitialGameStateFromScenario(gameState, result, llmCallsThisRoundRef.current);
+        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
+        setGameState(initialGameState);
+        setIsLoading(false);
+        setLoadingMessage('');
+        try {
+          setStartStep('generatingScenario', 'done');
+          setStartStep('ready', 'done');
+        } catch {}
+      } else {
+        // Fallback to static initialization if LLM fails
+        const initialGameState: GameState = {
+          ...gameState,
+          phase: GamePhase.ACTION,
+          round: 1,
+          currentEvent: {
+            headline: setup.scenarioTitle,
+            detail: setup.scenarioDescription,
           },
-        ],
-      };
-      setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
-      setGameState(initialGameState);
-      setIsLoading(false);
-      setLoadingMessage('');
-      try {
-        setStartStep('generatingScenario', 'done');
-        setStartStep('ready', 'done');
-      } catch {}
+          eventLog: [
+            {
+              round: 0,
+              roundSummary: setup.scenarioDescription,
+              outcomeTimeline: [],
+              counterfactualNote:
+                'If no one had acted, the crisis would remain poised to escalate immediately once the simulation begins.',
+              event: null,
+              playerActions: [],
+              publicScoreChange: 0,
+              publicScoreAfter: gameState.coreMetric.value,
+              hiddenScoreChanges: {},
+              geminiCalls: 0,
+            },
+          ],
+        };
+        setTimer(GAME_CONFIG.ACTION_PHASE_SECONDS);
+        setGameState(initialGameState);
+        setIsLoading(false);
+        setLoadingMessage('');
+        try {
+          setStartStep('generatingScenario', 'done');
+          setStartStep('ready', 'done');
+        } catch {}
+      }
     };
 
     if (gamePath === 'classic' || !gamePath) {
