@@ -30,9 +30,8 @@ export const EventLog: React.FC<EventLogProps> = ({
   }, [gameState.eventLog, order]);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 max-h-[50vh] overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-accent">Event Log</h3>
+    <div className="bg-card border border-border rounded-lg p-4 max-h-[50vh] overflow-y-auto">
+      <div className="flex items-center justify-end mb-3">
         <Button onClick={onViewActionTree} disabled={!canViewActionTree} className="h-8 text-sm disabled:opacity-60">View Action Tree</Button>
       </div>
 
