@@ -7,6 +7,81 @@ import { useRotatingJoke } from '@/lib/loadingJokes';
 import { useUIStore } from '../../stores/uiStore';
 import { GAME_CONFIG } from '../../constants';
 
+/** Mini candlestick/bar chart component for showing deltas per round */
+const DeltaChart: React.FC<{
+  deltas: number[];  // Array of delta values (positive or negative)
+  width?: number;
+  height?: number;
+}> = ({ deltas, width = 140, height = 52 }) => {
+  if (deltas.length === 0) return null;
+
+  const padding = 6;
+  const maxAbs = Math.max(...deltas.map(Math.abs), 1);
+  const barWidth = Math.max(10, Math.min(18, (width - padding * 2) / deltas.length - 3));
+  const gap = 3;
+  const centerY = height / 2;
+  const maxBarHeight = (height - padding * 2) / 2;
+  const minBarHeight = 4; // Minimum height so small deltas are visible
+
+  // Use actual hex colors that work in SVG
+  const colors = {
+    positive: '#2ea043',  // green
+    negative: '#f85149',  // red
+    neutral: '#d29922',   // yellow
+    border: '#3d444d',    // border gray
+    hoverPositive: '#3fb950',
+    hoverNegative: '#ff7b72',
+  };
+
+  return (
+    <svg width={width} height={height} className="bg-panel rounded flex-shrink-0">
+      {/* Center line (zero) */}
+      <line
+        x1={padding}
+        x2={width - padding}
+        y1={centerY}
+        y2={centerY}
+        stroke={colors.border}
+        strokeWidth="1"
+      />
+      {/* Bars for each delta */}
+      {deltas.map((delta, i) => {
+        const scaledHeight = (Math.abs(delta) / maxAbs) * maxBarHeight;
+        const barHeight = delta !== 0 ? Math.max(scaledHeight, minBarHeight) : minBarHeight;
+        const x = padding + i * (barWidth + gap);
+        const y = delta >= 0 ? centerY - barHeight : centerY;
+        const color = delta > 0 ? colors.positive : delta < 0 ? colors.negative : colors.neutral;
+        const tooltipText = `Round ${i + 1}: ${delta > 0 ? '+' : ''}${delta}`;
+
+        return (
+          <g key={i} className="cursor-pointer">
+            <title>{tooltipText}</title>
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill={color}
+              rx="2"
+              className="hover:opacity-80 transition-opacity"
+            />
+            {/* Round number label */}
+            <text
+              x={x + barWidth / 2}
+              y={height - 1}
+              textAnchor="middle"
+              fontSize="8"
+              fill="#8b949e"
+            >
+              {i + 1}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
 interface RoundSnapshotCardProps {
   gameState: GameState;
   latestLogEntry: GameLogEntry | null;
@@ -64,11 +139,45 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   const [expandedMoments, setExpandedMoments] = useState<Set<number>>(new Set());
   const [expandedActions, setExpandedActions] = useState<Set<string>>(new Set());
 
-  // Section collapse state
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  // Section collapse state - start with all collapsed except status
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    new Set(['moments', 'actions', 'scores'])
+  );
 
   // Popup state for metric explanations
   const [activePopup, setActivePopup] = useState<string | null>(null);
+
+  // Flash animation state for key moments
+  const [flashMoments, setFlashMoments] = useState(false);
+  const prevRoundRef = React.useRef<number | null>(null);
+
+  // Trigger flash when key moments update (new round)
+  useEffect(() => {
+    const currentRound = latestLogEntry?.round ?? null;
+    if (prevRoundRef.current !== null && currentRound !== null && currentRound !== prevRoundRef.current) {
+      // New round detected - flash the moments section and auto-expand it
+      setFlashMoments(true);
+      setCollapsedSections(prev => {
+        const next = new Set(prev);
+        next.delete('moments'); // Auto-expand moments on new round
+        return next;
+      });
+      const timer = setTimeout(() => setFlashMoments(false), 1500);
+      return () => clearTimeout(timer);
+    }
+    prevRoundRef.current = currentRound;
+  }, [latestLogEntry?.round]);
+
+  // Auto-expand actions section when options are available
+  useEffect(() => {
+    if (actionOptions.length > 0 && !hasSubmitted) {
+      setCollapsedSections(prev => {
+        const next = new Set(prev);
+        next.delete('actions'); // Auto-expand actions when options available
+        return next;
+      });
+    }
+  }, [actionOptions.length, hasSubmitted]);
 
   const toggleSection = (section: string) => {
     setCollapsedSections(prev => {
@@ -276,7 +385,7 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
 
                 {/* Explanation Popups */}
                 {activePopup && (
-                  <div className="bg-card border border-border rounded-md p-3 text-xs space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="bg-card border border-border rounded-md p-3 text-xs space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
                     <div className="flex justify-between items-start">
                       <h4 className="font-bold text-accent">
                         {activePopup === 'objective' && '🎯 Your Secret Objective'}
@@ -286,32 +395,47 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                       </h4>
                       <button onClick={() => setActivePopup(null)} className="text-muted hover:text-text">✕</button>
                     </div>
-                    <p className="text-muted leading-relaxed">
-                      {activePopup === 'objective' && (
-                        <>
-                          <span className="text-amber-300 font-medium block mb-2">{humanPlayer.role.hiddenObjective}</span>
-                          This is your <strong className="text-amber-300">hidden goal</strong> that only you can see.
-                          Your actions should work toward this objective to increase your personal score.
-                          Other players have their own secret objectives that may conflict with yours!
-                        </>
-                      )}
-                      {activePopup === 'personal' && (
-                        <>Your <strong className="text-amber-300">secret score</strong> tracks progress toward your hidden objective.
-                        Only you can see this. At game end, the player with the highest personal score (among survivors) wins individually.
-                        Your actions each round affect this score based on how well they align with your secret goal.</>
-                      )}
-                      {activePopup === 'metric' && (
-                        <>The <strong className="text-accent">{metric.name}</strong> is the shared public score that all players must protect.
-                        {metric.description && <> {metric.description}</>} If this drops to <strong className="text-danger">0%</strong>,
-                        the crisis becomes catastrophic and <strong>everyone loses</strong>, regardless of personal scores.
-                        Balance your secret objectives with keeping this above zero!</>
-                      )}
-                      {activePopup === 'ap' && (
-                        <>You have <strong className="text-accent">{GAME_CONFIG.ACTION_POINTS_PER_ROUND} Action Points</strong> each round to spend on actions.
-                        Actions cost 1-3 AP based on their impact. Unused points carry over to the next round (max {GAME_CONFIG.MAX_ACTION_POINTS}).
-                        Choose wisely - more expensive actions often have bigger effects on both scores!</>
-                      )}
-                    </p>
+
+                    {/* Content with optional chart */}
+                    <div className="flex gap-3 items-start">
+                      {/* Delta Chart for Personal Score */}
+                      {activePopup === 'personal' && (() => {
+                        const deltas = gameState.eventLog
+                          .filter(e => e.round > 0)
+                          .map(e => e.hiddenScoreChanges?.[humanPlayer.role.name]?.update ?? 0);
+                        if (deltas.length === 0) return null;
+                        return <DeltaChart deltas={deltas} />;
+                      })()}
+
+                      {/* Delta Chart for Core Metric */}
+                      {activePopup === 'metric' && (() => {
+                        const deltas = gameState.eventLog.map(e => e.publicScoreChange ?? 0);
+                        if (deltas.length === 0) return null;
+                        return <DeltaChart deltas={deltas} />;
+                      })()}
+
+                      <p className="text-muted leading-relaxed flex-1">
+                        {activePopup === 'objective' && (
+                          <>
+                            <span className="text-amber-300 font-medium block mb-1">{humanPlayer.role.hiddenObjective}</span>
+                            This is your <strong className="text-amber-300">hidden goal</strong> that only you can see.
+                            Your actions should work toward this objective to increase your personal score.
+                          </>
+                        )}
+                        {activePopup === 'personal' && (
+                          <>Your <strong className="text-amber-300">secret score</strong> tracks progress toward your hidden objective.
+                          Only you can see this. At game end, the highest personal score wins individually.</>
+                        )}
+                        {activePopup === 'metric' && (
+                          <>The <strong className="text-accent">{metric.name}</strong> is the shared public score all players must protect.
+                          {metric.description && <> {metric.description}</>} If it drops to <strong className="text-danger">0%</strong>, everyone loses!</>
+                        )}
+                        {activePopup === 'ap' && (
+                          <>You have <strong className="text-accent">{GAME_CONFIG.ACTION_POINTS_PER_ROUND} AP</strong> each round.
+                          Actions cost 1-3 AP. Unused points carry over (max {GAME_CONFIG.MAX_ACTION_POINTS}).</>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -320,7 +444,11 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 1: Key Moments - Side by Side */}
-        <div className="bg-panel border border-border rounded-md p-2">
+        <div className={`bg-panel border rounded-md p-2 transition-all duration-300 ${
+          flashMoments
+            ? 'border-accent shadow-[0_0_15px_rgba(46,160,67,0.4)] animate-pulse'
+            : 'border-border'
+        }`}>
           {collapsedSections.has('moments') ? (
             <button
               onClick={() => toggleSection('moments')}
@@ -389,7 +517,11 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
         </div>
 
         {/* SECTION 2: Your Actions (moved above Score Δ) */}
-        <div className="bg-panel border border-border rounded-md p-2 relative">
+        <div className={`bg-panel border rounded-md p-2 relative transition-all duration-500 ${
+          hasSubmitted && isLoading
+            ? 'border-accent/50 shadow-[0_0_20px_rgba(46,160,67,0.3)] animate-pulse'
+            : 'border-border'
+        }`}>
           {collapsedSections.has('actions') ? (
             <button
               onClick={() => toggleSection('actions')}
