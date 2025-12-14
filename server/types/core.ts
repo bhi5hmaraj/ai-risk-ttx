@@ -78,7 +78,20 @@ export interface PlayerRoundActions {
 export interface HiddenScoreUpdate { update: number; justification: string; }
 export interface AIHiddenScoreUpdate { roleName: string; update: number; justification: string; }
 
-export interface OutcomeTimelineItem { title: string; description: string; impact: string; }
+/** Sentiment of a key moment - used for visual triage */
+export enum MomentSentiment {
+  POSITIVE = 'positive',
+  NEGATIVE = 'negative',
+  NEUTRAL = 'neutral',
+  MIXED = 'mixed',
+}
+
+export interface OutcomeTimelineItem {
+  title: string;
+  description: string;
+  impact: string;
+  sentiment: MomentSentiment;
+}
 
 export interface GameLogEntry {
   round: number;

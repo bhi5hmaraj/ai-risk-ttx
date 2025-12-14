@@ -113,10 +113,19 @@ export interface AIHiddenScoreUpdate {
   justification: string;
 }
 
+/** Sentiment of a key moment - used for visual triage */
+export enum MomentSentiment {
+  POSITIVE = 'positive',
+  NEGATIVE = 'negative',
+  NEUTRAL = 'neutral',
+  MIXED = 'mixed',
+}
+
 export interface OutcomeTimelineItem {
   title: string;
   description: string;
   impact: string;
+  sentiment: MomentSentiment;
   causes?: CausalReference[]; // optional interpretability citations
 }
 
