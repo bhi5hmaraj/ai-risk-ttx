@@ -68,10 +68,12 @@ const GameEventZ = z.object({
   detail: z.string(),
 }).strict();
 
+const SentimentZ = z.enum(['positive', 'negative', 'neutral', 'mixed']);
 const TimelineItemZ = z.object({
   title: z.string(),
   description: z.string(),
   impact: z.string(),
+  sentiment: SentimentZ,
 }).strict();
 
 const ConsequenceZ = z.object({

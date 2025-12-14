@@ -21,6 +21,11 @@ const AIConsequenceResponseSchema = {
           title: { type: "string", description: "A short label for the moment." },
           description: { type: "string", description: "1-2 sentences describing what happened during this beat." },
           impact: { type: "string", description: "A concise explanation of how this beat affected the core metric or player goals." },
+          sentiment: {
+            type: "string",
+            enum: ["positive", "negative", "neutral", "mixed"],
+            description: "The overall sentiment of this moment: 'positive' (good for core metric/players), 'negative' (harmful), 'neutral' (no clear impact), or 'mixed' (both good and bad aspects)."
+          },
           causes: {
             type: "array",
             description: "Optional causal citations explaining why this beat happened, linking to prior events or actions.",
@@ -35,7 +40,7 @@ const AIConsequenceResponseSchema = {
             }
           },
         },
-        required: ['title', 'description', 'impact'],
+        required: ['title', 'description', 'impact', 'sentiment'],
       },
     },
     counterfactualNote: {
@@ -209,7 +214,7 @@ export const getInitialScenarioPromptAndSchema = () => {
 
       Tell the story in a way that players can scan quickly:
       - Use the 'roundSummary' field for a tight plain-language recap (no more than 3 sentences).
-      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, and an explicit "impact" line tying back to how the crisis affects the core metric or the players.
+      - Populate the 'outcomeTimeline' array with 3 to 4 chronological beats. Each beat should have a short title, a couple of sentences, an explicit "impact" line, and a "sentiment" field ('positive', 'negative', 'neutral', or 'mixed') to help players quickly triage the moment's effect.
       - The 'counterfactualNote' should begin with "If no one had acted..." and briefly explain the expected score change (remember, this is the first round so reference the escalating crisis rather than player decisions).
 
       Here are your strict instructions for the response:
@@ -285,7 +290,7 @@ ${historyBlocks || '        <!-- no prior rounds -->'}
       - Assign credit/blame ONLY for concrete actions or inaction in THIS round.
       - Hidden score updates must be action-justified; if a role took no relevant action, do not reward them.
       1.  **Round Summary:** Populate the 'roundSummary' field with 2-3 sentences that clearly explain what happened and why the ${gameState.coreMetric.name} score changed, explicitly naming the most important player actions.
-      2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, and an "impact" string that connects the beat back to the core metric or a player objective.
+      2.  **Outcome Timeline:** Fill the 'outcomeTimeline' array with 3-5 chronological beats. Each beat needs a short headline (title), 1-2 sentences of description, an "impact" string that connects the beat back to the core metric or a player objective, and a "sentiment" field ('positive', 'negative', 'neutral', or 'mixed') for quick visual triage.
           For each beat, when applicable, add 'causes' entries that cite why it happened by referencing:
             • prior events (use their id or exact headline) or
             • specific player actions from this round or previous rounds.
@@ -396,7 +401,7 @@ export const getInitialScenarioChatPrompt = () => {
 
 You must provide:
 1. **roundSummary**: 2-3 sentence overview of the starting crisis
-2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats)
+2. **outcomeTimeline**: 3-4 key moments that set the stage (chronological beats). Each item needs: title, description, impact, and sentiment ('positive', 'negative', 'neutral', or 'mixed')
 3. **counterfactualNote**: Start with "If no one acts..." and explain the baseline deterioration
 4. **publicScoreUpdate**: A negative score change (-15 to -25) representing the initial crisis impact
 5. **hiddenScoreUpdates**: All players start with update: 0, justification: "Game start."
@@ -469,6 +474,7 @@ Return a JSON object matching this structure:
    - title (string)
    - description (string)
    - impact (string)
+   - sentiment ('positive', 'negative', 'neutral', or 'mixed') - for quick visual triage
    - causes (optional, array) with entries: { type: 'event'|'action'|'exogenous', ref: string, rationale: string }
 - counterfactualNote (string)
 - publicScoreUpdate (number)

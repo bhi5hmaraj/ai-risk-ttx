@@ -74,10 +74,12 @@ const CauseZ = z.object({
   ref: z.string(),
   rationale: z.string(),
 }).strict();
+const SentimentZ = z.enum(['positive', 'negative', 'neutral', 'mixed']);
 const TimelineItemZ = z.object({
   title: z.string(),
   description: z.string(),
   impact: z.string(),
+  sentiment: SentimentZ,
   causes: z.array(CauseZ).optional(),
 }).strict();
 const ConsequenceZ = z.object({

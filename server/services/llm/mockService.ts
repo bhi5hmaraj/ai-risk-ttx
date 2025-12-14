@@ -8,7 +8,9 @@ import type {
   AITurnResponse,
   PlayerRoundActions,
   GameSetup,
+  OutcomeTimelineItem,
 } from "../../types/core";
+import { MomentSentiment } from "../../types/core";
 import type { AIDebriefResponse } from "../../types/core";
 import { GAME_CONFIG } from '../../../gameConfig';
 import type { LLMService } from './types';
@@ -34,14 +36,16 @@ function mockAction(titleSeed: string, r: () => number): ActionOption {
   };
 }
 
-function mockOutcomeTimeline(r: () => number) {
-  const items = [] as { title: string; description: string; impact: string }[];
+function mockOutcomeTimeline(r: () => number): OutcomeTimelineItem[] {
+  const items: OutcomeTimelineItem[] = [];
   const impacts = ['public anxiety', 'platform stability', 'turnout', 'trust'];
+  const sentiments = [MomentSentiment.POSITIVE, MomentSentiment.NEGATIVE, MomentSentiment.NEUTRAL, MomentSentiment.MIXED];
   for (let i = 0; i < 3; i++) {
     items.push({
       title: `Event ${i + 1}`,
       description: 'Mock outcome detail for testing UI.',
       impact: pick(impacts, r),
+      sentiment: pick(sentiments, r),
     });
   }
   return items;

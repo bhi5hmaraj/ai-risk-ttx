@@ -15,7 +15,7 @@ import { MemorySessionStore } from '@/server/stores/sessionStore.memory';
 import { createValidGameState } from '@/tests/fixtures/session-data';
 import { GAME_CONFIG } from '../../gameConfig';
 import { prisma } from '@/server/lib/prisma';
-import { GamePhase } from '@/server/types/core';
+import { GamePhase, MomentSentiment } from '@/server/types/core';
 import * as sessionMetricsRepo from '@/server/data/sessionMetricsRepo';
 import type { Player, RoleDataCore, PlayerRoundActions, GameState, ActionOption, AIConsequenceResponse, AITurnResponse, AICounterfactualResponse } from '@/server/types/core';
 import { createInitialGameStateFromScenario, buildPlayersFromSetup } from '@/server/services/sessionEngine';
@@ -385,9 +385,9 @@ export function makeTestRouterDeps(): RouterDeps {
       return {
         roundSummary: `The ${setup.scenarioTitle} crisis begins.`,
         outcomeTimeline: [
-          { title: 'Crisis Emerges', description: 'The situation develops.', impact: 'Initial uncertainty spreads.' },
-          { title: 'Stakes Rise', description: 'Key actors take notice.', impact: 'Pressure mounts on all parties.' },
-          { title: 'Decision Point', description: 'Action is required.', impact: 'The next moves will be critical.' },
+          { title: 'Crisis Emerges', description: 'The situation develops.', impact: 'Initial uncertainty spreads.', sentiment: MomentSentiment.NEGATIVE },
+          { title: 'Stakes Rise', description: 'Key actors take notice.', impact: 'Pressure mounts on all parties.', sentiment: MomentSentiment.MIXED },
+          { title: 'Decision Point', description: 'Action is required.', impact: 'The next moves will be critical.', sentiment: MomentSentiment.NEUTRAL },
         ],
         counterfactualNote: 'If no one acts, the crisis will escalate rapidly.',
         publicScoreUpdate: -15,
