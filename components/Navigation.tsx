@@ -63,6 +63,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               >
                 <h1 className="text-xl font-bold text-accent hover:text-accent-strong transition-colors">Simulacra</h1>
               </button>
+              <span className="text-[9px] uppercase tracking-wider text-muted bg-panel border border-border rounded px-1.5 py-0.5">Early Prototype</span>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs text-muted">AI Tabletop Exercise</span>
             </div>

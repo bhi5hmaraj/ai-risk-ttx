@@ -398,7 +398,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   return (
     <div className="min-h-screen bg-bg text-text p-8 pt-24">
     <div className="text-center mb-10">
-      <h1 className="text-5xl font-extrabold text-accent">Simulacra</h1>
+      <div className="flex items-center justify-center gap-3">
+        <h1 className="text-5xl font-extrabold text-accent">Simulacra</h1>
+        <span className="text-[10px] uppercase tracking-wider text-muted bg-panel border border-border rounded px-2 py-1">Early Prototype</span>
+      </div>
       <p className="text-lg text-muted mt-2 max-w-4xl mx-auto">
         AI-powered tabletop exercise for complex, high-stakes decision making.
       </p>

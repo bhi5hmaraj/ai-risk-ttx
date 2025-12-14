@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import type { GameState, GameLogEntry, ActionOption, Player } from '../../types';
+import type { GameState, GameLogEntry, ActionOption, Player, OutcomeTimelineItem } from '../../types';
+import { MomentSentiment } from '../../types';
 import { CauseTag } from './CauseTag';
 import { LoadingSpinner, CheckCircleIcon, GlobeIcon, ArrowPathIcon, StarIcon, BoltIcon } from '../Icons';
 import { Button } from '@/components/ui/Button';
@@ -151,6 +152,12 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
   const [flashMoments, setFlashMoments] = useState(false);
   const prevRoundRef = React.useRef<number | null>(null);
 
+  // Flash animation state for score changes
+  const [flashPersonal, setFlashPersonal] = useState<'positive' | 'negative' | null>(null);
+  const [flashMetric, setFlashMetric] = useState<'positive' | 'negative' | null>(null);
+  const prevPersonalScoreRef = React.useRef<number | null>(null);
+  const prevMetricValueRef = React.useRef<number | null>(null);
+
   // Trigger flash when key moments update (new round)
   useEffect(() => {
     const currentRound = latestLogEntry?.round ?? null;
@@ -167,6 +174,30 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
     }
     prevRoundRef.current = currentRound;
   }, [latestLogEntry?.round]);
+
+  // Trigger flash when personal score changes
+  useEffect(() => {
+    const currentScore = humanPlayer.hiddenScore;
+    if (prevPersonalScoreRef.current !== null && currentScore !== prevPersonalScoreRef.current) {
+      const delta = currentScore - prevPersonalScoreRef.current;
+      setFlashPersonal(delta >= 0 ? 'positive' : 'negative');
+      const timer = setTimeout(() => setFlashPersonal(null), 2000);
+      return () => clearTimeout(timer);
+    }
+    prevPersonalScoreRef.current = currentScore;
+  }, [humanPlayer.hiddenScore]);
+
+  // Trigger flash when core metric changes
+  useEffect(() => {
+    const currentValue = metric.value;
+    if (prevMetricValueRef.current !== null && currentValue !== prevMetricValueRef.current) {
+      const delta = currentValue - prevMetricValueRef.current;
+      setFlashMetric(delta >= 0 ? 'positive' : 'negative');
+      const timer = setTimeout(() => setFlashMetric(null), 2000);
+      return () => clearTimeout(timer);
+    }
+    prevMetricValueRef.current = currentValue;
+  }, [metric.value]);
 
   // Auto-expand actions section when options are available
   useEffect(() => {
@@ -229,22 +260,42 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
     ? gameState.eventLog[gameState.eventLog.length - 2]?.outcomeTimeline ?? null
     : null;
 
+  // Sentiment color mapping
+  const getSentimentStyles = (sentiment?: string) => {
+    switch (sentiment) {
+      case MomentSentiment.POSITIVE:
+        return { bg: 'bg-success/20', border: 'border-success/50', dot: 'bg-success' };
+      case MomentSentiment.NEGATIVE:
+        return { bg: 'bg-danger/20', border: 'border-danger/50', dot: 'bg-danger' };
+      case MomentSentiment.MIXED:
+        return { bg: 'bg-warning/20', border: 'border-warning/50', dot: 'bg-warning' };
+      case MomentSentiment.NEUTRAL:
+      default:
+        return { bg: 'bg-card', border: 'border-border', dot: 'bg-muted' };
+    }
+  };
+
   // Render a single key moment card
-  const renderMomentCard = (item: any, index: number, keyPrefix: string) => {
+  const renderMomentCard = (item: OutcomeTimelineItem, index: number, keyPrefix: string) => {
     const momentKey = `${keyPrefix}_${index}`;
     const isExpanded = expandedMoments.has(index + (keyPrefix === 'last' ? 1000 : 0)); // Offset for last round
     const toggleKey = index + (keyPrefix === 'last' ? 1000 : 0);
+    const sentimentStyles = getSentimentStyles(item.sentiment);
 
     return (
-      <div key={momentKey} className="bg-card border border-border rounded p-2">
+      <div key={momentKey} className={`${sentimentStyles.bg} border ${sentimentStyles.border} rounded p-2 transition-colors`}>
         <button
           type="button"
           onClick={() => toggleMoment(toggleKey)}
           className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
         >
           <div className="flex items-start gap-2">
-            <div className="h-5 w-5 flex-shrink-0 rounded-full bg-panel text-accent font-bold text-xs flex items-center justify-center border border-border">
-              {index + 1}
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div className="h-5 w-5 rounded-full bg-panel text-accent font-bold text-xs flex items-center justify-center border border-border">
+                {index + 1}
+              </div>
+              {/* Sentiment indicator dot */}
+              <div className={`h-2 w-2 rounded-full ${sentimentStyles.dot}`} title={item.sentiment || 'neutral'} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
@@ -337,7 +388,13 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                   {/* Personal Score - clickable */}
                   <button
                     onClick={() => setActivePopup(activePopup === 'personal' ? null : 'personal')}
-                    className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded hover:border-amber-500/50 transition-colors cursor-help"
+                    className={`relative flex items-center gap-1 px-2 py-1 bg-card border rounded transition-all duration-300 cursor-help ${
+                      flashPersonal === 'positive'
+                        ? 'border-success shadow-[0_0_12px_rgba(46,160,67,0.6)] animate-pulse'
+                        : flashPersonal === 'negative'
+                        ? 'border-danger shadow-[0_0_12px_rgba(248,81,73,0.6)] animate-pulse'
+                        : 'border-border hover:border-amber-500/50'
+                    }`}
                     title="Click for details"
                   >
                     <StarIcon className="h-3.5 w-3.5 text-amber-300" />
@@ -350,12 +407,22 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                         </span>
                       ) : null;
                     })()}
+                    {/* Notification dot - click for more info */}
+                    {gameState.eventLog.length > 0 && activePopup !== 'personal' && (
+                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-400" />
+                    )}
                   </button>
 
                   {/* Core Metric - clickable */}
                   <button
                     onClick={() => setActivePopup(activePopup === 'metric' ? null : 'metric')}
-                    className="flex items-center gap-1 px-2 py-1 bg-card border border-border rounded hover:border-accent/50 transition-colors cursor-help max-w-[180px] sm:max-w-none"
+                    className={`relative flex items-center gap-1 px-2 py-1 bg-card border rounded transition-all duration-300 cursor-help max-w-[180px] sm:max-w-none ${
+                      flashMetric === 'positive'
+                        ? 'border-success shadow-[0_0_12px_rgba(46,160,67,0.6)] animate-pulse'
+                        : flashMetric === 'negative'
+                        ? 'border-danger shadow-[0_0_12px_rgba(248,81,73,0.6)] animate-pulse'
+                        : 'border-border hover:border-accent/50'
+                    }`}
                     title="Click for details"
                   >
                     <GlobeIcon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.value > 60 ? 'text-success' : metric.value > 30 ? 'text-warning' : 'text-danger'}`} />
@@ -367,6 +434,10 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                       <span className={`font-semibold flex-shrink-0 ${lastDelta >= 0 ? 'text-success' : 'text-danger'}`}>
                         {lastDelta >= 0 ? '+' : ''}{lastDelta}
                       </span>
+                    )}
+                    {/* Notification dot - click for more info */}
+                    {gameState.eventLog.length > 0 && activePopup !== 'metric' && (
+                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent" />
                     )}
                   </button>
 
@@ -530,6 +601,14 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
             >
               <span className="text-accent text-sm">+</span>
               <p className="text-sm uppercase tracking-wide text-accent font-semibold">Your Actions</p>
+              {/* Pulsing indicator when waiting for user input (collapsed state) */}
+              {!hasSubmitted && actionOptions.length > 0 && !isPaused && (
+                <div className="relative flex items-center justify-center ml-auto">
+                  <span className="absolute h-4 w-4 rounded-full bg-accent/40 animate-ping" />
+                  <span className="absolute h-3 w-3 rounded-full bg-accent/30 animate-pulse" />
+                  <span className="relative h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(46,160,67,0.8)]" />
+                </div>
+              )}
             </button>
           ) : (
             <div className="flex gap-2">
@@ -541,6 +620,14 @@ export const RoundSnapshotCard: React.FC<RoundSnapshotCardProps> = ({
                 >
                   <span className="text-accent text-xs">−</span>
                 </button>
+                {/* Pulsing indicator when waiting for user input */}
+                {!hasSubmitted && actionOptions.length > 0 && !isPaused && (
+                  <div className="relative flex items-center justify-center">
+                    <span className="absolute h-4 w-4 rounded-full bg-accent/40 animate-ping" />
+                    <span className="absolute h-3 w-3 rounded-full bg-accent/30 animate-pulse" />
+                    <span className="relative h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(46,160,67,0.8)]" />
+                  </div>
+                )}
                 <p className="text-xs uppercase tracking-wide text-accent font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Your Actions</p>
               </div>
               <div className="flex-1 min-w-0 relative">

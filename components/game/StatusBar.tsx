@@ -64,6 +64,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             <Bars3Icon className="h-4 w-4 text-muted" />
           </button>
           <h1 className="text-base font-bold text-accent whitespace-nowrap">Simulacra</h1>
+          <span className="text-[9px] uppercase tracking-wider text-muted bg-panel border border-border rounded px-1.5 py-0.5">Early Prototype</span>
         </div>
 
         {/* Center: Timer (only during ACTION phase) */}

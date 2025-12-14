@@ -1,7 +1,23 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { GameState, Player } from '../../types';
+import { MomentSentiment } from '../../types';
 import { CauseTag } from './CauseTag';
+
+// Sentiment color mapping for key moments
+const getSentimentStyles = (sentiment?: string) => {
+  switch (sentiment) {
+    case MomentSentiment.POSITIVE:
+      return { bg: 'bg-success/20', border: 'border-success/50', dot: 'bg-success' };
+    case MomentSentiment.NEGATIVE:
+      return { bg: 'bg-danger/20', border: 'border-danger/50', dot: 'bg-danger' };
+    case MomentSentiment.MIXED:
+      return { bg: 'bg-warning/20', border: 'border-warning/50', dot: 'bg-warning' };
+    case MomentSentiment.NEUTRAL:
+    default:
+      return { bg: 'bg-panel', border: 'border-border', dot: 'bg-muted' };
+  }
+};
 
 interface EventLogProps {
   gameState: GameState;
@@ -75,26 +91,33 @@ export const EventLog: React.FC<EventLogProps> = ({
                       <div>
                         <p className="text-xs uppercase tracking-wide text-accent mb-1.5">Key Moments</p>
                         <ol className="space-y-2">
-                          {log.outcomeTimeline.map((item, index) => (
-                            <li key={`${log.round}_${index}`} className="flex gap-2">
-                              <div className="mt-0.5 h-5 w-5 flex-shrink-0 rounded-full bg-panel text-accent font-semibold text-xs flex items-center justify-center border border-border">
-                                {index + 1}
-                              </div>
-                              <div className="flex-1 bg-panel border border-border rounded p-2 space-y-1">
-                                <p className="text-xs font-semibold text-text">{item.title}</p>
-                                <p className="text-xs text-muted leading-relaxed">{item.description}</p>
-                                <p className="text-[10px] uppercase tracking-wide text-accent">Impact: <span className="normal-case font-medium text-text">{item.impact}</span></p>
-                                {item.causes && item.causes.length > 0 && (
-                                  <div className="mt-2 flex flex-wrap gap-2 items-center">
-                                    <p className="text-[11px] uppercase tracking-wide text-accent mr-1">Because:</p>
-                                    {item.causes.map((c, i) => (
-                                      <CauseTag key={`${log.round}_${index}_c_${i}`} cause={c as any} logs={gameState.eventLog} />
-                                    ))}
+                          {log.outcomeTimeline.map((item, index) => {
+                            const sentimentStyles = getSentimentStyles(item.sentiment);
+                            return (
+                              <li key={`${log.round}_${index}`} className="flex gap-2">
+                                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                                  <div className="h-5 w-5 rounded-full bg-panel text-accent font-semibold text-xs flex items-center justify-center border border-border">
+                                    {index + 1}
                                   </div>
-                                )}
-                              </div>
-                            </li>
-                          ))}
+                                  {/* Sentiment indicator dot */}
+                                  <div className={`h-2 w-2 rounded-full ${sentimentStyles.dot}`} title={item.sentiment || 'neutral'} />
+                                </div>
+                                <div className={`flex-1 ${sentimentStyles.bg} border ${sentimentStyles.border} rounded p-2 space-y-1 transition-colors`}>
+                                  <p className="text-xs font-semibold text-text">{item.title}</p>
+                                  <p className="text-xs text-muted leading-relaxed">{item.description}</p>
+                                  <p className="text-[10px] uppercase tracking-wide text-accent">Impact: <span className="normal-case font-medium text-text">{item.impact}</span></p>
+                                  {item.causes && item.causes.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2 items-center">
+                                      <p className="text-[11px] uppercase tracking-wide text-accent mr-1">Because:</p>
+                                      {item.causes.map((c, i) => (
+                                        <CauseTag key={`${log.round}_${index}_c_${i}`} cause={c as any} logs={gameState.eventLog} />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
                         </ol>
                       </div>
                     ) : null}

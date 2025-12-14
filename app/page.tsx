@@ -37,7 +37,10 @@ export default function HomePage() {
         </div>
         <section className="px-4 py-6 md:px-6 md:py-16">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-extrabold text-accent">Simulacra</h1>
+            <div className="flex items-center justify-center gap-3">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-accent">Simulacra</h1>
+              <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted bg-panel border border-border rounded px-1.5 md:px-2 py-0.5 md:py-1">Early Prototype</span>
+            </div>
             <p className="mt-2 md:mt-3 text-base md:text-lg text-muted max-w-3xl mx-auto">
               AI-powered tabletop exercise for complex, high-stakes decision making.
             </p>

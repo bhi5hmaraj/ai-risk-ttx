@@ -11,7 +11,10 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-accent">About Simulacra</h1>
+          <div className="flex items-center justify-center gap-3">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-accent">About Simulacra</h1>
+            <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted bg-panel border border-border rounded px-1.5 md:px-2 py-0.5 md:py-1">Early Prototype</span>
+          </div>
           <p className="text-lg text-muted">Where Simulation Becomes Hyperreality</p>
         </div>
 
