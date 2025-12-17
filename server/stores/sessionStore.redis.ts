@@ -29,6 +29,28 @@ export class RedisSessionStore extends MemorySessionStore {
     return `session:${id}`;
   }
 
+  /**
+   * Retry wrapper for mutation paths on cold instances.
+   * If the in-memory check throws `NotFound`, warm from Redis via get(id) and retry once.
+   */
+  private async warmAndRetry<T>(id: string, fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      // Only handle the specific cold-instance condition from MemorySessionStore.withRevisionCheck
+      if (err && typeof err.message === 'string' && err.message === 'NotFound') {
+        try {
+          console.warn(`[${this.className}] cold instance for ${id}; warming from Redis and retrying once`);
+          await this.get(id); // warm memory from Redis (no-op if already present)
+          return await fn();
+        } catch (err2) {
+          throw err2;
+        }
+      }
+      throw err;
+    }
+  }
+
   async create(args: CreateArgs): Promise<SessionSnapshot> {
     // Create in memory first
     const snap = await super.create(args);
@@ -117,8 +139,8 @@ export class RedisSessionStore extends MemorySessionStore {
     expectedRevision: number,
     mut: (state: GameState) => GameState
   ): Promise<SessionSnapshot> {
-    // Update memory first
-    const snap = await super.update(id, expectedRevision, mut);
+    // Update memory first (with cold-instance warm+retry)
+    const snap = await this.warmAndRetry(id, () => super.update(id, expectedRevision, mut));
 
     // Save to Redis
     // TODO: Add optimistic locking with WATCH + MULTI/EXEC
@@ -141,7 +163,7 @@ export class RedisSessionStore extends MemorySessionStore {
     expectedRevision: number,
     actions: ActionOption[]
   ): Promise<SessionSnapshot> {
-    const snap = await super.submitActions(id, playerId, expectedRevision, actions);
+    const snap = await this.warmAndRetry(id, () => super.submitActions(id, playerId, expectedRevision, actions));
 
     try {
       const redis = await getRedis();
@@ -161,7 +183,7 @@ export class RedisSessionStore extends MemorySessionStore {
     context?: AdvanceContext
   ): Promise<SessionSnapshot> {
     console.log(`[RedisSessionStore] advance() called for ${id} expectedRev=${expectedRevision}`);
-    const snap = await super.advance(id, expectedRevision, context);
+    const snap = await this.warmAndRetry(id, () => super.advance(id, expectedRevision, context));
     console.log(`[RedisSessionStore] advance() completed: rev=${snap.revision} round=${snap.state.round} phase=${snap.state.phase}`);
 
     try {

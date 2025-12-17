@@ -10,14 +10,14 @@ const BASE = '/api/session';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds for normal operations
 const HEALTH_CHECK_TIMEOUT = 10000; // 10 seconds for health checks (Redis cold start can take 6s)
 
-async function fetchJson(url: string, init?: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT) {
+async function fetchJson(url: string, init?: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT): Promise<{ res: Response; body: any }> {
   try {
     const res = await api(url, { ...init, timeout: timeoutMs });
     const rid = res.headers?.get('x-req-id') || undefined;
     try { console.log('[SessionClient]', init?.method || 'GET', url, 'status=', res.status, rid ? `rid=${rid}` : ''); } catch {}
-    if (res.status === 304) return { res, body: null } as const;
-    const body = await res.json().catch(() => ({ success: false, error: 'Invalid JSON response from server' }));
-    return { res, body } as const;
+    if (res.status === 304) return { res, body: null };
+    const body: any = await res.json().catch(() => ({ success: false, error: 'Invalid JSON response from server' } as any));
+    return { res, body };
   } catch (err: any) {
     // Ky throws for network/timeout; normalize messages
     const msg = err?.message || 'Unknown error';
