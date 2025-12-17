@@ -122,10 +122,13 @@ const GameSetupZ = z.object({
 }).strict();
 
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
+  const systemMessage = { role: "system" as const, content: "You are a helpful AI assistant that generates structured JSON responses for a crisis simulation game. Always respond with valid JSON matching the requested schema." };
+  const userMessage = { role: "user" as const, content: prompt };
+
   try {
     const completion = await client.chat.completions.create({
       model,
-      messages: [{ role: "user", content: prompt }],
+      messages: [systemMessage, userMessage],
       response_format: zodResponseFormat(schema, name),
     });
     const msg = completion.choices[0]?.message as any;
@@ -143,12 +146,12 @@ async function parseWithZod<T>(schema: any, prompt: string, name: string): Promi
     }
     // Fall back to json_object if parsing or enforcement failed
     throw new Error("No parsed content from structured output");
-  } catch (e) {
-    console.warn("Structured output enforcement failed, falling back to json_object:", e);
+  } catch (e: any) {
+    console.warn(`Structured output enforcement failed for ${name}, falling back to json_object:`, e?.message || e);
     try {
       const res = await client.chat.completions.create({
         model,
-        messages: [{ role: "user", content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }],
+        messages: [systemMessage, { role: "user" as const, content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }],
         response_format: { type: "json_object" },
       });
       const text = (res.choices[0]?.message?.content || "").trim();

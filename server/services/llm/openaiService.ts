@@ -114,17 +114,30 @@ const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEvent
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
+  const systemMessage = { role: "system" as const, content: "You are a helpful AI assistant that generates structured JSON responses for a crisis simulation game. Always respond with valid JSON matching the requested schema." };
+  const userMessage = { role: "user" as const, content: prompt };
+
   try {
-    const completion = await getClient().chat.completions.create({ model, messages: [{ role: "user", content: prompt }], response_format: zodResponseFormat(schema, name) });
+    const completion = await getClient().chat.completions.create({
+      model,
+      messages: [systemMessage, userMessage],
+      response_format: zodResponseFormat(schema, name),
+    });
     const msg = completion.choices[0]?.message as any;
     if (msg?.refusal) return null;
     if (msg?.parsed) return msg.parsed as T;
     const content = msg?.content;
     if (typeof content === "string") { const parsed = safeJsonParse<T>(content); if (parsed) return parsed; }
     throw new Error("No parsed content from structured output");
-  } catch (e) {
+  } catch (e: any) {
+    console.warn(`[parseWithZod] Structured output failed for ${name}:`, e?.message || e);
+    // Fallback to json_object mode without structured output
     try {
-      const res = await getClient().chat.completions.create({ model, messages: [{ role: "user", content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }], response_format: { type: "json_object" } });
+      const res = await getClient().chat.completions.create({
+        model,
+        messages: [systemMessage, { role: "user" as const, content: `${prompt}\n\nRespond ONLY with valid JSON matching the described schema.` }],
+        response_format: { type: "json_object" },
+      });
       const text = (res.choices[0]?.message?.content || "").trim();
       return safeJsonParse<T>(text);
     } catch (e2) {
