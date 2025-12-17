@@ -57,7 +57,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   maxRounds,
   scenarioAlreadyPublic,
 }) => {
-  const { isHistoryOpen: historyOpen, setHistoryOpen } = useUIStore();
+  const { isHistoryOpen: historyOpen, setHistoryOpen, setError } = useUIStore();
 
   return (
   <div className="min-h-screen bg-bg px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4 pt-12">
@@ -79,7 +79,16 @@ const GameScreen: React.FC<GameScreenProps> = ({
         latestLogEntry={latestLogEntry}
       />
       {error && (
-        <div className="bg-red-800/50 border border-red-500 text-red-300 p-4 rounded-lg mb-4 text-center">{error}</div>
+        <div className="bg-red-900/40 border border-red-600 text-red-200 p-3 rounded-md mb-4 flex items-start justify-between gap-3" role="alert">
+          <div className="flex-1 text-left">{error}</div>
+          <button
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+            className="shrink-0 px-2 py-0.5 rounded text-red-200 hover:text-red-100 hover:bg-red-800/40 border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+          >
+            ✕
+          </button>
+        </div>
       )}
       <RoundSnapshotCard
         gameState={gameState}
