@@ -89,13 +89,41 @@ export async function getActionOptions(id: string, playerId: string, playerRoleN
 }
 
 export async function submitActions(id: string, playerId: string, actions: ActionOption[], expectedRevision: number) {
-  const { res, body } = await fetchJson(`${BASE}/${id}/actions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'If-Match': String(expectedRevision) },
-    body: JSON.stringify({ playerId, actions }),
-  });
-  if (!body?.success) throw new Error(body?.error || `HTTP ${res.status}`);
-  return body.data as { id: string; state: any; revision: number; submitted: Record<string, boolean> };
+  const doPost = () =>
+    fetchJson(`${BASE}/${id}/actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'If-Match': String(expectedRevision) },
+      body: JSON.stringify({ playerId, actions }),
+    });
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // First attempt
+  let { res, body } = await doPost();
+  if (body?.success) {
+    return body.data as { id: string; state: any; revision: number; submitted: Record<string, boolean> };
+  }
+
+  // Stop-gap: warm + retry once on Not Found (cold instance or read-after-write race)
+  const isNotFound = res.status === 404 || (res.status === 500 && /not\s*found/i.test(String(body?.error || '')));
+  if (isNotFound) {
+    try {
+      // Warm the instance cache and retry once with a tiny backoff
+      await getSession(id).catch(() => null);
+      await sleep(120);
+      const retry = await doPost();
+      res = retry.res;
+      body = retry.body;
+      if (body?.success) {
+        return body.data as { id: string; state: any; revision: number; submitted: Record<string, boolean> };
+      }
+    } catch {
+      // fallthrough to throw below
+    }
+  }
+
+  // If we’re here, either it wasn’t retryable or retry failed
+  throw new Error(body?.error || `HTTP ${res.status}`);
 }
 
 export async function advance(
