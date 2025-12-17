@@ -33,6 +33,7 @@
     "metrics": "pnpm run test:coverage && pnpm run type-check && pnpm run coverage:readme"
   },
   "dependencies": {
+    "ky": "^1.4.0",
     "@ag-ui/core": "^0.0.41",
     "@clerk/nextjs": "^6.35.1",
     "@copilotkit/react-core": "^1.10.6",

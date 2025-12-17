@@ -4,38 +4,27 @@
  */
 
 import type { GameSetup, ActionOption } from '../types/core';
+import { api } from './http';
 
 const BASE = '/api/session';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds for normal operations
 const HEALTH_CHECK_TIMEOUT = 10000; // 10 seconds for health checks (Redis cold start can take 6s)
 
 async function fetchJson(url: string, init?: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const res = await fetch(url, { ...init, signal: controller.signal });
-    clearTimeout(timeoutId);
-
+    const res = await api(url, { ...init, timeout: timeoutMs });
     const rid = res.headers?.get('x-req-id') || undefined;
-    try {
-      console.log('[SessionClient]', init?.method || 'GET', url, 'status=', res.status, rid ? `rid=${rid}` : '');
-    } catch {}
-
+    try { console.log('[SessionClient]', init?.method || 'GET', url, 'status=', res.status, rid ? `rid=${rid}` : ''); } catch {}
     if (res.status === 304) return { res, body: null } as const;
     const body = await res.json().catch(() => ({ success: false, error: 'Invalid JSON response from server' }));
     return { res, body } as const;
   } catch (err: any) {
-    clearTimeout(timeoutId);
-
-    // Provide helpful error messages based on error type
-    if (err.name === 'AbortError') {
+    // Ky throws for network/timeout; normalize messages
+    const msg = err?.message || 'Unknown error';
+    if (/Timeout/i.test(msg)) {
       throw new Error(`Backend connection timeout after ${timeoutMs / 1000}s. Please check your network connection and try again.`);
     }
-    if (err.message?.includes('Failed to fetch')) {
-      throw new Error('Cannot reach backend server. Please check your internet connection.');
-    }
-    throw new Error(`Network error: ${err.message || 'Unknown error'}`);
+    throw new Error(`Network error: ${msg}`);
   }
 }
 
