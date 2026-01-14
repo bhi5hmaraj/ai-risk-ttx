@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:monolith": "node scripts/dev-monolith.mjs",
+    "dev:colyseus": "node scripts/dev-colyseus.mjs",
     "build:analyze": "ANALYZE=true next build",
     "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "dev:mock": "node scripts/dev.mjs --mock-llm",
