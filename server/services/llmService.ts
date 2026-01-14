@@ -25,6 +25,7 @@ export interface LLMFacade {
   generateConsequencesChat: typeof generateConsequencesChat;
   generateAITurn: typeof generateAITurn;
   generateDebriefChat: typeof generateDebriefChat;
+  generateIntents: typeof generateIntents;
 }
 
 function isMockMode(): boolean {
@@ -108,4 +109,11 @@ export const generateDebriefChat = async (
   gameSetup?: GameSetup
 ): Promise<import('../types/core').AIDebriefResponse | null> => {
   return getService().generateDebriefChat(session, gameState, players, humanRoleName, gameSetup);
+};
+
+export const generateIntents = async (
+  player: Player,
+  gameState: GameState
+): Promise<import('../types/core').Intent[]> => {
+  return getService().generateIntents(player, gameState);
 };

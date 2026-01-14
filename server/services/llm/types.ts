@@ -56,4 +56,10 @@ export interface LLMService {
     humanRoleName?: string,
     gameSetup?: GameSetup
   ): Promise<import('../../types/core').AIDebriefResponse | null>;
+
+  // CP5: Intent generation
+  generateIntents(
+    player: Player,
+    gameState: GameState
+  ): Promise<import('../../types/core').Intent[]>;
 }

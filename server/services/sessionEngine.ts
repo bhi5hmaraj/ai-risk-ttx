@@ -40,6 +40,7 @@ export function buildPlayersFromSetup(
         constraints: stakeholder.constraints ?? [],
       },
       isHuman: stakeholder.name === humanRoleName,
+      resources: { material: 50, institutional: 50, narrative: 50 },
       hiddenScore: 0,
       actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
       actions: [],

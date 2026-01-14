@@ -11,6 +11,7 @@ import type {
   AITurnResponse,
   PlayerRoundActions,
   GameSetup,
+  Intent,
 } from "../../types/core";
 import type { AIDebriefResponse } from "../../types/core";
 import {
@@ -24,6 +25,7 @@ import {
   getInitialScenarioChatPrompt,
   getChatConsequencesPrompt,
   getDebriefPrompt,
+  getIntentsPromptAndSchema,
 } from "../../../prompts";
 import { GAME_CONFIG } from '../../../gameConfig';
 import type { LLMService } from './types';
@@ -110,6 +112,32 @@ const DebriefActionZ = z.object({ round: z.number().int().min(1), title: z.strin
 // Allow as few as 1 event to avoid forcing hallucinated rounds in short games
 const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEventZ).min(1).max(7), userActions: z.array(DebriefActionZ).min(0) }).strict();
 
+// CP5: Intent generation schema - derives from Intent type in core.ts
+const ResourceDeltasZ = z.object({
+  material: z.number().optional(),
+  institutional: z.number().optional(),
+  narrative: z.number().optional(),
+}).strict();
+
+const IntentDeltasZ = z.object({
+  targetResources: ResourceDeltasZ.optional(),
+  sourceResources: ResourceDeltasZ.optional(),
+  coreMetric: z.number().optional(),
+}).strict();
+
+const IntentZ = z.object({
+  target: z.string(),
+  cost: z.number().min(1).max(3),
+  deltas: IntentDeltasZ,
+  title: z.string(),
+  description: z.string(),
+  risk: z.enum(['low', 'medium', 'high']),
+}).strict();
+
+const AIIntentsResponseZ = z.object({
+  intents: z.array(IntentZ).length(5),
+}).strict();
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
   try {
@@ -174,5 +202,16 @@ export const LLM_OPENAI: LLMService = {
   async generateDebriefChat(session, gameState, players, humanRoleName, gameSetup) {
     const prompt = getDebriefPrompt(gameState, players, humanRoleName, gameSetup);
     return await parseWithZod<AIDebriefResponse>(DebriefZ, prompt, 'debrief');
+  },
+  async generateIntents(player, gameState) {
+    const { prompt } = getIntentsPromptAndSchema(player, gameState);
+    const parsed = await parseWithZod<{ intents: Omit<Intent, 'id' | 'source'>[] }>(AIIntentsResponseZ, prompt, 'generate_intents');
+    if (!parsed) return [];
+    // Add id and source to each intent
+    return parsed.intents.map((intent, index) => ({
+      id: `${player.id}-intent-${index}`,
+      source: player.id,
+      ...intent,
+    }));
   },
 };

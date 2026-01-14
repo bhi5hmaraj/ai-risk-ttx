@@ -673,3 +673,123 @@ ${previousActionsText}
     `;
     return { prompt, schema: AITurnSchema };
 };
+
+/**
+ * CP5: Generates intents with predicted effects based on player policy
+ * This replaces the two-step flow (generate actions → estimate effects) with policy-aware generation
+ * @param player The player for whom to generate intents
+ * @param gameState The current game state
+ */
+export const getIntentsPromptAndSchema = (player: Player, gameState: GameState) => {
+    // Format policy stances for the prompt
+    const formatPolicyStances = (policy: Player['policy']): string => {
+        if (!policy || !policy.stances) return 'No policy stances set.';
+        return Object.entries(policy.stances)
+            .map(([key, stance]) => `  - ${key}: ${stance.value}/100 (${stance.description || 'no description'})`)
+            .join('\n');
+    };
+
+    const prompt = `
+      You are the Game Master for 'Crisis Command', generating policy-aware action intents for a player.
+
+      CURRENT GAME STATE:
+      - Round: ${gameState.round}
+      - Core Metric (${gameState.coreMetric.name}): ${gameState.coreMetric.value}
+      - Current Crisis: "${gameState.currentEvent?.headline}"
+      - Crisis Detail: ${gameState.currentEvent?.detail}
+
+      PLAYER ROLE: ${player.role.name}
+      - Public Objective: "${player.role.publicObjective}"
+      - Hidden Objective: "${player.role.hiddenObjective}" (secret win condition)
+
+      PLAYER RESOURCES:
+      - Material (M): ${player.resources.material}
+      - Institutional (I): ${player.resources.institutional}
+      - Narrative (N): ${player.resources.narrative}
+      - Action Points Available: ${GAME_CONFIG.ACTION_POINTS_PER_ROUND}
+
+      PLAYER POLICY STANCES:
+${formatPolicyStances(player.policy)}
+
+      YOUR TASK:
+      Generate 5 actionable intents for this player that:
+
+      1. **Consider Policy Alignment:** Some intents should align with the player's policy stances, while others might strategically violate them for tactical advantage
+      2. **Predict Realistic Effects:** For each intent, predict how it will affect:
+         - Target's resources (M/I/N changes)
+         - Source's (this player's) resources (M/I/N changes)
+         - Global core metric (${gameState.coreMetric.name})
+      3. **Vary in Scope:** Mix of direct actions (targeting specific stakeholders), systemic actions (GLOBAL target), and environmental changes (ENVIRONMENT target)
+      4. **Vary in Cost and Risk:**
+         - Costs: 1-${GAME_CONFIG.ACTION_POINTS_PER_ROUND} action points (higher cost = more impactful)
+         - Risk: low/medium/high (assessment of potential negative consequences)
+      5. **Be Specific and Actionable:** Clear titles and descriptions that players can understand
+
+      TARGETING RULES:
+      - Use stakeholder role names for direct actions affecting other players (e.g., "Tech CEO", "Federal Regulator")
+      - Use "GLOBAL" for systemic actions affecting all players or the game state
+      - Use "ENVIRONMENT" for actions affecting the crisis or external factors
+      - Self-targeting actions should target "ENVIRONMENT" to represent mediated effects
+
+      DELTA PREDICTION GUIDELINES:
+      - Resource deltas should be realistic integers (typically -20 to +20 for single actions)
+      - Core metric changes should align with the action's impact on the crisis (typically -10 to +10)
+      - Not all deltas need to be present for each intent (omit if not applicable)
+      - Consider trade-offs: high-cost actions might harm the source while helping others
+
+      POLICY AWARENESS:
+      - If a policy stance value is high (positive), consider intents that reinforce that dimension
+      - If a policy stance value is low (negative), consider intents that oppose that dimension
+      - Some intents can strategically conflict with policy for hidden objective advancement
+
+      You must respond ONLY with a valid JSON object that conforms to the provided schema. Do not include any explanatory text or markdown formatting outside of the JSON structure.
+    `;
+
+    // Return schema as plain object (prompts.ts uses plain schemas, not Zod)
+    const schema = {
+      type: "object",
+      properties: {
+        intents: {
+          type: "array",
+          minItems: 5,
+          maxItems: 5,
+          items: {
+            type: "object",
+            properties: {
+              target: { type: "string" },
+              cost: { type: "number", minimum: 1, maximum: GAME_CONFIG.ACTION_POINTS_PER_ROUND },
+              deltas: {
+                type: "object",
+                properties: {
+                  targetResources: {
+                    type: "object",
+                    properties: {
+                      material: { type: "number" },
+                      institutional: { type: "number" },
+                      narrative: { type: "number" },
+                    }
+                  },
+                  sourceResources: {
+                    type: "object",
+                    properties: {
+                      material: { type: "number" },
+                      institutional: { type: "number" },
+                      narrative: { type: "number" },
+                    }
+                  },
+                  coreMetric: { type: "number" },
+                }
+              },
+              title: { type: "string" },
+              description: { type: "string" },
+              risk: { type: "string", enum: ['low', 'medium', 'high'] },
+            },
+            required: ['target', 'cost', 'deltas', 'title', 'description', 'risk']
+          }
+        }
+      },
+      required: ['intents']
+    } as const;
+
+    return { prompt, schema };
+};
