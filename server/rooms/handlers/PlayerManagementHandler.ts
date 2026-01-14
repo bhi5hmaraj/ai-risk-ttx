@@ -72,6 +72,7 @@ export class PlayerManagementHandler {
                         constraints: []
                     },
                     isHuman: options.isHuman ?? true,
+                    resources: { material: 50, institutional: 50, narrative: 50 },
                     actionPoints: 3,
                     actions: [],
                     hasSubmittedActions: false,

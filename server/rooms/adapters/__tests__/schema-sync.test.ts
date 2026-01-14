@@ -124,6 +124,9 @@ describe('Schema Synchronization: Field Coverage', () => {
             role: 'Senator',
             isHuman: true,
         });
+        schemaPlayer.material = 50;
+        schemaPlayer.institutional = 50;
+        schemaPlayer.narrative = 50;
         schemaPlayer.actionPoints = 2;
         schemaPlayer.hasSubmitted = true;
 
@@ -174,6 +177,7 @@ describe('Schema Synchronization: Field Coverage', () => {
                 constraints: ['regulation'],
             },
             isHuman: false,
+            resources: { material: 50, institutional: 50, narrative: 50 },
             actionPoints: 1,
             actions: [],
             hasSubmittedActions: true,
@@ -417,6 +421,7 @@ describe('Schema Synchronization: Integration Smoke Tests', () => {
                 constraints: ['public opinion', 'term limits'],
             },
             isHuman: true,
+            resources: { material: 50, institutional: 50, narrative: 50 },
             actionPoints: 2,
             actions: [
                 { title: 'Action 1', description: 'Do something', cost: 1 }

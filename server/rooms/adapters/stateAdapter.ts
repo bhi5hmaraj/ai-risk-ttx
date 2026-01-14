@@ -74,6 +74,11 @@ export function schemaPlayerToCore(
             constraints: roleFromEnrichment?.constraints ?? [],
         },
         isHuman: player.isHuman,
+        resources: {
+            material: player.material ?? 0,
+            institutional: player.institutional ?? 0,
+            narrative: player.narrative ?? 0,
+        },
         actionPoints: player.actionPoints,
         actions: options.actions ?? [],
         hasSubmittedActions: player.hasSubmitted,
@@ -113,6 +118,9 @@ export function corePlayerToSchema(
     schema.isHuman = core.isHuman;
     schema.actionPoints = core.actionPoints;
     schema.hasSubmitted = core.hasSubmittedActions;
+    schema.material = core.resources.material;
+    schema.institutional = core.resources.institutional;
+    schema.narrative = core.resources.narrative;
 }
 
 /**
@@ -156,7 +164,7 @@ export function buildRosterFromStakeholders(
   const stakeholderByName = new Map(stakeholders.map((s) => [s.name, s]));
 
   // Enrich Schema players with full role info from stakeholders
-  const enrichment = new Map<string, { fullRole?: CorePlayer['role'] }>();
+  const enrichment = new Map<string, { fullRole?: CorePlayer['role']; initialResources?: any }>();
   schemaPlayers.forEach((sp) => {
     if (sp?.role && sp.role.trim()) {
       const s = stakeholderByName.get(sp.role);
@@ -169,6 +177,7 @@ export function buildRosterFromStakeholders(
             resources: s.resources ?? [],
             constraints: s.constraints ?? [],
           },
+          initialResources: s.initialResources,
         });
       }
     }
@@ -184,16 +193,23 @@ export function buildRosterFromStakeholders(
   // Normalize human players (initial AP, clear actions/flags)
   const humans: CorePlayer[] = coreFromSchema
     .filter((p) => p.isHuman && p.role?.name)
-    .map((p) => ({
-      ...p,
-      actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
-      actions: [],
-      hasSubmittedActions: false,
-      hiddenScore: p.hiddenScore ?? 0,
-    }));
+    .map((p) => {
+      // Get initialResources from stakeholder data if available
+      const enrichData = enrichment.get(p.id);
+      const defaultResources = { material: 50, institutional: 50, narrative: 50 };
+      return {
+        ...p,
+        actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
+        resources: (enrichData?.initialResources as any) ?? defaultResources,
+        actions: [],
+        hasSubmittedActions: false,
+        hiddenScore: p.hiddenScore ?? 0,
+      };
+    });
 
   // Fill remaining roles with AI players
   let aiIndex = 0;
+  const defaultResources = { material: 50, institutional: 50, narrative: 50 };
   const aiSeats: CorePlayer[] = stakeholders
     .filter((s) => !humanTaken.has(s.name))
     .map((s) => ({
@@ -206,6 +222,7 @@ export function buildRosterFromStakeholders(
         constraints: s.constraints ?? [],
       },
       isHuman: false,
+      resources: s.initialResources ?? defaultResources,
       hiddenScore: 0,
       actionPoints: GAME_CONFIG.INITIAL_ACTION_POINTS,
       actions: [],

@@ -5,7 +5,8 @@ import {
     SetRoleSchema, SetRoleMessage,
     SubmitActionSchema, SubmitActionMessage,
     StartGameSchema, StartGameMessage,
-    AdvanceRoundSchema, AdvanceRoundMessage
+    AdvanceRoundSchema, AdvanceRoundMessage,
+    UpdatePolicySchema, UpdatePolicyMessage
 } from "../../shared/messages";
 
 import { GameController } from "../services/GameController";
@@ -19,6 +20,7 @@ import { GameStartHandler } from "./handlers/GameStartHandler";
 import { RoundAdvanceHandler } from "./handlers/RoundAdvanceHandler";
 import { ActionSubmissionHandler } from "./handlers/ActionSubmissionHandler";
 import { PlayerManagementHandler } from "./handlers/PlayerManagementHandler";
+import { PolicyHandler } from "./handlers/PolicyHandler";
 import { SeatRegistry } from "./services/SeatRegistry";
 import { computeWaitingStatus } from "./utils/waitingStatus";
 import * as llmService from "../services/llmService";
@@ -55,6 +57,7 @@ export class GameRoom extends Room<GameState> {
     private roundAdvanceHandler!: RoundAdvanceHandler;
     private actionSubmissionHandler!: ActionSubmissionHandler;
     private playerManagementHandler!: PlayerManagementHandler;
+    private policyHandler!: PolicyHandler;
 
     constructor() {
         super();
@@ -209,6 +212,8 @@ export class GameRoom extends Room<GameState> {
             seats: this.seats,
             emitWaitingStatus: () => this.broadcastWaitingStatus(),
         } as any);
+
+        this.policyHandler = new PolicyHandler(baseDeps);
     }
 
     /**
@@ -240,6 +245,11 @@ export class GameRoom extends Room<GameState> {
         // Advance Round Handler
         this.onMessageZod("advance_round", AdvanceRoundSchema, async (client, data: AdvanceRoundMessage) => {
             await this.roundAdvanceHandler.handleAdvanceRound(client);
+        });
+
+        // Update Policy Handler (CP4)
+        this.onMessageZod("update_policy", UpdatePolicySchema, (client, data: UpdatePolicyMessage) => {
+            this.policyHandler.handleUpdatePolicy(client, data);
         });
 
         // Request re-broadcast of available roles

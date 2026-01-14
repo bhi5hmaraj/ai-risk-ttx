@@ -13,6 +13,11 @@ export class Player extends Schema {
     @type("number") actionPoints: number = 3;
     @type("boolean") hasSubmitted: boolean = false;
 
+    // Resources (CP3)
+    @type("number") material: number = 0;
+    @type("number") institutional: number = 0;
+    @type("number") narrative: number = 0;
+
     constructor(sessionId: string, options?: {
         name?: string;
         role?: string;

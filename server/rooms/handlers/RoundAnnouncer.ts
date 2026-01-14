@@ -57,6 +57,16 @@ export async function announceRoundTransition({ schemaState, coreState, players,
     } catch (e) {
       logger.error('round-announce', 'action_options:failed', { playerId: player.id, error: e });
     }
+
+    // CP5: Generate intents with predicted effects based on player policy
+    try {
+      const intents = await llmService.generateIntents(player, coreState);
+      broadcast('intents_available', { playerId: player.id, intents, round: coreState.round });
+      logger.info('round-announce', 'broadcast:intents_available', { playerId: player.id, intentCount: intents.length });
+    } catch (e) {
+      logger.error('round-announce', 'intents:failed', { playerId: player.id, error: e });
+      // Non-fatal: intents are optional in CP5 (display-only)
+    }
   }
 }
 

@@ -75,9 +75,17 @@ export class GameStartHandler {
             // Seed roster from initial stakeholders now (AI created on start only)
             const stakeholders = this.deps.getInitialStakeholders?.() || [];
             if (stakeholders && stakeholders.length > 0) {
-                const { buildRosterFromStakeholders } = await import('../adapters/stateAdapter');
+                const { buildRosterFromStakeholders, corePlayerToSchema } = await import('../adapters/stateAdapter');
                 const roster = buildRosterFromStakeholders(stakeholders, this.deps.state.players as any);
                 stateManager.setCorePlayers(roster);
+
+                // Sync resources back to Schema
+                for (const corePlayer of roster) {
+                    const schemaPlayer = this.deps.state.players.get(corePlayer.id);
+                    if (schemaPlayer) {
+                        corePlayerToSchema(corePlayer, schemaPlayer);
+                    }
+                }
             }
             const corePlayers = stateManager.getCorePlayers();
 

@@ -183,6 +183,7 @@ describe('State Adapter Contracts', () => {
                     constraints: ['legal limits'],
                 },
                 isHuman: false,
+                resources: { material: 50, institutional: 50, narrative: 50 },
                 actionPoints: 3,
                 actions: [],
                 hasSubmittedActions: false,
@@ -209,6 +210,7 @@ describe('State Adapter Contracts', () => {
                     constraints: [],
                 },
                 isHuman: true,
+                resources: { material: 50, institutional: 50, narrative: 50 },
                 actionPoints: 1,
                 actions: [],
                 hasSubmittedActions: true,
@@ -274,6 +276,7 @@ describe('State Adapter Contracts', () => {
                 id: 'test',
                 role: { name: 'Test', publicObjective: '', hiddenObjective: '', resources: [], constraints: [] },
                 isHuman: true,
+                resources: { material: 50, institutional: 50, narrative: 50 },
                 actionPoints: -5, // Invalid but shouldn't crash
                 actions: [],
                 hasSubmittedActions: false,
