@@ -91,7 +91,8 @@ echo ""
 
 # Database configuration
 DB_NAME="simulacra_local"
-DB_USER="${USER}"
+# Prefer postgres superuser by default; allow override via env
+DB_USER="${DB_USER:-postgres}"
 DB_PORT="5432"
 
 echo "Database Configuration:"
@@ -100,23 +101,35 @@ echo "  User: $DB_USER"
 echo "  Port: $DB_PORT"
 echo ""
 
+# Verify we can connect with the chosen DB user
+if ! psql -U "$DB_USER" -d postgres -c "SELECT 1" >/dev/null 2>&1; then
+    echo -e "${RED}❌ Cannot connect as database user '$DB_USER'${NC}"
+    echo "If this is a local Postgres install, try one of:"
+    echo "  1) Run as the postgres OS user:"
+    echo "     sudo -u postgres $0"
+    echo "  2) Create a role for your OS user and retry:"
+    echo "     sudo -u postgres createuser -s \"$USER\""
+    echo "     DB_USER=\"$USER\" $0"
+    exit 1
+fi
+
 # Check if database already exists
-if psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
+if psql -U "$DB_USER" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
     echo -e "${YELLOW}⚠ Database '$DB_NAME' already exists${NC}"
     read -p "Do you want to drop and recreate it? (y/N) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Dropping existing database..."
-        dropdb "$DB_NAME" || true
+        dropdb -U "$DB_USER" "$DB_NAME" || true
         echo "Creating new database..."
-        createdb "$DB_NAME"
+        createdb -U "$DB_USER" "$DB_NAME"
         echo -e "${GREEN}✓ Database recreated${NC}"
     else
         echo "Using existing database"
     fi
 else
     echo "Creating database '$DB_NAME'..."
-    createdb "$DB_NAME"
+    createdb -U "$DB_USER" "$DB_NAME"
     echo -e "${GREEN}✓ Database created${NC}"
 fi
 
