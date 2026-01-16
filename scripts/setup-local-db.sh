@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Crisis Command - Local Database Setup Script
+# Simulacra - Local Database Setup Script
 # This script helps set up PostgreSQL locally for development
 
 set -e  # Exit on error
 
-echo "🎮 Crisis Command - Local Database Setup"
+echo "🎮 Simulacra - Local Database Setup"
 echo "========================================="
 echo ""
 
@@ -40,22 +40,48 @@ if ! pg_isready -q; then
     echo ""
     echo "Starting PostgreSQL service..."
 
+    start_ok=false
     # Try different commands based on OS
+    set +e
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
         if command -v brew &> /dev/null; then
             brew services start postgresql@16 || brew services start postgresql
+            start_ok=$?
         fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Linux
-        sudo systemctl start postgresql || sudo service postgresql start
+        if command -v systemctl &> /dev/null; then
+            if sudo -n true 2>/dev/null; then
+                sudo systemctl start postgresql
+                start_ok=$?
+            else
+                systemctl --user start postgresql 2>/dev/null
+                start_ok=$?
+            fi
+        fi
+
+        if [[ $start_ok != 0 ]] && command -v service &> /dev/null; then
+            if sudo -n true 2>/dev/null; then
+                sudo service postgresql start
+                start_ok=$?
+            else
+                service postgresql start 2>/dev/null
+                start_ok=$?
+            fi
+        fi
     fi
+    set -e
 
     sleep 2
 
     if ! pg_isready -q; then
         echo -e "${RED}❌ Failed to start PostgreSQL${NC}"
         echo "Please start PostgreSQL manually and run this script again."
+        echo "Suggested commands:"
+        echo "  macOS:   brew services start postgresql@16"
+        echo "  Linux:   sudo systemctl start postgresql"
         exit 1
     fi
 fi
@@ -64,7 +90,7 @@ echo -e "${GREEN}✓ PostgreSQL service is running${NC}"
 echo ""
 
 # Database configuration
-DB_NAME="ttx-prisma-postgres-local"
+DB_NAME="simulacra_local"
 DB_USER="${USER}"
 DB_PORT="5432"
 
