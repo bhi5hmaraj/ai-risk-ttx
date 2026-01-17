@@ -18,6 +18,20 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Generate Prisma client for Next.js typechecking during build.
+ARG DATABASE_URL=postgresql://localhost:5432/postgres?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+RUN pnpm exec prisma generate
+
+# Build-time public envs (baked into client bundle).
+# These MUST be set correctly per-environment when building this image.
+ARG NEXT_PUBLIC_COLYSEUS_URL
+ARG NEXT_PUBLIC_COLYSEUS_HTTP_BASE
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_COLYSEUS_URL=$NEXT_PUBLIC_COLYSEUS_URL
+ENV NEXT_PUBLIC_COLYSEUS_HTTP_BASE=$NEXT_PUBLIC_COLYSEUS_HTTP_BASE
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
 # Build Next.js with standalone output
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
@@ -45,6 +59,6 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 CMD ["node", "server.js"]

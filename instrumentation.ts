@@ -11,6 +11,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     // Only run on Node.js runtime (not Edge)
     const { loadSecrets } = await import('./lib/infisical');
+    const { logRuntimeEnv } = await import('./lib/envDebug');
     await loadSecrets();
+    logRuntimeEnv('app');
   }
 }

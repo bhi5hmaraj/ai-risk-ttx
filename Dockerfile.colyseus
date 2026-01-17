@@ -18,15 +18,19 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Generate Prisma client for server build typechecking.
+ARG DATABASE_URL=postgresql://localhost:5432/postgres?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+RUN pnpm exec prisma generate
+
 # Build Colyseus/Server only
-ARG OPENAI_API_KEY=dummy
-RUN pnpm run build:server
+RUN OPENAI_API_KEY=dummy pnpm run build:server
 
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -54,15 +58,15 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm i --prod --frozen-lockfile
 
-FROM runner as final
+FROM runner AS final
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/healthz', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"

@@ -3,17 +3,31 @@ import { zodResponseFormat } from "openai/helpers/zod";
 import type { GameSetup, Player } from "../types/core";
 import { GAME_CONFIG } from "../../gameConfig";
 
-const baseURL = process.env.LITELLM_BASE_URL || "https://asgard.bhishmaraj.org";
-const model = process.env.LLM_MODEL || "gpt-4o-mini";
+function getRuntimeConfig(): { baseURL: string; apiKey?: string; model: string; sig: string } {
+  const baseURL = process.env.LITELLM_BASE_URL || "https://asgard.bhishmaraj.org";
+  const apiKey = process.env.LITELLM_API_KEY;
+  const model = process.env.LLM_MODEL || "gpt-4o-mini";
+  const apiKeySig = apiKey ? String(apiKey).slice(-4) : "nokey";
+  const sig = `${baseURL}|${apiKeySig}`;
+  return { baseURL, apiKey, model, sig };
+}
 
 let __client: any | null | undefined;
+let __sig: string | undefined;
 function getClient(): any {
+  const { baseURL, apiKey, sig } = getRuntimeConfig();
   if (!__client) {
-    const key = process.env.LITELLM_API_KEY;
-    if (!key) {
+    if (!apiKey) {
       throw new Error("Missing LiteLLM configuration. Please set LITELLM_API_KEY environment variable.");
     }
-    __client = new OpenAI({ apiKey: key, baseURL });
+    __client = new OpenAI({ apiKey, baseURL });
+    __sig = sig;
+  } else if (__sig !== sig) {
+    if (!apiKey) {
+      throw new Error("Missing LiteLLM configuration. Please set LITELLM_API_KEY environment variable.");
+    }
+    __client = new OpenAI({ apiKey, baseURL });
+    __sig = sig;
   }
   return __client;
 }
@@ -33,6 +47,7 @@ export class GameChatSession {
   ): Promise<T | null> {
     this.messages.push({ role: "user", content: userMessage });
     try {
+      const { model } = getRuntimeConfig();
       const response = await getClient().chat.completions.create(
         responseSchema
           ? { model, messages: this.messages, response_format: zodResponseFormat(responseSchema, "response") }

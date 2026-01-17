@@ -8,22 +8,24 @@
 import { Client, Room } from 'colyseus.js';
 import type { GameState as ColyseusGameState } from '@/server/rooms/schema/GameState';
 
-// Require explicit Colyseus URL from env; no hardcoded or same-origin fallback
-const COLYSEUS_URL = process.env.NEXT_PUBLIC_COLYSEUS_URL as string | undefined;
-if (!COLYSEUS_URL) {
-  throw new Error('[ColyseusClient] NEXT_PUBLIC_COLYSEUS_URL is not set. Define it in .env.local (dev) or deployment env.');
-}
-
-console.log('[ColyseusClient] Server URL:', COLYSEUS_URL);
-
 let clientInstance: Client | null = null;
+
+function getColyseusUrl(): string {
+  const url = process.env.NEXT_PUBLIC_COLYSEUS_URL as string | undefined;
+  if (!url) {
+    throw new Error('[ColyseusClient] NEXT_PUBLIC_COLYSEUS_URL is not set. Define it in .env.local (dev) or deployment env.');
+  }
+  return url;
+}
 
 /**
  * Get or create the singleton Colyseus client
  */
 export function getColyseusClient(): Client {
   if (!clientInstance) {
-    clientInstance = new Client(COLYSEUS_URL);
+    const url = getColyseusUrl();
+    console.log('[ColyseusClient] Server URL:', url);
+    clientInstance = new Client(url);
   }
   return clientInstance;
 }

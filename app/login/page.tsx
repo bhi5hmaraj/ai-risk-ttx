@@ -1,5 +1,7 @@
 import { SignIn } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 text-gray-100 p-4">

@@ -11,10 +11,12 @@ import { LobbyRoom } from 'colyseus';
 import * as Sentry from './instrument';
 import { slog, serr, swarn, createReqId } from './lib/logger';
 import { loadSecrets } from '../lib/infisical';
+import { logRuntimeEnv } from '../lib/envDebug';
 
 // Load secrets from Infisical before starting server
 (async () => {
   await loadSecrets();
+  logRuntimeEnv('stein');
 
   startServer();
 })();
@@ -74,6 +76,12 @@ const gameServer = new Server({
       .filterBy(['gameId']); // Allow filtering rooms by gameId - clients with same gameId join same room
 
 expressApp.use('/colyseus-admin', monitor());
+
+// Cloud Run seems to intercept `/healthz` externally; keep `/healthz` for local checks
+// and add `/` as a simple externally curlable probe.
+expressApp.get('/', (req: ExpressRequest, res: ExpressResponse) => {
+    res.status(200).send('OK');
+});
 
 expressApp.get('/healthz', (req: ExpressRequest, res: ExpressResponse) => {
     res.status(200).send('OK');

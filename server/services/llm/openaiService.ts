@@ -29,10 +29,13 @@ import { GAME_CONFIG } from '../../../gameConfig';
 import type { LLMService } from './types';
 import type { GameChatSession } from '../chatSession';
 
-const baseURL = process.env.LITELLM_BASE_URL || 'https://asgard.bhishmaraj.org';
-const apiKey = process.env.LITELLM_API_KEY;
-const model = process.env.LLM_MODEL || 'gpt-4o-mini';
-const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || '10000', 10);
+type LlmRuntimeConfig = {
+  baseURL: string;
+  apiKey?: string;
+  model: string;
+  timeoutMs: number;
+  sig: string;
+};
 
 declare global {
   // eslint-disable-next-line no-var
@@ -41,13 +44,27 @@ declare global {
   var __LLM_SIG__: string | undefined;
 }
 
-const configSig = `${baseURL}|${model}|${timeoutMs}|${apiKey ? apiKey.slice(-4) : 'nokey'}`;
+function getRuntimeConfig(): LlmRuntimeConfig {
+  const baseURL = process.env.LITELLM_BASE_URL || 'https://asgard.bhishmaraj.org';
+  const apiKey = process.env.LITELLM_API_KEY;
+  const model = process.env.LLM_MODEL || 'gpt-4o-mini';
+  const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || '10000', 10);
+  const apiKeySig = apiKey ? String(apiKey).slice(-4) : 'nokey';
+  const sig = `${baseURL}|${model}|${timeoutMs}|${apiKeySig}`;
+
+  if (!process.env.LLM_MODEL) {
+    try { console.warn('[LLM] LLM_MODEL missing; falling back to gpt-4o-mini'); } catch {}
+  }
+
+  return { baseURL, apiKey, model, timeoutMs, sig };
+}
 
 function getClient(): InstanceType<typeof OpenAI> {
+  const { apiKey, baseURL, model, timeoutMs, sig } = getRuntimeConfig();
   if (!apiKey) throw new Error("Missing LiteLLM configuration. Please set LITELLM_API_KEY environment variable.");
-  if (!globalThis.__LLM_CLIENT__ || globalThis.__LLM_SIG__ !== configSig) {
+  if (!globalThis.__LLM_CLIENT__ || globalThis.__LLM_SIG__ !== sig) {
     globalThis.__LLM_CLIENT__ = new OpenAI({ apiKey, baseURL, timeout: timeoutMs, maxRetries: 1 });
-    globalThis.__LLM_SIG__ = configSig;
+    globalThis.__LLM_SIG__ = sig;
     try { console.log('[LLM INIT]', { baseURL, model, apiKeyPresent: !!apiKey, timeoutMs }); } catch {}
   }
   return globalThis.__LLM_CLIENT__;
@@ -112,6 +129,7 @@ const DebriefZ = z.object({ summary: z.string(), keyEvents: z.array(DebriefEvent
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function parseWithZod<T>(schema: any, prompt: string, name: string): Promise<T | null> {
+  const { model } = getRuntimeConfig();
   try {
     const completion = await getClient().chat.completions.create({ model, messages: [{ role: "user", content: prompt }], response_format: zodResponseFormat(schema, name) });
     const msg = completion.choices[0]?.message as any;

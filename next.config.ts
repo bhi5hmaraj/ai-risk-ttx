@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  output: 'standalone',
   reactStrictMode: true,
   productionBrowserSourceMaps: true,
   images: {
