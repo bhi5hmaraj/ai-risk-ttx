@@ -2,6 +2,8 @@
 
 Goal: deploy both Next.js and Colyseus on Google Cloud Run with Infisical secrets.
 
+Start here: `docs/INFRA_SETUP.md`.
+
 ## Phase 0: Prep (one-time)
 - [ ] Enable GCP APIs: Cloud Run, Cloud Build, Artifact Registry, Secret Manager.
 - [ ] Create Artifact Registry repo `simulacra` in `us-central1`.

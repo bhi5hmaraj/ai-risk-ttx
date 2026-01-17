@@ -92,6 +92,8 @@ A **Tabletop Exercise (TTX)** is a simulated crisis where participants role-play
 ## Documentation
 
 - Docs live in the `docs/` folder.
+- Cloud Run + Infisical infra setup: `docs/INFRA_SETUP.md`.
+- Cloud Run deployment checklist: `docs/CLOUD_RUN_TASKLIST.md`.
 - Session backend (server‑authoritative state) design: `docs/session-backend.md`.
 - Advanced analytics (ADA + CDT + Shapley) design: `docs/ada-cdt-shapley.md`.
 
@@ -224,6 +226,23 @@ npm run analyze -- --help
 - `NEXT_PUBLIC_LLM_MODEL` (optional, display only)
 
 If any required variable is missing, impacted routes will return 503 with a descriptive JSON error.
+
+### Cloud Run (Full Stack: Next.js + Stein/Colyseus)
+
+This branch also supports deploying the full stack to **Google Cloud Run**:
+- `simulacra-app` (Next.js)
+- `simulacra-stein` (Colyseus)
+
+Start here:
+- `docs/INFRA_SETUP.md` (what we deployed + how to modify it)
+- `docs/CLOUD_RUN_TASKLIST.md` (step-by-step)
+- `infra/README.md` (Terraform option)
+- `docs/multiplayer/INFISICAL_QUICK_START.md` (Infisical auth + env model)
+
+Important caveats:
+- `NEXT_PUBLIC_*` values (like Colyseus URLs) are **baked into the Next.js image** at build time; changing them requires rebuilding the image.
+- Secrets are loaded at runtime from Infisical via `lib/infisical.ts`; Cloud Run only needs Infisical auth credentials (from Secret Manager) plus `INFISICAL_ENVIRONMENT`/`INFISICAL_PROJECT_ID`.
+- Stein should stay at `max-instances=1` unless you add a shared presence layer and validate room routing.
 
 ---
 
