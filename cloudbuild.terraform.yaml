@@ -1,0 +1,81 @@
+# Cloud Build: build/push both images, then Terraform apply Cloud Run services.
+#
+# NOTE: This expects a configured Terraform backend (GCS bucket) in `infra/personal/backend.tf`.
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'N1_HIGHCPU_8'
+
+substitutions:
+  _REGION: us-central1
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-colyseus'
+    waitFor: ['-']
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.colyseus'
+      - '--build-arg'
+      - 'OPENAI_API_KEY=dummy'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-colyseus'
+    waitFor: ['build-colyseus']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-nextjs'
+    waitFor: ['-']
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.nextjs'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-nextjs'
+    waitFor: ['build-nextjs']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID'
+
+  - name: 'hashicorp/terraform:1.9.5'
+    id: 'tf-init'
+    dir: 'infra/personal'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        terraform init -input=false
+
+  - name: 'hashicorp/terraform:1.9.5'
+    id: 'tf-apply'
+    dir: 'infra/personal'
+    entrypoint: 'sh'
+    env:
+      - TF_VAR_project_id=$PROJECT_ID
+      - TF_VAR_region=${_REGION}
+      - TF_VAR_app_image=${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID
+      - TF_VAR_stein_image=${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID
+    args:
+      - '-c'
+      - |
+        terraform apply -input=false -auto-approve
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID'
+

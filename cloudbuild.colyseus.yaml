@@ -1,0 +1,114 @@
+# Cloud Build config for deploying Colyseus to Cloud Run (standalone service)
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'N1_HIGHCPU_8'
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: simulacra-stein
+  # Infisical environment slugs are typically: dev | stg | prod
+  _INFISICAL_ENVIRONMENT: prod
+  # Default to the Simulacra project id for "just run it" deployments.
+  _INFISICAL_PROJECT_ID: '846893fb-d731-4fd3-b7af-b9ff306d91e2'
+  # Prefer Universal Auth via Secret Manager by default.
+  _INFISICAL_TOKEN_SECRET: none
+  _INFISICAL_UA_CLIENT_ID_SECRET: INFISICAL_UA_CLIENT_ID
+  _INFISICAL_UA_CLIENT_SECRET_SECRET: INFISICAL_UA_CLIENT_SECRET
+
+steps:
+  # ========== Build Colyseus ========== #
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-colyseus'
+    waitFor: ['-']
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.colyseus'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-colyseus-build'
+    waitFor: ['build-colyseus']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-colyseus-latest'
+    waitFor: ['build-colyseus']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:latest'
+
+  # ========== Deploy Colyseus to Cloud Run ========== #
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-colyseus'
+    entrypoint: 'bash'
+    waitFor: ['push-colyseus-build', 'push-colyseus-latest']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+
+        SERVICE_NAME="${_SERVICE_NAME}"
+        if [ -z "$$SERVICE_NAME" ]; then
+          echo "Missing _SERVICE_NAME substitution"
+          exit 1
+        fi
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🎮 Deploying Colyseus Game Server"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Service: $$SERVICE_NAME"
+        echo "Region:  ${_REGION}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+        ENV_VARS="NODE_ENV=production,INFISICAL_ENVIRONMENT=${_INFISICAL_ENVIRONMENT}"
+        if [ -n "${_INFISICAL_PROJECT_ID}" ]; then
+          ENV_VARS="$$ENV_VARS,INFISICAL_PROJECT_ID=${_INFISICAL_PROJECT_ID}"
+        fi
+
+        SECRETS=""
+        if [ -n "${_INFISICAL_TOKEN_SECRET}" ] && [ "${_INFISICAL_TOKEN_SECRET}" != "none" ] && [ "${_INFISICAL_TOKEN_SECRET}" != "NONE" ]; then
+          SECRETS="INFISICAL_TOKEN=${_INFISICAL_TOKEN_SECRET}:latest"
+        fi
+        if [ -n "${_INFISICAL_UA_CLIENT_ID_SECRET}" ]; then
+          SECRETS="${SECRETS:+$$SECRETS,}INFISICAL_UNIVERSAL_AUTH_CLIENT_ID=${_INFISICAL_UA_CLIENT_ID_SECRET}:latest"
+        fi
+        if [ -n "${_INFISICAL_UA_CLIENT_SECRET_SECRET}" ]; then
+          SECRETS="${SECRETS:+$$SECRETS,}INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET=${_INFISICAL_UA_CLIENT_SECRET_SECRET}:latest"
+        fi
+        if [ -z "$$SECRETS" ]; then
+          echo "Provide _INFISICAL_TOKEN_SECRET or universal auth secret names"
+          exit 1
+        fi
+
+        gcloud run deploy "$$SERVICE_NAME" \
+          --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID \
+          --region ${_REGION} \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --timeout 3600 \
+          --session-affinity \
+          --min-instances 1 \
+          --max-instances 1 \
+          --set-env-vars "$$ENV_VARS" \
+          --set-secrets "$$SECRETS"
+
+        DEPLOYED_URL="$$(gcloud run services describe "$$SERVICE_NAME" --region ${_REGION} --format='value(status.url)')"
+        echo ""
+        echo "✅ Colyseus deployed successfully!"
+        echo "🔗 URL: $$DEPLOYED_URL"
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/colyseus:latest'

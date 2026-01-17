@@ -1,0 +1,178 @@
+# Cloud Build config for deploying Next.js to Cloud Run (standalone service)
+# Requires an existing Colyseus deployment URL or service name to configure browser env vars.
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'N1_HIGHCPU_8'
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: simulacra-app
+  _COLYSEUS_SERVICE_NAME: simulacra-stein
+  _COLYSEUS_URL: ''
+  # Infisical environment slugs are typically: dev | stg | prod
+  _INFISICAL_ENVIRONMENT: prod
+  # Default to the Simulacra project id for "just run it" deployments.
+  _INFISICAL_PROJECT_ID: '846893fb-d731-4fd3-b7af-b9ff306d91e2'
+  # Prefer Universal Auth via Secret Manager by default.
+  _INFISICAL_TOKEN_SECRET: none
+  _INFISICAL_UA_CLIENT_ID_SECRET: INFISICAL_UA_CLIENT_ID
+  _INFISICAL_UA_CLIENT_SECRET_SECRET: INFISICAL_UA_CLIENT_SECRET
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/INFISICAL_UA_CLIENT_ID/versions/latest
+      env: INFISICAL_UNIVERSAL_AUTH_CLIENT_ID
+    - versionName: projects/$PROJECT_ID/secrets/INFISICAL_UA_CLIENT_SECRET/versions/latest
+      env: INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET
+
+steps:
+  # Resolve Colyseus URL early so we can bake NEXT_PUBLIC_* at build time.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'resolve-colyseus-url'
+    entrypoint: 'bash'
+    waitFor: ['-']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+
+        COLYSEUS_URL="${_COLYSEUS_URL}"
+        if [ -z "$$COLYSEUS_URL" ]; then
+          COLYSEUS_SERVICE_NAME="${_COLYSEUS_SERVICE_NAME}"
+          if [ -z "$$COLYSEUS_SERVICE_NAME" ]; then
+            echo "Provide either _COLYSEUS_URL or _COLYSEUS_SERVICE_NAME"
+            exit 1
+          fi
+          COLYSEUS_URL="$$(gcloud run services describe "$$COLYSEUS_SERVICE_NAME" --region ${_REGION} --format='value(status.url)')"
+        fi
+
+        COLYSEUS_WS_URL="$$(echo "$$COLYSEUS_URL" | sed 's/^https:/wss:/')"
+        echo -n "$$COLYSEUS_URL" > .cb_colyseus_url
+        echo -n "$$COLYSEUS_WS_URL" > .cb_colyseus_ws_url
+
+  # ========== Build Next.js ========== #
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-nextjs'
+    entrypoint: 'bash'
+    waitFor: ['resolve-colyseus-url']
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        COLYSEUS_URL="$$(cat .cb_colyseus_url)"
+        COLYSEUS_WS_URL="$$(cat .cb_colyseus_ws_url)"
+
+        docker build \
+          -f Dockerfile.nextjs \
+          --build-arg NEXT_PUBLIC_COLYSEUS_HTTP_BASE="$$COLYSEUS_URL" \
+          --build-arg NEXT_PUBLIC_COLYSEUS_URL="$$COLYSEUS_WS_URL" \
+          -t "${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID" \
+          -t "${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:latest" \
+          .
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-nextjs-build'
+    waitFor: ['build-nextjs']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-nextjs-latest'
+    waitFor: ['build-nextjs']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:latest'
+
+  # ========== Release Step: Prisma Migrations (once per deploy) ========== #
+  - name: 'node:20'
+    id: 'migrate-db'
+    entrypoint: 'bash'
+    waitFor: ['push-nextjs-build', 'push-nextjs-latest']
+    secretEnv:
+      - INFISICAL_UNIVERSAL_AUTH_CLIENT_ID
+      - INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET
+    env:
+      - 'INFISICAL_ENVIRONMENT=${_INFISICAL_ENVIRONMENT}'
+      - 'INFISICAL_PROJECT_ID=${_INFISICAL_PROJECT_ID}'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        corepack enable
+        corepack prepare pnpm@latest --activate
+        pnpm i --frozen-lockfile
+        node scripts/prisma-migrate-infisical.mjs
+
+  # ========== Deploy Next.js to Cloud Run ========== #
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-nextjs'
+    entrypoint: 'bash'
+    waitFor: ['push-nextjs-build', 'push-nextjs-latest', 'migrate-db']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+
+        SERVICE_NAME="${_SERVICE_NAME}"
+        if [ -z "$$SERVICE_NAME" ]; then
+          echo "Missing _SERVICE_NAME substitution"
+          exit 1
+        fi
+
+        COLYSEUS_URL="$$(cat .cb_colyseus_url)"
+        COLYSEUS_WS_URL="$$(cat .cb_colyseus_ws_url)"
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📦 Deploying Next.js Frontend"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Service:      $$SERVICE_NAME"
+        echo "Region:       ${_REGION}"
+        echo "Game URL:     $$COLYSEUS_URL"
+        echo "Game WS URL:  $$COLYSEUS_WS_URL"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+        ENV_VARS="NODE_ENV=production,INFISICAL_ENVIRONMENT=${_INFISICAL_ENVIRONMENT},NEXT_PUBLIC_COLYSEUS_URL=$$COLYSEUS_WS_URL,NEXT_PUBLIC_COLYSEUS_HTTP_BASE=$$COLYSEUS_URL"
+        if [ -n "${_INFISICAL_PROJECT_ID}" ]; then
+          ENV_VARS="$$ENV_VARS,INFISICAL_PROJECT_ID=${_INFISICAL_PROJECT_ID}"
+        fi
+
+        SECRETS=""
+        if [ -n "${_INFISICAL_TOKEN_SECRET}" ] && [ "${_INFISICAL_TOKEN_SECRET}" != "none" ] && [ "${_INFISICAL_TOKEN_SECRET}" != "NONE" ]; then
+          SECRETS="INFISICAL_TOKEN=${_INFISICAL_TOKEN_SECRET}:latest"
+        fi
+        if [ -n "${_INFISICAL_UA_CLIENT_ID_SECRET}" ]; then
+          SECRETS="${SECRETS:+$$SECRETS,}INFISICAL_UNIVERSAL_AUTH_CLIENT_ID=${_INFISICAL_UA_CLIENT_ID_SECRET}:latest"
+        fi
+        if [ -n "${_INFISICAL_UA_CLIENT_SECRET_SECRET}" ]; then
+          SECRETS="${SECRETS:+$$SECRETS,}INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET=${_INFISICAL_UA_CLIENT_SECRET_SECRET}:latest"
+        fi
+        if [ -z "$$SECRETS" ]; then
+          echo "Provide _INFISICAL_TOKEN_SECRET or universal auth secret names"
+          exit 1
+        fi
+
+        gcloud run deploy "$$SERVICE_NAME" \
+          --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID \
+          --region ${_REGION} \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --timeout 60 \
+          --min-instances 0 \
+          --max-instances 3 \
+          --set-env-vars "$$ENV_VARS" \
+          --set-secrets "$$SECRETS"
+
+        DEPLOYED_URL="$$(gcloud run services describe "$$SERVICE_NAME" --region ${_REGION} --format='value(status.url)')"
+        echo ""
+        echo "✅ Next.js deployed successfully!"
+        echo "🔗 URL: $$DEPLOYED_URL"
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/simulacra/nextjs:latest'
