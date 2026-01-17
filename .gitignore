@@ -52,6 +52,13 @@ Thumbs.db
 .env.*
 !.env.example
 !.env*.example
+!.env.infiscal.example
+
+# Local Infisical config (never commit)
+.env.infiscal
+
+# Local gcloud config used by scripts/tests
+.gcloud/
 
 node_modules/**
 

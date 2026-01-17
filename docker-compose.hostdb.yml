@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  simulacra-stein:
+    container_name: simulacra-stein-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile.colyseus
+    extra_hosts:
+      # Linux: allow containers to reach host services via host.docker.internal
+      - 'host.docker.internal:host-gateway'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN?set INFISICAL_TOKEN in your shell or .env}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-production}
+      # Override DB locally (Infisical will not overwrite existing env vars)
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/simulacra_local?schema=public}
+    ports:
+      - '3004:3000'
+
+  simulacra-app:
+    container_name: simulacra-app-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile.nextjs
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN?set INFISICAL_TOKEN in your shell or .env}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-production}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/simulacra_local?schema=public}
+      # App → Colyseus (browser needs host-mapped URLs, not docker-internal names)
+      NEXT_PUBLIC_COLYSEUS_HTTP_BASE: http://localhost:3004
+      NEXT_PUBLIC_COLYSEUS_URL: ws://localhost:3004
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    depends_on:
+      - simulacra-stein
+    ports:
+      - '3000:3000'
+

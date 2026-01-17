@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: simulacra-postgres-local
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: simulacra_local
+    volumes:
+      - simulacra_db_data:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+
+  simulacra-stein:
+    container_name: simulacra-stein-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile.colyseus
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN?set INFISICAL_TOKEN in your shell or .env}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-production}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/simulacra_local?schema=public
+    depends_on:
+      - db
+    ports:
+      - '3004:3000'
+
+  simulacra-app:
+    container_name: simulacra-app-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile.nextjs
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN?set INFISICAL_TOKEN in your shell or .env}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-production}
+      # App → Colyseus (browser needs host-mapped URLs, not docker-internal names)
+      NEXT_PUBLIC_COLYSEUS_HTTP_BASE: http://localhost:3004
+      NEXT_PUBLIC_COLYSEUS_URL: ws://localhost:3004
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      # Optional: override DB locally while still using Infisical for other secrets
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/simulacra_local?schema=public
+    depends_on:
+      - db
+      - simulacra-stein
+    ports:
+      - '3000:3000'
+
+volumes:
+  simulacra_db_data:
+

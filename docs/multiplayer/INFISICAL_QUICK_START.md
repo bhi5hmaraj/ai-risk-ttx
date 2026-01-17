@@ -37,7 +37,13 @@ Go to each environment and add all your secrets:
 3. Give it **Read** access
 4. Copy the token (starts with `st.`)
 
-### 4. Add Token to GCP Secret Manager
+### 4. Get Project ID (required)
+
+1. Go to Project Settings → General (or Overview)
+2. Copy the **Project ID** (UUID)
+3. You will set this as `INFISICAL_PROJECT_ID` (not a secret)
+
+### 5. Add Token to GCP Secret Manager
 
 ```bash
 # Create INFISICAL_TOKEN secret
@@ -75,6 +81,9 @@ LITELLM_API_KEY=...
 ```bash
 # Create .env.local with just the token
 INFISICAL_TOKEN=st.dev.your-token
+
+# Also set project id (required)
+INFISICAL_PROJECT_ID=00000000-0000-0000-0000-000000000000
 
 # Server will fetch all other secrets at startup
 PORT=3004 pnpm run dev:colyseus
