@@ -140,17 +140,25 @@ This document outlines a strategy to unify all features into a new `simulacra` r
 | `tests/hooks.useGameController.sse-progress.test.ts` | stein | Skipped test for deprecated SSE |
 | `.next/cache/webpack/*.old` | all | Build cache artifacts |
 
-### MEDIUM PRIORITY - Delete After Migration
+### MEDIUM PRIORITY - Delete After Migration (DEFERRED - needs verification)
 
-| File | Branch | Reason |
-|------|--------|--------|
-| `hooks/useGameActions.ts` | stein | Legacy HTTP/SSE, replaced by useGameActionsColyseus |
-| `tests/hooks.useGameActions.backend-mode.test.ts` | stein | Tests deprecated hook |
-| `app/api/session/[[...parts]]/route.ts` | stein | Deprecated SSE API (marked TODO) |
-| `server/api/session-router.ts` | stein | Part of deprecated session stack |
-| `server/stores/sessionStore.memory.ts` | stein | Deprecated store |
-| `server/stores/sessionStore.redis.ts` | stein | Deprecated store |
-| `server/stores/sessionStore.redis.integration.test.ts` | stein | Tests deprecated store |
+⚠️ **Status**: These files are marked deprecated but still have active references.
+Needs deeper audit to verify Colyseus fully replaced them before deletion.
+
+| File | Branch | Status | Blocker |
+|------|--------|--------|---------|
+| `app/api/session/[[...parts]]/route.ts` | stein | Marked TODO[deprecate] | Still referenced by sessionClient |
+| `server/api/session-router.ts` | stein | Part of deprecated stack | Used by session route |
+| `services/sessionClient.ts` | stein | Session API client | Used by SessionService |
+| `services/SessionService.ts` | stein | Wrapper over sessionClient | Used by useGameController |
+| `hooks/useGameActions.ts` | stein | Legacy HTTP/SSE hook | Used by useGameController (fallback?) |
+| `tests/hooks.useGameActions.backend-mode.test.ts` | stein | Tests deprecated hook | Can delete with hook |
+| `server/stores/sessionStore.memory.ts` | stein | Deprecated store | Used by session route |
+| `server/stores/sessionStore.redis.ts` | stein | Deprecated store | Used by session route |
+| `server/stores/sessionStore.redis.integration.test.ts` | stein | Tests deprecated store | Can delete with store |
+
+**Action**: Audit useGameController to see if it still uses session API in Colyseus mode.
+If not, the entire stack can be deleted together.
 
 ### LOW PRIORITY - Consolidate
 
